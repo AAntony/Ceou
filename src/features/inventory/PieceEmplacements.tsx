@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, View } from 'react-native';
+import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
@@ -47,10 +48,10 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isEmpty ? (
-          <EmptyState title={t('inventory.emplacements.empty')} />
+          <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
           emplacements?.map((emplacement) => (
             <EntityCard
@@ -65,9 +66,11 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         )}
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 border-t border-neutral-100 bg-white px-6 py-4">
-        <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
-      </View>
+      <BottomActionBar>
+        <View className="flex-1">
+          <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
+        </View>
+      </BottomActionBar>
 
       <CreateEntityModal
         visible={modalOpen}

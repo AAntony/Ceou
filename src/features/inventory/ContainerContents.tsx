@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, View } from 'react-native';
+import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
@@ -43,16 +44,16 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
   const isEmpty = !isLoading && conteneurs.length === 0 && objets.length === 0;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isEmpty ? (
-          <EmptyState title={t('inventory.container.empty')} />
+          <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
           <>
             {conteneurs.map((conteneur) => (
               <EntityCard
                 key={conteneur.id}
-                icon="🗃️"
+                icon="conteneur"
                 title={conteneur.name}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
                 onLongPress={() => handleDeleteConteneur(conteneur.id)}
@@ -65,7 +66,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
             {objets.map((objet) => (
               <EntityCard
                 key={objet.id}
-                icon="📦"
+                icon="objet"
                 imageUri={objet.photo_url}
                 title={objet.name}
                 onPress={() => router.push(`/objet/${objet.id}`)}
@@ -76,7 +77,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         )}
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 flex-row gap-3 border-t border-neutral-100 bg-white px-6 py-4">
+      <BottomActionBar>
         <View className="flex-1">
           <Button
             label={t('inventory.container.add_conteneur')}
@@ -90,7 +91,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         <View className="flex-1">
           <Button label={t('inventory.container.add_objet')} onPress={() => setObjetModalOpen(true)} />
         </View>
-      </View>
+      </BottomActionBar>
 
       <CreateEntityModal
         visible={conteneurModalOpen}

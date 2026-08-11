@@ -25,7 +25,7 @@ export default function PlanScreen() {
 
   if (planLoading || !plan) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
       </View>
     );
@@ -34,7 +34,7 @@ export default function PlanScreen() {
   return (
     <>
       <Stack.Screen options={{ title: plan.name }} />
-      <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 py-4">
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 py-4">
         <PresetPicker
           presets={PLAN_SHAPE_TYPES}
           selectedKey={null}

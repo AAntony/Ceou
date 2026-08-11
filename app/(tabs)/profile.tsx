@@ -48,29 +48,29 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
       </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-10">
-      <Text className="mb-8 text-3xl font-bold text-neutral-900">{t('profile.title')}</Text>
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-10">
+      <Text className="mb-8 text-3xl font-bold text-ink">{t('profile.title')}</Text>
 
       <Pressable onPress={handleAvatarPress} className="mb-8 items-center">
-        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-neutral-100">
+        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-sand-dark">
           {avatarUploading ? (
             <ActivityIndicator />
           ) : profile?.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={{ width: 96, height: 96 }} />
           ) : (
-            <Text className="text-3xl font-semibold text-neutral-400">
+            <Text className="text-3xl font-semibold text-ink-soft">
               {(displayName || session?.user.email || '?').charAt(0).toUpperCase()}
             </Text>
           )}
         </View>
-        <Text className="mt-2 text-sm font-medium text-neutral-500">{t('profile.avatar.change')}</Text>
+        <Text className="mt-2 text-sm font-medium text-ink-soft">{t('profile.avatar.change')}</Text>
       </Pressable>
 
       <TextField label={t('profile.display_name')} value={displayName} onChangeText={setDisplayName} />
@@ -79,17 +79,17 @@ export default function ProfileScreen() {
 
       <Button label={t('common.save')} onPress={handleSave} loading={updateProfile.isPending} />
 
-      <Text className="mb-2 mt-8 text-sm font-medium text-neutral-700">{t('profile.language')}</Text>
+      <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('profile.language')}</Text>
       <View className="flex-row gap-2">
         {SUPPORTED_LANGUAGES.map((language) => (
           <Pressable
             key={language}
             onPress={() => handleLanguageChange(language)}
             className={`rounded-xl border px-4 py-2 ${
-              i18n.language === language ? 'border-neutral-900 bg-neutral-900' : 'border-neutral-200'
+              i18n.language === language ? 'border-coral bg-coral' : 'border-ink/10'
             }`}
           >
-            <Text className={i18n.language === language ? 'font-semibold text-white' : 'text-neutral-700'}>
+            <Text className={i18n.language === language ? 'font-semibold text-white' : 'text-ink-soft'}>
               {language.toUpperCase()}
             </Text>
           </Pressable>

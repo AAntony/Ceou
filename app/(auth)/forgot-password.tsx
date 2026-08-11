@@ -27,15 +27,15 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-white">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-2 text-3xl font-bold text-neutral-900">{t('auth.forgot_password.title')}</Text>
+        <Text className="mb-2 text-3xl font-bold text-ink">{t('auth.forgot_password.title')}</Text>
 
         {success ? (
-          <Text className="mt-4 text-base text-neutral-700">{t('auth.forgot_password.success')}</Text>
+          <Text className="mt-4 text-base text-ink-soft">{t('auth.forgot_password.success')}</Text>
         ) : (
           <>
-            <Text className="mb-8 text-base text-neutral-500">{t('auth.forgot_password.description')}</Text>
+            <Text className="mb-8 text-base text-ink-soft">{t('auth.forgot_password.description')}</Text>
 
             <TextField
               label={t('auth.email')}
@@ -51,7 +51,7 @@ export default function ForgotPasswordScreen() {
           </>
         )}
 
-        <Link href="/(auth)/login" className="mt-8 text-center text-sm font-semibold text-neutral-900">
+        <Link href="/(auth)/login" className="mt-8 text-center text-sm font-semibold text-ink">
           {t('auth.forgot_password.back_to_login')}
         </Link>
       </ScrollView>

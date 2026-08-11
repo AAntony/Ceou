@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
+import type { IconName } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { TextField } from '../../components/TextField';
 import type { Piece, PlanForme } from '../../types/database';
@@ -38,7 +39,10 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onSave, onDelete, 
     onSave({ width: w, height: h, pieceId });
   };
 
-  const pieceOptions = [{ key: NO_PIECE_KEY, icon: '❔' }, ...pieces.map((p) => ({ key: p.id, icon: '🚪' }))];
+  const pieceOptions: { key: string; icon: IconName }[] = [
+    { key: NO_PIECE_KEY, icon: 'autre' },
+    ...pieces.map((p) => ({ key: p.id, icon: 'piece' as const })),
+  ];
   const pieceLabel = (key: string) => (key === NO_PIECE_KEY ? t('plans.shape.no_piece') : (pieces.find((p) => p.id === key)?.name ?? ''));
 
   return (
@@ -46,7 +50,7 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onSave, onDelete, 
       <View className="flex-1 justify-end bg-black/40">
         <View className="rounded-t-3xl bg-white px-6 pb-10 pt-6">
           <ScrollView keyboardShouldPersistTaps="handled">
-            <Text className="mb-4 text-xl font-bold text-neutral-900">{t('plans.shape.title')}</Text>
+            <Text className="mb-4 text-xl font-bold text-ink">{t('plans.shape.title')}</Text>
 
             <View className="flex-row gap-3">
               <View className="flex-1">
@@ -57,7 +61,7 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onSave, onDelete, 
               </View>
             </View>
 
-            <Text className="mb-2 text-sm font-medium text-neutral-700">{t('plans.shape.piece_label')}</Text>
+            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('plans.shape.piece_label')}</Text>
             <PresetPicker
               presets={pieceOptions}
               selectedKey={pieceId ?? NO_PIECE_KEY}

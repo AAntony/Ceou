@@ -1,25 +1,31 @@
+import type { IconName } from '../../components/Icon';
+
 export type HabitationTypeKey = 'maison' | 'appartement' | 'garage' | 'cave' | 'cellier' | 'box' | 'vehicule' | 'autre';
 
 export type HabitationTypeDefinition = {
   key: HabitationTypeKey;
-  icon: string;
+  icon: IconName;
   /** Pas de couche Pièce visible dans l'UI : une Pièce unique est créée et gérée en silence. */
   singleSpace: boolean;
 };
 
 export const HABITATION_TYPES: HabitationTypeDefinition[] = [
-  { key: 'maison', icon: '🏠', singleSpace: false },
-  { key: 'appartement', icon: '🏢', singleSpace: false },
-  { key: 'garage', icon: '🚗', singleSpace: true },
-  { key: 'cave', icon: '🕳️', singleSpace: true },
-  { key: 'cellier', icon: '🧺', singleSpace: true },
-  { key: 'box', icon: '📦', singleSpace: true },
-  { key: 'vehicule', icon: '🚐', singleSpace: true },
-  { key: 'autre', icon: '❔', singleSpace: true },
+  { key: 'maison', icon: 'maison', singleSpace: false },
+  { key: 'appartement', icon: 'appartement', singleSpace: false },
+  { key: 'garage', icon: 'garage', singleSpace: true },
+  { key: 'cave', icon: 'cave', singleSpace: true },
+  { key: 'cellier', icon: 'cellier', singleSpace: true },
+  { key: 'box', icon: 'box', singleSpace: true },
+  { key: 'vehicule', icon: 'vehicule', singleSpace: true },
+  { key: 'autre', icon: 'autre', singleSpace: true },
 ];
 
 export function isSingleSpaceHabitation(type: string): boolean {
   return HABITATION_TYPES.find((t) => t.key === type)?.singleSpace ?? true;
+}
+
+export function getHabitationIcon(type: string): IconName {
+  return HABITATION_TYPES.find((t) => t.key === type)?.icon ?? 'autre';
 }
 
 export type EmplacementPresetKey =
@@ -37,25 +43,25 @@ export type EmplacementPresetKey =
 
 export type EmplacementPresetDefinition = {
   key: EmplacementPresetKey;
-  icon: string;
+  icon: IconName;
 };
 
 export const EMPLACEMENT_PRESETS: EmplacementPresetDefinition[] = [
-  { key: 'armoire', icon: '🚪' },
-  { key: 'dressing', icon: '👕' },
-  { key: 'commode', icon: '🗄️' },
-  { key: 'etagere', icon: '📚' },
-  { key: 'placard', icon: '🚪' },
-  { key: 'bureau', icon: '🖥️' },
-  { key: 'table_de_chevet', icon: '🛏️' },
-  { key: 'tiroir', icon: '🗃️' },
-  { key: 'coffre', icon: '🧰' },
-  { key: 'boite_a_gants', icon: '🚙' },
-  { key: 'autre', icon: '❔' },
+  { key: 'armoire', icon: 'armoire' },
+  { key: 'dressing', icon: 'dressing' },
+  { key: 'commode', icon: 'commode' },
+  { key: 'etagere', icon: 'etagere' },
+  { key: 'placard', icon: 'placard' },
+  { key: 'bureau', icon: 'bureau' },
+  { key: 'table_de_chevet', icon: 'table_de_chevet' },
+  { key: 'tiroir', icon: 'tiroir' },
+  { key: 'coffre', icon: 'coffre' },
+  { key: 'boite_a_gants', icon: 'boite_a_gants' },
+  { key: 'autre', icon: 'autre' },
 ];
 
-export const DEFAULT_ICON = '❔';
+export const DEFAULT_ICON: IconName = 'autre';
 
-export function getEmplacementIcon(presetKey: string | null): string {
+export function getEmplacementIcon(presetKey: string | null): IconName {
   return EMPLACEMENT_PRESETS.find((p) => p.key === presetKey)?.icon ?? DEFAULT_ICON;
 }

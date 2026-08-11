@@ -67,7 +67,7 @@ export default function ObjetScreen() {
 
   if (isLoading || !objet) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
       </View>
     );
@@ -76,17 +76,17 @@ export default function ObjetScreen() {
   return (
     <>
       <Stack.Screen options={{ title: objet.name }} />
-      <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pb-16 pt-6">
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-16 pt-6">
         <Pressable
           onPress={handleChangePhoto}
-          className="mb-6 h-40 w-40 items-center justify-center self-center overflow-hidden rounded-2xl bg-neutral-100"
+          className="mb-6 h-40 w-40 items-center justify-center self-center overflow-hidden rounded-2xl bg-sand-dark"
         >
           {photoUploading ? (
             <ActivityIndicator />
           ) : objet.photo_url ? (
             <Image source={{ uri: objet.photo_url }} style={{ width: 160, height: 160 }} />
           ) : (
-            <Text className="px-2 text-center text-sm text-neutral-500">{t('inventory.objet.add_photo')}</Text>
+            <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
           )}
         </Pressable>
 
@@ -107,18 +107,18 @@ export default function ObjetScreen() {
           <Button label={t('inventory.objet.move')} variant="ghost" onPress={() => setMoveModalOpen(true)} />
         </View>
 
-        <Text className="mb-2 text-base font-bold text-neutral-900">{t('inventory.objet.history_title')}</Text>
+        <Text className="mb-2 text-base font-bold text-ink">{t('inventory.objet.history_title')}</Text>
         {history && history.length > 0 ? (
           history.map((entry) => (
-            <View key={entry.id} className="mb-2 rounded-xl border border-neutral-200 px-4 py-3">
-              <Text className="text-sm text-neutral-900">
+            <View key={entry.id} className="mb-2 rounded-xl border border-ink/10 px-4 py-3">
+              <Text className="text-sm text-ink">
                 {entry.from_location_label} → {entry.to_location_label}
               </Text>
-              <Text className="text-xs text-neutral-500">{new Date(entry.moved_at).toLocaleString()}</Text>
+              <Text className="text-xs text-ink-soft">{new Date(entry.moved_at).toLocaleString()}</Text>
             </View>
           ))
         ) : (
-          <Text className="text-sm text-neutral-500">{t('inventory.objet.history_empty')}</Text>
+          <Text className="text-sm text-ink-soft">{t('inventory.objet.history_empty')}</Text>
         )}
 
         <Pressable onPress={handleDelete} className="mt-10">

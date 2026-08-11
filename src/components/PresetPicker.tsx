@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
+import { Icon, type IconName } from './Icon';
 
-type Preset = { key: string; icon: string };
+type Preset = { key: string; icon: IconName };
 
 type PresetPickerProps<T extends Preset> = {
   presets: T[];
@@ -19,11 +20,11 @@ export function PresetPicker<T extends Preset>({ presets, selectedKey, onSelect,
             key={preset.key}
             onPress={() => onSelect(preset.key)}
             className={`flex-row items-center gap-1.5 rounded-full border px-3 py-2 ${
-              selected ? 'border-neutral-900 bg-neutral-900' : 'border-neutral-200'
+              selected ? 'border-coral bg-coral' : 'border-ink/10 bg-white'
             }`}
           >
-            <Text>{preset.icon}</Text>
-            <Text className={selected ? 'font-semibold text-white' : 'text-neutral-700'}>{labelFor(preset.key)}</Text>
+            <Icon name={preset.icon} size={16} color={selected ? '#fff' : '#6B6459'} />
+            <Text className={selected ? 'font-semibold text-white' : 'text-ink-soft'}>{labelFor(preset.key)}</Text>
           </Pressable>
         );
       })}

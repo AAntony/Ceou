@@ -51,7 +51,7 @@ export function PlanCanvas({ formes, pieceNames, onDragEnd, onTap }: PlanCanvasP
   }, [formes]);
 
   return (
-    <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-neutral-100">
+    <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-sand-dark">
       <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
         {formes.map((forme) => {
           const pos = positions[forme.id] ?? { x: forme.x, y: forme.y };

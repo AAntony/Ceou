@@ -9,7 +9,7 @@ export default function EmplacementScreen() {
 
   if (isLoading || !emplacement) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
       </View>
     );

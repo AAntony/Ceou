@@ -51,7 +51,7 @@ export function CreateEntityModal({
       <View className="flex-1 justify-end bg-black/40">
         <View className="rounded-t-3xl bg-white px-6 pb-10 pt-6">
           <ScrollView keyboardShouldPersistTaps="handled">
-            <Text className="mb-4 text-xl font-bold text-neutral-900">{title}</Text>
+            <Text className="mb-4 text-xl font-bold text-ink">{title}</Text>
             <TextField label={nameLabel} value={name} onChangeText={setName} autoFocus />
             {children}
             <View className="mt-2 flex-row gap-3">

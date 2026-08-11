@@ -2,12 +2,13 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
+import { BottomActionBar } from '../../src/components/BottomActionBar';
 import { Button } from '../../src/components/Button';
 import { CreateEntityModal } from '../../src/components/CreateEntityModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { EntityCard } from '../../src/components/EntityCard';
 import { PresetPicker } from '../../src/components/PresetPicker';
-import { HABITATION_TYPES, type HabitationTypeKey } from '../../src/features/inventory/constants';
+import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../src/features/inventory/constants';
 import { useCreateHabitation, useDeleteHabitation, useHabitations, useUpdateHabitation } from '../../src/features/inventory/queries';
 import type { Habitation } from '../../src/types/database';
 
@@ -43,16 +44,16 @@ export default function HabitationsScreen() {
   const isEmpty = !isLoading && (habitations?.length ?? 0) === 0;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-28 pt-16">
-        <Text className="mb-6 text-3xl font-bold text-neutral-900">{t('inventory.habitations.title')}</Text>
+        <Text className="mb-6 text-3xl font-bold text-ink">{t('inventory.habitations.title')}</Text>
         {isEmpty ? (
-          <EmptyState icon="🏠" title={t('inventory.habitations.empty')} />
+          <EmptyState icon="home" title={t('inventory.habitations.empty')} />
         ) : (
           habitations?.map((habitation) => (
             <EntityCard
               key={habitation.id}
-              icon={habitation.icon ?? undefined}
+              icon={getHabitationIcon(habitation.type)}
               title={habitation.name}
               subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
               onPress={() => router.push(`/habitation/${habitation.id}`)}
@@ -63,9 +64,11 @@ export default function HabitationsScreen() {
         )}
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 border-t border-neutral-100 bg-white px-6 py-4">
-        <Button label={t('inventory.habitations.add')} onPress={openCreate} />
-      </View>
+      <BottomActionBar>
+        <View className="flex-1">
+          <Button label={t('inventory.habitations.add')} onPress={openCreate} />
+        </View>
+      </BottomActionBar>
 
       <CreateEntityModal
         visible={modalOpen}

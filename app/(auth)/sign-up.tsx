@@ -37,12 +37,12 @@ export default function SignUpScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-white">
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-8 text-3xl font-bold text-neutral-900">{t('auth.sign_up.title')}</Text>
+        <Text className="mb-8 text-3xl font-bold text-ink">{t('auth.sign_up.title')}</Text>
 
         {success ? (
-          <Text className="text-base text-neutral-700">{t('auth.sign_up.success')}</Text>
+          <Text className="text-base text-ink-soft">{t('auth.sign_up.success')}</Text>
         ) : (
           <>
             <TextField
@@ -74,8 +74,8 @@ export default function SignUpScreen() {
         )}
 
         <View className="mt-8 flex-row justify-center gap-1">
-          <Text className="text-sm text-neutral-500">{t('auth.sign_up.has_account')}</Text>
-          <Link href="/(auth)/login" className="text-sm font-semibold text-neutral-900">
+          <Text className="text-sm text-ink-soft">{t('auth.sign_up.has_account')}</Text>
+          <Link href="/(auth)/login" className="text-sm font-semibold text-ink">
             {t('auth.sign_up.login_link')}
           </Link>
         </View>

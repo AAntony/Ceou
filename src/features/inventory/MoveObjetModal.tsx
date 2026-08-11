@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { EntityCard } from '../../components/EntityCard';
+import { Icon } from '../../components/Icon';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Piece } from '../../types/database';
-import { getEmplacementIcon, isSingleSpaceHabitation } from './constants';
+import { getEmplacementIcon, getHabitationIcon, isSingleSpaceHabitation } from './constants';
 import { useContainerContents, useEmplacements, useHabitations, useMoveObjet, usePieces } from './queries';
 
 type Step =
@@ -49,18 +50,18 @@ export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProp
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-white pt-16">
+      <View className="flex-1 bg-sand pt-16">
         <View className="mb-2 flex-row items-center justify-between px-6">
           {stack.length > 1 ? (
-            <Pressable onPress={pop}>
-              <Text className="text-base text-neutral-700">‹</Text>
+            <Pressable onPress={pop} hitSlop={8}>
+              <Icon name="back" size={22} color="#2D2A26" />
             </Pressable>
           ) : (
-            <View />
+            <View style={{ width: 22 }} />
           )}
-          <Text className="text-lg font-bold text-neutral-900">{t('inventory.objet.move_title')}</Text>
-          <Pressable onPress={onClose}>
-            <Text className="text-base text-neutral-700">✕</Text>
+          <Text className="text-lg font-bold text-ink">{t('inventory.objet.move_title')}</Text>
+          <Pressable onPress={onClose} hitSlop={8}>
+            <Icon name="close" size={22} color="#2D2A26" />
           </Pressable>
         </View>
 
@@ -95,7 +96,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
   return (
     <>
       {habitations?.map((habitation) => (
-        <EntityCard key={habitation.id} icon={habitation.icon ?? undefined} title={habitation.name} onPress={() => onSelect(habitation)} />
+        <EntityCard key={habitation.id} icon={getHabitationIcon(habitation.type)} title={habitation.name} onPress={() => onSelect(habitation)} />
       ))}
     </>
   );
@@ -106,7 +107,7 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
   return (
     <>
       {pieces?.map((piece) => (
-        <EntityCard key={piece.id} icon="🚪" title={piece.name} onPress={() => onSelect(piece)} />
+        <EntityCard key={piece.id} icon="piece" title={piece.name} onPress={() => onSelect(piece)} />
       ))}
     </>
   );
@@ -149,7 +150,7 @@ function ContainerStep({
         <Button label={t('inventory.objet.move_choose_here')} onPress={onChooseHere} loading={loading} />
       </View>
       {conteneurs.map((conteneur) => (
-        <EntityCard key={conteneur.id} icon="🗃️" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
+        <EntityCard key={conteneur.id} icon="conteneur" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
       ))}
     </>
   );

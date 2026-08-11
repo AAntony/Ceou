@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, View } from 'react-native';
+import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
@@ -32,15 +33,15 @@ export function PieceList({ habitationId }: PieceListProps) {
   const isEmpty = !isLoading && (pieces?.length ?? 0) === 0;
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isEmpty ? (
-          <EmptyState title={t('inventory.pieces.empty')} />
+          <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
           pieces?.map((piece) => (
             <EntityCard
               key={piece.id}
-              icon="🚪"
+              icon="piece"
               title={piece.name}
               onPress={() => router.push(`/piece/${piece.id}`)}
               onLongPress={() => handleDelete(piece.id)}
@@ -53,15 +54,17 @@ export function PieceList({ habitationId }: PieceListProps) {
         )}
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 border-t border-neutral-100 bg-white px-6 py-4">
-        <Button
-          label={t('inventory.pieces.add')}
-          onPress={() => {
-            setEditingPiece(null);
-            setModalOpen(true);
-          }}
-        />
-      </View>
+      <BottomActionBar>
+        <View className="flex-1">
+          <Button
+            label={t('inventory.pieces.add')}
+            onPress={() => {
+              setEditingPiece(null);
+              setModalOpen(true);
+            }}
+          />
+        </View>
+      </BottomActionBar>
 
       <CreateEntityModal
         visible={modalOpen}

@@ -15,7 +15,7 @@ export default function HabitationScreen() {
 
   if (isLoading || !habitation) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
       </View>
     );
@@ -28,7 +28,7 @@ export default function HabitationScreen() {
           title: habitation.name,
           headerRight: () => (
             <Pressable onPress={() => router.push(`/plans/${id}`)} hitSlop={8}>
-              <Text className="text-base font-medium text-neutral-900">{t('plans.header_button')}</Text>
+              <Text className="text-base font-medium text-ink">{t('plans.header_button')}</Text>
             </Pressable>
           ),
         }}
@@ -37,7 +37,7 @@ export default function HabitationScreen() {
         pieces?.[0] ? (
           <PieceEmplacements pieceId={pieces[0].id} />
         ) : (
-          <View className="flex-1 items-center justify-center bg-white">
+          <View className="flex-1 items-center justify-center bg-sand">
             <ActivityIndicator />
           </View>
         )

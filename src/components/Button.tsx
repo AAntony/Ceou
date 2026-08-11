@@ -13,14 +13,14 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
     <Pressable
       disabled={disabled || loading}
       className={`items-center justify-center rounded-xl py-3.5 active:opacity-80 ${
-        isPrimary ? 'bg-neutral-900' : 'bg-transparent'
+        isPrimary ? 'bg-coral' : 'bg-transparent'
       } ${disabled || loading ? 'opacity-50' : ''}`}
       {...pressableProps}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#fff' : '#171717'} />
+        <ActivityIndicator color={isPrimary ? '#fff' : '#2D2A26'} />
       ) : (
-        <Text className={`text-base font-semibold ${isPrimary ? 'text-white' : 'text-neutral-900'}`}>{label}</Text>
+        <Text className={`text-base font-semibold ${isPrimary ? 'text-white' : 'text-ink'}`}>{label}</Text>
       )}
     </Pressable>
   );

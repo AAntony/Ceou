@@ -52,7 +52,7 @@ export function BarcodeScanner({ visible, onClose, onScanned }: BarcodeScannerPr
               </Text>
             </View>
             <Pressable onPress={onClose} className="absolute bottom-12 self-center rounded-full bg-white/90 px-6 py-3">
-              <Text className="font-semibold text-neutral-900">{t('common.cancel')}</Text>
+              <Text className="font-semibold text-ink">{t('common.cancel')}</Text>
             </Pressable>
           </>
         )}

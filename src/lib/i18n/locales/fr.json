@@ -130,6 +130,8 @@
       "scan_hint": "Vise le code-barre du produit",
       "scan_permission_message": "Autorise l'accès à l'appareil photo pour scanner un code-barre.",
       "scan_permission_grant": "Autoriser l'appareil photo",
+      "scan_not_found": "Produit non trouvé pour ce code-barre. Le code est conservé, complète le reste à la main.",
+      "saved_without_photo": "Objet enregistré, mais l'ajout de la photo a échoué. Tu peux réessayer depuis sa fiche.",
       "move": "Déplacer",
       "move_title": "Déplacer l'objet",
       "move_choose_here": "Choisir cet emplacement",

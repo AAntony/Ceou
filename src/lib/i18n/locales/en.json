@@ -130,6 +130,8 @@
       "scan_hint": "Point at the product's barcode",
       "scan_permission_message": "Allow camera access to scan a barcode.",
       "scan_permission_grant": "Allow camera",
+      "scan_not_found": "No product found for that barcode. The code is kept — fill in the rest by hand.",
+      "saved_without_photo": "Item saved, but adding the photo failed. You can retry from its detail screen.",
       "move": "Move",
       "move_title": "Move item",
       "move_choose_here": "Choose this spot",

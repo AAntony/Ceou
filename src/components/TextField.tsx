@@ -12,11 +12,11 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 ) {
   return (
     <View className="mb-4">
-      <Text className="mb-1.5 text-sm font-medium text-neutral-700">{label}</Text>
+      <Text className="mb-1.5 text-sm font-medium text-ink-soft">{label}</Text>
       <TextInput
         ref={ref}
-        className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-base text-neutral-900"
-        placeholderTextColor="#9ca3af"
+        className="rounded-xl border border-ink/10 bg-sand-dark px-4 py-3 text-base text-ink"
+        placeholderTextColor="#A39C8F"
         autoCapitalize="none"
         autoCorrect={false}
         {...inputProps}
