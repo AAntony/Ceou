@@ -1,4 +1,3 @@
-import { File } from 'expo-file-system';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase/client';
@@ -24,13 +23,14 @@ export async function pickAndUploadAvatar(userId: string): Promise<string | null
     { compress: 0.8, format: SaveFormat.JPEG }
   );
 
-  const file = new File(resized.uri);
-  const bytes = await file.arrayBuffer();
+  // fetch().blob() reads the local uri uniformly across web (blob:/data:) and
+  // native (file:) — expo-file-system's File class only understands device paths.
+  const blob = await (await fetch(resized.uri)).blob();
   const path = `${userId}/avatar.jpg`;
 
   const { error: uploadError } = await supabase.storage
     .from(AVATAR_BUCKET)
-    .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+    .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
   if (uploadError) throw uploadError;
 
   const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
