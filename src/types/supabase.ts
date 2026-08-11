@@ -264,9 +264,9 @@ export type Database = {
       plan_formes: {
         Row: {
           created_at: string
-          emplacement_id: string | null
           height: number
           id: string
+          piece_id: string | null
           plan_id: string
           rotation: number
           shape_type: string
@@ -276,9 +276,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          emplacement_id?: string | null
           height?: number
           id?: string
+          piece_id?: string | null
           plan_id: string
           rotation?: number
           shape_type: string
@@ -288,9 +288,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          emplacement_id?: string | null
           height?: number
           id?: string
+          piece_id?: string | null
           plan_id?: string
           rotation?: number
           shape_type?: string
@@ -300,10 +300,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "plan_formes_emplacement_id_fkey"
-            columns: ["emplacement_id"]
+            foreignKeyName: "plan_formes_piece_id_fkey"
+            columns: ["piece_id"]
             isOneToOne: false
-            referencedRelation: "emplacements"
+            referencedRelation: "pieces"
             referencedColumns: ["id"]
           },
           {
@@ -377,7 +377,12 @@ export type Database = {
     }
     Functions: {
       conteneur_owner: { Args: { p_conteneur_id: string }; Returns: string }
+      conteneur_parent_owner: {
+        Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
+        Returns: string
+      }
       emplacement_owner: { Args: { p_emplacement_id: string }; Returns: string }
+      habitation_owner: { Args: { p_habitation_id: string }; Returns: string }
       move_objet: {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
@@ -386,6 +391,7 @@ export type Database = {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
         Returns: string
       }
+      piece_owner: { Args: { p_piece_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -1,0 +1,144 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../lib/supabase/client';
+import type { Plan, PlanForme } from '../../types/database';
+import { CANVAS_WIDTH, DEFAULT_SHAPE_SIZE, type PlanShapeType } from './constants';
+
+export function usePlans(habitationId: string) {
+  return useQuery({
+    queryKey: ['plans', habitationId],
+    queryFn: async (): Promise<Plan[]> => {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('habitation_id', habitationId)
+        .order('floor_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function usePlan(id: string) {
+  return useQuery({
+    queryKey: ['plan', id],
+    queryFn: async (): Promise<Plan> => {
+      const { data, error } = await supabase.from('plans').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreatePlan(habitationId: string) {
+  const queryClient = useQueryClient();
+  const { data: existing } = usePlans(habitationId);
+
+  return useMutation({
+    mutationFn: async (name: string): Promise<Plan> => {
+      const floorOrder = existing?.length ?? 0;
+      const { data, error } = await supabase
+        .from('plans')
+        .insert({ habitation_id: habitationId, name, floor_order: floorOrder })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['plans', habitationId] }),
+  });
+}
+
+export function useUpdatePlan(habitationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await supabase.from('plans').update({ name: input.name }).eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['plans', habitationId] }),
+  });
+}
+
+export function useDeletePlan(habitationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('plans').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['plans', habitationId] }),
+  });
+}
+
+export function usePlanFormes(planId: string) {
+  return useQuery({
+    queryKey: ['planFormes', planId],
+    queryFn: async (): Promise<PlanForme[]> => {
+      const { data, error } = await supabase.from('plan_formes').select('*').eq('plan_id', planId).order('created_at');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreatePlanForme(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (shapeType: PlanShapeType): Promise<PlanForme> => {
+      const { data, error } = await supabase
+        .from('plan_formes')
+        .insert({
+          plan_id: planId,
+          shape_type: shapeType,
+          x: CANVAS_WIDTH / 2 - DEFAULT_SHAPE_SIZE / 2,
+          y: 40,
+          width: DEFAULT_SHAPE_SIZE,
+          height: DEFAULT_SHAPE_SIZE,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
+  });
+}
+
+export function useUpdatePlanForme(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+      pieceId?: string | null;
+    }) => {
+      const { id, ...patch } = input;
+      const { error } = await supabase
+        .from('plan_formes')
+        .update({
+          ...(patch.x !== undefined && { x: patch.x }),
+          ...(patch.y !== undefined && { y: patch.y }),
+          ...(patch.width !== undefined && { width: patch.width }),
+          ...(patch.height !== undefined && { height: patch.height }),
+          ...(patch.pieceId !== undefined && { piece_id: patch.pieceId }),
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
+  });
+}
+
+export function useDeletePlanForme(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('plan_formes').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
+  });
+}

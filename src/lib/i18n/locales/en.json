@@ -139,5 +139,28 @@
       "delete_confirm_title": "Delete this item?",
       "delete_confirm_message": "This action cannot be undone."
     }
+  },
+  "plans": {
+    "header_button": "Plan",
+    "title": "{{name}}'s plan",
+    "empty": "No plan yet.",
+    "add": "Add a plan",
+    "create_title": "New plan",
+    "edit_title": "Edit plan",
+    "name_label": "Name",
+    "delete_confirm_title": "Delete this plan?",
+    "delete_confirm_message": "All the shapes it contains will be deleted.",
+    "shapeTypes": {
+      "rectangle": "Rectangle",
+      "circle": "Circle",
+      "triangle": "Triangle"
+    },
+    "shape": {
+      "title": "Shape",
+      "width": "Width",
+      "height": "Height",
+      "piece_label": "Linked room",
+      "no_piece": "None"
+    }
   }
 }
