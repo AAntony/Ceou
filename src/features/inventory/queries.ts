@@ -325,13 +325,19 @@ export function useCreateObjet(parentType: LocationType, parentId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { name: string; description: string | null; photoUrl: string | null }): Promise<Objet> => {
+    mutationFn: async (input: {
+      name: string;
+      description: string | null;
+      photoUrl: string | null;
+      barcode?: string | null;
+    }): Promise<Objet> => {
       const { data, error } = await supabase
         .from('objets')
         .insert({
           name: input.name,
           description: input.description,
           photo_url: input.photoUrl,
+          barcode: input.barcode ?? null,
           parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
           parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
         })

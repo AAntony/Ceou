@@ -28,7 +28,13 @@
       "expo-router",
       "expo-image",
       "expo-secure-store",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ceou a besoin de l'appareil photo pour scanner les codes-barres et photographier tes objets."
+        }
+      ]
     ],
     "extra": {
       "router": {},
