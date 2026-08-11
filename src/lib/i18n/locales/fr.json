@@ -2,8 +2,11 @@
   "common": {
     "cancel": "Annuler",
     "save": "Enregistrer",
+    "add": "Ajouter",
+    "delete": "Supprimer",
     "loading": "Chargement...",
-    "error_generic": "Une erreur est survenue. Réessaie."
+    "error_generic": "Une erreur est survenue. Réessaie.",
+    "other": "Autre"
   },
   "auth": {
     "email": "Email",
@@ -51,8 +54,82 @@
     },
     "saved": "Profil enregistré"
   },
-  "home": {
-    "title": "Mes habitations",
-    "empty": "Aucune habitation pour l'instant."
+  "inventory": {
+    "habitations": {
+      "title": "Mes habitations",
+      "empty": "Aucune habitation pour l'instant.",
+      "add": "Ajouter une habitation",
+      "create_title": "Nouvelle habitation",
+      "name_label": "Nom",
+      "type_label": "Type",
+      "delete_confirm_title": "Supprimer cette habitation ?",
+      "delete_confirm_message": "Toutes les pièces, emplacements et objets qu'elle contient seront supprimés."
+    },
+    "habitationTypes": {
+      "maison": "Maison",
+      "appartement": "Appartement",
+      "garage": "Garage",
+      "cave": "Cave",
+      "cellier": "Cellier",
+      "box": "Box",
+      "vehicule": "Véhicule",
+      "autre": "Autre"
+    },
+    "pieces": {
+      "empty": "Aucune pièce pour l'instant.",
+      "add": "Ajouter une pièce",
+      "create_title": "Nouvelle pièce",
+      "name_label": "Nom",
+      "delete_confirm_title": "Supprimer cette pièce ?",
+      "delete_confirm_message": "Tous les emplacements et objets qu'elle contient seront supprimés."
+    },
+    "emplacements": {
+      "empty": "Aucun emplacement pour l'instant.",
+      "add": "Ajouter un emplacement",
+      "create_title": "Nouvel emplacement",
+      "name_label": "Nom",
+      "type_label": "Type",
+      "delete_confirm_title": "Supprimer cet emplacement ?",
+      "delete_confirm_message": "Tous les conteneurs et objets qu'il contient seront supprimés."
+    },
+    "emplacementPresets": {
+      "armoire": "Armoire",
+      "dressing": "Dressing",
+      "commode": "Commode",
+      "etagere": "Étagère",
+      "placard": "Placard",
+      "bureau": "Bureau",
+      "table_de_chevet": "Table de chevet",
+      "tiroir": "Tiroir",
+      "coffre": "Coffre",
+      "boite_a_gants": "Boîte à gants",
+      "autre": "Autre"
+    },
+    "container": {
+      "empty": "Rien ici pour l'instant.",
+      "add_conteneur": "Ajouter un conteneur",
+      "add_objet": "Ajouter un objet",
+      "create_conteneur_title": "Nouveau conteneur",
+      "create_objet_title": "Nouvel objet",
+      "name_label": "Nom"
+    },
+    "conteneurs": {
+      "delete_confirm_title": "Supprimer ce conteneur ?",
+      "delete_confirm_message": "Tous les conteneurs et objets qu'il contient seront supprimés."
+    },
+    "objet": {
+      "name_label": "Nom",
+      "description_label": "Description",
+      "add_photo": "Ajouter une photo",
+      "change_photo": "Changer la photo",
+      "move": "Déplacer",
+      "move_title": "Déplacer l'objet",
+      "move_choose_here": "Choisir cet emplacement",
+      "move_success": "Objet déplacé",
+      "history_title": "Historique des déplacements",
+      "history_empty": "Aucun déplacement pour l'instant.",
+      "delete_confirm_title": "Supprimer cet objet ?",
+      "delete_confirm_message": "Cette action est irréversible."
+    }
   }
 }

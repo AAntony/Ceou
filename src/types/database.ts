@@ -1,4 +1,15 @@
 import type { Database } from './supabase';
 
 export type { Database };
-export type Profile = Database['public']['Tables']['profiles']['Row'];
+
+type Tables = Database['public']['Tables'];
+
+export type Profile = Tables['profiles']['Row'];
+export type Habitation = Tables['habitations']['Row'];
+export type Piece = Tables['pieces']['Row'];
+export type Emplacement = Tables['emplacements']['Row'];
+export type Conteneur = Tables['conteneurs']['Row'];
+export type Objet = Tables['objets']['Row'];
+export type ObjetDeplacement = Tables['objet_deplacements']['Row'];
+
+export type LocationType = 'emplacement' | 'conteneur';

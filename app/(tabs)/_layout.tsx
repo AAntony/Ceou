@@ -12,7 +12,7 @@ export default function TabsLayout() {
 
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: '#171717' }}>
-      <Tabs.Screen name="index" options={{ title: t('home.title') }} />
+      <Tabs.Screen name="index" options={{ title: t('inventory.habitations.title') }} />
       <Tabs.Screen name="profile" options={{ title: t('profile.title') }} />
     </Tabs>
   );

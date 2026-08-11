@@ -378,6 +378,10 @@ export type Database = {
     Functions: {
       conteneur_owner: { Args: { p_conteneur_id: string }; Returns: string }
       emplacement_owner: { Args: { p_emplacement_id: string }; Returns: string }
+      move_objet: {
+        Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
+        Returns: undefined
+      }
       objet_owner: {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
         Returns: string

@@ -2,8 +2,11 @@
   "common": {
     "cancel": "Cancel",
     "save": "Save",
+    "add": "Add",
+    "delete": "Delete",
     "loading": "Loading...",
-    "error_generic": "Something went wrong. Please try again."
+    "error_generic": "Something went wrong. Please try again.",
+    "other": "Other"
   },
   "auth": {
     "email": "Email",
@@ -51,8 +54,82 @@
     },
     "saved": "Profile saved"
   },
-  "home": {
-    "title": "My homes",
-    "empty": "No home yet."
+  "inventory": {
+    "habitations": {
+      "title": "My homes",
+      "empty": "No home yet.",
+      "add": "Add a home",
+      "create_title": "New home",
+      "name_label": "Name",
+      "type_label": "Type",
+      "delete_confirm_title": "Delete this home?",
+      "delete_confirm_message": "All the rooms, spots and items it contains will be deleted."
+    },
+    "habitationTypes": {
+      "maison": "House",
+      "appartement": "Apartment",
+      "garage": "Garage",
+      "cave": "Basement",
+      "cellier": "Pantry",
+      "box": "Storage unit",
+      "vehicule": "Vehicle",
+      "autre": "Other"
+    },
+    "pieces": {
+      "empty": "No room yet.",
+      "add": "Add a room",
+      "create_title": "New room",
+      "name_label": "Name",
+      "delete_confirm_title": "Delete this room?",
+      "delete_confirm_message": "All the spots and items it contains will be deleted."
+    },
+    "emplacements": {
+      "empty": "No spot yet.",
+      "add": "Add a spot",
+      "create_title": "New spot",
+      "name_label": "Name",
+      "type_label": "Type",
+      "delete_confirm_title": "Delete this spot?",
+      "delete_confirm_message": "All the containers and items it contains will be deleted."
+    },
+    "emplacementPresets": {
+      "armoire": "Wardrobe",
+      "dressing": "Closet",
+      "commode": "Dresser",
+      "etagere": "Shelf",
+      "placard": "Cupboard",
+      "bureau": "Desk",
+      "table_de_chevet": "Nightstand",
+      "tiroir": "Drawer",
+      "coffre": "Trunk",
+      "boite_a_gants": "Glove box",
+      "autre": "Other"
+    },
+    "container": {
+      "empty": "Nothing here yet.",
+      "add_conteneur": "Add a container",
+      "add_objet": "Add an item",
+      "create_conteneur_title": "New container",
+      "create_objet_title": "New item",
+      "name_label": "Name"
+    },
+    "conteneurs": {
+      "delete_confirm_title": "Delete this container?",
+      "delete_confirm_message": "All the containers and items it contains will be deleted."
+    },
+    "objet": {
+      "name_label": "Name",
+      "description_label": "Description",
+      "add_photo": "Add a photo",
+      "change_photo": "Change photo",
+      "move": "Move",
+      "move_title": "Move item",
+      "move_choose_here": "Choose this spot",
+      "move_success": "Item moved",
+      "history_title": "Move history",
+      "history_empty": "No move yet.",
+      "delete_confirm_title": "Delete this item?",
+      "delete_confirm_message": "This action cannot be undone."
+    }
   }
 }
