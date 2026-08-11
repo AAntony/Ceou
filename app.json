@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Ceou",
+    "slug": "ceou",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "ceou",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aantony.ceou"
+    },
+    "android": {
+      "package": "com.aantony.ceou",
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-secure-store",
+      "expo-localization"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e6e7590c-fe95-4ec3-93c4-5da5ee7e9b94"
+      }
+    },
+    "owner": "m-ajestic"
+  }
+}

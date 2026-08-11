@@ -1,0 +1,58 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "error_generic": "Something went wrong. Please try again."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "confirm_password": "Confirm password",
+    "login": {
+      "title": "Log in",
+      "submit": "Log in",
+      "no_account": "No account yet?",
+      "sign_up_link": "Create an account",
+      "forgot_password_link": "Forgot password?"
+    },
+    "sign_up": {
+      "title": "Create an account",
+      "submit": "Sign up",
+      "has_account": "Already have an account?",
+      "login_link": "Log in",
+      "success": "Account created. Check your email to confirm your address."
+    },
+    "forgot_password": {
+      "title": "Forgot password",
+      "description": "Enter your email and we'll send you a reset link.",
+      "submit": "Send link",
+      "success": "Email sent if that account exists. Check your inbox.",
+      "back_to_login": "Back to login"
+    },
+    "reset_password": {
+      "title": "New password",
+      "new_password": "New password",
+      "submit": "Update",
+      "success": "Password updated."
+    },
+    "errors": {
+      "passwords_mismatch": "Passwords don't match",
+      "password_too_short": "Password must be at least 8 characters"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "display_name": "Display name",
+    "language": "Language",
+    "sign_out": "Sign out",
+    "avatar": {
+      "change": "Change photo"
+    },
+    "saved": "Profile saved"
+  },
+  "home": {
+    "title": "My homes",
+    "empty": "No home yet."
+  }
+}

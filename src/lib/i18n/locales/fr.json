@@ -1,0 +1,58 @@
+{
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "loading": "Chargement...",
+    "error_generic": "Une erreur est survenue. Réessaie."
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirm_password": "Confirmer le mot de passe",
+    "login": {
+      "title": "Connexion",
+      "submit": "Se connecter",
+      "no_account": "Pas encore de compte ?",
+      "sign_up_link": "Créer un compte",
+      "forgot_password_link": "Mot de passe oublié ?"
+    },
+    "sign_up": {
+      "title": "Créer un compte",
+      "submit": "S'inscrire",
+      "has_account": "Déjà un compte ?",
+      "login_link": "Se connecter",
+      "success": "Compte créé. Vérifie tes emails pour confirmer ton adresse."
+    },
+    "forgot_password": {
+      "title": "Mot de passe oublié",
+      "description": "Indique ton email, on t'envoie un lien pour le réinitialiser.",
+      "submit": "Envoyer le lien",
+      "success": "Email envoyé si ce compte existe. Vérifie ta boîte de réception.",
+      "back_to_login": "Retour à la connexion"
+    },
+    "reset_password": {
+      "title": "Nouveau mot de passe",
+      "new_password": "Nouveau mot de passe",
+      "submit": "Mettre à jour",
+      "success": "Mot de passe mis à jour."
+    },
+    "errors": {
+      "passwords_mismatch": "Les mots de passe ne correspondent pas",
+      "password_too_short": "Le mot de passe doit faire au moins 8 caractères"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "display_name": "Nom affiché",
+    "language": "Langue",
+    "sign_out": "Se déconnecter",
+    "avatar": {
+      "change": "Changer la photo"
+    },
+    "saved": "Profil enregistré"
+  },
+  "home": {
+    "title": "Mes habitations",
+    "empty": "Aucune habitation pour l'instant."
+  }
+}
