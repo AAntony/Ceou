@@ -6,9 +6,9 @@ import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
-import type { LocationType } from '../../types/database';
+import type { Conteneur, LocationType } from '../../types/database';
 import { CreateObjetModal } from './CreateObjetModal';
-import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDeleteObjet } from './queries';
+import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDeleteObjet, useUpdateConteneur } from './queries';
 
 type ContainerContentsProps = {
   parentType: LocationType;
@@ -19,9 +19,11 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
   const { t } = useTranslation();
   const { conteneurs, objets, isLoading } = useContainerContents(parentType, parentId);
   const createConteneur = useCreateConteneur(parentType, parentId);
+  const updateConteneur = useUpdateConteneur();
   const deleteConteneur = useDeleteConteneur();
   const deleteObjet = useDeleteObjet();
   const [conteneurModalOpen, setConteneurModalOpen] = useState(false);
+  const [editingConteneur, setEditingConteneur] = useState<Conteneur | null>(null);
   const [objetModalOpen, setObjetModalOpen] = useState(false);
 
   const handleDeleteConteneur = (id: string) => {
@@ -54,6 +56,10 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 title={conteneur.name}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
                 onLongPress={() => handleDeleteConteneur(conteneur.id)}
+                onEdit={() => {
+                  setEditingConteneur(conteneur);
+                  setConteneurModalOpen(true);
+                }}
               />
             ))}
             {objets.map((objet) => (
@@ -72,7 +78,14 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
 
       <View className="absolute bottom-0 left-0 right-0 flex-row gap-3 border-t border-neutral-100 bg-white px-6 py-4">
         <View className="flex-1">
-          <Button label={t('inventory.container.add_conteneur')} variant="ghost" onPress={() => setConteneurModalOpen(true)} />
+          <Button
+            label={t('inventory.container.add_conteneur')}
+            variant="ghost"
+            onPress={() => {
+              setEditingConteneur(null);
+              setConteneurModalOpen(true);
+            }}
+          />
         </View>
         <View className="flex-1">
           <Button label={t('inventory.container.add_objet')} onPress={() => setObjetModalOpen(true)} />
@@ -81,14 +94,19 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
 
       <CreateEntityModal
         visible={conteneurModalOpen}
-        title={t('inventory.container.create_conteneur_title')}
+        title={editingConteneur ? t('inventory.conteneurs.edit_title') : t('inventory.container.create_conteneur_title')}
         nameLabel={t('inventory.container.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        loading={createConteneur.isPending}
+        initialName={editingConteneur?.name}
+        loading={createConteneur.isPending || updateConteneur.isPending}
         onClose={() => setConteneurModalOpen(false)}
         onSubmit={async (name) => {
-          await createConteneur.mutateAsync(name);
+          if (editingConteneur) {
+            await updateConteneur.mutateAsync({ id: editingConteneur.id, name });
+          } else {
+            await createConteneur.mutateAsync(name);
+          }
           setConteneurModalOpen(false);
         }}
       />

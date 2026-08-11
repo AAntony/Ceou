@@ -10,6 +10,7 @@ type CreateEntityModalProps = {
   nameLabel: string;
   submitLabel: string;
   cancelLabel: string;
+  initialName?: string;
   onClose: () => void;
   onSubmit: (name: string) => void | Promise<void>;
   loading?: boolean;
@@ -22,6 +23,7 @@ export function CreateEntityModal({
   nameLabel,
   submitLabel,
   cancelLabel,
+  initialName,
   onClose,
   onSubmit,
   loading,
@@ -31,7 +33,8 @@ export function CreateEntityModal({
   const [name, setName] = useState('');
 
   useEffect(() => {
-    if (visible) setName('');
+    if (visible) setName(initialName ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const handleSubmit = async () => {

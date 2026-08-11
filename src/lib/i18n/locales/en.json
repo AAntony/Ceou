@@ -60,6 +60,7 @@
       "empty": "No home yet.",
       "add": "Add a home",
       "create_title": "New home",
+      "edit_title": "Edit home",
       "name_label": "Name",
       "type_label": "Type",
       "delete_confirm_title": "Delete this home?",
@@ -79,6 +80,7 @@
       "empty": "No room yet.",
       "add": "Add a room",
       "create_title": "New room",
+      "edit_title": "Edit room",
       "name_label": "Name",
       "delete_confirm_title": "Delete this room?",
       "delete_confirm_message": "All the spots and items it contains will be deleted."
@@ -87,6 +89,7 @@
       "empty": "No spot yet.",
       "add": "Add a spot",
       "create_title": "New spot",
+      "edit_title": "Edit spot",
       "name_label": "Name",
       "type_label": "Type",
       "delete_confirm_title": "Delete this spot?",
@@ -114,6 +117,7 @@
       "name_label": "Name"
     },
     "conteneurs": {
+      "edit_title": "Edit container",
       "delete_confirm_title": "Delete this container?",
       "delete_confirm_message": "All the containers and items it contains will be deleted."
     },

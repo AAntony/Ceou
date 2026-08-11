@@ -56,6 +56,20 @@ export function useCreateHabitation() {
   });
 }
 
+export function useUpdateHabitation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string; type: string; icon: string }) => {
+      const { error } = await supabase
+        .from('habitations')
+        .update({ name: input.name, type: input.type, icon: input.icon })
+        .eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitations'] }),
+  });
+}
+
 export function useDeleteHabitation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -111,6 +125,17 @@ export function useCreatePiece(habitationId: string) {
   });
 }
 
+export function useUpdatePiece(habitationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await supabase.from('pieces').update({ name: input.name }).eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] }),
+  });
+}
+
 export function useDeletePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -158,6 +183,20 @@ export function useCreateEmplacement(pieceId: string) {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] }),
+  });
+}
+
+export function useUpdateEmplacement(pieceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string; presetKey: string | null }) => {
+      const { error } = await supabase
+        .from('emplacements')
+        .update({ name: input.name, preset_key: input.presetKey })
+        .eq('id', input.id);
+      if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] }),
   });
@@ -242,6 +281,17 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => invalidateContainerContents(queryClient),
+  });
+}
+
+export function useUpdateConteneur() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await supabase.from('conteneurs').update({ name: input.name }).eq('id', input.id);
+      if (error) throw error;
     },
     onSuccess: () => invalidateContainerContents(queryClient),
   });

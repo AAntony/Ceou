@@ -7,8 +7,9 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { PresetPicker } from '../../components/PresetPicker';
+import type { Emplacement } from '../../types/database';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
-import { useCreateEmplacement, useDeleteEmplacement, useEmplacements } from './queries';
+import { useCreateEmplacement, useDeleteEmplacement, useEmplacements, useUpdateEmplacement } from './queries';
 
 type PieceEmplacementsProps = {
   pieceId: string;
@@ -18,8 +19,10 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const { t } = useTranslation();
   const { data: emplacements, isLoading } = useEmplacements(pieceId);
   const createEmplacement = useCreateEmplacement(pieceId);
+  const updateEmplacement = useUpdateEmplacement(pieceId);
   const deleteEmplacement = useDeleteEmplacement(pieceId);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingEmplacement, setEditingEmplacement] = useState<Emplacement | null>(null);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
 
   const handleDelete = (id: string) => {
@@ -27,6 +30,18 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deleteEmplacement.mutate(id) },
     ]);
+  };
+
+  const openCreate = () => {
+    setEditingEmplacement(null);
+    setPresetKey(null);
+    setModalOpen(true);
+  };
+
+  const openEdit = (emplacement: Emplacement) => {
+    setEditingEmplacement(emplacement);
+    setPresetKey((emplacement.preset_key as EmplacementPresetKey) ?? null);
+    setModalOpen(true);
   };
 
   const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
@@ -44,27 +59,32 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
               title={emplacement.name}
               onPress={() => router.push(`/emplacement/${emplacement.id}`)}
               onLongPress={() => handleDelete(emplacement.id)}
+              onEdit={() => openEdit(emplacement)}
             />
           ))
         )}
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 border-t border-neutral-100 bg-white px-6 py-4">
-        <Button label={t('inventory.emplacements.add')} onPress={() => setModalOpen(true)} />
+        <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
       </View>
 
       <CreateEntityModal
         visible={modalOpen}
-        title={t('inventory.emplacements.create_title')}
+        title={editingEmplacement ? t('inventory.emplacements.edit_title') : t('inventory.emplacements.create_title')}
         nameLabel={t('inventory.emplacements.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        loading={createEmplacement.isPending}
+        initialName={editingEmplacement?.name}
+        loading={createEmplacement.isPending || updateEmplacement.isPending}
         onClose={() => setModalOpen(false)}
         onSubmit={async (name) => {
-          await createEmplacement.mutateAsync({ name, presetKey });
+          if (editingEmplacement) {
+            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name, presetKey });
+          } else {
+            await createEmplacement.mutateAsync({ name, presetKey });
+          }
           setModalOpen(false);
-          setPresetKey(null);
         }}
       >
         <PresetPicker

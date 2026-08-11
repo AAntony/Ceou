@@ -60,6 +60,7 @@
       "empty": "Aucune habitation pour l'instant.",
       "add": "Ajouter une habitation",
       "create_title": "Nouvelle habitation",
+      "edit_title": "Modifier l'habitation",
       "name_label": "Nom",
       "type_label": "Type",
       "delete_confirm_title": "Supprimer cette habitation ?",
@@ -79,6 +80,7 @@
       "empty": "Aucune pièce pour l'instant.",
       "add": "Ajouter une pièce",
       "create_title": "Nouvelle pièce",
+      "edit_title": "Modifier la pièce",
       "name_label": "Nom",
       "delete_confirm_title": "Supprimer cette pièce ?",
       "delete_confirm_message": "Tous les emplacements et objets qu'elle contient seront supprimés."
@@ -87,6 +89,7 @@
       "empty": "Aucun emplacement pour l'instant.",
       "add": "Ajouter un emplacement",
       "create_title": "Nouvel emplacement",
+      "edit_title": "Modifier l'emplacement",
       "name_label": "Nom",
       "type_label": "Type",
       "delete_confirm_title": "Supprimer cet emplacement ?",
@@ -114,6 +117,7 @@
       "name_label": "Nom"
     },
     "conteneurs": {
+      "edit_title": "Modifier le conteneur",
       "delete_confirm_title": "Supprimer ce conteneur ?",
       "delete_confirm_message": "Tous les conteneurs et objets qu'il contient seront supprimés."
     },

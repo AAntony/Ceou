@@ -6,7 +6,8 @@ import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
-import { useCreatePiece, useDeletePiece, usePieces } from './queries';
+import type { Piece } from '../../types/database';
+import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
 
 type PieceListProps = {
   habitationId: string;
@@ -16,8 +17,10 @@ export function PieceList({ habitationId }: PieceListProps) {
   const { t } = useTranslation();
   const { data: pieces, isLoading } = usePieces(habitationId);
   const createPiece = useCreatePiece(habitationId);
+  const updatePiece = useUpdatePiece(habitationId);
   const deletePiece = useDeletePiece(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.pieces.delete_confirm_title'), t('inventory.pieces.delete_confirm_message'), [
@@ -41,25 +44,40 @@ export function PieceList({ habitationId }: PieceListProps) {
               title={piece.name}
               onPress={() => router.push(`/piece/${piece.id}`)}
               onLongPress={() => handleDelete(piece.id)}
+              onEdit={() => {
+                setEditingPiece(piece);
+                setModalOpen(true);
+              }}
             />
           ))
         )}
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0 border-t border-neutral-100 bg-white px-6 py-4">
-        <Button label={t('inventory.pieces.add')} onPress={() => setModalOpen(true)} />
+        <Button
+          label={t('inventory.pieces.add')}
+          onPress={() => {
+            setEditingPiece(null);
+            setModalOpen(true);
+          }}
+        />
       </View>
 
       <CreateEntityModal
         visible={modalOpen}
-        title={t('inventory.pieces.create_title')}
+        title={editingPiece ? t('inventory.pieces.edit_title') : t('inventory.pieces.create_title')}
         nameLabel={t('inventory.pieces.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        loading={createPiece.isPending}
+        initialName={editingPiece?.name}
+        loading={createPiece.isPending || updatePiece.isPending}
         onClose={() => setModalOpen(false)}
         onSubmit={async (name) => {
-          await createPiece.mutateAsync(name);
+          if (editingPiece) {
+            await updatePiece.mutateAsync({ id: editingPiece.id, name });
+          } else {
+            await createPiece.mutateAsync(name);
+          }
           setModalOpen(false);
         }}
       />
