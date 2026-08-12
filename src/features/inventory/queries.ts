@@ -4,6 +4,13 @@ import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { isSingleSpaceHabitation } from './constants';
 
+// Toute mutation qui change un nom/une position dans la hiérarchie doit
+// aussi invalider le cache de recherche globale (search_index()) — sinon le
+// dashboard d'accueil resterait périmé après une modif faite ailleurs.
+function invalidateSearchIndex(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
+}
+
 // === Habitations =====================================================
 
 export function useHabitations() {
@@ -52,7 +59,10 @@ export function useCreateHabitation() {
 
       return habitation;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitations'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habitations'] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -66,7 +76,10 @@ export function useUpdateHabitation() {
         .eq('id', input.id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitations'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habitations'] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -77,7 +90,10 @@ export function useDeleteHabitation() {
       const { error } = await supabase.from('habitations').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitations'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['habitations'] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -121,7 +137,10 @@ export function useCreatePiece(habitationId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -132,7 +151,10 @@ export function useUpdatePiece(habitationId: string) {
       const { error } = await supabase.from('pieces').update({ name: input.name }).eq('id', input.id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -143,7 +165,10 @@ export function useDeletePiece(habitationId: string) {
       const { error } = await supabase.from('pieces').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -184,7 +209,10 @@ export function useCreateEmplacement(pieceId: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -198,7 +226,10 @@ export function useUpdateEmplacement(pieceId: string) {
         .eq('id', input.id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -209,7 +240,10 @@ export function useDeleteEmplacement(pieceId: string) {
       const { error } = await supabase.from('emplacements').delete().eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -252,6 +286,7 @@ export function useContainerContents(parentType: LocationType, parentId: string)
 
 function invalidateContainerContents(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['containerContents'] });
+  invalidateSearchIndex(queryClient);
 }
 
 export function useConteneur(id: string) {
@@ -357,7 +392,10 @@ export function useUpdateObjet(id: string) {
       const { error } = await supabase.from('objets').update(patch).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['objet', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['objet', id] });
+      invalidateSearchIndex(queryClient);
+    },
   });
 }
 
@@ -369,6 +407,24 @@ export function useDeleteObjet() {
       if (error) throw error;
     },
     onSuccess: () => invalidateContainerContents(queryClient),
+  });
+}
+
+export type ObjetLocationNode = {
+  kind: 'habitation' | 'piece' | 'emplacement' | 'conteneur';
+  id: string;
+  name: string;
+  preset_key: string | null;
+};
+
+export function useObjetLocationChain(objetId: string) {
+  return useQuery({
+    queryKey: ['objetLocationChain', objetId],
+    queryFn: async (): Promise<ObjetLocationNode[]> => {
+      const { data, error } = await supabase.rpc('objet_location_chain', { p_objet_id: objetId });
+      if (error) throw error;
+      return data as unknown as ObjetLocationNode[];
+    },
   });
 }
 
@@ -401,6 +457,7 @@ export function useMoveObjet(objetId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['objet', objetId] });
       queryClient.invalidateQueries({ queryKey: ['objetHistory', objetId] });
+      queryClient.invalidateQueries({ queryKey: ['objetLocationChain', objetId] });
       invalidateContainerContents(queryClient);
     },
   });

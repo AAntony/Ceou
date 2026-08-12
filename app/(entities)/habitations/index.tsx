@@ -1,5 +1,5 @@
-import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { Stack, router } from 'expo-router';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { BottomActionBar } from '../../../src/components/BottomActionBar';
@@ -14,7 +14,6 @@ import type { Habitation } from '../../../src/types/database';
 
 export default function HabitationsScreen() {
   const { t } = useTranslation();
-  const { create } = useLocalSearchParams<{ create?: string }>();
   const { data: habitations, isLoading } = useHabitations();
   const createHabitation = useCreateHabitation();
   const updateHabitation = useUpdateHabitation();
@@ -22,18 +21,6 @@ export default function HabitationsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
   const [type, setType] = useState<HabitationTypeKey>('maison');
-
-  // Le "+" flottant de la barre d'onglets pointe ici avec ?create=1 pour
-  // ouvrir directement la création, plutôt que dupliquer la modale/logique
-  // de création à un autre endroit.
-  useEffect(() => {
-    if (create) {
-      setEditingHabitation(null);
-      setType('maison');
-      setModalOpen(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [create]);
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.habitations.delete_confirm_title'), t('inventory.habitations.delete_confirm_message'), [
@@ -60,7 +47,7 @@ export default function HabitationsScreen() {
     <>
       <Stack.Screen options={{ title: t('inventory.habitations.title') }} />
       <View className="flex-1 bg-sand">
-        <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+        <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
           {isEmpty ? (
             <EmptyState icon="home" title={t('inventory.habitations.empty')} />
           ) : (
@@ -78,7 +65,7 @@ export default function HabitationsScreen() {
           )}
         </ScrollView>
 
-        <BottomActionBar>
+        <BottomActionBar extraBottomOffset={88}>
           <View className="flex-1">
             <Button label={t('inventory.habitations.add')} onPress={openCreate} />
           </View>

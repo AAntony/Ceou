@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -48,18 +47,9 @@ export function HomeDashboard() {
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-40 pt-16">
-        <View className="mb-6 flex-row items-start justify-between">
-          <View className="flex-1 pr-4">
-            <Text className="text-2xl font-bold text-ink">{greeting}</Text>
-            <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
-          </View>
-          <Pressable
-            onPress={() => router.push('/habitations')}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full bg-white active:opacity-70"
-          >
-            <Icon name="manage" size={20} color="#2D2A26" />
-          </Pressable>
+        <View className="mb-6">
+          <Text className="text-2xl font-bold text-ink">{greeting}</Text>
+          <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
         </View>
 
         {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
@@ -85,7 +75,8 @@ export function HomeDashboard() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1" contentContainerClassName="px-1">
             <Pressable
               onPress={() => setSelectedPiece(null)}
-              className={`mr-2 flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${
+              android_ripple={{ color: 'rgba(45,42,38,0.08)', borderless: false }}
+              className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
                 selectedPiece === null ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
               }`}
             >
@@ -100,7 +91,8 @@ export function HomeDashboard() {
                 <Pressable
                   key={pieceName}
                   onPress={() => setSelectedPiece(selected ? null : pieceName)}
-                  className={`mr-2 flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${
+                  android_ripple={{ color: 'rgba(45,42,38,0.08)', borderless: false }}
+                  className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
                     selected ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
                   }`}
                 >

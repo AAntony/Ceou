@@ -391,6 +391,15 @@ export type Database = {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
       }
+      objet_location_chain: {
+        Args: { p_objet_id: string }
+        Returns: {
+          id: string
+          kind: string
+          name: string
+          preset_key: string
+        }[]
+      }
       objet_owner: {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
         Returns: string

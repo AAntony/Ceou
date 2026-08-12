@@ -1,9 +1,11 @@
 {
+  "app_name": "Céoù",
   "common": {
     "cancel": "Cancel",
     "save": "Save",
     "add": "Add",
     "delete": "Delete",
+    "back": "Back",
     "loading": "Loading...",
     "error_generic": "Something went wrong. Please try again.",
     "other": "Other"
@@ -62,7 +64,9 @@
     "search_placeholder": "An item, a room, a box...",
     "chip_all": "All",
     "empty": "Nothing to show yet.",
-    "no_results": "No results for that search."
+    "no_results": "No results for that search.",
+    "choose_location": "Choose a location",
+    "choose_location_here": "Store here"
   },
   "inventory": {
     "habitations": {
@@ -132,6 +136,7 @@
       "delete_confirm_message": "All the containers and items it contains will be deleted."
     },
     "objet": {
+      "location_title": "Location",
       "name_label": "Name",
       "description_label": "Description",
       "add_photo": "Add a photo",

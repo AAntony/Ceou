@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { Button } from '../../../src/components/Button';
 import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
+import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
 import { useDeleteObjet, useObjet, useObjetHistory, useUpdateObjet } from '../../../src/features/inventory/queries';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
@@ -89,6 +90,8 @@ export default function ObjetScreen() {
             <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
           )}
         </Pressable>
+
+        <LocationBreadcrumb objetId={id} />
 
         <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} />
         <TextField

@@ -1,82 +1,75 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Icon, type IconName } from './Icon';
+import { AddObjetModal } from '../features/inventory/AddObjetModal';
+import { Icon } from './Icon';
 
-// Sous-ensemble minimal de BottomTabBarProps (React Navigation) — on ne
-// dépend que de state/descriptors/navigation.navigate/navigation.emit,
-// donc pas besoin d'importer les types internes d'expo-router.
-type TabBarState = { index: number; routes: { key: string; name: string }[] };
-type TabBarDescriptor = { options: { title?: string } };
-type TabBarNavigation = {
-  navigate: (name: string) => void;
-  emit: (event: { type: string; target: string; canPreventDefault?: boolean }) => { defaultPrevented: boolean };
-};
+// Rendu depuis app/_layout.tsx (racine), pas depuis le navigateur Tabs :
+// il doit rester visible en passant de l'Accueil à /habitations, qui vivent
+// dans deux groupes de routes différents ((tabs) vs (entities)) — un
+// tabBar React Navigation classique ne peut pas franchir cette frontière.
+const VISIBLE_PATHS = new Set(['/', '/profile', '/habitations']);
 
-export type AppTabBarProps = {
-  state: TabBarState;
-  descriptors: Record<string, TabBarDescriptor>;
-  navigation: TabBarNavigation;
-};
-
-const TAB_ICONS: Record<string, IconName> = {
-  index: 'home',
-  profile: 'profile',
-};
-
-export function AppTabBar({ state, descriptors, navigation }: AppTabBarProps) {
+export function AppTabBar() {
+  const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
+  const [addObjetOpen, setAddObjetOpen] = useState(false);
+
+  if (!VISIBLE_PATHS.has(pathname)) return null;
+
+  const onHabitations = pathname === '/habitations';
+  const leftLabel = onHabitations ? t('app_name') : t('home.tab_title');
+  const leftOnPress = () => router.navigate(onHabitations ? '/' : '/habitations');
+  const leftActive = pathname !== '/profile';
+  const rightActive = pathname === '/profile';
 
   return (
-    <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 12 }}>
-      <View className="h-16 flex-row items-center rounded-full bg-white px-2 shadow-lg">
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const focused = state.index === index;
-          const color = focused ? '#FF6B4A' : '#A39C8F';
+    <>
+      <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 12 }}>
+        <View className="h-16 flex-row items-center rounded-full bg-white px-2 shadow-lg">
+          <Pressable onPress={leftOnPress} className="flex-1 items-center justify-center py-2">
+            <Icon name="home" size={22} color={leftActive ? '#FF6B4A' : '#A39C8F'} />
+            <Text className="mt-0.5 text-xs font-medium" style={{ color: leftActive ? '#FF6B4A' : '#A39C8F' }}>
+              {leftLabel}
+            </Text>
+          </Pressable>
 
-          const onPress = () => {
-            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
-          };
+          <Pressable onPress={() => router.navigate('/profile')} className="flex-1 items-center justify-center py-2">
+            <Icon name="profile" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
+            <Text className="mt-0.5 text-xs font-medium" style={{ color: rightActive ? '#FF6B4A' : '#A39C8F' }}>
+              {t('profile.title')}
+            </Text>
+          </Pressable>
+        </View>
 
-          return (
-            <Pressable key={route.key} onPress={onPress} className="flex-1 items-center justify-center py-2">
-              <Icon name={TAB_ICONS[route.name] ?? 'home'} size={22} color={color} />
-              <Text className="mt-0.5 text-xs font-medium" style={{ color }}>
-                {options.title}
-              </Text>
-            </Pressable>
-          );
-        })}
+        <Pressable onPress={() => setAddObjetOpen(true)} className="absolute self-center active:opacity-85" style={{ top: -22 }}>
+          <LinearGradient
+            colors={['#FF6B4A', '#FFC857']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              alignItems: 'center',
+              justifyContent: 'center',
+              elevation: 6,
+              shadowColor: '#2D2A26',
+              shadowOpacity: 0.25,
+              shadowOffset: { width: 0, height: 4 },
+              shadowRadius: 8,
+            }}
+          >
+            <Icon name="add" size={26} color="#fff" />
+          </LinearGradient>
+        </Pressable>
       </View>
 
-      <Pressable
-        onPress={() => router.push('/habitations?create=1')}
-        className="absolute self-center active:opacity-85"
-        style={{ top: -22 }}
-      >
-        <LinearGradient
-          colors={['#FF6B4A', '#FFC857']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            alignItems: 'center',
-            justifyContent: 'center',
-            elevation: 6,
-            shadowColor: '#2D2A26',
-            shadowOpacity: 0.25,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 8,
-          }}
-        >
-          <Icon name="add" size={26} color="#fff" />
-        </LinearGradient>
-      </Pressable>
-    </View>
+      <AddObjetModal visible={addObjetOpen} onClose={() => setAddObjetOpen(false)} />
+    </>
   );
 }
