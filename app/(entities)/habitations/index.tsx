@@ -1,5 +1,5 @@
-import { Stack, router } from 'expo-router';
-import { useState } from 'react';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { BottomActionBar } from '../../../src/components/BottomActionBar';
@@ -14,6 +14,7 @@ import type { Habitation } from '../../../src/types/database';
 
 export default function HabitationsScreen() {
   const { t } = useTranslation();
+  const { create } = useLocalSearchParams<{ create?: string }>();
   const { data: habitations, isLoading } = useHabitations();
   const createHabitation = useCreateHabitation();
   const updateHabitation = useUpdateHabitation();
@@ -21,6 +22,18 @@ export default function HabitationsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
   const [type, setType] = useState<HabitationTypeKey>('maison');
+
+  // Le "+" flottant de la barre d'onglets pointe ici avec ?create=1 pour
+  // ouvrir directement la création, plutôt que dupliquer la modale/logique
+  // de création à un autre endroit.
+  useEffect(() => {
+    if (create) {
+      setEditingHabitation(null);
+      setType('maison');
+      setModalOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [create]);
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.habitations.delete_confirm_title'), t('inventory.habitations.delete_confirm_message'), [

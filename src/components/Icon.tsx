@@ -45,7 +45,9 @@ export type IconName =
   | 'home'
   | 'back'
   | 'close'
-  | 'search';
+  | 'search'
+  | 'profile'
+  | 'manage';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -89,6 +91,8 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   back: 'arrow-left',
   close: 'close',
   search: 'magnify',
+  profile: 'account-circle-outline',
+  manage: 'view-grid-outline',
 };
 
 type IconProps = {

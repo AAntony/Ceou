@@ -55,7 +55,7 @@
     "saved": "Profile saved"
   },
   "home": {
-    "tab_title": "Home",
+    "tab_title": "Homes",
     "greeting": "Hi, {{name}}",
     "greeting_anonymous": "Hi there!",
     "tagline": "Find everything you've put away.",

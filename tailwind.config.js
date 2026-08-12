@@ -23,6 +23,11 @@ module.exports = {
           dark: '#E0A93C',
           light: '#FFF3DA',
         },
+        sky: {
+          DEFAULT: '#5B9BE0',
+          dark: '#3F7BC0',
+          light: '#DCEBFB',
+        },
         ink: {
           DEFAULT: '#2D2A26',
           soft: '#6B6459',

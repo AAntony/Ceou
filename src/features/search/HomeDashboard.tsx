@@ -2,28 +2,19 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { Icon } from '../../components/Icon';
-import { PresetPicker } from '../../components/PresetPicker';
-import { HABITATION_TYPES, type HabitationTypeKey } from '../inventory/constants';
-import { useCreateHabitation } from '../inventory/queries';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex } from './queries';
 
 export function HomeDashboard() {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { data: profile } = useProfile();
   const { data: entries, isLoading } = useSearchIndex();
-  const createHabitation = useCreateHabitation();
 
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [type, setType] = useState<HabitationTypeKey>('maison');
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -54,11 +45,6 @@ export function HomeDashboard() {
     ? t('home.greeting', { name: profile.display_name })
     : t('home.greeting_anonymous');
 
-  const openCreateHabitation = () => {
-    setType('maison');
-    setModalOpen(true);
-  };
-
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-40 pt-16">
@@ -72,32 +58,39 @@ export function HomeDashboard() {
             hitSlop={8}
             className="h-11 w-11 items-center justify-center rounded-full bg-white active:opacity-70"
           >
-            <Icon name="home" size={20} color="#2D2A26" />
+            <Icon name="manage" size={20} color="#2D2A26" />
           </Pressable>
         </View>
 
-        <View className="mb-4 flex-row items-center rounded-full border border-ink/10 bg-white px-4 py-3">
-          <Icon name="search" size={20} color="#A39C8F" />
-          <TextInput
-            value={searchText}
-            onChangeText={setSearchText}
-            placeholder={t('home.search_placeholder')}
-            placeholderTextColor="#A39C8F"
-            autoCapitalize="none"
-            autoCorrect={false}
-            className="ml-2 flex-1 text-base text-ink"
-          />
+        {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
+            colorée façon maquette n'est pas fiable sur Android (elevation
+            ne rend qu'une ombre grise), ce cerne fait l'effet sans lib
+            supplémentaire ni rendu différent iOS/Android. */}
+        <View className="mb-4 rounded-full bg-teal/15 p-[3px]">
+          <View className="flex-row items-center rounded-full border border-teal/30 bg-white px-4 py-3">
+            <Icon name="search" size={20} color="#A39C8F" />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder={t('home.search_placeholder')}
+              placeholderTextColor="#A39C8F"
+              autoCapitalize="none"
+              autoCorrect={false}
+              className="ml-2 flex-1 text-base text-ink"
+            />
+          </View>
         </View>
 
         {pieceOptions.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1" contentContainerClassName="px-1">
             <Pressable
               onPress={() => setSelectedPiece(null)}
-              className={`mr-2 rounded-full border px-4 py-2 ${
-                selectedPiece === null ? 'border-coral bg-coral' : 'border-ink/10 bg-white'
+              className={`mr-2 flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${
+                selectedPiece === null ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
               }`}
             >
-              <Text className={selectedPiece === null ? 'font-semibold text-white' : 'text-ink-soft'}>
+              <Icon name="home" size={14} color={selectedPiece === null ? '#219488' : '#6B6459'} />
+              <Text className={selectedPiece === null ? 'font-semibold text-teal-dark' : 'text-ink-soft'}>
                 {t('home.chip_all')}
               </Text>
             </Pressable>
@@ -107,11 +100,12 @@ export function HomeDashboard() {
                 <Pressable
                   key={pieceName}
                   onPress={() => setSelectedPiece(selected ? null : pieceName)}
-                  className={`mr-2 rounded-full border px-4 py-2 ${
-                    selected ? 'border-coral bg-coral' : 'border-ink/10 bg-white'
+                  className={`mr-2 flex-row items-center gap-1.5 rounded-full border px-4 py-2 ${
+                    selected ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
                   }`}
                 >
-                  <Text className={selected ? 'font-semibold text-white' : 'text-ink-soft'}>{pieceName}</Text>
+                  <Icon name="piece" size={14} color={selected ? '#219488' : '#6B6459'} />
+                  <Text className={selected ? 'font-semibold text-teal-dark' : 'text-ink-soft'}>{pieceName}</Text>
                 </Pressable>
               );
             })}
@@ -119,10 +113,7 @@ export function HomeDashboard() {
         ) : null}
 
         {!isLoading && filtered.length === 0 ? (
-          <EmptyState
-            icon="search"
-            title={trimmedSearch ? t('home.no_results') : t('home.empty')}
-          />
+          <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
         ) : (
           <View className="flex-row flex-wrap justify-between">
             {filtered.map((entry, index) => (
@@ -131,36 +122,6 @@ export function HomeDashboard() {
           </View>
         )}
       </ScrollView>
-
-      <Pressable
-        onPress={openCreateHabitation}
-        className="absolute h-14 w-14 items-center justify-center rounded-full bg-coral shadow-lg active:opacity-80"
-        style={{ right: 24, bottom: insets.bottom + 84 }}
-      >
-        <Icon name="add" size={26} color="#fff" />
-      </Pressable>
-
-      <CreateEntityModal
-        visible={modalOpen}
-        title={t('inventory.habitations.create_title')}
-        nameLabel={t('inventory.habitations.name_label')}
-        submitLabel={t('common.save')}
-        cancelLabel={t('common.cancel')}
-        loading={createHabitation.isPending}
-        onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
-          const definition = HABITATION_TYPES.find((h) => h.key === type)!;
-          await createHabitation.mutateAsync({ name, type, icon: definition.icon });
-          setModalOpen(false);
-        }}
-      >
-        <PresetPicker
-          presets={HABITATION_TYPES}
-          selectedKey={type}
-          onSelect={(key) => setType(key as HabitationTypeKey)}
-          labelFor={(key) => t(`inventory.habitationTypes.${key}`)}
-        />
-      </CreateEntityModal>
     </View>
   );
 }
