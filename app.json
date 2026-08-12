@@ -42,6 +42,12 @@
         "projectId": "e6e7590c-fe95-4ec3-93c4-5da5ee7e9b94"
       }
     },
-    "owner": "m-ajestic"
+    "owner": "m-ajestic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e6e7590c-fe95-4ec3-93c4-5da5ee7e9b94"
+    }
   }
 }
