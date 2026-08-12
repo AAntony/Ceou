@@ -1,4 +1,3 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, usePathname } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -46,26 +45,23 @@ export function AppTabBar() {
           </Pressable>
         </View>
 
-        <Pressable onPress={() => setAddObjetOpen(true)} className="absolute self-center active:opacity-85" style={{ top: -22 }}>
-          <LinearGradient
-            colors={['#FF6B4A', '#FFC857']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              alignItems: 'center',
-              justifyContent: 'center',
-              elevation: 6,
-              shadowColor: '#2D2A26',
-              shadowOpacity: 0.25,
-              shadowOffset: { width: 0, height: 4 },
-              shadowRadius: 8,
-            }}
-          >
-            <Icon name="add" size={26} color="#fff" />
-          </LinearGradient>
+        <Pressable
+          onPress={() => setAddObjetOpen(true)}
+          className="absolute self-center items-center justify-center active:opacity-85"
+          style={{
+            top: -22,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: '#FF6B4A',
+            elevation: 6,
+            shadowColor: '#2D2A26',
+            shadowOpacity: 0.25,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 8,
+          }}
+        >
+          <Icon name="add" size={26} color="#fff" />
         </Pressable>
       </View>
 

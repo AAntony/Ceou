@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { HexBadge } from '../../components/HexBadge';
+import { IconBadge } from '../../components/IconBadge';
 import { getEmplacementIcon } from '../inventory/constants';
 import { HUE_BADGE_FILL, HUE_CARD_BG, hueAt } from './palette';
 import type { SearchIndexEntry, SearchKind } from './queries';
@@ -32,7 +32,7 @@ export function ResultCard({ entry, colorIndex }: ResultCardProps) {
       className={`mb-3 w-[48%] rounded-2xl p-4 active:opacity-70 ${HUE_CARD_BG[hue]}`}
     >
       <View className="mb-3">
-        <HexBadge
+        <IconBadge
           icon={entry.kind === 'emplacement' ? getEmplacementIcon(entry.preset_key) : entry.kind}
           fill={HUE_BADGE_FILL[hue]}
           photoUri={entry.photo_url}
