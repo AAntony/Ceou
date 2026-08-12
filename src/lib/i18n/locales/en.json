@@ -54,6 +54,16 @@
     },
     "saved": "Profile saved"
   },
+  "home": {
+    "tab_title": "Home",
+    "greeting": "Hi, {{name}}",
+    "greeting_anonymous": "Hi there!",
+    "tagline": "Find everything you've put away.",
+    "search_placeholder": "An item, a room, a box...",
+    "chip_all": "All",
+    "empty": "Nothing to show yet.",
+    "no_results": "No results for that search."
+  },
   "inventory": {
     "habitations": {
       "title": "My homes",

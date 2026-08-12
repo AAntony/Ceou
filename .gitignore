@@ -40,3 +40,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local tooling config (Claude Code preview server)
+/.claude/

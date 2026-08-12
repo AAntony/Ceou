@@ -54,6 +54,16 @@
     },
     "saved": "Profil enregistré"
   },
+  "home": {
+    "tab_title": "Accueil",
+    "greeting": "Bonjour, {{name}}",
+    "greeting_anonymous": "Bonjour !",
+    "tagline": "Retrouve tout ce que tu as rangé.",
+    "search_placeholder": "Un objet, une pièce, une boîte...",
+    "chip_all": "Toutes",
+    "empty": "Rien à afficher pour l'instant.",
+    "no_results": "Aucun résultat pour cette recherche."
+  },
   "inventory": {
     "habitations": {
       "title": "Mes habitations",

@@ -381,6 +381,10 @@ export type Database = {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
         Returns: string
       }
+      conteneur_root_emplacement: {
+        Args: { p_conteneur_id: string }
+        Returns: string
+      }
       emplacement_owner: { Args: { p_emplacement_id: string }; Returns: string }
       habitation_owner: { Args: { p_habitation_id: string }; Returns: string }
       move_objet: {
@@ -392,6 +396,22 @@ export type Database = {
         Returns: string
       }
       piece_owner: { Args: { p_piece_id: string }; Returns: string }
+      search_index: {
+        Args: never
+        Returns: {
+          habitation_icon: string
+          habitation_id: string
+          habitation_name: string
+          id: string
+          kind: string
+          name: string
+          parent_label: string
+          photo_url: string
+          piece_id: string
+          piece_name: string
+          preset_key: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
