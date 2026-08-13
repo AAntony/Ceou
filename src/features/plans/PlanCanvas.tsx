@@ -155,6 +155,10 @@ function ShapeHandle({
   // onResize re-render the parent, which would double-count movement.
   const dragOrigin = useRef(geo);
   const resizeOrigin = useRef(geo);
+  // RNGH's Pinch onEnd payload can report a stale/reset `scale`, so the
+  // last value actually applied during onUpdate is what onEnd persists —
+  // it doesn't re-derive from the end event.
+  const lastResize = useRef(geo);
 
   const computeResize = (scale: number): ShapeGeometry => {
     const origin = resizeOrigin.current;
@@ -165,9 +169,16 @@ function ShapeHandle({
     return { x: centerX - width / 2, y: centerY - height / 2, width, height };
   };
 
+  // Zone de détection élargie au-delà du contour visible : une forme par
+  // défaut (80x80) est plus petite que l'écartement naturel de deux doigts
+  // qui pincent, donc sans marge le second doigt atterrit hors de la vue et
+  // le geste n'est jamais détecté du tout.
+  const HIT_SLOP = 40;
+
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
+    .hitSlop(HIT_SLOP)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = geo;
@@ -180,14 +191,19 @@ function ShapeHandle({
   // coin séparées — plus simple à utiliser au doigt et cohérent avec le
   // rendu (un cercle doit rester un cercle).
   const pinch = Gesture.Pinch()
+    .hitSlop(HIT_SLOP)
     .runOnJS(true)
     .onStart(() => {
       resizeOrigin.current = geo;
+      lastResize.current = geo;
     })
-    .onUpdate((event) => onResize(computeResize(event.scale)))
-    .onEnd((event) => onResizeEnd(computeResize(event.scale)));
+    .onUpdate((event) => {
+      lastResize.current = computeResize(event.scale);
+      onResize(lastResize.current);
+    })
+    .onEnd(() => onResizeEnd(lastResize.current));
 
-  const tap = Gesture.Tap().runOnJS(true).onEnd(() => onTap());
+  const tap = Gesture.Tap().hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onTap());
   const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), tap);
 
   return (
