@@ -34,7 +34,7 @@ export function PlansList({ habitationId }: PlansListProps) {
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
         {isEmpty ? (
           <EmptyState icon="plan" title={t('plans.empty')} />
         ) : (
@@ -54,7 +54,7 @@ export function PlansList({ habitationId }: PlansListProps) {
         )}
       </ScrollView>
 
-      <BottomActionBar>
+      <BottomActionBar extraBottomOffset={88}>
         <View className="flex-1">
           <Button
             label={t('plans.add')}

@@ -8,7 +8,8 @@ import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
 import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
-import { useDeleteObjet, useObjet, useObjetHistory, useUpdateObjet } from '../../../src/features/inventory/queries';
+import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useUpdateObjet } from '../../../src/features/inventory/queries';
+import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
 
 export default function ObjetScreen() {
@@ -17,6 +18,8 @@ export default function ObjetScreen() {
   const { session } = useSession();
   const { data: objet, isLoading } = useObjet(id);
   const { data: history } = useObjetHistory(id);
+  const { data: locationChain } = useObjetLocationChain(id);
+  const pieceId = locationChain?.find((node) => node.kind === 'piece')?.id;
   const updateObjet = useUpdateObjet(id);
   const deleteObjet = useDeleteObjet();
 
@@ -77,7 +80,7 @@ export default function ObjetScreen() {
   return (
     <>
       <Stack.Screen options={{ title: objet.name }} />
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-16 pt-6">
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6">
         <Pressable
           onPress={handleChangePhoto}
           className="mb-6 h-40 w-40 items-center justify-center self-center overflow-hidden rounded-2xl bg-sand-dark"
@@ -92,6 +95,7 @@ export default function ObjetScreen() {
         </Pressable>
 
         <LocationBreadcrumb objetId={id} />
+        <PlanLocationLink pieceId={pieceId} />
 
         <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} />
         <TextField

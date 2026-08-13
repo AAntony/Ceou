@@ -45,7 +45,12 @@ export default function HabitationsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('inventory.habitations.title') }} />
+      {/* Atteint uniquement via le bouton "Habitations" de la barre du bas,
+          jamais poussé depuis un autre écran de cette pile — la flèche de
+          retour native n'a donc aucune destination pertinente ("précédent"
+          n'existe pas dans ce modèle de navigation, seuls Céoù/Profil le
+          sont, déjà dans la barre du bas). */}
+      <Stack.Screen options={{ title: t('inventory.habitations.title'), headerBackVisible: false }} />
       <View className="flex-1 bg-sand">
         <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
           {isEmpty ? (

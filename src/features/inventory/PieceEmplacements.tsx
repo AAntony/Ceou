@@ -49,7 +49,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
         {isEmpty ? (
           <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
@@ -66,7 +66,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         )}
       </ScrollView>
 
-      <BottomActionBar>
+      <BottomActionBar extraBottomOffset={88}>
         <View className="flex-1">
           <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
         </View>

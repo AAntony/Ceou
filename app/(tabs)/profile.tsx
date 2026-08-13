@@ -55,9 +55,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-10">
-      <Text className="mb-8 text-3xl font-bold text-ink">{t('profile.title')}</Text>
-
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40">
       <Pressable onPress={handleAvatarPress} className="mb-8 items-center">
         <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-sand-dark">
           {avatarUploading ? (

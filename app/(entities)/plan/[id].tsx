@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { usePieces } from '../../../src/features/inventory/queries';
 import { PLAN_SHAPE_TYPES, type PlanShapeType } from '../../../src/features/plans/constants';
@@ -11,7 +11,7 @@ import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorS
 import type { PlanForme } from '../../../src/types/database';
 
 export default function PlanScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, highlightFormeId } = useLocalSearchParams<{ id: string; highlightFormeId?: string }>();
   const { t } = useTranslation();
   const { data: plan, isLoading: planLoading } = usePlan(id);
   const { data: formes } = usePlanFormes(id);
@@ -20,8 +20,18 @@ export default function PlanScreen() {
   const updateForme = useUpdatePlanForme(id);
   const deleteForme = useDeletePlanForme(id);
   const [selectedForme, setSelectedForme] = useState<PlanForme | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
 
   const pieceNames = useMemo(() => Object.fromEntries((pieces ?? []).map((p) => [p.id, p.name])), [pieces]);
+
+  // Vient de "Voir sur le plan" (fiche Objet) : amène la forme concernée
+  // dans le cadre, approximatif mais suffisant (pas besoin d'un calcul de
+  // mise en page exact pour un simple "c'est à peu près ici").
+  useEffect(() => {
+    if (!highlightFormeId || !formes) return;
+    const forme = formes.find((f) => f.id === highlightFormeId);
+    if (forme) scrollRef.current?.scrollTo({ y: Math.max(0, forme.y - 100), animated: true });
+  }, [highlightFormeId, formes]);
 
   if (planLoading || !plan) {
     return (
@@ -34,18 +44,21 @@ export default function PlanScreen() {
   return (
     <>
       <Stack.Screen options={{ title: plan.name }} />
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 py-4">
+      <ScrollView ref={scrollRef} className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-4">
         <PresetPicker
           presets={PLAN_SHAPE_TYPES}
           selectedKey={null}
           onSelect={(key) => createForme.mutate(key as PlanShapeType)}
           labelFor={(key) => t(`plans.shapeTypes.${key}`)}
         />
+        <Text className="mb-3 text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
 
         <PlanCanvas
           formes={formes ?? []}
           pieceNames={pieceNames}
+          highlightFormeId={highlightFormeId}
           onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
+          onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
           onTap={(forme) => setSelectedForme(forme)}
         />
       </ScrollView>
@@ -53,12 +66,10 @@ export default function PlanScreen() {
       <ShapeInspectorSheet
         forme={selectedForme}
         pieces={pieces ?? []}
-        loading={updateForme.isPending}
         onClose={() => setSelectedForme(null)}
-        onSave={(patch) => {
+        onChoosePiece={(pieceId) => {
           if (!selectedForme) return;
-          updateForme.mutate({ id: selectedForme.id, width: patch.width, height: patch.height, pieceId: patch.pieceId });
-          setSelectedForme(null);
+          updateForme.mutate({ id: selectedForme.id, pieceId });
         }}
         onDelete={() => {
           if (!selectedForme) return;

@@ -45,7 +45,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
         {isEmpty ? (
           <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
@@ -77,7 +77,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         )}
       </ScrollView>
 
-      <BottomActionBar>
+      <BottomActionBar extraBottomOffset={88}>
         <View className="flex-1">
           <Button
             label={t('inventory.container.add_conteneur')}

@@ -7,22 +7,18 @@ import { AddObjetModal } from '../features/inventory/AddObjetModal';
 import { Icon } from './Icon';
 
 // Rendu depuis app/_layout.tsx (racine), pas depuis le navigateur Tabs :
-// il doit rester visible en passant de l'Accueil à /habitations, qui vivent
-// dans deux groupes de routes différents ((tabs) vs (entities)) — un
-// tabBar React Navigation classique ne peut pas franchir cette frontière.
-const VISIBLE_PATHS = new Set(['/', '/profile', '/habitations']);
-
+// toujours visible, quel que soit l'écran — Piece/Emplacement/Conteneur
+// n'ont sinon aucun moyen rapide de revenir à l'Accueil ou au Profil
+// (uniquement le fil de navigation natif, écran par écran).
 export function AppTabBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [addObjetOpen, setAddObjetOpen] = useState(false);
 
-  if (!VISIBLE_PATHS.has(pathname)) return null;
-
-  const onHabitations = pathname === '/habitations';
-  const leftLabel = onHabitations ? t('app_name') : t('home.tab_title');
-  const leftOnPress = () => router.navigate(onHabitations ? '/' : '/habitations');
+  const onHome = pathname === '/';
+  const leftLabel = onHome ? t('home.tab_title') : t('app_name');
+  const leftOnPress = () => router.navigate(onHome ? '/habitations' : '/');
   const leftActive = pathname !== '/profile';
   const rightActive = pathname === '/profile';
 

@@ -6,6 +6,7 @@
     "add": "Add",
     "delete": "Delete",
     "back": "Back",
+    "close": "Close",
     "loading": "Loading...",
     "error_generic": "Something went wrong. Please try again.",
     "other": "Other"
@@ -154,7 +155,8 @@
       "history_title": "Move history",
       "history_empty": "No move yet.",
       "delete_confirm_title": "Delete this item?",
-      "delete_confirm_message": "This action cannot be undone."
+      "delete_confirm_message": "This action cannot be undone.",
+      "view_on_plan": "View on plan"
     }
   },
   "plans": {
@@ -167,6 +169,7 @@
     "name_label": "Name",
     "delete_confirm_title": "Delete this plan?",
     "delete_confirm_message": "All the shapes it contains will be deleted.",
+    "canvas_hint": "Drag to move, pinch to resize, tap to link a room.",
     "shapeTypes": {
       "rectangle": "Rectangle",
       "circle": "Circle",
@@ -174,8 +177,6 @@
     },
     "shape": {
       "title": "Shape",
-      "width": "Width",
-      "height": "Height",
       "piece_label": "Linked room",
       "no_piece": "None"
     }

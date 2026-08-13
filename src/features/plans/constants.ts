@@ -9,5 +9,7 @@ export const PLAN_SHAPE_TYPES: { key: PlanShapeType; icon: IconName }[] = [
 ];
 
 export const DEFAULT_SHAPE_SIZE = 80;
+export const MIN_SHAPE_SIZE = 30;
+export const MAX_SHAPE_SIZE = 300;
 export const CANVAS_WIDTH = 340;
 export const CANVAS_HEIGHT = 600;

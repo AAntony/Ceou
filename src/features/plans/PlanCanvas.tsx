@@ -3,14 +3,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { PlanForme } from '../../types/database';
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from './constants';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE } from './constants';
 
-type ShapePosition = { x: number; y: number };
+type ShapeGeometry = { x: number; y: number; width: number; height: number };
 
 type PlanCanvasProps = {
   formes: PlanForme[];
   pieceNames: Record<string, string>;
+  highlightFormeId?: string | null;
   onDragEnd: (id: string, x: number, y: number) => void;
+  onResizeEnd: (id: string, x: number, y: number, width: number, height: number) => void;
   onTap: (forme: PlanForme) => void;
 };
 
@@ -18,8 +20,15 @@ function trianglePath(x: number, y: number, width: number, height: number): stri
   return `M ${x + width / 2},${y} L ${x + width},${y + height} L ${x},${y + height} Z`;
 }
 
-export function PlanCanvas({ formes, pieceNames, onDragEnd, onTap }: PlanCanvasProps) {
-  const [positions, setPositions] = useState<Record<string, ShapePosition>>({});
+function clampSize(value: number): number {
+  return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
+}
+
+export function PlanCanvas({ formes, pieceNames, highlightFormeId, onDragEnd, onResizeEnd, onTap }: PlanCanvasProps) {
+  // Position ET taille vivent dans le même state, mises à jour en direct par
+  // le pan (x/y) et le pincement (x/y/width/height, le centre restant fixe)
+  // — un seul aller-retour réseau à la fin du geste, pas à chaque frame.
+  const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
   // otherwise crash this whole screen. Labels are a nice-to-have on top of
@@ -37,11 +46,11 @@ export function PlanCanvas({ formes, pieceNames, onDragEnd, onTap }: PlanCanvasP
   }, []);
 
   useEffect(() => {
-    setPositions((current) => {
+    setShapes((current) => {
       const next = { ...current };
       const ids = new Set(formes.map((f) => f.id));
       for (const forme of formes) {
-        if (!(forme.id in next)) next[forme.id] = { x: forme.x, y: forme.y };
+        if (!(forme.id in next)) next[forme.id] = { x: forme.x, y: forme.y, width: forme.width, height: forme.height };
       }
       for (const id of Object.keys(next)) {
         if (!ids.has(id)) delete next[id];
@@ -54,25 +63,31 @@ export function PlanCanvas({ formes, pieceNames, onDragEnd, onTap }: PlanCanvasP
     <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-sand-dark">
       <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
         {formes.map((forme) => {
-          const pos = positions[forme.id] ?? { x: forme.x, y: forme.y };
+          const geo = shapes[forme.id] ?? forme;
           const label = forme.piece_id ? (pieceNames[forme.piece_id] ?? '') : '';
           return (
-            <ShapeVisual key={forme.id} forme={forme} pos={pos} label={label} font={font} />
+            <ShapeVisual
+              key={forme.id}
+              forme={forme}
+              geo={geo}
+              label={label}
+              font={font}
+              highlighted={forme.id === highlightFormeId}
+            />
           );
         })}
       </Canvas>
 
       {formes.map((forme) => {
-        const pos = positions[forme.id] ?? { x: forme.x, y: forme.y };
+        const geo = shapes[forme.id] ?? forme;
         return (
           <ShapeHandle
             key={forme.id}
-            x={pos.x}
-            y={pos.y}
-            width={forme.width}
-            height={forme.height}
-            onMove={(x, y) => setPositions((current) => ({ ...current, [forme.id]: { x, y } }))}
-            onEnd={(x, y) => onDragEnd(forme.id, x, y)}
+            geo={geo}
+            onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
+            onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
+            onResize={(geometry) => setShapes((current) => ({ ...current, [forme.id]: geometry }))}
+            onResizeEnd={(geometry) => onResizeEnd(forme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
             onTap={() => onTap(forme)}
           />
         );
@@ -83,76 +98,101 @@ export function PlanCanvas({ formes, pieceNames, onDragEnd, onTap }: PlanCanvasP
 
 function ShapeVisual({
   forme,
-  pos,
+  geo,
   label,
   font,
+  highlighted,
 }: {
   forme: PlanForme;
-  pos: ShapePosition;
+  geo: ShapeGeometry;
   label: string;
   font: SkFont | null;
+  highlighted: boolean;
 }) {
-  const color = forme.piece_id ? '#171717' : '#a3a3a3';
+  const color = highlighted ? '#FF6B4A' : forme.piece_id ? '#171717' : '#a3a3a3';
+  const strokeWidth = highlighted ? 4 : 2;
   return (
     <>
       {forme.shape_type === 'rectangle' && (
-        <Rect x={pos.x} y={pos.y} width={forme.width} height={forme.height} color={color} style="stroke" strokeWidth={2} />
+        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="stroke" strokeWidth={strokeWidth} />
       )}
       {forme.shape_type === 'circle' && (
         <Circle
-          cx={pos.x + forme.width / 2}
-          cy={pos.y + forme.height / 2}
-          r={Math.min(forme.width, forme.height) / 2}
+          cx={geo.x + geo.width / 2}
+          cy={geo.y + geo.height / 2}
+          r={Math.min(geo.width, geo.height) / 2}
           color={color}
           style="stroke"
-          strokeWidth={2}
+          strokeWidth={strokeWidth}
         />
       )}
       {forme.shape_type === 'triangle' && (
-        <Path path={trianglePath(pos.x, pos.y, forme.width, forme.height)} color={color} style="stroke" strokeWidth={2} />
+        <Path path={trianglePath(geo.x, geo.y, geo.width, geo.height)} color={color} style="stroke" strokeWidth={strokeWidth} />
       )}
-      {label && font ? <SkiaText x={pos.x + 6} y={pos.y + forme.height / 2} text={label} font={font} color="#171717" /> : null}
+      {label && font ? <SkiaText x={geo.x + 6} y={geo.y + geo.height / 2} text={label} font={font} color="#171717" /> : null}
     </>
   );
 }
 
 function ShapeHandle({
-  x,
-  y,
-  width,
-  height,
+  geo,
   onMove,
-  onEnd,
+  onDragEnd,
+  onResize,
+  onResizeEnd,
   onTap,
 }: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  geo: ShapeGeometry;
   onMove: (x: number, y: number) => void;
-  onEnd: (x: number, y: number) => void;
+  onDragEnd: (x: number, y: number) => void;
+  onResize: (geometry: ShapeGeometry) => void;
+  onResizeEnd: (geometry: ShapeGeometry) => void;
   onTap: () => void;
 }) {
-  // The gesture's translationX/Y is always relative to where the touch
-  // started, so the origin must be captured once at onStart — recomputing
-  // from the (constantly-changing, as onMove re-renders the parent) x/y
-  // props on every onUpdate would double-count the movement already applied.
-  const origin = useRef({ x, y });
+  // Gesture callbacks close over stale props, so both origins are captured
+  // once at the start of their gesture (in a ref) rather than recomputed
+  // from geo on every update — geo itself changes every frame as onMove/
+  // onResize re-render the parent, which would double-count movement.
+  const dragOrigin = useRef(geo);
+  const resizeOrigin = useRef(geo);
+
+  const computeResize = (scale: number): ShapeGeometry => {
+    const origin = resizeOrigin.current;
+    const width = clampSize(origin.width * scale);
+    const height = clampSize(origin.height * scale);
+    const centerX = origin.x + origin.width / 2;
+    const centerY = origin.y + origin.height / 2;
+    return { x: centerX - width / 2, y: centerY - height / 2, width, height };
+  };
 
   const pan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
     .runOnJS(true)
     .onStart(() => {
-      origin.current = { x, y };
+      dragOrigin.current = geo;
     })
-    .onUpdate((event) => onMove(origin.current.x + event.translationX, origin.current.y + event.translationY))
-    .onEnd((event) => onEnd(origin.current.x + event.translationX, origin.current.y + event.translationY));
+    .onUpdate((event) => onMove(dragOrigin.current.x + event.translationX, dragOrigin.current.y + event.translationY))
+    .onEnd((event) => onDragEnd(dragOrigin.current.x + event.translationX, dragOrigin.current.y + event.translationY));
+
+  // "Comme redimensionner une photo" -> mise à l'échelle uniforme (largeur
+  // et hauteur ensemble) autour du centre de la forme, pas des poignées de
+  // coin séparées — plus simple à utiliser au doigt et cohérent avec le
+  // rendu (un cercle doit rester un cercle).
+  const pinch = Gesture.Pinch()
+    .runOnJS(true)
+    .onStart(() => {
+      resizeOrigin.current = geo;
+    })
+    .onUpdate((event) => onResize(computeResize(event.scale)))
+    .onEnd((event) => onResizeEnd(computeResize(event.scale)));
 
   const tap = Gesture.Tap().runOnJS(true).onEnd(() => onTap());
-  const gesture = Gesture.Exclusive(pan, tap);
+  const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), tap);
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={{ position: 'absolute', left: x, top: y, width, height }} />
+      <View style={{ position: 'absolute', left: geo.x, top: geo.y, width: geo.width, height: geo.height }} />
     </GestureDetector>
   );
 }

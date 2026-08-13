@@ -128,7 +128,35 @@ export function useUpdatePlanForme(planId: string) {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
+    onSuccess: (_data, input) => {
+      queryClient.invalidateQueries({ queryKey: ['planFormes', planId] });
+      // pieceId change affects whether the objet page's "Voir sur le plan"
+      // link exists at all — bust broadly rather than tracking which piece
+      // lost/gained the association (both the old and new one could change).
+      if (input.pieceId !== undefined) queryClient.invalidateQueries({ queryKey: ['pieceLocationOnPlan'] });
+    },
+  });
+}
+
+export type PieceLocationOnPlan = { planId: string; formeId: string };
+
+// Utilisé depuis la fiche Objet ("Voir sur le plan") pour savoir si la pièce
+// de l'objet a déjà été placée sur un plan, et sur lequel — une pièce n'a
+// normalement qu'une forme associée au plus, on prend la première.
+export function usePieceLocationOnPlan(pieceId: string) {
+  return useQuery({
+    queryKey: ['pieceLocationOnPlan', pieceId],
+    enabled: !!pieceId,
+    queryFn: async (): Promise<PieceLocationOnPlan | null> => {
+      const { data, error } = await supabase
+        .from('plan_formes')
+        .select('id, plan_id')
+        .eq('piece_id', pieceId)
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? { planId: data.plan_id, formeId: data.id } : null;
+    },
   });
 }
 

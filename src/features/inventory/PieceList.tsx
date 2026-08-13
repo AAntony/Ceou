@@ -34,7 +34,7 @@ export function PieceList({ habitationId }: PieceListProps) {
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
         {isEmpty ? (
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
@@ -54,7 +54,7 @@ export function PieceList({ habitationId }: PieceListProps) {
         )}
       </ScrollView>
 
-      <BottomActionBar>
+      <BottomActionBar extraBottomOffset={88}>
         <View className="flex-1">
           <Button
             label={t('inventory.pieces.add')}

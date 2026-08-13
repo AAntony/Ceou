@@ -6,6 +6,7 @@
     "add": "Ajouter",
     "delete": "Supprimer",
     "back": "Retour",
+    "close": "Fermer",
     "loading": "Chargement...",
     "error_generic": "Une erreur est survenue. Réessaie.",
     "other": "Autre"
@@ -154,7 +155,8 @@
       "history_title": "Historique des déplacements",
       "history_empty": "Aucun déplacement pour l'instant.",
       "delete_confirm_title": "Supprimer cet objet ?",
-      "delete_confirm_message": "Cette action est irréversible."
+      "delete_confirm_message": "Cette action est irréversible.",
+      "view_on_plan": "Voir sur le plan"
     }
   },
   "plans": {
@@ -167,6 +169,7 @@
     "name_label": "Nom",
     "delete_confirm_title": "Supprimer ce plan ?",
     "delete_confirm_message": "Toutes les formes qu'il contient seront supprimées.",
+    "canvas_hint": "Glisse pour déplacer, pince pour redimensionner, appuie pour associer une pièce.",
     "shapeTypes": {
       "rectangle": "Rectangle",
       "circle": "Cercle",
@@ -174,8 +177,6 @@
     },
     "shape": {
       "title": "Forme",
-      "width": "Largeur",
-      "height": "Hauteur",
       "piece_label": "Pièce associée",
       "no_piece": "Aucune"
     }
