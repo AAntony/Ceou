@@ -169,7 +169,8 @@
     "name_label": "Nom",
     "delete_confirm_title": "Supprimer ce plan ?",
     "delete_confirm_message": "Toutes les formes qu'il contient seront supprimées.",
-    "canvas_hint": "Glisse pour déplacer, pince pour redimensionner, appuie pour associer une pièce.",
+    "canvas_hint": "Appuie pour sélectionner une forme, puis glisse ou pince pour la modifier. Valide pour en choisir une autre.",
+    "validate_selection": "Valider",
     "shapeTypes": {
       "rectangle": "Rectangle",
       "circle": "Cercle",

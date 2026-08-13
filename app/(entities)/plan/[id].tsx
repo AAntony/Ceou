@@ -19,7 +19,12 @@ export default function PlanScreen() {
   const createForme = useCreatePlanForme(id);
   const updateForme = useUpdatePlanForme(id);
   const deleteForme = useDeletePlanForme(id);
-  const [selectedForme, setSelectedForme] = useState<PlanForme | null>(null);
+  // sheetForme pilote la fiche (choix de pièce / suppression) ; selectedFormeId
+  // pilote l'exclusivité de déplacement/redimensionnement sur le canevas —
+  // deux états séparés car fermer la fiche ne doit pas relâcher la sélection
+  // (seul le bouton "Valider" le fait).
+  const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
+  const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const pieceNames = useMemo(() => Object.fromEntries((pieces ?? []).map((p) => [p.id, p.name])), [pieces]);
@@ -57,24 +62,30 @@ export default function PlanScreen() {
           formes={formes ?? []}
           pieceNames={pieceNames}
           highlightFormeId={highlightFormeId}
+          selectedFormeId={selectedFormeId}
           onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
           onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
-          onTap={(forme) => setSelectedForme(forme)}
+          onTap={(forme) => {
+            setSelectedFormeId(forme.id);
+            setSheetForme(forme);
+          }}
+          onDeselect={() => setSelectedFormeId(null)}
         />
       </ScrollView>
 
       <ShapeInspectorSheet
-        forme={selectedForme}
+        forme={sheetForme}
         pieces={pieces ?? []}
-        onClose={() => setSelectedForme(null)}
+        onClose={() => setSheetForme(null)}
         onChoosePiece={(pieceId) => {
-          if (!selectedForme) return;
-          updateForme.mutate({ id: selectedForme.id, pieceId });
+          if (!sheetForme) return;
+          updateForme.mutate({ id: sheetForme.id, pieceId });
         }}
         onDelete={() => {
-          if (!selectedForme) return;
-          deleteForme.mutate(selectedForme.id);
-          setSelectedForme(null);
+          if (!sheetForme) return;
+          deleteForme.mutate(sheetForme.id);
+          setSelectedFormeId(null);
+          setSheetForme(null);
         }}
       />
     </>

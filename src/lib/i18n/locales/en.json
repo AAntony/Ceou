@@ -169,7 +169,8 @@
     "name_label": "Name",
     "delete_confirm_title": "Delete this plan?",
     "delete_confirm_message": "All the shapes it contains will be deleted.",
-    "canvas_hint": "Drag to move, pinch to resize, tap to link a room.",
+    "canvas_hint": "Tap a shape to select it, then drag or pinch to edit it. Confirm to pick another one.",
+    "validate_selection": "Confirm",
     "shapeTypes": {
       "rectangle": "Rectangle",
       "circle": "Circle",

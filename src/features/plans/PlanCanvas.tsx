@@ -1,7 +1,9 @@
 import { Canvas, Circle, matchFont, Path, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Platform, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Icon } from '../../components/Icon';
 import type { PlanForme } from '../../types/database';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE } from './constants';
 
@@ -11,9 +13,11 @@ type PlanCanvasProps = {
   formes: PlanForme[];
   pieceNames: Record<string, string>;
   highlightFormeId?: string | null;
+  selectedFormeId: string | null;
   onDragEnd: (id: string, x: number, y: number) => void;
   onResizeEnd: (id: string, x: number, y: number, width: number, height: number) => void;
   onTap: (forme: PlanForme) => void;
+  onDeselect: () => void;
 };
 
 function trianglePath(x: number, y: number, width: number, height: number): string {
@@ -24,7 +28,17 @@ function clampSize(value: number): number {
   return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
 }
 
-export function PlanCanvas({ formes, pieceNames, highlightFormeId, onDragEnd, onResizeEnd, onTap }: PlanCanvasProps) {
+export function PlanCanvas({
+  formes,
+  pieceNames,
+  highlightFormeId,
+  selectedFormeId,
+  onDragEnd,
+  onResizeEnd,
+  onTap,
+  onDeselect,
+}: PlanCanvasProps) {
+  const { t } = useTranslation();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le pan (x/y) et le pincement (x/y/width/height, le centre restant fixe)
   // — un seul aller-retour réseau à la fin du geste, pas à chaque frame.
@@ -72,7 +86,7 @@ export function PlanCanvas({ formes, pieceNames, highlightFormeId, onDragEnd, on
               geo={geo}
               label={label}
               font={font}
-              highlighted={forme.id === highlightFormeId}
+              active={forme.id === highlightFormeId || forme.id === selectedFormeId}
             />
           );
         })}
@@ -80,10 +94,17 @@ export function PlanCanvas({ formes, pieceNames, highlightFormeId, onDragEnd, on
 
       {formes.map((forme) => {
         const geo = shapes[forme.id] ?? forme;
+        const isSelected = forme.id === selectedFormeId;
+        // Une seule forme à la fois peut être déplacée/redimensionnée — les
+        // autres restent verrouillées (même le tap) tant que "Valider" n'a
+        // pas relâché la sélection en cours.
+        const locked = selectedFormeId !== null && !isSelected;
         return (
           <ShapeHandle
             key={forme.id}
             geo={geo}
+            isSelected={isSelected}
+            locked={locked}
             onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
             onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
             onResize={(geometry) => setShapes((current) => ({ ...current, [forme.id]: geometry }))}
@@ -92,6 +113,16 @@ export function PlanCanvas({ formes, pieceNames, highlightFormeId, onDragEnd, on
           />
         );
       })}
+
+      {selectedFormeId ? (
+        <Pressable
+          onPress={onDeselect}
+          accessibilityLabel={t('plans.validate_selection')}
+          className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-coral shadow-md active:opacity-80"
+        >
+          <Icon name="validate" size={20} color="#fff" />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -101,16 +132,16 @@ function ShapeVisual({
   geo,
   label,
   font,
-  highlighted,
+  active,
 }: {
   forme: PlanForme;
   geo: ShapeGeometry;
   label: string;
   font: SkFont | null;
-  highlighted: boolean;
+  active: boolean;
 }) {
-  const color = highlighted ? '#FF6B4A' : forme.piece_id ? '#171717' : '#a3a3a3';
-  const strokeWidth = highlighted ? 4 : 2;
+  const color = active ? '#FF6B4A' : forme.piece_id ? '#171717' : '#a3a3a3';
+  const strokeWidth = active ? 4 : 2;
   return (
     <>
       {forme.shape_type === 'rectangle' && (
@@ -136,6 +167,8 @@ function ShapeVisual({
 
 function ShapeHandle({
   geo,
+  isSelected,
+  locked,
   onMove,
   onDragEnd,
   onResize,
@@ -143,6 +176,8 @@ function ShapeHandle({
   onTap,
 }: {
   geo: ShapeGeometry;
+  isSelected: boolean;
+  locked: boolean;
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onResize: (geometry: ShapeGeometry) => void;
@@ -175,10 +210,15 @@ function ShapeHandle({
   // le geste n'est jamais détecté du tout.
   const HIT_SLOP = 40;
 
+  // Seule la forme sélectionnée peut être déplacée ou redimensionnée ; le
+  // tap reste actif sur les autres uniquement tant que rien n'est encore
+  // sélectionné (pour pouvoir en choisir une) — "locked" ferme tout le
+  // reste dès qu'une sélection est en cours, jusqu'au bouton "Valider".
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
     .hitSlop(HIT_SLOP)
+    .enabled(isSelected)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = geo;
@@ -192,6 +232,7 @@ function ShapeHandle({
   // rendu (un cercle doit rester un cercle).
   const pinch = Gesture.Pinch()
     .hitSlop(HIT_SLOP)
+    .enabled(isSelected)
     .runOnJS(true)
     .onStart(() => {
       resizeOrigin.current = geo;
@@ -203,7 +244,7 @@ function ShapeHandle({
     })
     .onEnd(() => onResizeEnd(lastResize.current));
 
-  const tap = Gesture.Tap().hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onTap());
+  const tap = Gesture.Tap().hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onTap());
   const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), tap);
 
   return (
