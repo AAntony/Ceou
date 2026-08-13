@@ -65,7 +65,8 @@ export default function PlanScreen() {
           selectedFormeId={selectedFormeId}
           onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
           onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
-          onTap={(forme) => {
+          onSelect={(forme) => setSelectedFormeId(forme.id)}
+          onOpenSheet={(forme) => {
             setSelectedFormeId(forme.id);
             setSheetForme(forme);
           }}

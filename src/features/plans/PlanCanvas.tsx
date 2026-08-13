@@ -16,7 +16,8 @@ type PlanCanvasProps = {
   selectedFormeId: string | null;
   onDragEnd: (id: string, x: number, y: number) => void;
   onResizeEnd: (id: string, x: number, y: number, width: number, height: number) => void;
-  onTap: (forme: PlanForme) => void;
+  onSelect: (forme: PlanForme) => void;
+  onOpenSheet: (forme: PlanForme) => void;
   onDeselect: () => void;
 };
 
@@ -35,7 +36,8 @@ export function PlanCanvas({
   selectedFormeId,
   onDragEnd,
   onResizeEnd,
-  onTap,
+  onSelect,
+  onOpenSheet,
   onDeselect,
 }: PlanCanvasProps) {
   const { t } = useTranslation();
@@ -109,7 +111,8 @@ export function PlanCanvas({
             onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
             onResize={(geometry) => setShapes((current) => ({ ...current, [forme.id]: geometry }))}
             onResizeEnd={(geometry) => onResizeEnd(forme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
-            onTap={() => onTap(forme)}
+            onSelect={() => onSelect(forme)}
+            onOpenSheet={() => onOpenSheet(forme)}
           />
         );
       })}
@@ -173,7 +176,8 @@ function ShapeHandle({
   onDragEnd,
   onResize,
   onResizeEnd,
-  onTap,
+  onSelect,
+  onOpenSheet,
 }: {
   geo: ShapeGeometry;
   isSelected: boolean;
@@ -182,7 +186,8 @@ function ShapeHandle({
   onDragEnd: (x: number, y: number) => void;
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
-  onTap: () => void;
+  onSelect: () => void;
+  onOpenSheet: () => void;
 }) {
   // Gesture callbacks close over stale props, so both origins are captured
   // once at the start of their gesture (in a ref) rather than recomputed
@@ -244,8 +249,15 @@ function ShapeHandle({
     })
     .onEnd(() => onResizeEnd(lastResize.current));
 
-  const tap = Gesture.Tap().hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onTap());
-  const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), tap);
+  // Un tap simple sélectionne (déplacer/redimensionner) ; il faut un
+  // double-tap pour ouvrir la fiche (choix de pièce/suppression) — sinon
+  // la fiche s'ouvrait à chaque tap, gênant pour qui veut juste ajuster la
+  // position. doubleTap doit être listé en premier dans Exclusive : c'est
+  // ce qui fait attendre singleTap le temps de voir si un second tap suit.
+  const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onSelect());
+  const doubleTap = Gesture.Tap().numberOfTaps(2).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onOpenSheet());
+  const taps = Gesture.Exclusive(doubleTap, singleTap);
+  const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), taps);
 
   return (
     <GestureDetector gesture={gesture}>
