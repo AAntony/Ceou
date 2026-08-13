@@ -1,4 +1,4 @@
-import { Canvas, Circle, matchFont, Path, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
+import { Canvas, matchFont, Oval, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, View } from 'react-native';
@@ -8,6 +8,16 @@ import type { PlanForme } from '../../types/database';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE } from './constants';
 
 type ShapeGeometry = { x: number; y: number; width: number; height: number };
+
+// nw/n/ne/e/se/s/sw/w — les 4 coins ajustent largeur ET hauteur (bord opposé
+// fixe), les 4 milieux de segment n'ajustent qu'une seule dimension. Un
+// cercle n'a que les 4 points cardinaux (pas de "coin" pertinent sur son
+// pourtour) mais la même logique de bords opposés fixes s'applique
+// telle quelle pour en faire un ovale.
+type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+
+const RECT_HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+const OVAL_HANDLES: HandleId[] = ['n', 'e', 's', 'w'];
 
 type PlanCanvasProps = {
   formes: PlanForme[];
@@ -21,12 +31,52 @@ type PlanCanvasProps = {
   onDeselect: () => void;
 };
 
-function trianglePath(x: number, y: number, width: number, height: number): string {
-  return `M ${x + width / 2},${y} L ${x + width},${y + height} L ${x},${y + height} Z`;
-}
-
 function clampSize(value: number): number {
   return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
+}
+
+function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
+  const cx = geo.x + geo.width / 2;
+  const cy = geo.y + geo.height / 2;
+  const right = geo.x + geo.width;
+  const bottom = geo.y + geo.height;
+  const positions: Record<HandleId, { x: number; y: number }> = {
+    nw: { x: geo.x, y: geo.y },
+    n: { x: cx, y: geo.y },
+    ne: { x: right, y: geo.y },
+    e: { x: right, y: cy },
+    se: { x: right, y: bottom },
+    s: { x: cx, y: bottom },
+    sw: { x: geo.x, y: bottom },
+    w: { x: geo.x, y: cy },
+  };
+  return positions[handle];
+}
+
+// Chaque poignée ne déplace que les bords qu'elle touche ; le(s) bord(s)
+// opposé(s) restent ancrés sur la géométrie au début du geste — largeur et
+// hauteur s'ajustent donc indépendamment (un rectangle peut redevenir un
+// rectangle, pas juste un carré comme avec l'ancien pincement uniforme).
+function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: number): ShapeGeometry {
+  let { x, y, width, height } = origin;
+  const right = origin.x + origin.width;
+  const bottom = origin.y + origin.height;
+
+  if (handle.includes('w')) {
+    width = clampSize(origin.width - dx);
+    x = right - width;
+  }
+  if (handle.includes('e')) {
+    width = clampSize(origin.width + dx);
+  }
+  if (handle.includes('n')) {
+    height = clampSize(origin.height - dy);
+    y = bottom - height;
+  }
+  if (handle.includes('s')) {
+    height = clampSize(origin.height + dy);
+  }
+  return { x, y, width, height };
 }
 
 export function PlanCanvas({
@@ -42,8 +92,9 @@ export function PlanCanvas({
 }: PlanCanvasProps) {
   const { t } = useTranslation();
   // Position ET taille vivent dans le même state, mises à jour en direct par
-  // le pan (x/y) et le pincement (x/y/width/height, le centre restant fixe)
-  // — un seul aller-retour réseau à la fin du geste, pas à chaque frame.
+  // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
+  // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
+  // frame.
   const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
@@ -75,6 +126,8 @@ export function PlanCanvas({
     });
   }, [formes]);
 
+  const selectedForme = formes.find((f) => f.id === selectedFormeId) ?? null;
+
   return (
     <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-sand-dark">
       <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
@@ -102,20 +155,30 @@ export function PlanCanvas({
         // pas relâché la sélection en cours.
         const locked = selectedFormeId !== null && !isSelected;
         return (
-          <ShapeHandle
+          <ShapeBody
             key={forme.id}
             geo={geo}
             isSelected={isSelected}
             locked={locked}
             onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
             onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
-            onResize={(geometry) => setShapes((current) => ({ ...current, [forme.id]: geometry }))}
-            onResizeEnd={(geometry) => onResizeEnd(forme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
             onSelect={() => onSelect(forme)}
             onOpenSheet={() => onOpenSheet(forme)}
           />
         );
       })}
+
+      {selectedForme
+        ? (selectedForme.shape_type === 'rectangle' ? RECT_HANDLES : OVAL_HANDLES).map((handle) => (
+            <HandleDot
+              key={handle}
+              geo={shapes[selectedForme.id] ?? selectedForme}
+              handle={handle}
+              onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
+              onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
+            />
+          ))
+        : null}
 
       {selectedFormeId ? (
         <Pressable
@@ -147,35 +210,24 @@ function ShapeVisual({
   const strokeWidth = active ? 4 : 2;
   return (
     <>
-      {forme.shape_type === 'rectangle' && (
+      {forme.shape_type === 'rectangle' ? (
         <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="stroke" strokeWidth={strokeWidth} />
-      )}
-      {forme.shape_type === 'circle' && (
-        <Circle
-          cx={geo.x + geo.width / 2}
-          cy={geo.y + geo.height / 2}
-          r={Math.min(geo.width, geo.height) / 2}
-          color={color}
-          style="stroke"
-          strokeWidth={strokeWidth}
-        />
-      )}
-      {forme.shape_type === 'triangle' && (
-        <Path path={trianglePath(geo.x, geo.y, geo.width, geo.height)} color={color} style="stroke" strokeWidth={strokeWidth} />
+      ) : (
+        <Oval x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="stroke" strokeWidth={strokeWidth} />
       )}
       {label && font ? <SkiaText x={geo.x + 6} y={geo.y + geo.height / 2} text={label} font={font} color="#171717" /> : null}
     </>
   );
 }
 
-function ShapeHandle({
+// Déplacement (tout le corps de la forme, uniquement quand sélectionnée) +
+// sélection au tap simple / ouverture de la fiche au double-tap.
+function ShapeBody({
   geo,
   isSelected,
   locked,
   onMove,
   onDragEnd,
-  onResize,
-  onResizeEnd,
   onSelect,
   onOpenSheet,
 }: {
@@ -184,45 +236,15 @@ function ShapeHandle({
   locked: boolean;
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
-  onResize: (geometry: ShapeGeometry) => void;
-  onResizeEnd: (geometry: ShapeGeometry) => void;
   onSelect: () => void;
   onOpenSheet: () => void;
 }) {
-  // Gesture callbacks close over stale props, so both origins are captured
-  // once at the start of their gesture (in a ref) rather than recomputed
-  // from geo on every update — geo itself changes every frame as onMove/
-  // onResize re-render the parent, which would double-count movement.
   const dragOrigin = useRef(geo);
-  const resizeOrigin = useRef(geo);
-  // RNGH's Pinch onEnd payload can report a stale/reset `scale`, so the
-  // last value actually applied during onUpdate is what onEnd persists —
-  // it doesn't re-derive from the end event.
-  const lastResize = useRef(geo);
+  const HIT_SLOP = 12;
 
-  const computeResize = (scale: number): ShapeGeometry => {
-    const origin = resizeOrigin.current;
-    const width = clampSize(origin.width * scale);
-    const height = clampSize(origin.height * scale);
-    const centerX = origin.x + origin.width / 2;
-    const centerY = origin.y + origin.height / 2;
-    return { x: centerX - width / 2, y: centerY - height / 2, width, height };
-  };
-
-  // Zone de détection élargie au-delà du contour visible : une forme par
-  // défaut (80x80) est plus petite que l'écartement naturel de deux doigts
-  // qui pincent, donc sans marge le second doigt atterrit hors de la vue et
-  // le geste n'est jamais détecté du tout.
-  const HIT_SLOP = 40;
-
-  // Seule la forme sélectionnée peut être déplacée ou redimensionnée ; le
-  // tap reste actif sur les autres uniquement tant que rien n'est encore
-  // sélectionné (pour pouvoir en choisir une) — "locked" ferme tout le
-  // reste dès qu'une sélection est en cours, jusqu'au bouton "Valider".
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .hitSlop(HIT_SLOP)
     .enabled(isSelected)
     .runOnJS(true)
     .onStart(() => {
@@ -230,24 +252,6 @@ function ShapeHandle({
     })
     .onUpdate((event) => onMove(dragOrigin.current.x + event.translationX, dragOrigin.current.y + event.translationY))
     .onEnd((event) => onDragEnd(dragOrigin.current.x + event.translationX, dragOrigin.current.y + event.translationY));
-
-  // "Comme redimensionner une photo" -> mise à l'échelle uniforme (largeur
-  // et hauteur ensemble) autour du centre de la forme, pas des poignées de
-  // coin séparées — plus simple à utiliser au doigt et cohérent avec le
-  // rendu (un cercle doit rester un cercle).
-  const pinch = Gesture.Pinch()
-    .hitSlop(HIT_SLOP)
-    .enabled(isSelected)
-    .runOnJS(true)
-    .onStart(() => {
-      resizeOrigin.current = geo;
-      lastResize.current = geo;
-    })
-    .onUpdate((event) => {
-      lastResize.current = computeResize(event.scale);
-      onResize(lastResize.current);
-    })
-    .onEnd(() => onResizeEnd(lastResize.current));
 
   // Un tap simple sélectionne (déplacer/redimensionner) ; il faut un
   // double-tap pour ouvrir la fiche (choix de pièce/suppression) — sinon
@@ -257,11 +261,74 @@ function ShapeHandle({
   const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onSelect());
   const doubleTap = Gesture.Tap().numberOfTaps(2).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onOpenSheet());
   const taps = Gesture.Exclusive(doubleTap, singleTap);
-  const gesture = Gesture.Exclusive(Gesture.Simultaneous(pan, pinch), taps);
+  const gesture = Gesture.Exclusive(pan, taps);
 
   return (
     <GestureDetector gesture={gesture}>
       <View style={{ position: 'absolute', left: geo.x, top: geo.y, width: geo.width, height: geo.height }} />
+    </GestureDetector>
+  );
+}
+
+const HANDLE_TOUCH_SIZE = 32;
+const HANDLE_DOT_SIZE = 12;
+
+// Petit point d'ancrage — sa propre zone de geste (32x32, centrée sur le
+// point), rendu par-dessus ShapeBody pour que le toucher y soit prioritaire
+// à cet endroit précis plutôt que d'aller au déplacement.
+function HandleDot({
+  geo,
+  handle,
+  onResize,
+  onResizeEnd,
+}: {
+  geo: ShapeGeometry;
+  handle: HandleId;
+  onResize: (geometry: ShapeGeometry) => void;
+  onResizeEnd: (geometry: ShapeGeometry) => void;
+}) {
+  const origin = useRef(geo);
+  const last = useRef(geo);
+  const anchor = handleAnchor(geo, handle);
+
+  const pan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
+    .runOnJS(true)
+    .onStart(() => {
+      origin.current = geo;
+      last.current = geo;
+    })
+    .onUpdate((event) => {
+      last.current = applyHandle(origin.current, handle, event.translationX, event.translationY);
+      onResize(last.current);
+    })
+    .onEnd(() => onResizeEnd(last.current));
+
+  return (
+    <GestureDetector gesture={pan}>
+      <View
+        style={{
+          position: 'absolute',
+          left: anchor.x - HANDLE_TOUCH_SIZE / 2,
+          top: anchor.y - HANDLE_TOUCH_SIZE / 2,
+          width: HANDLE_TOUCH_SIZE,
+          height: HANDLE_TOUCH_SIZE,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <View
+          style={{
+            width: HANDLE_DOT_SIZE,
+            height: HANDLE_DOT_SIZE,
+            borderRadius: HANDLE_DOT_SIZE / 2,
+            backgroundColor: '#FF6B4A',
+            borderWidth: 2,
+            borderColor: '#fff',
+          }}
+        />
+      </View>
     </GestureDetector>
   );
 }

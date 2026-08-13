@@ -27,7 +27,6 @@ export type IconName =
   // Plan shapes
   | 'rectangle'
   | 'circle'
-  | 'triangle'
   // Generic UI
   | 'pencil'
   | 'chevron'
@@ -72,7 +71,6 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
 
   rectangle: 'vector-rectangle',
   circle: 'vector-circle',
-  triangle: 'vector-triangle',
 
   pencil: 'pencil',
   chevron: 'chevron-right',
