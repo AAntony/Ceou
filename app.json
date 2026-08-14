@@ -34,6 +34,13 @@
         {
           "cameraPermission": "Ceou a besoin de l'appareil photo pour scanner les codes-barres et photographier tes objets."
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Ceou a besoin du microphone pour rechercher un objet à la voix.",
+          "speechRecognitionPermission": "Ceou a besoin de la reconnaissance vocale pour rechercher un objet à la voix."
+        }
       ]
     ],
     "extra": {

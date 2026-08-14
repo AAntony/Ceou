@@ -68,7 +68,10 @@
     "no_results": "Aucun résultat pour cette recherche.",
     "choose_location": "Choisis un emplacement",
     "choose_location_here": "Ranger ici",
-    "onboarding_hint": "Un objet a toujours besoin d'un endroit où vivre. Crée ta première habitation pour commencer à ranger tes affaires."
+    "onboarding_hint": "Un objet a toujours besoin d'un endroit où vivre. Crée ta première habitation pour commencer à ranger tes affaires.",
+    "voice_search_listening": "Je t'écoute...",
+    "voice_search_permission_message": "Autorise l'accès au microphone pour rechercher à la voix.",
+    "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie."
   },
   "inventory": {
     "habitations": {

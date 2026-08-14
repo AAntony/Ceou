@@ -6,6 +6,7 @@ import { Icon } from '../../components/Icon';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex } from './queries';
+import { useVoiceSearch } from './useVoiceSearch';
 
 export function HomeDashboard() {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ export function HomeDashboard() {
 
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+  const voiceSearch = useVoiceSearch(setSearchText);
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -62,12 +64,19 @@ export function HomeDashboard() {
             <TextInput
               value={searchText}
               onChangeText={setSearchText}
-              placeholder={t('home.search_placeholder')}
+              placeholder={voiceSearch.isListening ? t('home.voice_search_listening') : t('home.search_placeholder')}
               placeholderTextColor="#A39C8F"
               autoCapitalize="none"
               autoCorrect={false}
               className="ml-2 flex-1 text-base text-ink"
             />
+            <Pressable
+              onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
+              hitSlop={8}
+              className="ml-2"
+            >
+              <Icon name="microphone" size={20} color={voiceSearch.isListening ? '#FF6B4A' : '#A39C8F'} />
+            </Pressable>
           </View>
         </View>
 
