@@ -8,6 +8,17 @@ import { ResultCard } from './ResultCard';
 import { useSearchIndex } from './queries';
 import { useVoiceSearch } from './useVoiceSearch';
 
+// En dessous de cette taille, un "mot" est presque toujours un mot de
+// liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
+// reconnaissance vocale en ajoute plusieurs par phrase ("Un coussin") qui
+// casseraient une correspondance sur la phrase entière.
+const MIN_SEARCH_WORD_LENGTH = 3;
+
+function searchTermsFor(query: string): string[] {
+  const words = query.split(/\s+/).filter((word) => word.length >= MIN_SEARCH_WORD_LENGTH);
+  return words.length > 0 ? words : query ? [query] : [];
+}
+
 export function HomeDashboard() {
   const { t } = useTranslation();
   const { data: profile } = useProfile();
@@ -27,20 +38,24 @@ export function HomeDashboard() {
   }, [entries]);
 
   const trimmedSearch = searchText.trim().toLowerCase();
+  const searchTerms = useMemo(() => searchTermsFor(trimmedSearch), [trimmedSearch]);
 
   const filtered = useMemo(() => {
     let list = entries ?? [];
     // Grille par défaut = objets uniquement ; une recherche texte élargit
-    // aux conteneurs/emplacements/pièces correspondants.
+    // aux conteneurs/emplacements/pièces correspondants. Un résultat
+    // correspond dès qu'UN SEUL terme de recherche apparaît dans le nom
+    // (pas besoin que la phrase entière corresponde) — sinon "Un coussin"
+    // ne retrouverait jamais l'objet "Coussin".
     list = trimmedSearch
-      ? list.filter((entry) => entry.name.toLowerCase().includes(trimmedSearch))
+      ? list.filter((entry) => searchTerms.some((term) => entry.name.toLowerCase().includes(term)))
       : list.filter((entry) => entry.kind === 'objet');
 
     if (selectedPiece) {
       list = list.filter((entry) => entry.piece_name.trim().toLowerCase() === selectedPiece.toLowerCase());
     }
     return list;
-  }, [entries, trimmedSearch, selectedPiece]);
+  }, [entries, trimmedSearch, searchTerms, selectedPiece]);
 
   const greeting = profile?.display_name
     ? t('home.greeting', { name: profile.display_name })
