@@ -9,7 +9,18 @@ import { Icon } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Piece } from '../../types/database';
-import { EMPLACEMENT_PRESETS, HABITATION_TYPES, getEmplacementIcon, getHabitationIcon, isSingleSpaceHabitation, type EmplacementPresetKey, type HabitationTypeKey } from './constants';
+import {
+  EMPLACEMENT_PRESETS,
+  HABITATION_TYPES,
+  PIECE_TYPES,
+  getEmplacementIcon,
+  getHabitationIcon,
+  getPieceIcon,
+  isSingleSpaceHabitation,
+  type EmplacementPresetKey,
+  type HabitationTypeKey,
+  type PieceTypeKey,
+} from './constants';
 import {
   useContainerContents,
   useCreateConteneur,
@@ -128,7 +139,13 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
   const createHabitation = useCreateHabitation();
   const [modalOpen, setModalOpen] = useState(false);
   const [type, setType] = useState<HabitationTypeKey>('maison');
+  const [name, setName] = useState('');
   const isEmpty = !isLoading && (habitations?.length ?? 0) === 0;
+
+  const handleSelectType = (key: HabitationTypeKey) => {
+    setType(key);
+    setName(t(`inventory.habitationTypes.${key}`));
+  };
 
   return (
     <>
@@ -140,6 +157,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
         label={t('inventory.habitations.add')}
         onPress={() => {
           setType('maison');
+          setName(t('inventory.habitationTypes.maison'));
           setModalOpen(true);
         }}
       />
@@ -150,11 +168,13 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
         nameLabel={t('inventory.habitations.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
+        name={name}
+        onNameChange={setName}
         loading={createHabitation.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
+        onSubmit={async (submittedName) => {
           const definition = HABITATION_TYPES.find((h) => h.key === type)!;
-          const habitation = await createHabitation.mutateAsync({ name, type, icon: definition.icon });
+          const habitation = await createHabitation.mutateAsync({ name: submittedName, type, icon: definition.icon });
           setModalOpen(false);
           onSelect(habitation);
         }}
@@ -162,7 +182,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
         <PresetPicker
           presets={HABITATION_TYPES}
           selectedKey={type}
-          onSelect={(key) => setType(key as HabitationTypeKey)}
+          onSelect={(key) => handleSelectType(key as HabitationTypeKey)}
           labelFor={(key) => t(`inventory.habitationTypes.${key}`)}
         />
       </CreateEntityModal>
@@ -175,15 +195,29 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
   const { data: pieces, isLoading } = usePieces(habitationId);
   const createPiece = useCreatePiece(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
+  const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
+  const [name, setName] = useState('');
   const isEmpty = !isLoading && (pieces?.length ?? 0) === 0;
+
+  const handleSelectPreset = (key: PieceTypeKey) => {
+    setPresetKey(key);
+    setName(t(`inventory.pieceTypes.${key}`));
+  };
 
   return (
     <>
       {isEmpty ? <EmptyState icon="piece" title={t('inventory.pieces.empty')} /> : null}
       {pieces?.map((piece) => (
-        <EntityCard key={piece.id} icon="piece" title={piece.name} onPress={() => onSelect(piece)} />
+        <EntityCard key={piece.id} icon={getPieceIcon(piece.preset_key)} title={piece.name} onPress={() => onSelect(piece)} />
       ))}
-      <AddInlineCard label={t('inventory.pieces.add')} onPress={() => setModalOpen(true)} />
+      <AddInlineCard
+        label={t('inventory.pieces.add')}
+        onPress={() => {
+          setPresetKey(null);
+          setName('');
+          setModalOpen(true);
+        }}
+      />
 
       <CreateEntityModal
         visible={modalOpen}
@@ -191,14 +225,23 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
         nameLabel={t('inventory.pieces.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
+        name={name}
+        onNameChange={setName}
         loading={createPiece.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
-          const piece = await createPiece.mutateAsync(name);
+        onSubmit={async (submittedName) => {
+          const piece = await createPiece.mutateAsync({ name: submittedName, presetKey });
           setModalOpen(false);
           onSelect(piece);
         }}
-      />
+      >
+        <PresetPicker
+          presets={PIECE_TYPES}
+          selectedKey={presetKey}
+          onSelect={(key) => handleSelectPreset(key as PieceTypeKey)}
+          labelFor={(key) => t(`inventory.pieceTypes.${key}`)}
+        />
+      </CreateEntityModal>
     </>
   );
 }
@@ -217,7 +260,13 @@ function EmplacementsStep({
   const createEmplacement = useCreateEmplacement(pieceId);
   const [modalOpen, setModalOpen] = useState(false);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
+  const [name, setName] = useState('');
   const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
+
+  const handleSelectPreset = (key: EmplacementPresetKey) => {
+    setPresetKey(key);
+    setName(t(`inventory.emplacementPresets.${key}`));
+  };
 
   return (
     <>
@@ -234,6 +283,7 @@ function EmplacementsStep({
         label={t('inventory.emplacements.add')}
         onPress={() => {
           setPresetKey(null);
+          setName('');
           setModalOpen(true);
         }}
       />
@@ -244,10 +294,12 @@ function EmplacementsStep({
         nameLabel={t('inventory.emplacements.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
+        name={name}
+        onNameChange={setName}
         loading={createEmplacement.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
-          const emplacement = await createEmplacement.mutateAsync({ name, presetKey });
+        onSubmit={async (submittedName) => {
+          const emplacement = await createEmplacement.mutateAsync({ name: submittedName, presetKey });
           setModalOpen(false);
           onCreated(emplacement);
         }}
@@ -255,7 +307,7 @@ function EmplacementsStep({
         <PresetPicker
           presets={EMPLACEMENT_PRESETS}
           selectedKey={presetKey}
-          onSelect={(key) => setPresetKey(key as EmplacementPresetKey)}
+          onSelect={(key) => handleSelectPreset(key as EmplacementPresetKey)}
           labelFor={(key) => t(`inventory.emplacementPresets.${key}`)}
         />
       </CreateEntityModal>
@@ -284,6 +336,7 @@ function ContainerStep({
   const { conteneurs } = useContainerContents(type, id);
   const createConteneur = useCreateConteneur(type, id);
   const [modalOpen, setModalOpen] = useState(false);
+  const [name, setName] = useState('');
 
   return (
     <>
@@ -293,7 +346,13 @@ function ContainerStep({
       {conteneurs.map((conteneur) => (
         <EntityCard key={conteneur.id} icon="conteneur" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
       ))}
-      <AddInlineCard label={t('inventory.container.add_conteneur')} onPress={() => setModalOpen(true)} />
+      <AddInlineCard
+        label={t('inventory.container.add_conteneur')}
+        onPress={() => {
+          setName('');
+          setModalOpen(true);
+        }}
+      />
 
       <CreateEntityModal
         visible={modalOpen}
@@ -301,10 +360,12 @@ function ContainerStep({
         nameLabel={t('inventory.container.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
+        name={name}
+        onNameChange={setName}
         loading={createConteneur.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
-          const conteneur = await createConteneur.mutateAsync(name);
+        onSubmit={async (submittedName) => {
+          const conteneur = await createConteneur.mutateAsync(submittedName);
           setModalOpen(false);
           onCreatedConteneur(conteneur);
         }}

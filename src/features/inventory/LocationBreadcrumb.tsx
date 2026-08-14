@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { Icon, type IconName } from '../../components/Icon';
-import { getEmplacementIcon } from './constants';
+import { getEmplacementIcon, getPieceIcon } from './constants';
 import { useObjetLocationChain, type ObjetLocationNode } from './queries';
 
 function iconForNode(node: ObjetLocationNode): IconName {
   if (node.kind === 'habitation') return 'home';
-  if (node.kind === 'piece') return 'piece';
+  if (node.kind === 'piece') return getPieceIcon(node.preset_key);
   if (node.kind === 'emplacement') return getEmplacementIcon(node.preset_key);
   return 'conteneur';
 }

@@ -65,3 +65,41 @@ export const DEFAULT_ICON: IconName = 'autre';
 export function getEmplacementIcon(presetKey: string | null): IconName {
   return EMPLACEMENT_PRESETS.find((p) => p.key === presetKey)?.icon ?? DEFAULT_ICON;
 }
+
+export type PieceTypeKey =
+  | 'chambre'
+  | 'sejour'
+  | 'cuisine'
+  | 'salle_de_bain'
+  | 'bureau'
+  | 'dressing'
+  | 'buanderie'
+  | 'cave'
+  | 'garage'
+  | 'entree'
+  | 'autre';
+
+export type PieceTypeDefinition = {
+  key: PieceTypeKey;
+  icon: IconName;
+};
+
+// Suggestions communes à la plupart des habitations — pas de contrainte
+// stricte, "Autre" + le champ Nom restent toujours modifiables librement.
+export const PIECE_TYPES: PieceTypeDefinition[] = [
+  { key: 'chambre', icon: 'chambre' },
+  { key: 'sejour', icon: 'sejour' },
+  { key: 'cuisine', icon: 'cuisine' },
+  { key: 'salle_de_bain', icon: 'salle_de_bain' },
+  { key: 'bureau', icon: 'bureau' },
+  { key: 'dressing', icon: 'dressing' },
+  { key: 'buanderie', icon: 'buanderie' },
+  { key: 'cave', icon: 'cave' },
+  { key: 'garage', icon: 'garage' },
+  { key: 'entree', icon: 'entree' },
+  { key: 'autre', icon: 'autre' },
+];
+
+export function getPieceIcon(presetKey: string | null): IconName {
+  return PIECE_TYPES.find((p) => p.key === presetKey)?.icon ?? DEFAULT_ICON;
+}

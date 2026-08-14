@@ -25,6 +25,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
   const deleteObjet = useDeleteObjet();
   const [conteneurModalOpen, setConteneurModalOpen] = useState(false);
   const [editingConteneur, setEditingConteneur] = useState<Conteneur | null>(null);
+  const [conteneurName, setConteneurName] = useState('');
   const [objetModalOpen, setObjetModalOpen] = useState(false);
 
   const handleDeleteConteneur = (id: string) => {
@@ -59,6 +60,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 onLongPress={() => handleDeleteConteneur(conteneur.id)}
                 onEdit={() => {
                   setEditingConteneur(conteneur);
+                  setConteneurName(conteneur.name);
                   setConteneurModalOpen(true);
                 }}
               />
@@ -84,6 +86,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
             variant="ghost"
             onPress={() => {
               setEditingConteneur(null);
+              setConteneurName('');
               setConteneurModalOpen(true);
             }}
           />
@@ -99,14 +102,15 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         nameLabel={t('inventory.container.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        initialName={editingConteneur?.name}
+        name={conteneurName}
+        onNameChange={setConteneurName}
         loading={createConteneur.isPending || updateConteneur.isPending}
         onClose={() => setConteneurModalOpen(false)}
-        onSubmit={async (name) => {
+        onSubmit={async (submittedName) => {
           if (editingConteneur) {
-            await updateConteneur.mutateAsync({ id: editingConteneur.id, name });
+            await updateConteneur.mutateAsync({ id: editingConteneur.id, name: submittedName });
           } else {
-            await createConteneur.mutateAsync(name);
+            await createConteneur.mutateAsync(submittedName);
           }
           setConteneurModalOpen(false);
         }}

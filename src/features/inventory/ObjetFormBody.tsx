@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { lookupBarcode } from '../../lib/barcode/lookupBarcode';
@@ -30,6 +31,7 @@ type ObjetFormBodyProps = {
 // plein écran) — même logique photo/scan/validation dans les deux cas.
 export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel }: ObjetFormBodyProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const queryClient = useQueryClient();
   const createObjet = useCreateObjet(parentType, parentId);
@@ -104,7 +106,11 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel }
 
   return (
     <>
-      <ScrollView contentContainerClassName="px-6 pb-10 pt-2" keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerClassName="px-6 pt-2"
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        keyboardShouldPersistTaps="handled"
+      >
         <Pressable onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
           {lookupLoading ? (
             <ActivityIndicator />

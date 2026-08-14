@@ -236,6 +236,7 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          preset_key: string | null
         }
         Insert: {
           created_at?: string
@@ -243,6 +244,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          preset_key?: string | null
         }
         Update: {
           created_at?: string
@@ -250,6 +252,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          preset_key?: string | null
         }
         Relationships: [
           {

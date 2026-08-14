@@ -25,6 +25,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEmplacement, setEditingEmplacement] = useState<Emplacement | null>(null);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
+  const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.emplacements.delete_confirm_title'), t('inventory.emplacements.delete_confirm_message'), [
@@ -36,13 +37,22 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const openCreate = () => {
     setEditingEmplacement(null);
     setPresetKey(null);
+    setName('');
     setModalOpen(true);
   };
 
   const openEdit = (emplacement: Emplacement) => {
     setEditingEmplacement(emplacement);
     setPresetKey((emplacement.preset_key as EmplacementPresetKey) ?? null);
+    setName(emplacement.name);
     setModalOpen(true);
+  };
+
+  // Comme pour les Habitations : le préremplissage nom <- catégorie
+  // n'écrase jamais un nom déjà personnalisé en édition.
+  const handleSelectPreset = (key: EmplacementPresetKey) => {
+    setPresetKey(key);
+    if (!editingEmplacement) setName(t(`inventory.emplacementPresets.${key}`));
   };
 
   const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
@@ -78,14 +88,15 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         nameLabel={t('inventory.emplacements.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        initialName={editingEmplacement?.name}
+        name={name}
+        onNameChange={setName}
         loading={createEmplacement.isPending || updateEmplacement.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
+        onSubmit={async (submittedName) => {
           if (editingEmplacement) {
-            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name, presetKey });
+            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name: submittedName, presetKey });
           } else {
-            await createEmplacement.mutateAsync({ name, presetKey });
+            await createEmplacement.mutateAsync({ name: submittedName, presetKey });
           }
           setModalOpen(false);
         }}
@@ -93,7 +104,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         <PresetPicker
           presets={EMPLACEMENT_PRESETS}
           selectedKey={presetKey}
-          onSelect={(key) => setPresetKey(key as EmplacementPresetKey)}
+          onSelect={(key) => handleSelectPreset(key as EmplacementPresetKey)}
           labelFor={(key) => t(`inventory.emplacementPresets.${key}`)}
         />
       </CreateEntityModal>

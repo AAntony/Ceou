@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { IconBadge } from '../../components/IconBadge';
-import { getEmplacementIcon } from '../inventory/constants';
+import { getEmplacementIcon, getPieceIcon } from '../inventory/constants';
 import { HUE_BADGE_FILL, HUE_CARD_BG, hueAt } from './palette';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
@@ -16,6 +16,12 @@ function locationLine(entry: SearchIndexEntry): string {
   if (entry.kind === 'piece') return entry.habitation_name;
   if (entry.kind === 'emplacement') return entry.piece_name;
   return `${entry.parent_label} · ${entry.piece_name}`;
+}
+
+function iconForEntry(entry: SearchIndexEntry) {
+  if (entry.kind === 'emplacement') return getEmplacementIcon(entry.preset_key);
+  if (entry.kind === 'piece') return getPieceIcon(entry.preset_key);
+  return entry.kind;
 }
 
 type ResultCardProps = {
@@ -33,7 +39,7 @@ export function ResultCard({ entry, colorIndex }: ResultCardProps) {
     >
       <View className="mb-3">
         <IconBadge
-          icon={entry.kind === 'emplacement' ? getEmplacementIcon(entry.preset_key) : entry.kind}
+          icon={iconForEntry(entry)}
           fill={HUE_BADGE_FILL[hue]}
           photoUri={entry.photo_url}
           size={52}

@@ -7,7 +7,9 @@ import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { PresetPicker } from '../../components/PresetPicker';
 import type { Piece } from '../../types/database';
+import { PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
 
 type PieceListProps = {
@@ -22,12 +24,35 @@ export function PieceList({ habitationId }: PieceListProps) {
   const deletePiece = useDeletePiece(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
+  const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
+  const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.pieces.delete_confirm_title'), t('inventory.pieces.delete_confirm_message'), [
       { text: t('common.cancel'), style: 'cancel' },
       { text: t('common.delete'), style: 'destructive', onPress: () => deletePiece.mutate(id) },
     ]);
+  };
+
+  const openCreate = () => {
+    setEditingPiece(null);
+    setPresetKey(null);
+    setName('');
+    setModalOpen(true);
+  };
+
+  const openEdit = (piece: Piece) => {
+    setEditingPiece(piece);
+    setPresetKey((piece.preset_key as PieceTypeKey) ?? null);
+    setName(piece.name);
+    setModalOpen(true);
+  };
+
+  // Comme pour les Habitations : le préremplissage nom <- catégorie
+  // n'écrase jamais un nom déjà personnalisé en édition.
+  const handleSelectPreset = (key: PieceTypeKey) => {
+    setPresetKey(key);
+    if (!editingPiece) setName(t(`inventory.pieceTypes.${key}`));
   };
 
   const isEmpty = !isLoading && (pieces?.length ?? 0) === 0;
@@ -41,14 +66,11 @@ export function PieceList({ habitationId }: PieceListProps) {
           pieces?.map((piece) => (
             <EntityCard
               key={piece.id}
-              icon="piece"
+              icon={getPieceIcon(piece.preset_key)}
               title={piece.name}
               onPress={() => router.push(`/piece/${piece.id}`)}
               onLongPress={() => handleDelete(piece.id)}
-              onEdit={() => {
-                setEditingPiece(piece);
-                setModalOpen(true);
-              }}
+              onEdit={() => openEdit(piece)}
             />
           ))
         )}
@@ -56,13 +78,7 @@ export function PieceList({ habitationId }: PieceListProps) {
 
       <BottomActionBar extraBottomOffset={88}>
         <View className="flex-1">
-          <Button
-            label={t('inventory.pieces.add')}
-            onPress={() => {
-              setEditingPiece(null);
-              setModalOpen(true);
-            }}
-          />
+          <Button label={t('inventory.pieces.add')} onPress={openCreate} />
         </View>
       </BottomActionBar>
 
@@ -72,18 +88,26 @@ export function PieceList({ habitationId }: PieceListProps) {
         nameLabel={t('inventory.pieces.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        initialName={editingPiece?.name}
+        name={name}
+        onNameChange={setName}
         loading={createPiece.isPending || updatePiece.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
+        onSubmit={async (submittedName) => {
           if (editingPiece) {
-            await updatePiece.mutateAsync({ id: editingPiece.id, name });
+            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey });
           } else {
-            await createPiece.mutateAsync(name);
+            await createPiece.mutateAsync({ name: submittedName, presetKey });
           }
           setModalOpen(false);
         }}
-      />
+      >
+        <PresetPicker
+          presets={PIECE_TYPES}
+          selectedKey={presetKey}
+          onSelect={(key) => handleSelectPreset(key as PieceTypeKey)}
+          labelFor={(key) => t(`inventory.pieceTypes.${key}`)}
+        />
+      </CreateEntityModal>
     </View>
   );
 }

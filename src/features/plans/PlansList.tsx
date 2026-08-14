@@ -22,6 +22,7 @@ export function PlansList({ habitationId }: PlansListProps) {
   const deletePlan = useDeletePlan(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
     Alert.alert(t('plans.delete_confirm_title'), t('plans.delete_confirm_message'), [
@@ -47,6 +48,7 @@ export function PlansList({ habitationId }: PlansListProps) {
               onLongPress={() => handleDelete(plan.id)}
               onEdit={() => {
                 setEditingPlan(plan);
+                setName(plan.name);
                 setModalOpen(true);
               }}
             />
@@ -60,6 +62,7 @@ export function PlansList({ habitationId }: PlansListProps) {
             label={t('plans.add')}
             onPress={() => {
               setEditingPlan(null);
+              setName('');
               setModalOpen(true);
             }}
           />
@@ -72,14 +75,15 @@ export function PlansList({ habitationId }: PlansListProps) {
         nameLabel={t('plans.name_label')}
         submitLabel={t('common.save')}
         cancelLabel={t('common.cancel')}
-        initialName={editingPlan?.name}
+        name={name}
+        onNameChange={setName}
         loading={createPlan.isPending || updatePlan.isPending}
         onClose={() => setModalOpen(false)}
-        onSubmit={async (name) => {
+        onSubmit={async (submittedName) => {
           if (editingPlan) {
-            await updatePlan.mutateAsync({ id: editingPlan.id, name });
+            await updatePlan.mutateAsync({ id: editingPlan.id, name: submittedName });
           } else {
-            await createPlan.mutateAsync(name);
+            await createPlan.mutateAsync(submittedName);
           }
           setModalOpen(false);
         }}

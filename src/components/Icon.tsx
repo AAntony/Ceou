@@ -24,6 +24,13 @@ export type IconName =
   | 'tiroir'
   | 'coffre'
   | 'boite_a_gants'
+  // Piece types (en plus de 'bureau'/'dressing'/'cave'/'garage'/'autre' déjà listés)
+  | 'chambre'
+  | 'sejour'
+  | 'cuisine'
+  | 'salle_de_bain'
+  | 'buanderie'
+  | 'entree'
   // Plan shapes
   | 'rectangle'
   | 'circle'
@@ -68,6 +75,13 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   tiroir: 'tray',
   coffre: 'treasure-chest',
   boite_a_gants: 'car-door',
+
+  chambre: 'bed',
+  sejour: 'sofa',
+  cuisine: 'stove',
+  salle_de_bain: 'shower',
+  buanderie: 'washing-machine',
+  entree: 'door',
 
   rectangle: 'vector-rectangle',
   circle: 'vector-circle',

@@ -21,6 +21,7 @@ export default function HabitationsScreen() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
   const [type, setType] = useState<HabitationTypeKey>('maison');
+  const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
     Alert.alert(t('inventory.habitations.delete_confirm_title'), t('inventory.habitations.delete_confirm_message'), [
@@ -32,13 +33,23 @@ export default function HabitationsScreen() {
   const openCreate = () => {
     setEditingHabitation(null);
     setType('maison');
+    setName(t('inventory.habitationTypes.maison'));
     setModalOpen(true);
   };
 
   const openEdit = (habitation: Habitation) => {
     setEditingHabitation(habitation);
     setType(habitation.type as HabitationTypeKey);
+    setName(habitation.name);
     setModalOpen(true);
+  };
+
+  // Le préremplissage nom <- catégorie n'a lieu qu'à la création : en
+  // édition, écraser un nom déjà personnalisé au moindre changement de
+  // catégorie serait une perte de donnée, pas un raccourci.
+  const handleSelectType = (key: HabitationTypeKey) => {
+    setType(key);
+    if (!editingHabitation) setName(t(`inventory.habitationTypes.${key}`));
   };
 
   const isEmpty = !isLoading && (habitations?.length ?? 0) === 0;
@@ -82,15 +93,16 @@ export default function HabitationsScreen() {
           nameLabel={t('inventory.habitations.name_label')}
           submitLabel={t('common.save')}
           cancelLabel={t('common.cancel')}
-          initialName={editingHabitation?.name}
+          name={name}
+          onNameChange={setName}
           loading={createHabitation.isPending || updateHabitation.isPending}
           onClose={() => setModalOpen(false)}
-          onSubmit={async (name) => {
+          onSubmit={async (submittedName) => {
             const definition = HABITATION_TYPES.find((h) => h.key === type)!;
             if (editingHabitation) {
-              await updateHabitation.mutateAsync({ id: editingHabitation.id, name, type, icon: definition.icon });
+              await updateHabitation.mutateAsync({ id: editingHabitation.id, name: submittedName, type, icon: definition.icon });
             } else {
-              await createHabitation.mutateAsync({ name, type, icon: definition.icon });
+              await createHabitation.mutateAsync({ name: submittedName, type, icon: definition.icon });
             }
             setModalOpen(false);
           }}
@@ -98,7 +110,7 @@ export default function HabitationsScreen() {
           <PresetPicker
             presets={HABITATION_TYPES}
             selectedKey={type}
-            onSelect={(key) => setType(key as HabitationTypeKey)}
+            onSelect={(key) => handleSelectType(key as HabitationTypeKey)}
             labelFor={(key) => t(`inventory.habitationTypes.${key}`)}
           />
         </CreateEntityModal>

@@ -101,6 +101,19 @@
       "delete_confirm_title": "Supprimer cette pièce ?",
       "delete_confirm_message": "Tous les emplacements et objets qu'elle contient seront supprimés."
     },
+    "pieceTypes": {
+      "chambre": "Chambre",
+      "sejour": "Séjour",
+      "cuisine": "Cuisine",
+      "salle_de_bain": "Salle de bain",
+      "bureau": "Bureau",
+      "dressing": "Dressing",
+      "buanderie": "Buanderie",
+      "cave": "Cave",
+      "garage": "Garage",
+      "entree": "Entrée",
+      "autre": "Autre"
+    },
     "emplacements": {
       "empty": "Aucun emplacement pour l'instant.",
       "add": "Ajouter un emplacement",

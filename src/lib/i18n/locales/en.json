@@ -101,6 +101,19 @@
       "delete_confirm_title": "Delete this room?",
       "delete_confirm_message": "All the spots and items it contains will be deleted."
     },
+    "pieceTypes": {
+      "chambre": "Bedroom",
+      "sejour": "Living room",
+      "cuisine": "Kitchen",
+      "salle_de_bain": "Bathroom",
+      "bureau": "Office",
+      "dressing": "Closet",
+      "buanderie": "Laundry room",
+      "cave": "Cellar",
+      "garage": "Garage",
+      "entree": "Entryway",
+      "autre": "Other"
+    },
     "emplacements": {
       "empty": "No spot yet.",
       "add": "Add a spot",
