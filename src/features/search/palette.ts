@@ -1,13 +1,20 @@
-// Rotation pastel partagée entre le fond de carte (teinte claire) et le badge
-// hexagonal (teinte saturée) — 4 teintes de la palette de marque, en rotation
-// par index plutôt qu'une couleur fixe par type (aucune donnée ne justifie un
-// mapping type -> couleur).
+import type { SearchKind } from './queries';
+
+// Une teinte fixe par catégorie plutôt qu'une rotation par position : le
+// but est de reconnaître la catégorie d'un résultat au premier coup d'œil
+// (Pièce/Emplacement/Conteneur/Objet), donc la couleur doit être stable
+// d'une recherche à l'autre, pas dépendante de l'ordre d'affichage.
 export type Hue = 'teal' | 'coral' | 'mustard' | 'sky';
 
-const HUES: Hue[] = ['teal', 'coral', 'mustard', 'sky'];
+const HUE_BY_KIND: Record<SearchKind, Hue> = {
+  piece: 'teal', // vert pastel
+  emplacement: 'mustard', // jaune pastel
+  conteneur: 'sky', // bleu pastel
+  objet: 'coral', // rouge/corail pastel
+};
 
-export function hueAt(index: number): Hue {
-  return HUES[index % HUES.length];
+export function hueForKind(kind: SearchKind): Hue {
+  return HUE_BY_KIND[kind];
 }
 
 export const HUE_CARD_BG: Record<Hue, string> = {

@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { IconBadge } from '../../components/IconBadge';
 import { getEmplacementIcon, getPieceIcon } from '../inventory/constants';
-import { HUE_BADGE_FILL, HUE_CARD_BG, hueAt } from './palette';
+import { HUE_BADGE_FILL, HUE_CARD_BG, hueForKind } from './palette';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
 const ROUTE_BY_KIND: Record<SearchKind, string> = {
@@ -26,11 +26,10 @@ function iconForEntry(entry: SearchIndexEntry) {
 
 type ResultCardProps = {
   entry: SearchIndexEntry;
-  colorIndex: number;
 };
 
-export function ResultCard({ entry, colorIndex }: ResultCardProps) {
-  const hue = hueAt(colorIndex);
+export function ResultCard({ entry }: ResultCardProps) {
+  const hue = hueForKind(entry.kind);
 
   return (
     <Pressable

@@ -132,8 +132,8 @@ export function HomeDashboard() {
           <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
         ) : (
           <View className="flex-row flex-wrap justify-between">
-            {filtered.map((entry, index) => (
-              <ResultCard key={`${entry.kind}-${entry.id}`} entry={entry} colorIndex={index} />
+            {filtered.map((entry) => (
+              <ResultCard key={`${entry.kind}-${entry.id}`} entry={entry} />
             ))}
           </View>
         )}
