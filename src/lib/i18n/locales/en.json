@@ -67,7 +67,8 @@
     "empty": "Nothing to show yet.",
     "no_results": "No results for that search.",
     "choose_location": "Choose a location",
-    "choose_location_here": "Store here"
+    "choose_location_here": "Store here",
+    "onboarding_hint": "An item always needs a place to live. Create your first home to start organizing your things."
   },
   "inventory": {
     "habitations": {
