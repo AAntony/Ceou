@@ -1,8 +1,8 @@
 // Rectangle en espace écran (plan 2D top-down pur, pas de projection) —
 // géométrie source d'une forme (PlanCanvas), et utilisée pour resituer une
-// pastille d'Emplacement ou une porte dans le repère de sa pièce parente.
-// Partagé pour éviter les imports circulaires entre PlanCanvas et les
-// couches d'overlay (PlanPinLayer, DoorLayer, snap).
+// pastille d'Emplacement dans le repère de sa pièce parente. Partagé pour
+// éviter les imports circulaires entre PlanCanvas et les couches d'overlay
+// (PlanPinLayer, snap).
 export type ShapeGeometry = { x: number; y: number; width: number; height: number };
 
 // nw/n/ne/e/se/s/sw/w — les 4 coins ajustent largeur ET hauteur (bord opposé

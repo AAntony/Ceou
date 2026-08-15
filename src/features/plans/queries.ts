@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase/client';
-import type { Plan, PlanDoor, PlanForme, PlanPin } from '../../types/database';
+import type { Plan, PlanForme, PlanPin } from '../../types/database';
 import { CANVAS_WIDTH, DEFAULT_SHAPE_SIZE, type PlanShapeType } from './constants';
 
 export function usePlans(habitationId: string) {
@@ -220,51 +220,3 @@ export function useDeletePlanPin(planId: string) {
   });
 }
 
-export function usePlanDoors(planId: string) {
-  return useQuery({
-    queryKey: ['planDoors', planId],
-    queryFn: async (): Promise<PlanDoor[]> => {
-      const { data, error } = await supabase.from('plan_doors').select('*').eq('plan_id', planId);
-      if (error) throw error;
-      return data;
-    },
-  });
-}
-
-export function useCreatePlanDoor(planId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { formeId: string }): Promise<PlanDoor> => {
-      const { data, error } = await supabase
-        .from('plan_doors')
-        .insert({ plan_id: planId, forme_id: input.formeId, edge: 's', position: 0.5 })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
-  });
-}
-
-export function useUpdatePlanDoor(planId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { id: string; edge: 'n' | 'e' | 's' | 'w'; position: number }) => {
-      const { error } = await supabase.from('plan_doors').update({ edge: input.edge, position: input.position }).eq('id', input.id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
-  });
-}
-
-export function useDeletePlanDoor(planId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('plan_doors').delete().eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
-  });
-}

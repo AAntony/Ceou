@@ -4,17 +4,31 @@ import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon, type IconName } from '../../components/Icon';
-import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE, roomColorForForme, shade } from './constants';
-import { DoorLayer } from './DoorLayer';
+import type { PlanForme, PlanPin } from '../../types/database';
+import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  HIGHLIGHT_GREEN,
+  MAX_SHAPE_SIZE,
+  MAX_ZOOM,
+  MIN_SHAPE_SIZE,
+  MIN_ZOOM,
+  roomColorForForme,
+  shade,
+} from './constants';
 import { PlanPinLayer } from './PlanPinLayer';
 import { snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
+import { UnplacedEmplacementsBar } from './UnplacedEmplacementsBar';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
 function clampSize(value: number): number {
-  return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
+  return clamp(value, MIN_SHAPE_SIZE, MAX_SHAPE_SIZE);
 }
 
 function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
@@ -59,13 +73,16 @@ function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: nu
   return { x, y, width, height };
 }
 
+type ZoomState = { scale: number; translateX: number; translateY: number };
+const IDLE_ZOOM: ZoomState = { scale: 1, translateX: 0, translateY: 0 };
+
 type PlanCanvasProps = {
   formes: PlanForme[];
   pieceInfo: Record<string, { name: string }>;
   pins: PlanPin[];
   pinDisplay: Record<string, { name: string; icon: IconName }>;
-  doors: PlanDoor[];
   highlightFormeId?: string | null;
+  highlightEmplacementId?: string | null;
   selectedFormeId: string | null;
   onDragEnd: (id: string, x: number, y: number) => void;
   onResizeEnd: (id: string, x: number, y: number, width: number, height: number) => void;
@@ -74,8 +91,7 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
-  onDoorDragEnd: (doorId: string, edge: 'n' | 'e' | 's' | 'w', position: number) => void;
-  onDoorTap: (door: PlanDoor) => void;
+  onPlaceEmplacement: (emplacementId: string) => void;
 };
 
 export function PlanCanvas({
@@ -83,8 +99,8 @@ export function PlanCanvas({
   pieceInfo,
   pins,
   pinDisplay,
-  doors,
   highlightFormeId,
+  highlightEmplacementId,
   selectedFormeId,
   onDragEnd,
   onResizeEnd,
@@ -93,16 +109,17 @@ export function PlanCanvas({
   onDeselect,
   onPinDragEnd,
   onPinTap,
-  onDoorDragEnd,
-  onDoorTap,
+  onPlaceEmplacement,
 }: PlanCanvasProps) {
   const { t } = useTranslation();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
   // frame. Plan 2D top-down pur : les coordonnées x/y SONT les coordonnées
-  // écran, aucune projection.
+  // écran (dans le repère du contenu zoomable), aucune projection.
   const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
+  const [zoom, setZoom] = useState<ZoomState>(IDLE_ZOOM);
+  const zoomOrigin = useRef(IDLE_ZOOM);
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
   // otherwise crash this whole screen. Labels are a nice-to-have on top of
@@ -141,109 +158,159 @@ export function PlanCanvas({
 
   const selectedForme = formes.find((f) => f.id === selectedFormeId) ?? null;
 
+  // Pincement = zoomer, glisser à deux doigts = déplacer la vue — le geste à
+  // UN doigt reste entièrement réservé au déplacement d'une pièce/pastille
+  // (minPointers(1).maxPointers(1) plus bas), donc aucun conflit entre les
+  // deux : ils se distinguent par le nombre de doigts, pas par une logique
+  // d'exclusivité à négocier.
+  const pinch = Gesture.Pinch()
+    .runOnJS(true)
+    .onStart(() => {
+      zoomOrigin.current = zoom;
+    })
+    .onUpdate((event) => {
+      setZoom((z) => ({ ...z, scale: clamp(zoomOrigin.current.scale * event.scale, MIN_ZOOM, MAX_ZOOM) }));
+    });
+
+  const twoFingerPan = Gesture.Pan()
+    .minPointers(2)
+    .maxPointers(2)
+    .runOnJS(true)
+    .onStart(() => {
+      zoomOrigin.current = zoom;
+    })
+    .onUpdate((event) => {
+      setZoom((z) => ({
+        ...z,
+        translateX: zoomOrigin.current.translateX + event.translationX,
+        translateY: zoomOrigin.current.translateY + event.translationY,
+      }));
+    });
+
   return (
-    <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-sand-dark">
-      <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
-        {formes.map((forme) => {
-          const geo = geoById[forme.id];
-          const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
-          return (
-            <RoomVisual
-              key={forme.id}
-              geo={geo}
-              color={roomColorForForme(forme.id)}
-              label={label}
-              font={font}
-              active={forme.id === highlightFormeId || forme.id === selectedFormeId}
-            />
-          );
-        })}
-      </Canvas>
-
-      {formes.map((forme) => {
-        const geo = geoById[forme.id];
-        const isSelected = forme.id === selectedFormeId;
-        // Une seule forme à la fois peut être déplacée/redimensionnée — les
-        // autres restent verrouillées (même le tap) tant que "Valider" n'a
-        // pas relâché la sélection en cours.
-        const locked = selectedFormeId !== null && !isSelected;
-        const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
-        return (
-          <ShapeBody
-            key={forme.id}
-            geo={geo}
-            others={others}
-            isSelected={isSelected}
-            locked={locked}
-            onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
-            onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
-            onSelect={() => onSelect(forme)}
-            onOpenSheet={() => onOpenSheet(forme)}
-          />
-        );
-      })}
-
-      {selectedForme
-        ? HANDLES.map((handle) => (
-            <HandleDot
-              key={handle}
-              geo={geoById[selectedForme.id]}
-              handle={handle}
-              others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
-              onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
-              onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
-            />
-          ))
-        : null}
-
-      <PlanPinLayer
-        pins={pins}
-        formeGeo={geoById}
-        pinDisplay={pinDisplay}
-        selectedFormeId={selectedFormeId}
-        onDragEnd={onPinDragEnd}
-        onTap={onPinTap}
-      />
-
-      <DoorLayer doors={doors} formeGeo={geoById} selectedFormeId={selectedFormeId} onDragEnd={onDoorDragEnd} onTap={onDoorTap} />
-
-      {selectedFormeId ? (
-        <Pressable
-          onPress={onDeselect}
-          accessibilityLabel={t('plans.validate_selection')}
-          className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-coral shadow-md active:opacity-80"
+    <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan)}>
+      <View
+        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'hidden' }}
+        className="self-center rounded-2xl bg-sand-dark"
+      >
+        <View
+          style={{
+            width: CANVAS_WIDTH,
+            height: CANVAS_HEIGHT,
+            transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
+          }}
         >
-          <Icon name="validate" size={20} color="#fff" />
-        </Pressable>
-      ) : null}
-    </View>
+          <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+            {formes.map((forme) => {
+              const geo = geoById[forme.id];
+              const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
+              return (
+                <RoomVisual
+                  key={forme.id}
+                  geo={geo}
+                  color={roomColorForForme(forme.id)}
+                  label={label}
+                  font={font}
+                  highlighted={forme.id === highlightFormeId}
+                  selected={forme.id === selectedFormeId}
+                />
+              );
+            })}
+          </Canvas>
+
+          {formes.map((forme) => {
+            const geo = geoById[forme.id];
+            const isSelected = forme.id === selectedFormeId;
+            const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
+            return (
+              <ShapeBody
+                key={forme.id}
+                geo={geo}
+                others={others}
+                isSelected={isSelected}
+                scale={zoom.scale}
+                onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
+                onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
+                onSelect={() => onSelect(forme)}
+                onOpenSheet={() => onOpenSheet(forme)}
+              />
+            );
+          })}
+
+          {selectedForme
+            ? HANDLES.map((handle) => (
+                <HandleDot
+                  key={handle}
+                  geo={geoById[selectedForme.id]}
+                  handle={handle}
+                  others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
+                  scale={zoom.scale}
+                  onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
+                  onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
+                />
+              ))
+            : null}
+
+          <PlanPinLayer
+            pins={pins}
+            formeGeo={geoById}
+            pinDisplay={pinDisplay}
+            selectedFormeId={selectedFormeId}
+            highlightedEmplacementId={highlightEmplacementId}
+            scale={zoom.scale}
+            onDragEnd={onPinDragEnd}
+            onTap={onPinTap}
+          />
+        </View>
+
+        {/* HUD fixe — ne suit pas le zoom/pan du contenu */}
+        {selectedForme?.piece_id ? (
+          <UnplacedEmplacementsBar pieceId={selectedForme.piece_id} pins={pins} onPlace={onPlaceEmplacement} />
+        ) : null}
+
+        {selectedFormeId ? (
+          <Pressable
+            onPress={onDeselect}
+            accessibilityLabel={t('plans.validate_selection')}
+            className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-coral shadow-md active:opacity-80"
+          >
+            <Icon name="validate" size={20} color="#fff" />
+          </Pressable>
+        ) : null}
+      </View>
+    </GestureDetector>
   );
 }
 
 // Rectangle plein (couleur par pièce individuelle) + contour + nom centré —
-// plan 2D top-down pur, aucune projection.
+// plan 2D top-down pur, aucune projection. `highlighted` (vient de "Voir sur
+// le plan") force un remplissage vert distinctif ; `selected` (édition en
+// cours) ajoute un contour corail par-dessus — les deux peuvent coexister.
 function RoomVisual({
   geo,
   color,
   label,
   font,
-  active,
+  highlighted,
+  selected,
 }: {
   geo: ShapeGeometry;
   color: string;
   label: string;
   font: SkFont | null;
-  active: boolean;
+  highlighted: boolean;
+  selected: boolean;
 }) {
-  const borderColor = shade(color, 0.25);
+  const fill = highlighted ? HIGHLIGHT_GREEN : color;
+  const borderColor = shade(fill, 0.25);
   const centerX = geo.x + geo.width / 2;
   const centerY = geo.y + geo.height / 2;
 
   return (
     <>
-      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="fill" />
+      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={fill} style="fill" />
       <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={borderColor} style="stroke" strokeWidth={2} />
-      {active ? (
+      {selected ? (
         <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#FF6B4A" style="stroke" strokeWidth={3} />
       ) : null}
       {label && font ? (
@@ -254,14 +321,16 @@ function RoomVisual({
 }
 
 // Déplacement (tout le corps de la forme, uniquement quand sélectionnée) +
-// sélection au tap simple / ouverture de la fiche au double-tap. Le
-// déplacement passe par snapPosition() pour s'accoler magnétiquement aux
-// pièces voisines.
+// sélection au tap simple / ouverture de la fiche au double-tap. Tap simple
+// est toujours actif, y compris sur une pièce non sélectionnée pendant
+// qu'une autre l'est — passer directement d'une pièce à l'autre sans devoir
+// d'abord "Valider" la précédente. Le déplacement passe par snapPosition()
+// pour s'accoler magnétiquement aux pièces voisines.
 function ShapeBody({
   geo,
   others,
   isSelected,
-  locked,
+  scale,
   onMove,
   onDragEnd,
   onSelect,
@@ -270,7 +339,7 @@ function ShapeBody({
   geo: ShapeGeometry;
   others: ShapeGeometry[];
   isSelected: boolean;
-  locked: boolean;
+  scale: number;
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onSelect: () => void;
@@ -279,9 +348,12 @@ function ShapeBody({
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
 
+  // event.translation(X|Y) est un delta ÉCRAN, avant mise à l'échelle du
+  // zoom — diviser par `scale` pour obtenir le déplacement réel dans le
+  // repère (non zoomé) où vivent x/y.
   const resolve = (translationX: number, translationY: number) => {
-    const rawX = dragOrigin.current.x + translationX;
-    const rawY = dragOrigin.current.y + translationY;
+    const rawX = dragOrigin.current.x + translationX / scale;
+    const rawY = dragOrigin.current.y + translationY / scale;
     return snapPosition(rawX, rawY, geo.width, geo.height, others);
   };
 
@@ -302,13 +374,14 @@ function ShapeBody({
       onDragEnd(snapped.x, snapped.y);
     });
 
-  // Un tap simple sélectionne (déplacer/redimensionner) ; il faut un
-  // double-tap pour ouvrir la fiche (choix de pièce/suppression) — sinon
-  // la fiche s'ouvrait à chaque tap, gênant pour qui veut juste ajuster la
-  // position. doubleTap doit être listé en premier dans Exclusive : c'est
-  // ce qui fait attendre singleTap le temps de voir si un second tap suit.
-  const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onSelect());
-  const doubleTap = Gesture.Tap().numberOfTaps(2).hitSlop(HIT_SLOP).enabled(!locked).runOnJS(true).onEnd(() => onOpenSheet());
+  // Un tap simple sélectionne (déplacer/redimensionner) — toujours actif,
+  // même sur une pièce non sélectionnée pendant qu'une autre l'est, pour
+  // pouvoir enchaîner les pièces sans étape de validation intermédiaire. Il
+  // faut un double-tap pour ouvrir la fiche (choix de pièce/suppression) ;
+  // doubleTap doit être listé en premier dans Exclusive pour faire attendre
+  // singleTap le temps de voir si un second tap suit.
+  const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onSelect());
+  const doubleTap = Gesture.Tap().numberOfTaps(2).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onOpenSheet());
   const taps = Gesture.Exclusive(doubleTap, singleTap);
   const gesture = Gesture.Exclusive(pan, taps);
 
@@ -330,12 +403,14 @@ function HandleDot({
   geo,
   handle,
   others,
+  scale,
   onResize,
   onResizeEnd,
 }: {
   geo: ShapeGeometry;
   handle: HandleId;
   others: ShapeGeometry[];
+  scale: number;
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
 }) {
@@ -352,7 +427,7 @@ function HandleDot({
       last.current = geo;
     })
     .onUpdate((event) => {
-      const raw = applyHandle(origin.current, handle, event.translationX, event.translationY);
+      const raw = applyHandle(origin.current, handle, event.translationX / scale, event.translationY / scale);
       last.current = snapResize(raw, handle, others);
       onResize(last.current);
     })

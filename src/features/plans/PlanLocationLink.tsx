@@ -6,12 +6,13 @@ import { usePieceLocationOnPlan } from './queries';
 
 type PlanLocationLinkProps = {
   pieceId?: string;
+  emplacementId?: string;
 };
 
 // Rendu vide si la pièce de l'objet n'a jamais été placée sur un plan —
 // pas de bouton mort pour une fonctionnalité (Plans) que l'utilisateur n'a
 // peut-être pas encore utilisée.
-export function PlanLocationLink({ pieceId }: PlanLocationLinkProps) {
+export function PlanLocationLink({ pieceId, emplacementId }: PlanLocationLinkProps) {
   const { t } = useTranslation();
   const { data } = usePieceLocationOnPlan(pieceId ?? '');
 
@@ -19,7 +20,11 @@ export function PlanLocationLink({ pieceId }: PlanLocationLinkProps) {
 
   return (
     <Pressable
-      onPress={() => router.push(`/plan/${data.planId}?highlightFormeId=${data.formeId}`)}
+      onPress={() =>
+        router.push(
+          `/plan/${data.planId}?highlightFormeId=${data.formeId}${emplacementId ? `&highlightEmplacementId=${emplacementId}` : ''}`,
+        )
+      }
       className="mb-6 flex-row items-center justify-center gap-2 rounded-xl border border-coral/30 bg-coral-light px-4 py-3 active:opacity-70"
     >
       <Icon name="plan" size={18} color="#E2543A" />

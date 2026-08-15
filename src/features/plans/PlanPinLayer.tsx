@@ -4,9 +4,12 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
+import { HIGHLIGHT_GREEN } from './constants';
 import type { ShapeGeometry } from './types';
 
-const PIN_SIZE = 30;
+// 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
+// plan une fois plusieurs pastilles posées.
+const PIN_SIZE = 21;
 
 type RelPosition = { relX: number; relY: number };
 
@@ -15,6 +18,8 @@ type PlanPinLayerProps = {
   formeGeo: Record<string, ShapeGeometry>;
   pinDisplay: Record<string, { name: string; icon: IconName }>;
   selectedFormeId: string | null;
+  highlightedEmplacementId?: string | null;
+  scale: number;
   onDragEnd: (pinId: string, relX: number, relY: number) => void;
   onTap: (pin: PlanPin) => void;
 };
@@ -28,7 +33,16 @@ type PlanPinLayerProps = {
 // glisser vit dans un state ici (mise à jour à chaque frame par le geste),
 // synchronisée depuis les props à l'arrivée/au changement d'un pin — un
 // seul aller-retour réseau à la fin du geste, pas à chaque frame.
-export function PlanPinLayer({ pins, formeGeo, pinDisplay, selectedFormeId, onDragEnd, onTap }: PlanPinLayerProps) {
+export function PlanPinLayer({
+  pins,
+  formeGeo,
+  pinDisplay,
+  selectedFormeId,
+  highlightedEmplacementId,
+  scale,
+  onDragEnd,
+  onTap,
+}: PlanPinLayerProps) {
   const [positions, setPositions] = useState<Record<string, RelPosition>>({});
 
   useEffect(() => {
@@ -59,6 +73,8 @@ export function PlanPinLayer({ pins, formeGeo, pinDisplay, selectedFormeId, onDr
             pos={pos}
             display={display}
             interactive={pin.forme_id === selectedFormeId}
+            highlighted={pin.emplacement_id === highlightedEmplacementId}
+            scale={scale}
             onMove={(next) => setPositions((current) => ({ ...current, [pin.id]: next }))}
             onDragEnd={(next) => onDragEnd(pin.id, next.relX, next.relY)}
             onTap={() => onTap(pin)}
@@ -78,6 +94,8 @@ function PinBadge({
   pos,
   display,
   interactive,
+  highlighted,
+  scale,
   onMove,
   onDragEnd,
   onTap,
@@ -86,16 +104,21 @@ function PinBadge({
   pos: RelPosition;
   display: { name: string; icon: IconName };
   interactive: boolean;
+  highlighted: boolean;
+  scale: number;
   onMove: (pos: RelPosition) => void;
   onDragEnd: (pos: RelPosition) => void;
   onTap: () => void;
 }) {
   const dragOrigin = useRef(pos);
 
-  // Plan 2D top-down pur : x/y sont directement des coordonnées écran, pas
-  // besoin de projeter/inverser quoi que ce soit.
+  // Plan 2D top-down pur : x/y sont directement des coordonnées écran (dans
+  // le repère du contenu zoomable), pas besoin de projeter quoi que ce soit.
   const screen = { x: geo.x + pos.relX * geo.width, y: geo.y + pos.relY * geo.height };
 
+  // Le geste rapporte un delta en pixels ÉCRAN (avant mise à l'échelle du
+  // zoom) — diviser par `scale` pour obtenir le déplacement réel dans le
+  // repère (non zoomé) où vivent x/y.
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
@@ -106,14 +129,14 @@ function PinBadge({
     })
     .onUpdate((event) => {
       onMove({
-        relX: clamp01(dragOrigin.current.relX + event.translationX / geo.width),
-        relY: clamp01(dragOrigin.current.relY + event.translationY / geo.height),
+        relX: clamp01(dragOrigin.current.relX + event.translationX / scale / geo.width),
+        relY: clamp01(dragOrigin.current.relY + event.translationY / scale / geo.height),
       });
     })
     .onEnd((event) => {
       onDragEnd({
-        relX: clamp01(dragOrigin.current.relX + event.translationX / geo.width),
-        relY: clamp01(dragOrigin.current.relY + event.translationY / geo.height),
+        relX: clamp01(dragOrigin.current.relX + event.translationX / scale / geo.width),
+        relY: clamp01(dragOrigin.current.relY + event.translationY / scale / geo.height),
       });
     });
 
@@ -123,7 +146,7 @@ function PinBadge({
   return (
     <GestureDetector gesture={gesture}>
       <View style={{ position: 'absolute', left: screen.x - PIN_SIZE / 2, top: screen.y - PIN_SIZE / 2 }}>
-        <IconBadge icon={display.icon} fill="#FFFBF8" size={PIN_SIZE} />
+        <IconBadge icon={display.icon} fill={highlighted ? HIGHLIGHT_GREEN : '#FFFBF8'} size={PIN_SIZE} />
       </View>
     </GestureDetector>
   );

@@ -14,6 +14,14 @@ export const MAX_SHAPE_SIZE = 300;
 export const CANVAS_WIDTH = 340;
 export const CANVAS_HEIGHT = 600;
 
+export const MIN_ZOOM = 0.5;
+export const MAX_ZOOM = 3;
+
+// Couleur dédiée au surlignage "Voir sur le plan" (delibérément hors de
+// ROOM_COLOR_PALETTE, qui reste dans des tons pastel — celle-ci doit se
+// distinguer sans ambiguïté de la couleur normale d'une pièce).
+export const HIGHLIGHT_GREEN = '#4CAF50';
+
 // Palette pastel — volontairement distincte de celle des résultats de
 // recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
 // ici on distingue des PIÈCES entre elles sur un même plan.

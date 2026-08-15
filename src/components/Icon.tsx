@@ -54,8 +54,7 @@ export type IconName =
   | 'search'
   | 'profile'
   | 'validate'
-  | 'microphone'
-  | 'porte';
+  | 'microphone';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -108,7 +107,6 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   profile: 'account-circle-outline',
   validate: 'check',
   microphone: 'microphone',
-  porte: 'door',
 };
 
 type IconProps = {

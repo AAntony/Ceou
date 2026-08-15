@@ -199,10 +199,6 @@
     },
     "pins": {
       "remove": "Retirer du plan"
-    },
-    "doors": {
-      "add": "Ajouter une porte",
-      "remove": "Retirer cette porte"
     }
   }
 }

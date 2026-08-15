@@ -1,6 +1,5 @@
-import { useTranslation } from 'react-i18next';
-import { Text, View } from 'react-native';
-import { PresetPicker } from '../../components/PresetPicker';
+import { Pressable, ScrollView, View } from 'react-native';
+import { IconBadge } from '../../components/IconBadge';
 import { getEmplacementIcon } from '../inventory/constants';
 import { useEmplacements } from '../inventory/queries';
 import type { PlanPin } from '../../types/database';
@@ -11,12 +10,12 @@ type UnplacedEmplacementsBarProps = {
   onPlace: (emplacementId: string) => void;
 };
 
-// Chips des Emplacements de la pièce sélectionnée qui n'ont pas encore de
-// pastille sur CE plan — tap pour en poser une au centre de la pièce,
-// prête à être glissée. Réutilise PresetPicker (déjà utilisé pour les types
-// de forme/preset ailleurs dans l'app).
+// Menu vertical flottant sur le bord gauche du plan, façon inventaire de jeu
+// vidéo (icônes seules, empilées, fond translucide) — remplace l'ancienne
+// rangée horizontale de chips sous le plan. Icônes uniquement, sans texte :
+// un panneau volontairement compact posé par-dessus un plan déjà petit
+// (340px de large) n'a pas la place pour des libellés.
 export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmplacementsBarProps) {
-  const { t } = useTranslation();
   const { data: emplacements } = useEmplacements(pieceId);
 
   const placedIds = new Set(pins.map((p) => p.emplacement_id));
@@ -25,14 +24,16 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
   if (unplaced.length === 0) return null;
 
   return (
-    <View className="mb-3">
-      <Text className="mb-2 text-xs font-medium text-ink-soft">{t('plans.unplaced_title')}</Text>
-      <PresetPicker
-        presets={unplaced.map((e) => ({ key: e.id, icon: getEmplacementIcon(e.preset_key) }))}
-        selectedKey={null}
-        onSelect={onPlace}
-        labelFor={(key) => unplaced.find((e) => e.id === key)?.name ?? ''}
-      />
+    <View pointerEvents="box-none" className="absolute bottom-2 left-2 top-2 w-11 items-center">
+      <View className="w-11 flex-1 items-center rounded-2xl bg-ink/70 py-2">
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="items-center gap-2">
+          {unplaced.map((e) => (
+            <Pressable key={e.id} onPress={() => onPlace(e.id)} className="active:opacity-70">
+              <IconBadge icon={getEmplacementIcon(e.preset_key)} fill="#FFFBF8" size={32} />
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }

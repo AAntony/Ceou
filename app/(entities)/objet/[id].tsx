@@ -20,6 +20,7 @@ export default function ObjetScreen() {
   const { data: history } = useObjetHistory(id);
   const { data: locationChain } = useObjetLocationChain(id);
   const pieceId = locationChain?.find((node) => node.kind === 'piece')?.id;
+  const emplacementId = locationChain?.find((node) => node.kind === 'emplacement')?.id;
   const updateObjet = useUpdateObjet(id);
   const deleteObjet = useDeleteObjet();
 
@@ -95,7 +96,7 @@ export default function ObjetScreen() {
         </Pressable>
 
         <LocationBreadcrumb objetId={id} />
-        <PlanLocationLink pieceId={pieceId} />
+        <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} />
 
         <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} />
         <TextField
