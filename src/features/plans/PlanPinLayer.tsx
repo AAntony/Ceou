@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
-import { project, screenDeltaToWorldDelta, type ShapeGeometry } from './iso';
+import type { ShapeGeometry } from './types';
 
 const PIN_SIZE = 30;
 
@@ -92,9 +92,9 @@ function PinBadge({
 }) {
   const dragOrigin = useRef(pos);
 
-  const worldX = geo.x + pos.relX * geo.width;
-  const worldY = geo.y + pos.relY * geo.height;
-  const screen = project(worldX, worldY);
+  // Plan 2D top-down pur : x/y sont directement des coordonnées écran, pas
+  // besoin de projeter/inverser quoi que ce soit.
+  const screen = { x: geo.x + pos.relX * geo.width, y: geo.y + pos.relY * geo.height };
 
   const pan = Gesture.Pan()
     .minPointers(1)
@@ -105,17 +105,15 @@ function PinBadge({
       dragOrigin.current = pos;
     })
     .onUpdate((event) => {
-      const delta = screenDeltaToWorldDelta(event.translationX, event.translationY);
       onMove({
-        relX: clamp01(dragOrigin.current.relX + delta.x / geo.width),
-        relY: clamp01(dragOrigin.current.relY + delta.y / geo.height),
+        relX: clamp01(dragOrigin.current.relX + event.translationX / geo.width),
+        relY: clamp01(dragOrigin.current.relY + event.translationY / geo.height),
       });
     })
     .onEnd((event) => {
-      const delta = screenDeltaToWorldDelta(event.translationX, event.translationY);
       onDragEnd({
-        relX: clamp01(dragOrigin.current.relX + delta.x / geo.width),
-        relY: clamp01(dragOrigin.current.relY + delta.y / geo.height),
+        relX: clamp01(dragOrigin.current.relX + event.translationX / geo.width),
+        relY: clamp01(dragOrigin.current.relY + event.translationY / geo.height),
       });
     });
 

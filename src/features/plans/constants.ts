@@ -1,12 +1,9 @@
 import type { IconName } from '../../components/Icon';
-import type { PieceTypeKey } from '../inventory/constants';
 
-// "circle" retiré (Phase 7) : la maquette isométrique ne montre que des
-// pièces rectangulaires (cas réel quasi systématique) — extruder une
-// ellipse en isométrique (arcs de mur ombrés) est nettement plus complexe
-// qu'un rectangle pour un bénéfice visuel quasi nul. Les formes "circle"
-// déjà en base ne sont pas perdues : PlanCanvas les traite comme des
-// rectangles (leur width/height définissent déjà une bounding box).
+// "circle" retiré (Phase 7) : simplifie l'éditeur à des pièces rectangulaires
+// uniquement (cas réel quasi systématique pour un plan d'architecte). Les
+// formes "circle" déjà en base ne sont pas perdues : PlanCanvas les traite
+// comme des rectangles (leur width/height définissent déjà une bounding box).
 export type PlanShapeType = 'rectangle';
 
 export const PLAN_SHAPE_TYPES: { key: PlanShapeType; icon: IconName }[] = [{ key: 'rectangle', icon: 'rectangle' }];
@@ -17,34 +14,37 @@ export const MAX_SHAPE_SIZE = 300;
 export const CANVAS_WIDTH = 340;
 export const CANVAS_HEIGHT = 600;
 
-// Couleur de sol pastel de base par type de pièce — volontairement distincte
-// de la palette des résultats de recherche (src/features/search/palette.ts,
-// 4 teintes par TYPE D'ENTITÉ) : ici on distingue des PIÈCES entre elles sur
-// un même plan, un besoin différent (variété façon maquette).
-export const PLAN_ROOM_COLORS: Record<PieceTypeKey, string> = {
-  chambre: '#F3C6D9',
-  sejour: '#C9E4C5',
-  cuisine: '#FCE8A8',
-  salle_de_bain: '#BEE3DB',
-  bureau: '#D7C9F2',
-  dressing: '#F6D8B8',
-  buanderie: '#BFD7EA',
-  cave: '#D6CFC7',
-  garage: '#C8CDD3',
-  entree: '#E8D5C4',
-  autre: '#E0E0E0',
-};
+// Palette pastel — volontairement distincte de celle des résultats de
+// recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
+// ici on distingue des PIÈCES entre elles sur un même plan.
+export const ROOM_COLOR_PALETTE: string[] = [
+  '#F3C6D9',
+  '#C9E4C5',
+  '#FCE8A8',
+  '#BEE3DB',
+  '#D7C9F2',
+  '#F6D8B8',
+  '#BFD7EA',
+  '#D6CFC7',
+  '#C8CDD3',
+  '#E8D5C4',
+];
 
-export const UNASSIGNED_ROOM_COLOR = '#E0E0E0';
-
-export function roomFloorColor(presetKey: string | null): string {
-  if (!presetKey) return UNASSIGNED_ROOM_COLOR;
-  return PLAN_ROOM_COLORS[presetKey as PieceTypeKey] ?? UNASSIGNED_ROOM_COLOR;
+// Couleur PAR PIÈCE INDIVIDUELLE (pas par catégorie) : un hash déterministe
+// sur l'id de la FORME (pas de la pièce — une forme sans piece_id doit quand
+// même avoir une couleur) garantit que la même pièce garde toujours la même
+// couleur d'une session à l'autre, et que deux pièces voisines sont
+// visuellement distinctes même si elles partagent la même catégorie (deux
+// Chambres côte à côte) ou n'ont pas de catégorie du tout.
+export function roomColorForForme(formeId: string): string {
+  let hash = 0;
+  for (let i = 0; i < formeId.length; i++) hash = (hash * 31 + formeId.charCodeAt(i)) >>> 0;
+  return ROOM_COLOR_PALETTE[hash % ROOM_COLOR_PALETTE.length];
 }
 
 // Assombrit une couleur hex #RRGGBB d'un facteur 0..1 (0 = inchangée, 1 =
-// noir) — dérive les 2 teintes de mur depuis la seule couleur de sol plutôt
-// que de maintenir 33 valeurs à la main.
+// noir) — dérive la couleur de contour depuis la couleur de sol plutôt que
+// de maintenir une deuxième valeur à la main.
 export function shade(hex: string, factor: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);

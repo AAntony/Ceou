@@ -199,6 +199,10 @@
     },
     "pins": {
       "remove": "Remove from plan"
+    },
+    "doors": {
+      "add": "Add a door",
+      "remove": "Remove this door"
     }
   }
 }

@@ -1,21 +1,27 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Icon } from '../../../src/components/Icon';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces } from '../../../src/features/inventory/queries';
 import { PLAN_SHAPE_TYPES, type PlanShapeType } from '../../../src/features/plans/constants';
+import { DoorSheet } from '../../../src/features/plans/DoorSheet';
 import { PlanCanvas } from '../../../src/features/plans/PlanCanvas';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
 import {
+  useCreatePlanDoor,
   useCreatePlanForme,
   useCreatePlanPin,
+  useDeletePlanDoor,
   useDeletePlanForme,
   useDeletePlanPin,
   usePlan,
+  usePlanDoors,
   usePlanFormes,
   usePlanPins,
+  useUpdatePlanDoor,
   useUpdatePlanForme,
   useUpdatePlanPin,
 } from '../../../src/features/plans/queries';
@@ -30,12 +36,16 @@ export default function PlanScreen() {
   const { data: formes } = usePlanFormes(id);
   const { data: pieces } = usePieces(plan?.habitation_id ?? '');
   const { data: pins } = usePlanPins(id);
+  const { data: doors } = usePlanDoors(id);
   const createForme = useCreatePlanForme(id);
   const updateForme = useUpdatePlanForme(id);
   const deleteForme = useDeletePlanForme(id);
   const createPin = useCreatePlanPin(id);
   const updatePin = useUpdatePlanPin(id);
   const deletePin = useDeletePlanPin(id);
+  const createDoor = useCreatePlanDoor(id);
+  const updateDoor = useUpdatePlanDoor(id);
+  const deleteDoor = useDeletePlanDoor(id);
 
   // sheetForme pilote la fiche (choix de pièce / suppression) ; selectedFormeId
   // pilote l'exclusivité de déplacement/redimensionnement sur le canevas —
@@ -44,12 +54,10 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
+  const [sheetDoorId, setSheetDoorId] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
-  const pieceInfo = useMemo(
-    () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, presetKey: p.preset_key }])),
-    [pieces],
-  );
+  const pieceInfo = useMemo(() => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name }])), [pieces]);
 
   const pieceIdsOnPlan = useMemo(
     () => Array.from(new Set((formes ?? []).map((f) => f.piece_id).filter((pid): pid is string => !!pid))),
@@ -64,6 +72,7 @@ export default function PlanScreen() {
   const selectedForme = (formes ?? []).find((f) => f.id === selectedFormeId) ?? null;
   const sheetPin = (pins ?? []).find((p) => p.id === sheetPinId) ?? null;
   const sheetPinDisplay = sheetPin ? (pinDisplay[sheetPin.emplacement_id] ?? null) : null;
+  const sheetDoor = (doors ?? []).find((d) => d.id === sheetDoorId) ?? null;
 
   // Vient de "Voir sur le plan" (fiche Objet) : amène la forme concernée
   // dans le cadre, approximatif mais suffisant (pas besoin d'un calcul de
@@ -99,6 +108,7 @@ export default function PlanScreen() {
           pieceInfo={pieceInfo}
           pins={pins ?? []}
           pinDisplay={pinDisplay}
+          doors={doors ?? []}
           highlightFormeId={highlightFormeId}
           selectedFormeId={selectedFormeId}
           onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
@@ -111,7 +121,19 @@ export default function PlanScreen() {
           onDeselect={() => setSelectedFormeId(null)}
           onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
           onPinTap={(pin) => setSheetPinId(pin.id)}
+          onDoorDragEnd={(doorId, edge, position) => updateDoor.mutate({ id: doorId, edge, position })}
+          onDoorTap={(door) => setSheetDoorId(door.id)}
         />
+
+        {selectedForme ? (
+          <Pressable
+            onPress={() => createDoor.mutate({ formeId: selectedForme.id })}
+            className="mb-3 flex-row items-center gap-1.5 self-start rounded-full border border-ink/10 bg-white px-3 py-2 active:opacity-70"
+          >
+            <Icon name="porte" size={16} color="#6B6459" />
+            <Text className="text-ink-soft">{t('plans.doors.add')}</Text>
+          </Pressable>
+        ) : null}
 
         {selectedForme?.piece_id ? (
           <UnplacedEmplacementsBar
@@ -146,6 +168,16 @@ export default function PlanScreen() {
           if (!sheetPin) return;
           deletePin.mutate(sheetPin.id);
           setSheetPinId(null);
+        }}
+      />
+
+      <DoorSheet
+        door={sheetDoor}
+        onClose={() => setSheetDoorId(null)}
+        onRemove={() => {
+          if (!sheetDoor) return;
+          deleteDoor.mutate(sheetDoor.id);
+          setSheetDoorId(null);
         }}
       />
     </>

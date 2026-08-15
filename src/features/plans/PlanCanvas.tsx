@@ -1,23 +1,17 @@
-import { Canvas, matchFont, Path, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
+import { Canvas, matchFont, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon, type IconName } from '../../components/Icon';
-import type { PlanForme, PlanPin } from '../../types/database';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE, roomFloorColor, shade } from './constants';
-import { project, screenDeltaToWorldDelta, WALL_HEIGHT, type ShapeGeometry } from './iso';
+import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, MAX_SHAPE_SIZE, MIN_SHAPE_SIZE, roomColorForForme, shade } from './constants';
+import { DoorLayer } from './DoorLayer';
 import { PlanPinLayer } from './PlanPinLayer';
+import { snapPosition, snapResize } from './snap';
+import type { HandleId, ShapeGeometry } from './types';
 
-// nw/n/ne/e/se/s/sw/w — les 4 coins ajustent largeur ET hauteur (bord opposé
-// fixe), les 4 milieux de segment n'ajustent qu'une seule dimension.
-type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-
-function polygonPath(points: { x: number; y: number }[]): string {
-  const [first, ...rest] = points;
-  return `M${first.x},${first.y} ${rest.map((p) => `L${p.x},${p.y}`).join(' ')} Z`;
-}
 
 function clampSize(value: number): number {
   return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
@@ -42,8 +36,7 @@ function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: num
 }
 
 // Chaque poignée ne déplace que les bords qu'elle touche ; le(s) bord(s)
-// opposé(s) restent ancrés sur la géométrie au début du geste (espace
-// MONDE, indépendant de la projection isométrique de l'affichage).
+// opposé(s) restent ancrés sur la géométrie au début du geste.
 function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: number): ShapeGeometry {
   let { x, y, width, height } = origin;
   const right = origin.x + origin.width;
@@ -68,9 +61,10 @@ function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: nu
 
 type PlanCanvasProps = {
   formes: PlanForme[];
-  pieceInfo: Record<string, { name: string; presetKey: string | null }>;
+  pieceInfo: Record<string, { name: string }>;
   pins: PlanPin[];
   pinDisplay: Record<string, { name: string; icon: IconName }>;
+  doors: PlanDoor[];
   highlightFormeId?: string | null;
   selectedFormeId: string | null;
   onDragEnd: (id: string, x: number, y: number) => void;
@@ -80,6 +74,8 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
+  onDoorDragEnd: (doorId: string, edge: 'n' | 'e' | 's' | 'w', position: number) => void;
+  onDoorTap: (door: PlanDoor) => void;
 };
 
 export function PlanCanvas({
@@ -87,6 +83,7 @@ export function PlanCanvas({
   pieceInfo,
   pins,
   pinDisplay,
+  doors,
   highlightFormeId,
   selectedFormeId,
   onDragEnd,
@@ -96,13 +93,15 @@ export function PlanCanvas({
   onDeselect,
   onPinDragEnd,
   onPinTap,
+  onDoorDragEnd,
+  onDoorTap,
 }: PlanCanvasProps) {
   const { t } = useTranslation();
-  // Position ET taille vivent dans le même state, en espace MONDE, mises à
-  // jour en direct par le déplacement (x/y) et les poignées de
-  // redimensionnement (x/y/width/height) — un seul aller-retour réseau à la
-  // fin du geste, pas à chaque frame. La projection isométrique n'est
-  // appliquée qu'au dessin, jamais stockée.
+  // Position ET taille vivent dans le même state, mises à jour en direct par
+  // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
+  // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
+  // frame. Plan 2D top-down pur : les coordonnées x/y SONT les coordonnées
+  // écran, aucune projection.
   const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
@@ -142,30 +141,18 @@ export function PlanCanvas({
 
   const selectedForme = formes.find((f) => f.id === selectedFormeId) ?? null;
 
-  // Tri en profondeur (peintre) : les pièces les plus "loin" (x+y monde
-  // faible) sont dessinées en premier, pour un chevauchement visuel correct
-  // si deux pièces se recouvrent à l'écran une fois projetées.
-  const sortedFormes = useMemo(() => {
-    return [...formes].sort((a, b) => {
-      const ga = geoById[a.id];
-      const gb = geoById[b.id];
-      const da = ga.x + ga.width / 2 + (ga.y + ga.height / 2);
-      const db = gb.x + gb.width / 2 + (gb.y + gb.height / 2);
-      return da - db;
-    });
-  }, [formes, geoById]);
-
   return (
     <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }} className="self-center rounded-2xl bg-sand-dark">
       <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
-        {sortedFormes.map((forme) => {
-          const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
+        {formes.map((forme) => {
+          const geo = geoById[forme.id];
+          const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
           return (
             <RoomVisual
               key={forme.id}
-              geo={geoById[forme.id]}
-              presetKey={info?.presetKey ?? null}
-              label={info?.name ?? ''}
+              geo={geo}
+              color={roomColorForForme(forme.id)}
+              label={label}
               font={font}
               active={forme.id === highlightFormeId || forme.id === selectedFormeId}
             />
@@ -180,10 +167,12 @@ export function PlanCanvas({
         // autres restent verrouillées (même le tap) tant que "Valider" n'a
         // pas relâché la sélection en cours.
         const locked = selectedFormeId !== null && !isSelected;
+        const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
         return (
           <ShapeBody
             key={forme.id}
             geo={geo}
+            others={others}
             isSelected={isSelected}
             locked={locked}
             onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
@@ -200,6 +189,7 @@ export function PlanCanvas({
               key={handle}
               geo={geoById[selectedForme.id]}
               handle={handle}
+              others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
               onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
               onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
             />
@@ -215,6 +205,8 @@ export function PlanCanvas({
         onTap={onPinTap}
       />
 
+      <DoorLayer doors={doors} formeGeo={geoById} selectedFormeId={selectedFormeId} onDragEnd={onDoorDragEnd} onTap={onDoorTap} />
+
       {selectedFormeId ? (
         <Pressable
           onPress={onDeselect}
@@ -228,45 +220,31 @@ export function PlanCanvas({
   );
 }
 
-// Dessine une pièce comme un volume isométrique extrudé : une face "sol"
-// (parallélogramme, couleur pastel du type de pièce) + 2 faces de mur (les
-// arêtes droite/avant, les plus proches du "spectateur" en isométrique,
-// extrudées vers le bas d'un décalage écran fixe WALL_HEIGHT) dans des
-// teintes assombries de la même couleur. Le nom de la pièce reste horizontal
-// (pas skewé), comme sur la maquette de référence.
+// Rectangle plein (couleur par pièce individuelle) + contour + nom centré —
+// plan 2D top-down pur, aucune projection.
 function RoomVisual({
   geo,
-  presetKey,
+  color,
   label,
   font,
   active,
 }: {
   geo: ShapeGeometry;
-  presetKey: string | null;
+  color: string;
   label: string;
   font: SkFont | null;
   active: boolean;
 }) {
-  const topLeft = project(geo.x, geo.y);
-  const topRight = project(geo.x + geo.width, geo.y);
-  const bottomRight = project(geo.x + geo.width, geo.y + geo.height);
-  const bottomLeft = project(geo.x, geo.y + geo.height);
-  const down = (p: { x: number; y: number }) => ({ x: p.x, y: p.y + WALL_HEIGHT });
-
-  const floorColor = roomFloorColor(presetKey);
-  const rightWallColor = shade(floorColor, 0.15);
-  const frontWallColor = shade(floorColor, 0.3);
-
-  const centerX = (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4;
-  const centerY = (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4;
+  const borderColor = shade(color, 0.25);
+  const centerX = geo.x + geo.width / 2;
+  const centerY = geo.y + geo.height / 2;
 
   return (
     <>
-      <Path path={polygonPath([topRight, bottomRight, down(bottomRight), down(topRight)])} color={rightWallColor} style="fill" />
-      <Path path={polygonPath([bottomLeft, bottomRight, down(bottomRight), down(bottomLeft)])} color={frontWallColor} style="fill" />
-      <Path path={polygonPath([topLeft, topRight, bottomRight, bottomLeft])} color={floorColor} style="fill" />
+      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="fill" />
+      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={borderColor} style="stroke" strokeWidth={2} />
       {active ? (
-        <Path path={polygonPath([topLeft, topRight, bottomRight, bottomLeft])} color="#FF6B4A" style="stroke" strokeWidth={3} />
+        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#FF6B4A" style="stroke" strokeWidth={3} />
       ) : null}
       {label && font ? (
         <SkiaText x={centerX - label.length * 3} y={centerY} text={label} font={font} color="#2D2A26" />
@@ -276,12 +254,12 @@ function RoomVisual({
 }
 
 // Déplacement (tout le corps de la forme, uniquement quand sélectionnée) +
-// sélection au tap simple / ouverture de la fiche au double-tap. La zone de
-// toucher est la bounding box écran de la silhouette 3D projetée (sol +
-// murs) — un peu plus généreuse que le losange exact, compromis raisonnable
-// plutôt qu'un hit-test au pixel près sur un polygone.
+// sélection au tap simple / ouverture de la fiche au double-tap. Le
+// déplacement passe par snapPosition() pour s'accoler magnétiquement aux
+// pièces voisines.
 function ShapeBody({
   geo,
+  others,
   isSelected,
   locked,
   onMove,
@@ -290,6 +268,7 @@ function ShapeBody({
   onOpenSheet,
 }: {
   geo: ShapeGeometry;
+  others: ShapeGeometry[];
   isSelected: boolean;
   locked: boolean;
   onMove: (x: number, y: number) => void;
@@ -300,18 +279,12 @@ function ShapeBody({
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
 
-  const topLeft = project(geo.x, geo.y);
-  const topRight = project(geo.x + geo.width, geo.y);
-  const bottomRight = project(geo.x + geo.width, geo.y + geo.height);
-  const bottomLeft = project(geo.x, geo.y + geo.height);
-  const minX = Math.min(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
-  const maxX = Math.max(topLeft.x, topRight.x, bottomRight.x, bottomLeft.x);
-  const minY = Math.min(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y);
-  const maxY = Math.max(topLeft.y, topRight.y, bottomRight.y, bottomLeft.y) + WALL_HEIGHT;
+  const resolve = (translationX: number, translationY: number) => {
+    const rawX = dragOrigin.current.x + translationX;
+    const rawY = dragOrigin.current.y + translationY;
+    return snapPosition(rawX, rawY, geo.width, geo.height, others);
+  };
 
-  // event.translation(X|Y) est un delta ÉCRAN — sous la projection
-  // isométrique il ne correspond plus 1:1 à un déplacement sur les axes
-  // x/y du monde, d'où la conversion avant application à dragOrigin.
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
@@ -321,12 +294,12 @@ function ShapeBody({
       dragOrigin.current = geo;
     })
     .onUpdate((event) => {
-      const delta = screenDeltaToWorldDelta(event.translationX, event.translationY);
-      onMove(dragOrigin.current.x + delta.x, dragOrigin.current.y + delta.y);
+      const snapped = resolve(event.translationX, event.translationY);
+      onMove(snapped.x, snapped.y);
     })
     .onEnd((event) => {
-      const delta = screenDeltaToWorldDelta(event.translationX, event.translationY);
-      onDragEnd(dragOrigin.current.x + delta.x, dragOrigin.current.y + delta.y);
+      const snapped = resolve(event.translationX, event.translationY);
+      onDragEnd(snapped.x, snapped.y);
     });
 
   // Un tap simple sélectionne (déplacer/redimensionner) ; il faut un
@@ -341,7 +314,7 @@ function ShapeBody({
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={{ position: 'absolute', left: minX, top: minY, width: maxX - minX, height: maxY - minY }} />
+      <View style={{ position: 'absolute', left: geo.x, top: geo.y, width: geo.width, height: geo.height }} />
     </GestureDetector>
   );
 }
@@ -350,23 +323,25 @@ const HANDLE_TOUCH_SIZE = 32;
 const HANDLE_DOT_SIZE = 12;
 
 // Petit point d'ancrage — sa propre zone de geste (32x32, centrée sur le
-// point projeté), rendu par-dessus ShapeBody pour que le toucher y soit
-// prioritaire à cet endroit précis plutôt que d'aller au déplacement.
+// point), rendu par-dessus ShapeBody pour que le toucher y soit prioritaire
+// à cet endroit précis plutôt que d'aller au déplacement. Le redimensionnement
+// passe par snapResize() pour aligner le bord actif sur une pièce voisine.
 function HandleDot({
   geo,
   handle,
+  others,
   onResize,
   onResizeEnd,
 }: {
   geo: ShapeGeometry;
   handle: HandleId;
+  others: ShapeGeometry[];
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
 }) {
   const origin = useRef(geo);
   const last = useRef(geo);
-  const worldAnchor = handleAnchor(geo, handle);
-  const screenAnchor = project(worldAnchor.x, worldAnchor.y);
+  const anchor = handleAnchor(geo, handle);
 
   const pan = Gesture.Pan()
     .minPointers(1)
@@ -377,8 +352,8 @@ function HandleDot({
       last.current = geo;
     })
     .onUpdate((event) => {
-      const delta = screenDeltaToWorldDelta(event.translationX, event.translationY);
-      last.current = applyHandle(origin.current, handle, delta.x, delta.y);
+      const raw = applyHandle(origin.current, handle, event.translationX, event.translationY);
+      last.current = snapResize(raw, handle, others);
       onResize(last.current);
     })
     .onEnd(() => onResizeEnd(last.current));
@@ -388,8 +363,8 @@ function HandleDot({
       <View
         style={{
           position: 'absolute',
-          left: screenAnchor.x - HANDLE_TOUCH_SIZE / 2,
-          top: screenAnchor.y - HANDLE_TOUCH_SIZE / 2,
+          left: anchor.x - HANDLE_TOUCH_SIZE / 2,
+          top: anchor.y - HANDLE_TOUCH_SIZE / 2,
           width: HANDLE_TOUCH_SIZE,
           height: HANDLE_TOUCH_SIZE,
           alignItems: 'center',
