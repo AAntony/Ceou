@@ -236,87 +236,97 @@ export function PlanCanvas({
     });
 
   return (
-    <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
-      <View
-        style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'hidden' }}
-        className="self-center rounded-2xl bg-sand-dark"
-      >
-        <View
-          style={{
-            width: CANVAS_WIDTH,
-            height: CANVAS_HEIGHT,
-            transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
-          }}
-        >
-          <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+    <View
+      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'hidden' }}
+      className="self-center rounded-2xl bg-sand-dark"
+    >
+      {/* Le geste de fond (pan/tap/pinch) ne doit couvrir QUE le contenu du
+          plan — s'il englobait aussi le menu HUD ci-dessous, un tap sur une
+          icône du menu serait aussi vu comme un tap "dans le vide" et
+          intercepté par ce GestureDetector avant d'atteindre le Pressable de
+          l'icône (le bug exact qui empêchait d'ajouter un Emplacement). Le
+          menu est donc rendu en dehors de ce sous-arbre, pas seulement
+          visuellement par-dessus. */}
+      <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
+        <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+          <View
+            style={{
+              width: CANVAS_WIDTH,
+              height: CANVAS_HEIGHT,
+              transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
+            }}
+          >
+            <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+              {formes.map((forme) => {
+                const geo = geoById[forme.id];
+                const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
+                return (
+                  <RoomVisual
+                    key={forme.id}
+                    geo={geo}
+                    color={roomColorForForme(forme.id)}
+                    label={label}
+                    font={font}
+                    highlighted={forme.id === highlightFormeId}
+                    selected={forme.id === selectedFormeId}
+                  />
+                );
+              })}
+            </Canvas>
+
             {formes.map((forme) => {
               const geo = geoById[forme.id];
-              const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
+              const isSelected = forme.id === selectedFormeId;
+              const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
               return (
-                <RoomVisual
+                <ShapeBody
                   key={forme.id}
                   geo={geo}
-                  color={roomColorForForme(forme.id)}
-                  label={label}
-                  font={font}
-                  highlighted={forme.id === highlightFormeId}
-                  selected={forme.id === selectedFormeId}
+                  others={others}
+                  isSelected={isSelected}
+                  scale={zoom.scale}
+                  onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
+                  onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
+                  onSelect={() => onSelect(forme)}
+                  onOpenSheet={() => onOpenSheet(forme)}
                 />
               );
             })}
-          </Canvas>
 
-          {formes.map((forme) => {
-            const geo = geoById[forme.id];
-            const isSelected = forme.id === selectedFormeId;
-            const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
-            return (
-              <ShapeBody
-                key={forme.id}
-                geo={geo}
-                others={others}
-                isSelected={isSelected}
-                scale={zoom.scale}
-                onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
-                onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
-                onSelect={() => onSelect(forme)}
-                onOpenSheet={() => onOpenSheet(forme)}
-              />
-            );
-          })}
+            {selectedForme
+              ? HANDLES.map((handle) => (
+                  <HandleDot
+                    key={handle}
+                    geo={geoById[selectedForme.id]}
+                    handle={handle}
+                    others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
+                    scale={zoom.scale}
+                    onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
+                    onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
+                  />
+                ))
+              : null}
 
-          {selectedForme
-            ? HANDLES.map((handle) => (
-                <HandleDot
-                  key={handle}
-                  geo={geoById[selectedForme.id]}
-                  handle={handle}
-                  others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
-                  scale={zoom.scale}
-                  onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
-                  onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
-                />
-              ))
-            : null}
-
-          <PlanPinLayer
-            pins={pins}
-            formeGeo={geoById}
-            pinDisplay={pinDisplay}
-            selectedFormeId={selectedFormeId}
-            highlightedEmplacementId={highlightEmplacementId}
-            scale={zoom.scale}
-            onDragEnd={onPinDragEnd}
-            onTap={onPinTap}
-          />
+            <PlanPinLayer
+              pins={pins}
+              formeGeo={geoById}
+              pinDisplay={pinDisplay}
+              selectedFormeId={selectedFormeId}
+              highlightedEmplacementId={highlightEmplacementId}
+              scale={zoom.scale}
+              onDragEnd={onPinDragEnd}
+              onTap={onPinTap}
+            />
+          </View>
         </View>
+      </GestureDetector>
 
-        {/* HUD fixe — ne suit pas le zoom/pan du contenu */}
-        {selectedForme?.piece_id ? (
-          <UnplacedEmplacementsBar pieceId={selectedForme.piece_id} pins={pins} onPlace={onPlaceEmplacement} />
-        ) : null}
-      </View>
-    </GestureDetector>
+      {/* HUD fixe — hors du sous-arbre du GestureDetector ci-dessus, pas
+          seulement visuellement par-dessus (voir commentaire plus haut) */}
+      {selectedForme?.piece_id ? (
+        <UnplacedEmplacementsBar pieceId={selectedForme.piece_id} pins={pins} onPlace={onPlaceEmplacement} />
+      ) : null}
+    </View>
   );
 }
 
