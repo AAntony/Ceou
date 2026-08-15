@@ -157,7 +157,7 @@
     "objet": {
       "location_title": "Emplacement",
       "name_label": "Nom",
-      "description_label": "Description",
+      "description_label": "Informations",
       "add_photo": "Ajouter une photo",
       "change_photo": "Changer la photo",
       "scan_barcode": "Scanner un code-barre",
