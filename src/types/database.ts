@@ -13,5 +13,6 @@ export type Objet = Tables['objets']['Row'];
 export type ObjetDeplacement = Tables['objet_deplacements']['Row'];
 export type Plan = Tables['plans']['Row'];
 export type PlanForme = Tables['plan_formes']['Row'];
+export type PlanPin = Tables['plan_pins']['Row'];
 
 export type LocationType = 'emplacement' | 'conteneur';

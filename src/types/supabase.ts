@@ -318,6 +318,58 @@ export type Database = {
           },
         ]
       }
+      plan_pins: {
+        Row: {
+          created_at: string
+          emplacement_id: string
+          forme_id: string
+          id: string
+          plan_id: string
+          rel_x: number
+          rel_y: number
+        }
+        Insert: {
+          created_at?: string
+          emplacement_id: string
+          forme_id: string
+          id?: string
+          plan_id: string
+          rel_x?: number
+          rel_y?: number
+        }
+        Update: {
+          created_at?: string
+          emplacement_id?: string
+          forme_id?: string
+          id?: string
+          plan_id?: string
+          rel_x?: number
+          rel_y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_pins_emplacement_id_fkey"
+            columns: ["emplacement_id"]
+            isOneToOne: true
+            referencedRelation: "emplacements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_pins_forme_id_fkey"
+            columns: ["forme_id"]
+            isOneToOne: false
+            referencedRelation: "plan_formes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_pins_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
           created_at: string

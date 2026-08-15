@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase/client';
-import type { Plan, PlanForme } from '../../types/database';
+import type { Plan, PlanForme, PlanPin } from '../../types/database';
 import { CANVAS_WIDTH, DEFAULT_SHAPE_SIZE, type PlanShapeType } from './constants';
 
 export function usePlans(habitationId: string) {
@@ -168,5 +168,54 @@ export function useDeletePlanForme(planId: string) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
+  });
+}
+
+export function usePlanPins(planId: string) {
+  return useQuery({
+    queryKey: ['planPins', planId],
+    queryFn: async (): Promise<PlanPin[]> => {
+      const { data, error } = await supabase.from('plan_pins').select('*').eq('plan_id', planId);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreatePlanPin(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { formeId: string; emplacementId: string }): Promise<PlanPin> => {
+      const { data, error } = await supabase
+        .from('plan_pins')
+        .insert({ plan_id: planId, forme_id: input.formeId, emplacement_id: input.emplacementId, rel_x: 0.5, rel_y: 0.5 })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planPins', planId] }),
+  });
+}
+
+export function useUpdatePlanPin(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; relX: number; relY: number }) => {
+      const { error } = await supabase.from('plan_pins').update({ rel_x: input.relX, rel_y: input.relY }).eq('id', input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planPins', planId] }),
+  });
+}
+
+export function useDeletePlanPin(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('plan_pins').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planPins', planId] }),
   });
 }

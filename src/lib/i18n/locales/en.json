@@ -188,14 +188,17 @@
     "delete_confirm_message": "All the shapes it contains will be deleted.",
     "canvas_hint": "Tap a shape to select it: drag the center to move it, the dots to resize it. Double-tap to link a room. Confirm to pick another one.",
     "validate_selection": "Confirm",
+    "unplaced_title": "Spots to place in this room",
     "shapeTypes": {
-      "rectangle": "Rectangle",
-      "circle": "Circle"
+      "rectangle": "Rectangle"
     },
     "shape": {
       "title": "Shape",
       "piece_label": "Linked room",
       "no_piece": "None"
+    },
+    "pins": {
+      "remove": "Remove from plan"
     }
   }
 }

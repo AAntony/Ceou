@@ -188,14 +188,17 @@
     "delete_confirm_message": "Toutes les formes qu'il contient seront supprimées.",
     "canvas_hint": "Appuie pour sélectionner une forme : glisse le centre pour la déplacer, les points pour la redimensionner. Double-appuie pour associer une pièce. Valide pour en choisir une autre.",
     "validate_selection": "Valider",
+    "unplaced_title": "Emplacements à placer dans cette pièce",
     "shapeTypes": {
-      "rectangle": "Rectangle",
-      "circle": "Cercle"
+      "rectangle": "Rectangle"
     },
     "shape": {
       "title": "Forme",
       "piece_label": "Pièce associée",
       "no_piece": "Aucune"
+    },
+    "pins": {
+      "remove": "Retirer du plan"
     }
   }
 }

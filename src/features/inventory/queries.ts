@@ -189,6 +189,23 @@ export function useEmplacements(pieceId: string) {
   });
 }
 
+// Utilisé par l'écran Plan (Phase 7) pour afficher nom/icône des Emplacements
+// déjà épinglés sur le plan, quelle que soit la pièce à laquelle ils
+// appartiennent — un seul aller-retour réseau pour toutes les pièces posées
+// sur ce plan plutôt qu'un hook par pièce (le nombre de pièces varie d'un
+// plan à l'autre, incompatible avec les règles des Hooks appelés en boucle).
+export function useEmplacementsForPieces(pieceIds: string[]) {
+  return useQuery({
+    queryKey: ['emplacementsForPieces', [...pieceIds].sort()],
+    enabled: pieceIds.length > 0,
+    queryFn: async (): Promise<Emplacement[]> => {
+      const { data, error } = await supabase.from('emplacements').select('*').in('piece_id', pieceIds);
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
 export function useEmplacement(id: string) {
   return useQuery({
     queryKey: ['emplacement', id],
