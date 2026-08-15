@@ -1,14 +1,13 @@
 import { Canvas, matchFont, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Icon, type IconName } from '../../components/Icon';
+import type { IconName } from '../../components/Icon';
 import type { PlanForme, PlanPin } from '../../types/database';
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
-  HIGHLIGHT_GREEN,
+  HIGHLIGHT_GREEN_BORDER,
   MAX_SHAPE_SIZE,
   MAX_ZOOM,
   MIN_SHAPE_SIZE,
@@ -111,7 +110,6 @@ export function PlanCanvas({
   onPinTap,
   onPlaceEmplacement,
 }: PlanCanvasProps) {
-  const { t } = useTranslation();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
@@ -187,8 +185,58 @@ export function PlanCanvas({
       }));
     });
 
+  // Un point en coordonnées VIEWPORT (écran, avant zoom/pan) devient un point
+  // dans le repère du contenu en inversant la transformation appliquée à la
+  // vue interne — nécessaire pour savoir si un tap "dans le vide" tombe
+  // réellement en dehors de toute pièce.
+  const viewportToContent = (vx: number, vy: number) => ({
+    x: (vx - zoom.translateX) / zoom.scale,
+    y: (vy - zoom.translateY) / zoom.scale,
+  });
+  const isInsideAnyRoom = (x: number, y: number) =>
+    formes.some((f) => {
+      const g = geoById[f.id];
+      return x >= g.x && x <= g.x + g.width && y >= g.y && y <= g.y + g.height;
+    });
+
+  // Déplacer la vue à un seul doigt n'est possible que lorsqu'aucune pièce
+  // n'est sélectionnée (sinon le doigt sert à la déplacer elle-même —
+  // exclusion mutuelle garantie par cette même condition côté ShapeBody, donc
+  // jamais les deux actifs en même temps). Avec quelque chose de sélectionné,
+  // le pan à deux doigts (ci-dessus) reste disponible pour naviguer sans
+  // désélectionner.
+  const backgroundPan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
+    .enabled(selectedFormeId === null)
+    .runOnJS(true)
+    .onStart(() => {
+      zoomOrigin.current = zoom;
+    })
+    .onUpdate((event) => {
+      setZoom((z) => ({
+        ...z,
+        translateX: zoomOrigin.current.translateX + event.translationX,
+        translateY: zoomOrigin.current.translateY + event.translationY,
+      }));
+    });
+
+  // Remplace le bouton "Valider" : un tap qui ne touche aucune pièce
+  // désélectionne. Le calcul en JS (plutôt que de compter sur une priorité
+  // de geste implicite) garantit qu'un tap sur une pièce ne désélectionne
+  // jamais par erreur, même si ce geste et celui de la pièce touchée
+  // observent tous les deux le même toucher.
+  const backgroundTap = Gesture.Tap()
+    .maxDistance(8)
+    .runOnJS(true)
+    .onEnd((event) => {
+      if (!selectedFormeId) return;
+      const point = viewportToContent(event.x, event.y);
+      if (!isInsideAnyRoom(point.x, point.y)) onDeselect();
+    });
+
   return (
-    <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan)}>
+    <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
       <View
         style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'hidden' }}
         className="self-center rounded-2xl bg-sand-dark"
@@ -267,16 +315,6 @@ export function PlanCanvas({
         {selectedForme?.piece_id ? (
           <UnplacedEmplacementsBar pieceId={selectedForme.piece_id} pins={pins} onPlace={onPlaceEmplacement} />
         ) : null}
-
-        {selectedFormeId ? (
-          <Pressable
-            onPress={onDeselect}
-            accessibilityLabel={t('plans.validate_selection')}
-            className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-coral shadow-md active:opacity-80"
-          >
-            <Icon name="validate" size={20} color="#fff" />
-          </Pressable>
-        ) : null}
       </View>
     </GestureDetector>
   );
@@ -284,8 +322,11 @@ export function PlanCanvas({
 
 // Rectangle plein (couleur par pièce individuelle) + contour + nom centré —
 // plan 2D top-down pur, aucune projection. `highlighted` (vient de "Voir sur
-// le plan") force un remplissage vert distinctif ; `selected` (édition en
-// cours) ajoute un contour corail par-dessus — les deux peuvent coexister.
+// le plan") NE change PAS le remplissage (la pièce garde sa couleur normale,
+// lisibilité du plan dans son ensemble préservée) — seul le contour devient
+// vert et plus épais. `selected` (édition en cours) prend le pas en corail
+// si les deux sont vrais en même temps (cas rare : la pièce surlignée est
+// aussi celle qu'on édite).
 function RoomVisual({
   geo,
   color,
@@ -301,17 +342,18 @@ function RoomVisual({
   highlighted: boolean;
   selected: boolean;
 }) {
-  const fill = highlighted ? HIGHLIGHT_GREEN : color;
-  const borderColor = shade(fill, 0.25);
+  const borderColor = shade(color, 0.25);
   const centerX = geo.x + geo.width / 2;
   const centerY = geo.y + geo.height / 2;
 
   return (
     <>
-      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={fill} style="fill" />
+      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="fill" />
       <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={borderColor} style="stroke" strokeWidth={2} />
       {selected ? (
         <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#FF6B4A" style="stroke" strokeWidth={3} />
+      ) : highlighted ? (
+        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={HIGHLIGHT_GREEN_BORDER} style="stroke" strokeWidth={4} />
       ) : null}
       {label && font ? (
         <SkiaText x={centerX - label.length * 3} y={centerY} text={label} font={font} color="#2D2A26" />

@@ -3,6 +3,7 @@ import { IconBadge } from '../../components/IconBadge';
 import { getEmplacementIcon } from '../inventory/constants';
 import { useEmplacements } from '../inventory/queries';
 import type { PlanPin } from '../../types/database';
+import { MENU_PANEL_BACKGROUND } from './constants';
 
 type UnplacedEmplacementsBarProps = {
   pieceId: string;
@@ -25,7 +26,7 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
 
   return (
     <View pointerEvents="box-none" className="absolute bottom-2 left-2 top-2 w-11 items-center">
-      <View className="w-11 flex-1 items-center rounded-2xl bg-ink/70 py-2">
+      <View className="w-11 flex-1 items-center rounded-2xl py-2" style={{ backgroundColor: MENU_PANEL_BACKGROUND }}>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerClassName="items-center gap-2">
           {unplaced.map((e) => (
             <Pressable key={e.id} onPress={() => onPlace(e.id)} className="active:opacity-70">

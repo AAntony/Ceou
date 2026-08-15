@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Icon } from '../../components/Icon';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
-import { HIGHLIGHT_GREEN } from './constants';
+import { HIGHLIGHT_GREEN_PASTEL } from './constants';
 import type { ShapeGeometry } from './types';
 
 // 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
@@ -146,7 +147,12 @@ function PinBadge({
   return (
     <GestureDetector gesture={gesture}>
       <View style={{ position: 'absolute', left: screen.x - PIN_SIZE / 2, top: screen.y - PIN_SIZE / 2 }}>
-        <IconBadge icon={display.icon} fill={highlighted ? HIGHLIGHT_GREEN : '#FFFBF8'} size={PIN_SIZE} />
+        {highlighted ? (
+          <View style={{ position: 'absolute', top: -14, left: 0, right: 0, alignItems: 'center' }}>
+            <Icon name="arrowDown" size={16} color="#E53935" />
+          </View>
+        ) : null}
+        <IconBadge icon={display.icon} fill={highlighted ? HIGHLIGHT_GREEN_PASTEL : '#FFFBF8'} size={PIN_SIZE} />
       </View>
     </GestureDetector>
   );

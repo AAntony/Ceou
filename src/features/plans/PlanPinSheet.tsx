@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Pressable, Text } from 'react-native';
 import { Button } from '../../components/Button';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
@@ -20,8 +20,8 @@ export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetPr
 
   return (
     <Modal visible={!!pin && !!display} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/40">
-        <View className="items-center rounded-t-3xl bg-white px-6 pb-10 pt-6">
+      <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
+        <Pressable className="items-center rounded-t-3xl bg-white px-6 pb-10 pt-6" onPress={() => {}}>
           {display ? (
             <>
               <IconBadge icon={display.icon} fill="#F3EFE9" size={56} />
@@ -33,8 +33,8 @@ export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetPr
             <Text className="text-center text-sm font-semibold text-red-600">{t('plans.pins.remove')}</Text>
           </Pressable>
           <Button label={t('common.close')} variant="ghost" onPress={onClose} />
-        </View>
-      </View>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }

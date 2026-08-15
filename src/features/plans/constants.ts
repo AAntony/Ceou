@@ -17,10 +17,16 @@ export const CANVAS_HEIGHT = 600;
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 3;
 
-// Couleur dédiée au surlignage "Voir sur le plan" (delibérément hors de
-// ROOM_COLOR_PALETTE, qui reste dans des tons pastel — celle-ci doit se
-// distinguer sans ambiguïté de la couleur normale d'une pièce).
-export const HIGHLIGHT_GREEN = '#4CAF50';
+// Surlignage "Voir sur le plan" : deux verts distincts pour deux usages —
+// HIGHLIGHT_GREEN_BORDER (plus saturé) reste lisible en simple contour sur
+// n'importe quelle couleur de sol pastel ; HIGHLIGHT_GREEN_PASTEL (plus doux)
+// habille la pastille d'Emplacement elle-même, dont le remplissage est déjà
+// un petit badge, pas besoin du même contraste fort qu'un contour de pièce.
+export const HIGHLIGHT_GREEN_BORDER = '#4CAF50';
+export const HIGHLIGHT_GREEN_PASTEL = '#A5D6A7';
+
+// Fond du menu flottant "Emplacements à placer" (bord gauche du plan).
+export const MENU_PANEL_BACKGROUND = '#EDEBE7';
 
 // Palette pastel — volontairement distincte de celle des résultats de
 // recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
