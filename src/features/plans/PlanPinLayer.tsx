@@ -5,8 +5,9 @@ import { Icon } from '../../components/Icon';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
-import { HIGHLIGHT_GREEN_PASTEL } from './constants';
 import type { ShapeGeometry } from './types';
+
+const HIGHLIGHT_RED = '#E53935';
 
 // 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
 // plan une fois plusieurs pastilles posées.
@@ -149,10 +150,16 @@ function PinBadge({
       <View style={{ position: 'absolute', left: screen.x - PIN_SIZE / 2, top: screen.y - PIN_SIZE / 2 }}>
         {highlighted ? (
           <View style={{ position: 'absolute', top: -14, left: 0, right: 0, alignItems: 'center' }}>
-            <Icon name="arrowDown" size={16} color="#E53935" />
+            <Icon name="arrowDown" size={16} color={HIGHLIGHT_RED} />
           </View>
         ) : null}
-        <IconBadge icon={display.icon} fill={highlighted ? HIGHLIGHT_GREEN_PASTEL : '#FFFBF8'} size={PIN_SIZE} />
+        <IconBadge
+          icon={display.icon}
+          fill="#FFFBF8"
+          size={PIN_SIZE}
+          borderColor={highlighted ? HIGHLIGHT_RED : undefined}
+          borderWidth={2.5}
+        />
       </View>
     </GestureDetector>
   );
