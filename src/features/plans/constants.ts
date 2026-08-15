@@ -26,7 +26,11 @@ export const MENU_PANEL_BACKGROUND = '#EDEBE7';
 
 // Palette pastel — volontairement distincte de celle des résultats de
 // recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
-// ici on distingue des PIÈCES entre elles sur un même plan.
+// ici on distingue des PIÈCES entre elles sur un même plan. 15 teintes pour
+// plus de variété. Les 5 dernières ont été ajoutées APRÈS les 10 premières
+// (jamais insérées au milieu) : roomColorForForme() indexe dans ce tableau
+// par hash, un réordonnancement changerait silencieusement la couleur de
+// pièces déjà coloriées automatiquement.
 export const ROOM_COLOR_PALETTE: string[] = [
   '#F3C6D9',
   '#C9E4C5',
@@ -38,6 +42,11 @@ export const ROOM_COLOR_PALETTE: string[] = [
   '#D6CFC7',
   '#C8CDD3',
   '#E8D5C4',
+  '#F4BFC0',
+  '#B8E8E0',
+  '#E3BFE0',
+  '#DCE8AE',
+  '#C2C9E8',
 ];
 
 // Couleur PAR PIÈCE INDIVIDUELLE (pas par catégorie) : un hash déterministe
