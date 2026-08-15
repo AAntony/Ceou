@@ -7,6 +7,7 @@ import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Conteneur, LocationType } from '../../types/database';
 import { CreateObjetModal } from './CreateObjetModal';
 import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDeleteObjet, useUpdateConteneur } from './queries';
@@ -50,12 +51,14 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         {isEmpty ? (
           <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
-          <>
+          <View className="flex-row flex-wrap justify-between">
             {conteneurs.map((conteneur) => (
               <EntityCard
                 key={conteneur.id}
                 icon="conteneur"
                 title={conteneur.name}
+                bgColor={HUE_CARD_BG_HEX.sky}
+                badgeColor={HUE_BADGE_FILL.sky}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
                 onLongPress={() => handleDeleteConteneur(conteneur.id)}
                 onEdit={() => {
@@ -71,11 +74,13 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 icon="objet"
                 imageUri={objet.photo_url}
                 title={objet.name}
+                bgColor={HUE_CARD_BG_HEX.coral}
+                badgeColor={HUE_BADGE_FILL.coral}
                 onPress={() => router.push(`/objet/${objet.id}`)}
                 onLongPress={() => handleDeleteObjet(objet.id)}
               />
             ))}
-          </>
+          </View>
         )}
       </ScrollView>
 

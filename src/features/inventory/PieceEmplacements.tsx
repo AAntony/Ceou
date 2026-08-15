@@ -8,6 +8,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { PresetPicker } from '../../components/PresetPicker';
+import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Emplacement } from '../../types/database';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
 import { useCreateEmplacement, useDeleteEmplacement, useEmplacements, useUpdateEmplacement } from './queries';
@@ -63,16 +64,20 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         {isEmpty ? (
           <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
-          emplacements?.map((emplacement) => (
-            <EntityCard
-              key={emplacement.id}
-              icon={getEmplacementIcon(emplacement.preset_key)}
-              title={emplacement.name}
-              onPress={() => router.push(`/emplacement/${emplacement.id}`)}
-              onLongPress={() => handleDelete(emplacement.id)}
-              onEdit={() => openEdit(emplacement)}
-            />
-          ))
+          <View className="flex-row flex-wrap justify-between">
+            {emplacements?.map((emplacement) => (
+              <EntityCard
+                key={emplacement.id}
+                icon={getEmplacementIcon(emplacement.preset_key)}
+                title={emplacement.name}
+                bgColor={HUE_CARD_BG_HEX.mustard}
+                badgeColor={HUE_BADGE_FILL.mustard}
+                onPress={() => router.push(`/emplacement/${emplacement.id}`)}
+                onLongPress={() => handleDelete(emplacement.id)}
+                onEdit={() => openEdit(emplacement)}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
 

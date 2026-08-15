@@ -1,11 +1,10 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
-import { PresetPicker } from '../../../src/components/PresetPicker';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { Icon } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
-import { useEmplacementsForPieces, usePieces } from '../../../src/features/inventory/queries';
-import { PLAN_SHAPE_TYPES, type PlanShapeType } from '../../../src/features/plans/constants';
+import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
 import { PlanCanvas } from '../../../src/features/plans/PlanCanvas';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
 import {
@@ -39,6 +38,7 @@ export default function PlanScreen() {
   const createPin = useCreatePlanPin(id);
   const updatePin = useUpdatePlanPin(id);
   const deletePin = useDeletePlanPin(id);
+  const updatePiece = useUpdatePiece(plan?.habitation_id ?? '');
 
   // sheetForme pilote la fiche (choix de pièce / suppression) ; selectedFormeId
   // pilote l'exclusivité de déplacement/redimensionnement sur le canevas —
@@ -49,7 +49,10 @@ export default function PlanScreen() {
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
-  const pieceInfo = useMemo(() => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name }])), [pieces]);
+  const pieceInfo = useMemo(
+    () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, color: p.color }])),
+    [pieces],
+  );
 
   const pieceIdsOnPlan = useMemo(
     () => Array.from(new Set((formes ?? []).map((f) => f.piece_id).filter((pid): pid is string => !!pid))),
@@ -85,12 +88,13 @@ export default function PlanScreen() {
     <>
       <Stack.Screen options={{ title: plan.name }} />
       <ScrollView ref={scrollRef} className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-4">
-        <PresetPicker
-          presets={PLAN_SHAPE_TYPES}
-          selectedKey={null}
-          onSelect={(key) => createForme.mutate(key as PlanShapeType)}
-          labelFor={(key) => t(`plans.shapeTypes.${key}`)}
-        />
+        <Pressable
+          onPress={() => createForme.mutate('rectangle')}
+          className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
+        >
+          <Icon name="add" size={18} color="#fff" />
+          <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
+        </Pressable>
         <Text className="mb-3 text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
 
         <PlanCanvas
@@ -126,6 +130,7 @@ export default function PlanScreen() {
           if (!sheetForme) return;
           updateForme.mutate({ id: sheetForme.id, pieceId });
         }}
+        onChooseColor={(pieceId, color) => updatePiece.mutate({ id: pieceId, color })}
         onDelete={() => {
           if (!sheetForme) return;
           deleteForme.mutate(sheetForme.id);

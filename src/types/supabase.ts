@@ -231,6 +231,7 @@ export type Database = {
       }
       pieces: {
         Row: {
+          color: string | null
           created_at: string
           habitation_id: string
           id: string
@@ -239,6 +240,7 @@ export type Database = {
           preset_key: string | null
         }
         Insert: {
+          color?: string | null
           created_at?: string
           habitation_id: string
           id?: string
@@ -247,6 +249,7 @@ export type Database = {
           preset_key?: string | null
         }
         Update: {
+          color?: string | null
           created_at?: string
           habitation_id?: string
           id?: string

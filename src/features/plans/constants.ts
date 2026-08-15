@@ -1,12 +1,10 @@
-import type { IconName } from '../../components/Icon';
-
 // "circle" retiré (Phase 7) : simplifie l'éditeur à des pièces rectangulaires
 // uniquement (cas réel quasi systématique pour un plan d'architecte). Les
 // formes "circle" déjà en base ne sont pas perdues : PlanCanvas les traite
 // comme des rectangles (leur width/height définissent déjà une bounding box).
+// Un seul type possible désormais : plus de sélecteur, juste un bouton
+// "Ajouter une pièce" (voir plan/[id].tsx) qui crée directement ce type.
 export type PlanShapeType = 'rectangle';
-
-export const PLAN_SHAPE_TYPES: { key: PlanShapeType; icon: IconName }[] = [{ key: 'rectangle', icon: 'rectangle' }];
 
 export const DEFAULT_SHAPE_SIZE = 80;
 export const MIN_SHAPE_SIZE = 30;

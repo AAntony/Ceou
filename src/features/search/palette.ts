@@ -30,3 +30,15 @@ export const HUE_BADGE_FILL: Record<Hue, string> = {
   mustard: '#FFC857',
   sky: '#5B9BE0',
 };
+
+// Mêmes teintes que HUE_CARD_BG, mais en hex brut plutôt qu'en classe
+// Tailwind — pour les endroits (EntityCard des listes d'inventaire) qui
+// doivent aussi accepter une couleur dynamique (ex. la couleur choisie
+// d'une Pièce) via un style inline, pas seulement une classe statique.
+// Valeurs identiques à tailwind.config.js (`<hue>.light`).
+export const HUE_CARD_BG_HEX: Record<Hue, string> = {
+  teal: '#DBF7F4',
+  coral: '#FFE4DB',
+  mustard: '#FFF3DA',
+  sky: '#DCEBFB',
+};

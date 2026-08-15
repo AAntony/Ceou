@@ -10,6 +10,7 @@ import { EntityCard } from '../../../src/components/EntityCard';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { useCreateHabitation, useDeleteHabitation, useHabitations, useUpdateHabitation } from '../../../src/features/inventory/queries';
+import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../../../src/features/search/palette';
 import type { Habitation } from '../../../src/types/database';
 
 export default function HabitationsScreen() {
@@ -67,17 +68,21 @@ export default function HabitationsScreen() {
           {isEmpty ? (
             <EmptyState icon="home" title={t('inventory.habitations.empty')} />
           ) : (
-            habitations?.map((habitation) => (
-              <EntityCard
-                key={habitation.id}
-                icon={getHabitationIcon(habitation.type)}
-                title={habitation.name}
-                subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
-                onPress={() => router.push(`/habitation/${habitation.id}`)}
-                onLongPress={() => handleDelete(habitation.id)}
-                onEdit={() => openEdit(habitation)}
-              />
-            ))
+            <View className="flex-row flex-wrap justify-between">
+              {habitations?.map((habitation) => (
+                <EntityCard
+                  key={habitation.id}
+                  icon={getHabitationIcon(habitation.type)}
+                  title={habitation.name}
+                  subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
+                  bgColor={HUE_CARD_BG_HEX.teal}
+                  badgeColor={HUE_BADGE_FILL.teal}
+                  onPress={() => router.push(`/habitation/${habitation.id}`)}
+                  onLongPress={() => handleDelete(habitation.id)}
+                  onEdit={() => openEdit(habitation)}
+                />
+              ))}
+            </View>
           )}
         </ScrollView>
 

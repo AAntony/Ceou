@@ -77,7 +77,7 @@ const IDLE_ZOOM: ZoomState = { scale: 1, translateX: 0, translateY: 0 };
 
 type PlanCanvasProps = {
   formes: PlanForme[];
-  pieceInfo: Record<string, { name: string }>;
+  pieceInfo: Record<string, { name: string; color: string | null }>;
   pins: PlanPin[];
   pinDisplay: Record<string, { name: string; icon: IconName }>;
   highlightFormeId?: string | null;
@@ -259,13 +259,13 @@ export function PlanCanvas({
             <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
               {formes.map((forme) => {
                 const geo = geoById[forme.id];
-                const label = forme.piece_id ? (pieceInfo[forme.piece_id]?.name ?? '') : '';
+                const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
                 return (
                   <RoomVisual
                     key={forme.id}
                     geo={geo}
-                    color={roomColorForForme(forme.id)}
-                    label={label}
+                    color={info?.color ?? roomColorForForme(forme.id)}
+                    label={info?.name ?? ''}
                     font={font}
                     highlighted={forme.id === highlightFormeId}
                     selected={forme.id === selectedFormeId}

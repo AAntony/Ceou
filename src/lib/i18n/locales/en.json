@@ -101,6 +101,7 @@
       "create_title": "New room",
       "edit_title": "Edit room",
       "name_label": "Name",
+      "color_label": "Color",
       "delete_confirm_title": "Delete this room?",
       "delete_confirm_message": "All the spots and items it contains will be deleted."
     },
@@ -186,15 +187,14 @@
     "name_label": "Name",
     "delete_confirm_title": "Delete this plan?",
     "delete_confirm_message": "All the shapes it contains will be deleted.",
-    "canvas_hint": "Tap a room to select it: drag the center to move it, the dots to resize it. Double-tap to link it to a room. Pinch to zoom, drag to pan the plan.",
+    "canvas_hint": "Tap a room to select it: drag the room to move it, the dots to resize it. Double-tap to link it to a room. Pinch to zoom, drag to pan the plan.",
+    "add_room": "Add a room",
     "unplaced_title": "Spots to place in this room",
-    "shapeTypes": {
-      "rectangle": "Rectangle"
-    },
     "shape": {
       "title": "Shape",
       "piece_label": "Linked room",
-      "no_piece": "None"
+      "no_piece": "None",
+      "color_label": "Color"
     },
     "pins": {
       "remove": "Remove from plan"

@@ -1,13 +1,16 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
+import { ColorPicker } from '../../components/ColorPicker';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { PresetPicker } from '../../components/PresetPicker';
+import { shade } from '../plans/constants';
+import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Piece } from '../../types/database';
 import { PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
@@ -25,6 +28,7 @@ export function PieceList({ habitationId }: PieceListProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
+  const [color, setColor] = useState<string | null>(null);
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
@@ -37,6 +41,7 @@ export function PieceList({ habitationId }: PieceListProps) {
   const openCreate = () => {
     setEditingPiece(null);
     setPresetKey(null);
+    setColor(null);
     setName('');
     setModalOpen(true);
   };
@@ -44,6 +49,7 @@ export function PieceList({ habitationId }: PieceListProps) {
   const openEdit = (piece: Piece) => {
     setEditingPiece(piece);
     setPresetKey((piece.preset_key as PieceTypeKey) ?? null);
+    setColor(piece.color);
     setName(piece.name);
     setModalOpen(true);
   };
@@ -63,16 +69,20 @@ export function PieceList({ habitationId }: PieceListProps) {
         {isEmpty ? (
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
-          pieces?.map((piece) => (
-            <EntityCard
-              key={piece.id}
-              icon={getPieceIcon(piece.preset_key)}
-              title={piece.name}
-              onPress={() => router.push(`/piece/${piece.id}`)}
-              onLongPress={() => handleDelete(piece.id)}
-              onEdit={() => openEdit(piece)}
-            />
-          ))
+          <View className="flex-row flex-wrap justify-between">
+            {pieces?.map((piece) => (
+              <EntityCard
+                key={piece.id}
+                icon={getPieceIcon(piece.preset_key)}
+                title={piece.name}
+                bgColor={piece.color ?? HUE_CARD_BG_HEX.teal}
+                badgeColor={piece.color ? shade(piece.color, 0.35) : HUE_BADGE_FILL.teal}
+                onPress={() => router.push(`/piece/${piece.id}`)}
+                onLongPress={() => handleDelete(piece.id)}
+                onEdit={() => openEdit(piece)}
+              />
+            ))}
+          </View>
         )}
       </ScrollView>
 
@@ -94,9 +104,9 @@ export function PieceList({ habitationId }: PieceListProps) {
         onClose={() => setModalOpen(false)}
         onSubmit={async (submittedName) => {
           if (editingPiece) {
-            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey });
+            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey, color });
           } else {
-            await createPiece.mutateAsync({ name: submittedName, presetKey });
+            await createPiece.mutateAsync({ name: submittedName, presetKey, color });
           }
           setModalOpen(false);
         }}
@@ -107,6 +117,8 @@ export function PieceList({ habitationId }: PieceListProps) {
           onSelect={(key) => handleSelectPreset(key as PieceTypeKey)}
           labelFor={(key) => t(`inventory.pieceTypes.${key}`)}
         />
+        <Text className="mb-2 text-sm font-medium text-ink-soft">{t('inventory.pieces.color_label')}</Text>
+        <ColorPicker selectedColor={color} onSelect={setColor} />
       </CreateEntityModal>
     </View>
   );

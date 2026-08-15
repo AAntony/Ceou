@@ -128,10 +128,10 @@ export function usePiece(id: string) {
 export function useCreatePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; presetKey: string | null }): Promise<Piece> => {
+    mutationFn: async (input: { name: string; presetKey: string | null; color?: string | null }): Promise<Piece> => {
       const { data, error } = await supabase
         .from('pieces')
-        .insert({ habitation_id: habitationId, name: input.name, preset_key: input.presetKey })
+        .insert({ habitation_id: habitationId, name: input.name, preset_key: input.presetKey, color: input.color ?? null })
         .select()
         .single();
       if (error) throw error;
@@ -147,10 +147,14 @@ export function useCreatePiece(habitationId: string) {
 export function useUpdatePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; name: string; presetKey: string | null }) => {
+    mutationFn: async (input: { id: string; name?: string; presetKey?: string | null; color?: string | null }) => {
       const { error } = await supabase
         .from('pieces')
-        .update({ name: input.name, preset_key: input.presetKey })
+        .update({
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
+          ...(input.color !== undefined && { color: input.color }),
+        })
         .eq('id', input.id);
       if (error) throw error;
     },
