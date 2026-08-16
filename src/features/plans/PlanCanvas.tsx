@@ -8,8 +8,6 @@ import {
   ARTBOARD_BACKGROUND,
   ARTBOARD_BORDER,
   CANVAS_BACKGROUND,
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
   HIGHLIGHT_GREEN_BORDER,
   MAX_SHAPE_SIZE,
   MAX_ZOOM,
@@ -80,6 +78,23 @@ function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: nu
 type ZoomState = { scale: number; translateX: number; translateY: number };
 const IDLE_ZOOM: ZoomState = { scale: 1, translateX: 0, translateY: 0 };
 
+// La feuille (WORLD_WIDTH x WORLD_HEIGHT) est une zone FIXE et LIMITÉE : on
+// ne peut jamais dézoomer plus loin que "toute la feuille visible d'un coup"
+// (minScale), ni glisser la vue pour révéler quoi que ce soit au-delà de son
+// bord. Sur l'axe où la feuille projetée est plus petite que le viewport,
+// elle reste centrée (rien à glisser sur cet axe) ; sur l'axe où elle est
+// plus grande, le glissé est borné pile à ses bords — jamais de vide au-delà.
+// Même principe qu'une visionneuse d'image/PDF (contain, puis pan une fois
+// zoomé), plutôt qu'un canevas panoramique sans limite perceptible.
+function clampZoomState(z: ZoomState, viewportW: number, viewportH: number, minScale: number): ZoomState {
+  const scale = clamp(z.scale, minScale, MAX_ZOOM);
+  const contentW = WORLD_WIDTH * scale;
+  const contentH = WORLD_HEIGHT * scale;
+  const translateX = contentW <= viewportW ? (viewportW - contentW) / 2 : clamp(z.translateX, viewportW - contentW, 0);
+  const translateY = contentH <= viewportH ? (viewportH - contentH) / 2 : clamp(z.translateY, viewportH - contentH, 0);
+  return { scale, translateX, translateY };
+}
+
 type PlanCanvasProps = {
   formes: PlanForme[];
   pieceInfo: Record<string, { name: string; color: string | null }>;
@@ -123,12 +138,13 @@ export function PlanCanvas({
   const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
   const [zoom, setZoom] = useState<ZoomState>(IDLE_ZOOM);
   const zoomOrigin = useRef(IDLE_ZOOM);
-  // Le plan occupait toujours 340px de large, quel que soit l'écran — trop
-  // étroit pour poser plusieurs pièces côte à côte sans que ça se sente à
-  // l'usage. `viewportWidth` prend maintenant toute la largeur réellement
-  // disponible (mesurée via onLayout sur le conteneur), CANVAS_WIDTH ne sert
-  // plus que de valeur de repli avant la toute première mesure.
-  const [viewportWidth, setViewportWidth] = useState(CANVAS_WIDTH);
+  // Le canevas occupe maintenant tout l'espace disponible sous l'en-tête fixe
+  // (largeur ET hauteur, mesurées via onLayout) plutôt qu'une hauteur figée —
+  // c'est ce viewport, pas la taille de la feuille elle-même, qui borne le
+  // zoom/pan (voir clampZoomState/minScale plus bas).
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  const initializedRef = useRef(false);
+  const centeredHighlightRef = useRef<string | null>(null);
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
   // otherwise crash this whole screen. Labels are a nice-to-have on top of
@@ -167,18 +183,104 @@ export function PlanCanvas({
 
   const selectedForme = formes.find((f) => f.id === selectedFormeId) ?? null;
 
+  // Zoom minimum dynamique : la plus petite échelle à laquelle la feuille
+  // entière (WORLD_WIDTH x WORLD_HEIGHT) tient encore dans le viewport
+  // mesuré — au-delà, impossible de dézoomer plus (voir clampZoomState).
+  // C'est ce qui rend la zone de plan "limitée et fixe" : on peut toujours
+  // voir toute la feuille d'un coup, jamais un vide sans borne autour.
+  const minScale = useMemo(() => {
+    if (!viewportSize.width || !viewportSize.height) return MIN_ZOOM;
+    return Math.min(viewportSize.width / WORLD_WIDTH, viewportSize.height / WORLD_HEIGHT);
+  }, [viewportSize]);
+
+  // Recentre/zoome sur une zone du monde (unités feuille), avec une marge en
+  // pixels écran — base commune à la vue initiale et au double-tap "tout
+  // voir" (fitToRooms plus bas).
+  const fitToBounds = (minX: number, minY: number, maxX: number, maxY: number, padding: number) => {
+    const { width: vw, height: vh } = viewportSize;
+    if (!vw || !vh) return;
+    const boundsW = Math.max(maxX - minX, 1);
+    const boundsH = Math.max(maxY - minY, 1);
+    const availW = Math.max(vw - padding * 2, 1);
+    const availH = Math.max(vh - padding * 2, 1);
+    const scale = clamp(Math.min(availW / boundsW, availH / boundsH), minScale, MAX_ZOOM);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    setZoom(clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, minScale));
+  };
+
+  // Cadre toutes les pièces déjà posées (ou toute la feuille s'il n'y en a
+  // aucune) : vue initiale à l'ouverture de l'écran ET action du double-tap
+  // sur une zone vide du plan (backgroundDoubleTap plus bas) — "montre-moi
+  // tout le plan d'un coup" plutôt qu'un simple retour à un zoom fixe.
+  const fitToRooms = () => {
+    if (formes.length === 0) {
+      fitToBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 0);
+      return;
+    }
+    const geos = formes.map((f) => geoById[f.id]);
+    fitToBounds(
+      Math.min(...geos.map((g) => g.x)),
+      Math.min(...geos.map((g) => g.y)),
+      Math.max(...geos.map((g) => g.x + g.width)),
+      Math.max(...geos.map((g) => g.y + g.height)),
+      48,
+    );
+  };
+
+  // Amène une pièce précise au centre du viewport sans changer le zoom en
+  // cours — utilisé en arrivant depuis "Voir sur le plan" (fiche Objet), où
+  // situer la pièce importe plus qu'imposer un niveau de zoom arbitraire.
+  const centerOnGeo = (geo: ShapeGeometry) => {
+    const { width: vw, height: vh } = viewportSize;
+    if (!vw || !vh) return;
+    const scale = clamp(zoom.scale, minScale, MAX_ZOOM);
+    const cx = geo.x + geo.width / 2;
+    const cy = geo.y + geo.height / 2;
+    setZoom(clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, minScale));
+  };
+
+  // Vue initiale : cadre tout ce qui est déjà posé dès que le viewport est
+  // mesuré, une seule fois (initializedRef) — ne doit pas re-cadrer de force
+  // après que l'utilisateur a lui-même zoomé/déplacé la vue. Si l'écran
+  // s'ouvre depuis "Voir sur le plan", c'est l'effet suivant qui pilote le
+  // cadrage initial à la place de celui-ci.
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (!viewportSize.width || !viewportSize.height) return;
+    if (highlightFormeId) return;
+    initializedRef.current = true;
+    fitToRooms();
+  }, [viewportSize, formes]);
+
+  // Vient de "Voir sur le plan" (fiche Objet) : amène la forme concernée au
+  // centre du viewport. `centeredHighlightRef` évite de re-recentrer à
+  // chaque re-render tant que highlightFormeId ne change pas réellement.
+  useEffect(() => {
+    if (!highlightFormeId) return;
+    if (centeredHighlightRef.current === highlightFormeId) return;
+    if (!viewportSize.width || !viewportSize.height) return;
+    const geo = geoById[highlightFormeId];
+    if (!geo) return;
+    centeredHighlightRef.current = highlightFormeId;
+    initializedRef.current = true;
+    centerOnGeo(geo);
+  }, [highlightFormeId, geoById, viewportSize]);
+
   // Pincement = zoomer, glisser à deux doigts = déplacer la vue — le geste à
   // UN doigt reste entièrement réservé au déplacement d'une pièce/pastille
   // (minPointers(1).maxPointers(1) plus bas), donc aucun conflit entre les
   // deux : ils se distinguent par le nombre de doigts, pas par une logique
-  // d'exclusivité à négocier.
+  // d'exclusivité à négocier. Chaque mise à jour repasse par clampZoomState
+  // pour ne jamais dézoomer sous minScale ni glisser hors de la feuille.
   const pinch = Gesture.Pinch()
     .runOnJS(true)
     .onStart(() => {
       zoomOrigin.current = zoom;
     })
     .onUpdate((event) => {
-      setZoom((z) => ({ ...z, scale: clamp(zoomOrigin.current.scale * event.scale, MIN_ZOOM, MAX_ZOOM) }));
+      const next = { ...zoomOrigin.current, scale: zoomOrigin.current.scale * event.scale };
+      setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
     });
 
   const twoFingerPan = Gesture.Pan()
@@ -189,11 +291,12 @@ export function PlanCanvas({
       zoomOrigin.current = zoom;
     })
     .onUpdate((event) => {
-      setZoom((z) => ({
-        ...z,
+      const next = {
+        ...zoomOrigin.current,
         translateX: zoomOrigin.current.translateX + event.translationX,
         translateY: zoomOrigin.current.translateY + event.translationY,
-      }));
+      };
+      setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
     });
 
   // Un point en coordonnées VIEWPORT (écran, avant zoom/pan) devient un point
@@ -225,11 +328,12 @@ export function PlanCanvas({
       zoomOrigin.current = zoom;
     })
     .onUpdate((event) => {
-      setZoom((z) => ({
-        ...z,
+      const next = {
+        ...zoomOrigin.current,
         translateX: zoomOrigin.current.translateX + event.translationX,
         translateY: zoomOrigin.current.translateY + event.translationY,
-      }));
+      };
+      setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
     });
 
   // Remplace le bouton "Valider" : un tap qui ne touche aucune pièce
@@ -246,6 +350,20 @@ export function PlanCanvas({
       if (!isInsideAnyRoom(point.x, point.y)) onDeselect();
     });
 
+  // Double-tap sur une zone vide du plan (pas sur une pièce — celles-ci ont
+  // leur propre double-tap pour ouvrir la fiche, voir ShapeBody) : recentre
+  // et zoome pour montrer toutes les pièces d'un coup, l'action "vue
+  // d'ensemble" demandée pour naviguer facilement sur un grand plan.
+  // `Gesture.Exclusive(backgroundDoubleTap, backgroundTap)` fait attendre le
+  // tap simple le temps de voir si un second tap suit, même principe que
+  // ShapeBody.
+  const backgroundDoubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .maxDistance(12)
+    .runOnJS(true)
+    .onEnd(() => fitToRooms());
+  const backgroundTaps = Gesture.Exclusive(backgroundDoubleTap, backgroundTap);
+
   // La pièce sélectionnée se dessine en dernier (donc par-dessus) — sans ça,
   // une pièce en cours de glissé/redimensionnement pouvait passer sous une
   // voisine dessinée après elle dans le tableau `formes` (simple ordre de
@@ -257,9 +375,9 @@ export function PlanCanvas({
 
   return (
     <View
-      style={{ width: '100%', height: CANVAS_HEIGHT, overflow: 'hidden', backgroundColor: CANVAS_BACKGROUND }}
+      style={{ flex: 1, overflow: 'hidden', backgroundColor: CANVAS_BACKGROUND }}
       className="rounded-2xl"
-      onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
+      onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
       {/* Le geste de fond (pan/tap/pinch) ne doit couvrir QUE le contenu du
           plan — s'il englobait aussi le menu HUD ci-dessous, un tap sur une
@@ -268,11 +386,11 @@ export function PlanCanvas({
           l'icône (le bug exact qui empêchait d'ajouter un Emplacement). Le
           menu est donc rendu en dehors de ce sous-arbre, pas seulement
           visuellement par-dessus. */}
-      <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
+      <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
             visible, quel que soit le zoom — voir le commentaire sur
             backgroundPan plus haut. */}
-        <View style={{ width: viewportWidth, height: CANVAS_HEIGHT }}>
+        <View style={{ width: viewportSize.width, height: viewportSize.height }}>
           {/* Le contenu réellement zoomable/déplaçable, LUI, doit couvrir
               toute la FEUILLE (WORLD_WIDTH/HEIGHT), pas seulement la fenêtre
               visible : un Canvas Skia ne peut jamais dessiner en dehors de
@@ -285,6 +403,14 @@ export function PlanCanvas({
             style={{
               width: WORLD_WIDTH,
               height: WORLD_HEIGHT,
+              // Ancre le zoom sur le coin haut-gauche de la feuille (pas le
+              // centre, valeur par défaut de RN) : tous les calculs JS
+              // (viewportToContent, clampZoomState, fitToBounds...) traitent
+              // translateX/Y comme la position écran du point (0,0) de la
+              // feuille avant mise à l'échelle — sans ce transformOrigin, le
+              // rendu réel (centré par défaut) partirait d'un point différent
+              // de celui utilisé par ces calculs.
+              transformOrigin: '0 0',
               transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
             }}
           >

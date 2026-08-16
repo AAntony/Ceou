@@ -9,20 +9,22 @@ export type PlanShapeType = 'rectangle';
 export const DEFAULT_SHAPE_SIZE = 80;
 export const MIN_SHAPE_SIZE = 30;
 export const MAX_SHAPE_SIZE = 300;
-export const CANVAS_WIDTH = 340;
-export const CANVAS_HEIGHT = 600;
 
-// Zone où les pièces peuvent réellement être posées — fixe et généreuse,
-// indépendante de la largeur d'écran (CANVAS_WIDTH/HEIGHT ci-dessus ne
-// décrivent que la FENÊTRE visible, zoomable/déplaçable). 1200×1200 laisse
-// la place à un vrai plan multi-pièces (une dizaine de pièces à taille
-// courante) sans obliger à dézoomer en permanence. Pattern "artboard borné
-// sur fond déplaçable" classique des éditeurs de canevas (Figma, Miro,
-// Excalidraw) : sans bord visible, rien n'indique où s'arrête la zone utile
-// — d'où ARTBOARD_*/CANVAS_BACKGROUND ci-dessous, pour que la limite se VOIE.
+// Zone où les pièces peuvent réellement être posées — fixe, indépendante de
+// la taille d'écran. 1200×1200 laisse la place à un vrai plan multi-pièces
+// (une dizaine de pièces à taille courante). Le viewport (mesuré via
+// onLayout dans PlanCanvas) borne le zoom/pan pour qu'on ne puisse JAMAIS
+// dézoomer au-delà de "toute la feuille visible" ni glisser en dehors
+// (pattern "contain, avec pan une fois zoomé" des visionneuses d'image/PDF)
+// — la feuille reste donc une zone visiblement limitée, jamais un vide
+// panoramique sans borne. ARTBOARD_*/CANVAS_BACKGROUND ci-dessous rendent
+// cette limite visible (fond + bord de la feuille sur un fond distinct).
 export const WORLD_WIDTH = 1200;
 export const WORLD_HEIGHT = 1200;
 
+// Repli avant la toute première mesure de layout — le vrai zoom minimum est
+// calculé dynamiquement dans PlanCanvas (taille du viewport vs WORLD_*) pour
+// que "dézoomer au maximum" affiche exactement toute la feuille.
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 3;
 

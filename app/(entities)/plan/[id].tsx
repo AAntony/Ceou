@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Icon } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
@@ -47,7 +47,6 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
-  const scrollRef = useRef<ScrollView>(null);
 
   const pieceInfo = useMemo(
     () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, color: p.color }])),
@@ -67,15 +66,6 @@ export default function PlanScreen() {
   const sheetPin = (pins ?? []).find((p) => p.id === sheetPinId) ?? null;
   const sheetPinDisplay = sheetPin ? (pinDisplay[sheetPin.emplacement_id] ?? null) : null;
 
-  // Vient de "Voir sur le plan" (fiche Objet) : amène la forme concernée
-  // dans le cadre, approximatif mais suffisant (pas besoin d'un calcul de
-  // mise en page exact pour un simple "c'est à peu près ici").
-  useEffect(() => {
-    if (!highlightFormeId || !formes) return;
-    const forme = formes.find((f) => f.id === highlightFormeId);
-    if (forme) scrollRef.current?.scrollTo({ y: Math.max(0, forme.y - 100), animated: true });
-  }, [highlightFormeId, formes]);
-
   if (planLoading || !plan) {
     return (
       <View className="flex-1 items-center justify-center bg-sand">
@@ -87,40 +77,49 @@ export default function PlanScreen() {
   return (
     <>
       <Stack.Screen options={{ title: plan.name }} />
-      <ScrollView ref={scrollRef} className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-4">
-        <Pressable
-          onPress={() => createForme.mutate('rectangle')}
-          className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
-        >
-          <Icon name="add" size={18} color="#fff" />
-          <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
-        </Pressable>
-        <Text className="mb-3 text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
+      <View className="flex-1 bg-sand">
+        {/* En-tête fixe (bouton + rappel des gestes) : ne doit jamais
+            défiler, contrairement à avant où tout l'écran (bouton compris)
+            vivait dans le même ScrollView que le plan — le défilement/pan
+            n'a désormais de sens qu'À L'INTÉRIEUR de la zone du plan
+            elle-même (voir PlanCanvas, qui gère son propre zoom/pan borné). */}
+        <View className="px-6 pb-2 pt-4">
+          <Pressable
+            onPress={() => createForme.mutate('rectangle')}
+            className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
+          >
+            <Icon name="add" size={18} color="#fff" />
+            <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
+          </Pressable>
+          <Text className="text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
+        </View>
 
-        <PlanCanvas
-          formes={formes ?? []}
-          pieceInfo={pieceInfo}
-          pins={pins ?? []}
-          pinDisplay={pinDisplay}
-          highlightFormeId={highlightFormeId}
-          highlightEmplacementId={highlightEmplacementId}
-          selectedFormeId={selectedFormeId}
-          onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
-          onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
-          onSelect={(forme) => setSelectedFormeId(forme.id)}
-          onOpenSheet={(forme) => {
-            setSelectedFormeId(forme.id);
-            setSheetForme(forme);
-          }}
-          onDeselect={() => setSelectedFormeId(null)}
-          onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
-          onPinTap={(pin) => setSheetPinId(pin.id)}
-          onPlaceEmplacement={(emplacementId) => {
-            if (!selectedFormeId) return;
-            createPin.mutate({ formeId: selectedFormeId, emplacementId });
-          }}
-        />
-      </ScrollView>
+        <View className="flex-1 px-6 pb-4">
+          <PlanCanvas
+            formes={formes ?? []}
+            pieceInfo={pieceInfo}
+            pins={pins ?? []}
+            pinDisplay={pinDisplay}
+            highlightFormeId={highlightFormeId}
+            highlightEmplacementId={highlightEmplacementId}
+            selectedFormeId={selectedFormeId}
+            onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
+            onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
+            onSelect={(forme) => setSelectedFormeId(forme.id)}
+            onOpenSheet={(forme) => {
+              setSelectedFormeId(forme.id);
+              setSheetForme(forme);
+            }}
+            onDeselect={() => setSelectedFormeId(null)}
+            onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
+            onPinTap={(pin) => setSheetPinId(pin.id)}
+            onPlaceEmplacement={(emplacementId) => {
+              if (!selectedFormeId) return;
+              createPin.mutate({ formeId: selectedFormeId, emplacementId });
+            }}
+          />
+        </View>
+      </View>
 
       <ShapeInspectorSheet
         forme={sheetForme}
