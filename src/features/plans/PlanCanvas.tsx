@@ -118,6 +118,12 @@ export function PlanCanvas({
   const [shapes, setShapes] = useState<Record<string, ShapeGeometry>>({});
   const [zoom, setZoom] = useState<ZoomState>(IDLE_ZOOM);
   const zoomOrigin = useRef(IDLE_ZOOM);
+  // Le plan occupait toujours 340px de large, quel que soit l'écran — trop
+  // étroit pour poser plusieurs pièces côte à côte sans que ça se sente à
+  // l'usage. `viewportWidth` prend maintenant toute la largeur réellement
+  // disponible (mesurée via onLayout sur le conteneur), CANVAS_WIDTH ne sert
+  // plus que de valeur de repli avant la toute première mesure.
+  const [viewportWidth, setViewportWidth] = useState(CANVAS_WIDTH);
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
   // otherwise crash this whole screen. Labels are a nice-to-have on top of
@@ -237,8 +243,9 @@ export function PlanCanvas({
 
   return (
     <View
-      style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT, overflow: 'hidden' }}
-      className="self-center rounded-2xl bg-sand-dark"
+      style={{ width: '100%', height: CANVAS_HEIGHT, overflow: 'hidden' }}
+      className="rounded-2xl bg-sand-dark"
+      onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
     >
       {/* Le geste de fond (pan/tap/pinch) ne doit couvrir QUE le contenu du
           plan — s'il englobait aussi le menu HUD ci-dessous, un tap sur une
@@ -248,15 +255,15 @@ export function PlanCanvas({
           menu est donc rendu en dehors de ce sous-arbre, pas seulement
           visuellement par-dessus. */}
       <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
-        <View style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+        <View style={{ width: viewportWidth, height: CANVAS_HEIGHT }}>
           <View
             style={{
-              width: CANVAS_WIDTH,
+              width: viewportWidth,
               height: CANVAS_HEIGHT,
               transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
             }}
           >
-            <Canvas style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+            <Canvas style={{ width: viewportWidth, height: CANVAS_HEIGHT }}>
               {formes.map((forme) => {
                 const geo = geoById[forme.id];
                 const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
