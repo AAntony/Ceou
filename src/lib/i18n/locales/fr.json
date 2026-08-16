@@ -176,6 +176,21 @@
       "delete_confirm_title": "Supprimer cet objet ?",
       "delete_confirm_message": "Cette action est irréversible.",
       "view_on_plan": "Voir sur le plan"
+    },
+    "aiScan": {
+      "title": "Scanner des objets",
+      "mode_choice_title": "Comment veux-tu ajouter ?",
+      "entry_title": "Scanner une photo",
+      "entry_hint": "Photographie une étagère, un tiroir... l'IA détecte chaque objet automatiquement.",
+      "capture_title": "Scanner une photo",
+      "capture_hint": "Prends ou choisis une photo montrant plusieurs objets — l'IA va essayer de les détecter un par un.",
+      "take_photo": "Prendre une photo",
+      "pick_photo": "Choisir depuis la galerie",
+      "analyzing": "Analyse de la photo en cours...",
+      "no_detections": "Aucun objet détecté sur cette photo. Réessaie avec une autre photo, ou ajoute l'objet à la main.",
+      "review_hint": "Décoche ce qui n'est pas un objet, corrige les noms si besoin, puis valide.",
+      "confirm": "Ajouter ({{count}})",
+      "saved_with_photo_failures": "Objets enregistrés, mais l'ajout de la photo a échoué pour {{count}} d'entre eux. Tu peux réessayer depuis leur fiche."
     }
   },
   "plans": {

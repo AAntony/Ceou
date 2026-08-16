@@ -176,6 +176,21 @@
       "delete_confirm_title": "Delete this item?",
       "delete_confirm_message": "This action cannot be undone.",
       "view_on_plan": "View on plan"
+    },
+    "aiScan": {
+      "title": "Scan items",
+      "mode_choice_title": "How do you want to add it?",
+      "entry_title": "Scan a photo",
+      "entry_hint": "Photograph a shelf, a drawer... the AI detects each item automatically.",
+      "capture_title": "Scan a photo",
+      "capture_hint": "Take or pick a photo showing several items — the AI will try to detect them one by one.",
+      "take_photo": "Take a photo",
+      "pick_photo": "Choose from library",
+      "analyzing": "Analyzing the photo...",
+      "no_detections": "No item detected in this photo. Try another photo, or add the item by hand.",
+      "review_hint": "Uncheck anything that isn't an item, fix names if needed, then confirm.",
+      "confirm": "Add ({{count}})",
+      "saved_with_photo_failures": "Items saved, but the photo failed to upload for {{count}} of them. You can retry from their detail screen."
     }
   },
   "plans": {

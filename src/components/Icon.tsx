@@ -55,7 +55,10 @@ export type IconName =
   | 'profile'
   | 'validate'
   | 'microphone'
-  | 'arrowDown';
+  | 'arrowDown'
+  | 'scan'
+  | 'included'
+  | 'excluded';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -109,6 +112,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   validate: 'check',
   microphone: 'microphone',
   arrowDown: 'arrow-down-bold',
+  scan: 'creation',
+  included: 'check-circle',
+  excluded: 'checkbox-blank-circle-outline',
 };
 
 type IconProps = {

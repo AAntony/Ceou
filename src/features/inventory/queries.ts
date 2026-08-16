@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../features/auth/SessionProvider';
+import { uploadImage } from '../../lib/images/pickAndUploadImage';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
@@ -349,6 +350,54 @@ export function useCreateObjet(parentType: LocationType, parentId: string) {
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => invalidateContainerContents(queryClient),
+  });
+}
+
+// Utilisé par le scan photo IA (AiPhotoScanFlow) : une détection par
+// objet retenu, créées en série (pas Promise.all) pour rester lisible si une
+// erreur survient au milieu du lot — un échec partiel laisse les objets déjà
+// créés en place plutôt que de tout annuler, cohérent avec le reste de l'app
+// qui n'a pas de notion de transaction multi-lignes côté client. La photo de
+// chaque objet est uploadée APRÈS l'insert de sa ligne, même séquence que
+// ObjetFormBody.handleSubmit (l'id de l'objet sert de nom de fichier).
+export function useCreateObjetsBulk(parentType: LocationType, parentId: string) {
+  const { session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (
+      items: { name: string; localPhotoUri: string }[],
+    ): Promise<{ created: number; photoFailures: number }> => {
+      if (!session) throw new Error('no_session');
+      let photoFailures = 0;
+
+      for (const item of items) {
+        const { data: objet, error } = await supabase
+          .from('objets')
+          .insert({
+            name: item.name,
+            description: null,
+            photo_url: null,
+            barcode: null,
+            parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
+            parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+
+        try {
+          const photoUrl = await uploadImage(item.localPhotoUri, { bucket: 'objets', path: `${session.user.id}/${objet.id}.jpg` });
+          const { error: updateError } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objet.id);
+          if (updateError) throw updateError;
+        } catch {
+          photoFailures += 1;
+        }
+      }
+
+      return { created: items.length, photoFailures };
     },
     onSuccess: () => invalidateContainerContents(queryClient),
   });
