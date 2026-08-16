@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
+import { Icon } from '../../../src/components/Icon';
+import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
 import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
 import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
@@ -29,6 +31,7 @@ export default function ObjetScreen() {
   const [description, setDescription] = useState('');
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
 
   useEffect(() => {
     if (objet) {
@@ -48,7 +51,6 @@ export default function ObjetScreen() {
       const photoUrl = await pickAndUploadImage({
         bucket: 'objets',
         path: `${session.user.id}/${id}.jpg`,
-        maxSize: 1024,
         aspect: [1, 1],
       });
       if (photoUrl) updateObjet.mutate({ photo_url: photoUrl });
@@ -76,18 +78,30 @@ export default function ObjetScreen() {
     <>
       <Stack.Screen options={{ title: objet.name }} />
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6">
-        <Pressable
-          onPress={handleChangePhoto}
-          className="mb-6 h-40 w-40 items-center justify-center self-center overflow-hidden rounded-2xl bg-sand-dark"
-        >
-          {photoUploading ? (
-            <ActivityIndicator />
-          ) : objet.photo_url ? (
-            <Image source={{ uri: objet.photo_url }} style={{ width: 160, height: 160 }} />
-          ) : (
-            <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
-          )}
-        </Pressable>
+        <View className="mb-6 self-center">
+          <Pressable
+            onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : handleChangePhoto())}
+            className="h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-sand-dark"
+          >
+            {photoUploading ? (
+              <ActivityIndicator />
+            ) : objet.photo_url ? (
+              <Image source={{ uri: objet.photo_url }} style={{ width: 160, height: 160 }} />
+            ) : (
+              <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
+            )}
+          </Pressable>
+          {objet.photo_url ? (
+            <Pressable
+              onPress={handleChangePhoto}
+              hitSlop={8}
+              className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white"
+              style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }}
+            >
+              {photoUploading ? <ActivityIndicator size="small" /> : <Icon name="pencil" size={16} color="#2D2A26" />}
+            </Pressable>
+          ) : null}
+        </View>
 
         <LocationBreadcrumb objetId={id} />
         <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} />
@@ -129,6 +143,7 @@ export default function ObjetScreen() {
       </ScrollView>
 
       <MoveObjetModal visible={moveModalOpen} onClose={() => setMoveModalOpen(false)} objetId={id} />
+      <PhotoViewerModal visible={photoViewerOpen} uri={objet.photo_url} onClose={() => setPhotoViewerOpen(false)} />
     </>
   );
 }

@@ -1,6 +1,13 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
+import { Image as RNImage } from 'react-native';
 import { supabase } from '../supabase/client';
+
+function getImageSize(uri: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    RNImage.getSize(uri, (width, height) => resolve({ width, height }), reject);
+  });
+}
 
 export async function pickImage(aspect?: [number, number], allowsEditing = true): Promise<string | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -37,6 +44,7 @@ type UploadImageOptions = {
   bucket: string;
   path: string;
   maxSize?: number;
+  quality?: number;
 };
 
 /**
@@ -44,9 +52,20 @@ type UploadImageOptions = {
  * native (file:) — expo-file-system's File class only understands device
  * paths and crashes on web (see uploadAvatar history).
  */
-export async function uploadImage(uri: string, { bucket, path, maxSize = 1024 }: UploadImageOptions): Promise<string> {
-  const resized = await manipulateAsync(uri, [{ resize: { width: maxSize } }], {
-    compress: 0.8,
+export async function uploadImage(
+  uri: string,
+  { bucket, path, maxSize = 1600, quality = 0.85 }: UploadImageOptions,
+): Promise<string> {
+  // Ne JAMAIS agrandir une image plus petite que maxSize — un upscale
+  // ressort flou/pixélisé (bug réel rencontré sur les vignettes du scan IA,
+  // découpées depuis une photo déjà réduite : voir detectObjects.ts). Si la
+  // source est déjà plus petite, on se contente de la recompresser telle
+  // quelle (actions vide = pas de redimensionnement, juste un ré-encodage).
+  const { width: sourceWidth } = await getImageSize(uri);
+  const actions = sourceWidth > maxSize ? [{ resize: { width: maxSize } }] : [];
+
+  const resized = await manipulateAsync(uri, actions, {
+    compress: quality,
     format: SaveFormat.JPEG,
   });
 

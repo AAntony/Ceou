@@ -1,4 +1,5 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { Image as RNImage } from 'react-native';
 import { supabase } from '../supabase/client';
 
 export type Detection = {
@@ -6,29 +7,32 @@ export type Detection = {
   box: { x: number; y: number; width: number; height: number };
 };
 
-export type PreparedPhoto = { uri: string; width: number; height: number; base64: string };
-
+// Taille envoyée à Gemini pour la détection — n'a AUCUN rapport avec la
+// résolution des vignettes gardées ensuite (voir cropDetection ci-dessous) :
+// juste de quoi garder la requête légère, la détection n'a pas besoin de
+// finesse pixel-perfect pour repérer un objet.
 const DETECTION_MAX_WIDTH = 1024;
 
-// Même largeur max que l'upload final (uploadImage, pickAndUploadImage.ts) —
-// garde la requête vers l'Edge Function raisonnable, et sert de repère de
-// dimensions stable pour découper les vignettes ensuite : les box_2d que
-// Gemini renvoie sont relatifs à CETTE image redimensionnée, donc le
-// découpage (cropDetection) se fait depuis cette même copie, jamais depuis
-// la photo source d'origine.
-export async function preparePhotoForDetection(uri: string): Promise<PreparedPhoto> {
+export function getImageSize(uri: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    RNImage.getSize(uri, (width, height) => resolve({ width, height }), reject);
+  });
+}
+
+async function encodeForDetection(uri: string): Promise<string> {
   const result = await manipulateAsync(uri, [{ resize: { width: DETECTION_MAX_WIDTH } }], {
     compress: 0.8,
     format: SaveFormat.JPEG,
     base64: true,
   });
   if (!result.base64) throw new Error('image_manipulation_failed');
-  return { uri: result.uri, width: result.width, height: result.height, base64: result.base64 };
+  return result.base64;
 }
 
-export async function detectObjects(photo: PreparedPhoto): Promise<Detection[]> {
+export async function detectObjects(uri: string): Promise<Detection[]> {
+  const base64 = await encodeForDetection(uri);
   const { data, error } = await supabase.functions.invoke<{ detections: Detection[] }>('detect-objects', {
-    body: { imageBase64: photo.base64, mimeType: 'image/jpeg' },
+    body: { imageBase64: base64, mimeType: 'image/jpeg' },
   });
   if (error) throw error;
   return data?.detections ?? [];
@@ -38,18 +42,26 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-// Découpe une vignette locale pour une détection donnée — la box est relative
-// (0..1), donc appliquée directement contre les dimensions PIXEL de la photo
-// déjà redimensionnée (voir preparePhotoForDetection), sans avoir besoin de
-// connaître les dimensions de la photo source d'origine.
-export async function cropDetection(photo: PreparedPhoto, box: Detection['box']): Promise<string> {
-  const originX = clamp(Math.round(box.x * photo.width), 0, photo.width - 1);
-  const originY = clamp(Math.round(box.y * photo.height), 0, photo.height - 1);
-  const width = clamp(Math.round(box.width * photo.width), 1, photo.width - originX);
-  const height = clamp(Math.round(box.height * photo.height), 1, photo.height - originY);
+// Découpe une vignette depuis la photo ORIGINALE en pleine résolution — PAS
+// depuis la copie réduite (1024px) envoyée à Gemini pour la détection.
+// Découper depuis la copie réduite produisait des vignettes minuscules pour
+// les petits objets d'une photo de scène (ex: un objet occupant 1/10 d'une
+// image de 1024px = ~100px de large), qui ressortaient floues/pixélisées une
+// fois réagrandies par uploadImage(). Les box_2d de Gemini étant relatives
+// (0..1), elles s'appliquent identiquement à N'IMPORTE QUELLE résolution de
+// la même photo — rien n'oblige à découper depuis la copie envoyée à l'API.
+export async function cropDetection(
+  originalUri: string,
+  originalSize: { width: number; height: number },
+  box: Detection['box'],
+): Promise<string> {
+  const originX = clamp(Math.round(box.x * originalSize.width), 0, originalSize.width - 1);
+  const originY = clamp(Math.round(box.y * originalSize.height), 0, originalSize.height - 1);
+  const width = clamp(Math.round(box.width * originalSize.width), 1, originalSize.width - originX);
+  const height = clamp(Math.round(box.height * originalSize.height), 1, originalSize.height - originY);
 
-  const result = await manipulateAsync(photo.uri, [{ crop: { originX, originY, width, height } }], {
-    compress: 0.8,
+  const result = await manipulateAsync(originalUri, [{ crop: { originX, originY, width, height } }], {
+    compress: 0.9,
     format: SaveFormat.JPEG,
   });
   return result.uri;

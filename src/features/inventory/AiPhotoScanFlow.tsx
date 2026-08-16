@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { cropDetection, detectObjects, preparePhotoForDetection, type PreparedPhoto } from '../../lib/ai/detectObjects';
+import { cropDetection, detectObjects, getImageSize } from '../../lib/ai/detectObjects';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useCreateObjetsBulk } from './queries';
@@ -56,18 +56,21 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   const runDetection = async (uri: string) => {
     setStep('analyzing');
     try {
-      const prepared: PreparedPhoto = await preparePhotoForDetection(uri);
-      const detections = await detectObjects(prepared);
+      const detections = await detectObjects(uri);
       if (detections.length === 0) {
         Alert.alert(t('inventory.aiScan.no_detections'));
         setStep('capture');
         return;
       }
+      // Découpage depuis la photo ORIGINALE (voir cropDetection) : les
+      // vignettes gardent la pleine résolution source, indépendamment de la
+      // copie réduite envoyée à Gemini pour la détection.
+      const originalSize = await getImageSize(uri);
       const crops = await Promise.all(
         detections.map(async (d, index) => ({
           key: `${index}`,
           label: d.label,
-          thumbUri: await cropDetection(prepared, d.box),
+          thumbUri: await cropDetection(uri, originalSize, d.box),
           selected: true,
         })),
       );
