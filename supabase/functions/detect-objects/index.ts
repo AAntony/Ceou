@@ -14,7 +14,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const GEMINI_MODEL = 'gemini-3.6-flash';
 const MAX_DETECTIONS = 25;
-const RATE_LIMIT_COOLDOWN_SECONDS = 60;
+const RATE_LIMIT_COOLDOWN_SECONDS = 30;
 
 const DETECTION_PROMPT = `Détecte tous les objets physiques distincts et déplaçables visibles sur cette photo, dans le but de les cataloguer dans une application d'inventaire domestique. Ignore les murs, sols, plafonds, personnes, animaux et éléments de décor fixes (prises électriques, interrupteurs...). Pour chaque objet, donne un court label descriptif en français (2 à 4 mots, capitalisé comme un nom propre d'objet, ex: "Tasse bleue") et sa bounding box. Ne détecte pas plus de ${MAX_DETECTIONS} objets ; si plusieurs objets identiques se touchent (ex: une pile de livres identiques), regroupe-les en une seule détection plutôt que d'en créer une par unité.`;
 

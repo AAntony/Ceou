@@ -84,7 +84,11 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       setItems(crops);
       setStep('review');
     } catch (err) {
-      Alert.alert(err instanceof RateLimitedError ? t('inventory.aiScan.rate_limited') : t('common.error_generic'));
+      Alert.alert(
+        err instanceof RateLimitedError
+          ? t('inventory.aiScan.rate_limited', { seconds: err.retryAfterSeconds })
+          : t('common.error_generic'),
+      );
       setStep('capture');
     }
   };

@@ -200,7 +200,7 @@
       "consent_title": "Avant de scanner une photo",
       "consent_body": "Cette photo sera envoyée à l'API Gemini de Google pour détecter automatiquement les objets qu'elle contient. Elle n'est utilisée que pour répondre à cette demande ponctuelle.",
       "consent_accept": "J'accepte et je continue",
-      "rate_limited": "Tu as scanné une photo il y a moins d'une minute — réessaie dans quelques instants."
+      "rate_limited": "Tu as déjà scanné une photo il y a moins de {{seconds}} secondes — réessaie dans quelques instants."
     }
   },
   "plans": {
