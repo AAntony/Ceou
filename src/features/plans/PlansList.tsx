@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
+import { confirmDelete } from '../../lib/confirmDelete';
 import type { Plan } from '../../types/database';
 import { useCreatePlan, useDeletePlan, usePlans, useUpdatePlan } from './queries';
 
@@ -25,10 +27,7 @@ export function PlansList({ habitationId }: PlansListProps) {
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
-    Alert.alert(t('plans.delete_confirm_title'), t('plans.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deletePlan.mutate(id) },
-    ]);
+    confirmDelete(t, 'plans.delete_confirm_title', 'plans.delete_confirm_message', () => deletePlan.mutate(id));
   };
 
   const isEmpty = !isLoading && (plans?.length ?? 0) === 0;
@@ -39,20 +38,22 @@ export function PlansList({ habitationId }: PlansListProps) {
         {isEmpty ? (
           <EmptyState icon="plan" title={t('plans.empty')} />
         ) : (
-          plans?.map((plan) => (
-            <EntityCard
-              key={plan.id}
-              icon="plan"
-              title={plan.name}
-              onPress={() => router.push(`/plan/${plan.id}`)}
-              onLongPress={() => handleDelete(plan.id)}
-              onEdit={() => {
-                setEditingPlan(plan);
-                setName(plan.name);
-                setModalOpen(true);
-              }}
-            />
-          ))
+          <EntityGrid>
+            {plans?.map((plan) => (
+              <EntityCard
+                key={plan.id}
+                icon="plan"
+                title={plan.name}
+                onPress={() => router.push(`/plan/${plan.id}`)}
+                onLongPress={() => handleDelete(plan.id)}
+                onEdit={() => {
+                  setEditingPlan(plan);
+                  setName(plan.name);
+                  setModalOpen(true);
+                }}
+              />
+            ))}
+          </EntityGrid>
         )}
       </ScrollView>
 

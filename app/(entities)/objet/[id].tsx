@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
 import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
@@ -10,6 +10,7 @@ import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBrea
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
 import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useUpdateObjet } from '../../../src/features/inventory/queries';
 import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
+import { confirmDelete } from '../../../src/lib/confirmDelete';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
 
 export default function ObjetScreen() {
@@ -57,17 +58,10 @@ export default function ObjetScreen() {
   };
 
   const handleDelete = () => {
-    Alert.alert(t('inventory.objet.delete_confirm_title'), t('inventory.objet.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: async () => {
-          await deleteObjet.mutateAsync(id);
-          router.back();
-        },
-      },
-    ]);
+    confirmDelete(t, 'inventory.objet.delete_confirm_title', 'inventory.objet.delete_confirm_message', async () => {
+      await deleteObjet.mutateAsync(id);
+      router.back();
+    });
   };
 
   if (isLoading || !objet) {

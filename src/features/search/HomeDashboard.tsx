@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
+import { EntityGrid } from '../../components/EntityGrid';
 import { Icon } from '../../components/Icon';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
@@ -131,11 +132,11 @@ export function HomeDashboard() {
         {!isLoading && filtered.length === 0 ? (
           <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
         ) : (
-          <View className="flex-row flex-wrap justify-between">
+          <EntityGrid>
             {filtered.map((entry) => (
               <ResultCard key={`${entry.kind}-${entry.id}`} entry={entry} />
             ))}
-          </View>
+          </EntityGrid>
         )}
       </ScrollView>
     </View>

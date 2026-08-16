@@ -1,12 +1,14 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
+import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Conteneur, LocationType } from '../../types/database';
 import { CreateObjetModal } from './CreateObjetModal';
@@ -30,17 +32,13 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
   const [objetModalOpen, setObjetModalOpen] = useState(false);
 
   const handleDeleteConteneur = (id: string) => {
-    Alert.alert(t('inventory.conteneurs.delete_confirm_title'), t('inventory.conteneurs.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deleteConteneur.mutate(id) },
-    ]);
+    confirmDelete(t, 'inventory.conteneurs.delete_confirm_title', 'inventory.conteneurs.delete_confirm_message', () =>
+      deleteConteneur.mutate(id),
+    );
   };
 
   const handleDeleteObjet = (id: string) => {
-    Alert.alert(t('inventory.objet.delete_confirm_title'), t('inventory.objet.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deleteObjet.mutate(id) },
-    ]);
+    confirmDelete(t, 'inventory.objet.delete_confirm_title', 'inventory.objet.delete_confirm_message', () => deleteObjet.mutate(id));
   };
 
   const isEmpty = !isLoading && conteneurs.length === 0 && objets.length === 0;
@@ -51,7 +49,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         {isEmpty ? (
           <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
-          <View className="flex-row flex-wrap justify-between">
+          <EntityGrid>
             {conteneurs.map((conteneur) => (
               <EntityCard
                 key={conteneur.id}
@@ -80,7 +78,7 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 onLongPress={() => handleDeleteObjet(objet.id)}
               />
             ))}
-          </View>
+          </EntityGrid>
         )}
       </ScrollView>
 

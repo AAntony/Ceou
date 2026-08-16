@@ -1,13 +1,15 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
 import { PresetPicker } from '../../components/PresetPicker';
+import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Emplacement } from '../../types/database';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
@@ -29,10 +31,9 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
-    Alert.alert(t('inventory.emplacements.delete_confirm_title'), t('inventory.emplacements.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deleteEmplacement.mutate(id) },
-    ]);
+    confirmDelete(t, 'inventory.emplacements.delete_confirm_title', 'inventory.emplacements.delete_confirm_message', () =>
+      deleteEmplacement.mutate(id),
+    );
   };
 
   const openCreate = () => {
@@ -64,7 +65,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
         {isEmpty ? (
           <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
-          <View className="flex-row flex-wrap justify-between">
+          <EntityGrid>
             {emplacements?.map((emplacement) => (
               <EntityCard
                 key={emplacement.id}
@@ -77,7 +78,7 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
                 onEdit={() => openEdit(emplacement)}
               />
             ))}
-          </View>
+          </EntityGrid>
         )}
       </ScrollView>
 

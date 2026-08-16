@@ -1,14 +1,16 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { ColorPicker } from '../../components/ColorPicker';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
 import { PresetPicker } from '../../components/PresetPicker';
+import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Piece } from '../../types/database';
@@ -32,10 +34,7 @@ export function PieceList({ habitationId }: PieceListProps) {
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
-    Alert.alert(t('inventory.pieces.delete_confirm_title'), t('inventory.pieces.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deletePiece.mutate(id) },
-    ]);
+    confirmDelete(t, 'inventory.pieces.delete_confirm_title', 'inventory.pieces.delete_confirm_message', () => deletePiece.mutate(id));
   };
 
   const openCreate = () => {
@@ -69,7 +68,7 @@ export function PieceList({ habitationId }: PieceListProps) {
         {isEmpty ? (
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
-          <View className="flex-row flex-wrap justify-between">
+          <EntityGrid>
             {pieces?.map((piece) => (
               <EntityCard
                 key={piece.id}
@@ -82,7 +81,7 @@ export function PieceList({ habitationId }: PieceListProps) {
                 onEdit={() => openEdit(piece)}
               />
             ))}
-          </View>
+          </EntityGrid>
         )}
       </ScrollView>
 

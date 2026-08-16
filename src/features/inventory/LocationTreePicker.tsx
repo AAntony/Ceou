@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
 import { Icon } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { supabase } from '../../lib/supabase/client';
@@ -150,9 +151,11 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
   return (
     <>
       {isEmpty ? <EmptyState icon="home" title={t('home.onboarding_hint')} /> : null}
-      {habitations?.map((habitation) => (
-        <EntityCard key={habitation.id} icon={getHabitationIcon(habitation.type)} title={habitation.name} onPress={() => onSelect(habitation)} />
-      ))}
+      <EntityGrid>
+        {habitations?.map((habitation) => (
+          <EntityCard key={habitation.id} icon={getHabitationIcon(habitation.type)} title={habitation.name} onPress={() => onSelect(habitation)} />
+        ))}
+      </EntityGrid>
       <AddInlineCard
         label={t('inventory.habitations.add')}
         onPress={() => {
@@ -207,9 +210,11 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
   return (
     <>
       {isEmpty ? <EmptyState icon="piece" title={t('inventory.pieces.empty')} /> : null}
-      {pieces?.map((piece) => (
-        <EntityCard key={piece.id} icon={getPieceIcon(piece.preset_key)} title={piece.name} onPress={() => onSelect(piece)} />
-      ))}
+      <EntityGrid>
+        {pieces?.map((piece) => (
+          <EntityCard key={piece.id} icon={getPieceIcon(piece.preset_key)} title={piece.name} onPress={() => onSelect(piece)} />
+        ))}
+      </EntityGrid>
       <AddInlineCard
         label={t('inventory.pieces.add')}
         onPress={() => {
@@ -271,14 +276,16 @@ function EmplacementsStep({
   return (
     <>
       {isEmpty ? <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} /> : null}
-      {emplacements?.map((emplacement) => (
-        <EntityCard
-          key={emplacement.id}
-          icon={getEmplacementIcon(emplacement.preset_key)}
-          title={emplacement.name}
-          onPress={() => onSelect(emplacement)}
-        />
-      ))}
+      <EntityGrid>
+        {emplacements?.map((emplacement) => (
+          <EntityCard
+            key={emplacement.id}
+            icon={getEmplacementIcon(emplacement.preset_key)}
+            title={emplacement.name}
+            onPress={() => onSelect(emplacement)}
+          />
+        ))}
+      </EntityGrid>
       <AddInlineCard
         label={t('inventory.emplacements.add')}
         onPress={() => {
@@ -343,9 +350,11 @@ function ContainerStep({
       <View className="mb-4">
         <Button label={confirmLabel} onPress={onChooseHere} loading={loading} />
       </View>
-      {conteneurs.map((conteneur) => (
-        <EntityCard key={conteneur.id} icon="conteneur" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
-      ))}
+      <EntityGrid>
+        {conteneurs.map((conteneur) => (
+          <EntityCard key={conteneur.id} icon="conteneur" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
+        ))}
+      </EntityGrid>
       <AddInlineCard
         label={t('inventory.container.add_conteneur')}
         onPress={() => {

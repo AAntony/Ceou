@@ -1,16 +1,18 @@
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BottomActionBar } from '../../../src/components/BottomActionBar';
 import { Button } from '../../../src/components/Button';
 import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityCard } from '../../../src/components/EntityCard';
+import { EntityGrid } from '../../../src/components/EntityGrid';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { useCreateHabitation, useDeleteHabitation, useHabitations, useUpdateHabitation } from '../../../src/features/inventory/queries';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../../../src/features/search/palette';
+import { confirmDelete } from '../../../src/lib/confirmDelete';
 import type { Habitation } from '../../../src/types/database';
 
 export default function HabitationsScreen() {
@@ -25,10 +27,9 @@ export default function HabitationsScreen() {
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
-    Alert.alert(t('inventory.habitations.delete_confirm_title'), t('inventory.habitations.delete_confirm_message'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => deleteHabitation.mutate(id) },
-    ]);
+    confirmDelete(t, 'inventory.habitations.delete_confirm_title', 'inventory.habitations.delete_confirm_message', () =>
+      deleteHabitation.mutate(id),
+    );
   };
 
   const openCreate = () => {
@@ -68,7 +69,7 @@ export default function HabitationsScreen() {
           {isEmpty ? (
             <EmptyState icon="home" title={t('inventory.habitations.empty')} />
           ) : (
-            <View className="flex-row flex-wrap justify-between">
+            <EntityGrid>
               {habitations?.map((habitation) => (
                 <EntityCard
                   key={habitation.id}
@@ -82,7 +83,7 @@ export default function HabitationsScreen() {
                   onEdit={() => openEdit(habitation)}
                 />
               ))}
-            </View>
+            </EntityGrid>
           )}
         </ScrollView>
 

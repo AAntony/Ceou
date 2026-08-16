@@ -17,13 +17,6 @@ export function hueForKind(kind: SearchKind): Hue {
   return HUE_BY_KIND[kind];
 }
 
-export const HUE_CARD_BG: Record<Hue, string> = {
-  teal: 'bg-teal-light',
-  coral: 'bg-coral-light',
-  mustard: 'bg-mustard-light',
-  sky: 'bg-sky-light',
-};
-
 export const HUE_BADGE_FILL: Record<Hue, string> = {
   teal: '#2EC4B6',
   coral: '#FF6B4A',
@@ -31,10 +24,10 @@ export const HUE_BADGE_FILL: Record<Hue, string> = {
   sky: '#5B9BE0',
 };
 
-// Mêmes teintes que HUE_CARD_BG, mais en hex brut plutôt qu'en classe
-// Tailwind — pour les endroits (EntityCard des listes d'inventaire) qui
-// doivent aussi accepter une couleur dynamique (ex. la couleur choisie
-// d'une Pièce) via un style inline, pas seulement une classe statique.
+// Fond de carte en hex brut plutôt qu'en classe Tailwind — EntityCard (donc
+// ResultCard, qui délègue son rendu à EntityCard) applique la couleur via un
+// style inline, seul moyen d'accepter aussi une couleur dynamique (ex. la
+// couleur choisie d'une Pièce) en plus de ces teintes fixes par catégorie.
 // Valeurs identiques à tailwind.config.js (`<hue>.light`).
 export const HUE_CARD_BG_HEX: Record<Hue, string> = {
   teal: '#DBF7F4',

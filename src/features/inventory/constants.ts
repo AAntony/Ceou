@@ -1,5 +1,14 @@
 import type { IconName } from '../../components/Icon';
 
+export const DEFAULT_ICON: IconName = 'autre';
+
+// Les trois "get*Icon" ci-dessous (habitation/emplacement/pièce) ne sont
+// qu'une recherche par clé avec repli sur DEFAULT_ICON — factorisé une fois
+// ici plutôt que répété à l'identique pour chacune des trois listes.
+function iconLookup<K extends string>(list: { key: K; icon: IconName }[]): (key: K | string | null) => IconName {
+  return (key) => list.find((item) => item.key === key)?.icon ?? DEFAULT_ICON;
+}
+
 export type HabitationTypeKey = 'maison' | 'appartement' | 'garage' | 'cave' | 'cellier' | 'box' | 'vehicule' | 'autre';
 
 export type HabitationTypeDefinition = {
@@ -24,9 +33,7 @@ export function isSingleSpaceHabitation(type: string): boolean {
   return HABITATION_TYPES.find((t) => t.key === type)?.singleSpace ?? true;
 }
 
-export function getHabitationIcon(type: string): IconName {
-  return HABITATION_TYPES.find((t) => t.key === type)?.icon ?? 'autre';
-}
+export const getHabitationIcon = iconLookup(HABITATION_TYPES);
 
 export type EmplacementPresetKey =
   | 'armoire'
@@ -60,11 +67,7 @@ export const EMPLACEMENT_PRESETS: EmplacementPresetDefinition[] = [
   { key: 'autre', icon: 'autre' },
 ];
 
-export const DEFAULT_ICON: IconName = 'autre';
-
-export function getEmplacementIcon(presetKey: string | null): IconName {
-  return EMPLACEMENT_PRESETS.find((p) => p.key === presetKey)?.icon ?? DEFAULT_ICON;
-}
+export const getEmplacementIcon = iconLookup(EMPLACEMENT_PRESETS);
 
 export type PieceTypeKey =
   | 'chambre'
@@ -100,6 +103,4 @@ export const PIECE_TYPES: PieceTypeDefinition[] = [
   { key: 'autre', icon: 'autre' },
 ];
 
-export function getPieceIcon(presetKey: string | null): IconName {
-  return PIECE_TYPES.find((p) => p.key === presetKey)?.icon ?? DEFAULT_ICON;
-}
+export const getPieceIcon = iconLookup(PIECE_TYPES);
