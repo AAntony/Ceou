@@ -1,3 +1,4 @@
+import { MAX_SHAPE_SIZE, MIN_SHAPE_SIZE } from './constants';
 import type { HandleId, ShapeGeometry } from './types';
 
 // Unités écran (~pixels) : une pièce glissée ou redimensionnée dont un bord
@@ -7,6 +8,10 @@ import type { HandleId, ShapeGeometry } from './types';
 // pièces — pas de relation "attachée à" persistée en base : déplacer une
 // pièce plus tard n'entraîne pas ses voisines avec elle.
 export const SNAP_THRESHOLD = 10;
+
+function clampSize(value: number): number {
+  return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
+}
 
 export function snapPosition(x: number, y: number, width: number, height: number, others: ShapeGeometry[]): { x: number; y: number } {
   let sx = x;
@@ -22,7 +27,15 @@ export function snapPosition(x: number, y: number, width: number, height: number
 
 // N'ajuste que le(s) bord(s) que la poignée `handle` déplace, sans toucher
 // au(x) bord(s) opposé(s) fixe(s) — même principe que applyHandle (PlanCanvas)
-// dont ceci vient compléter le résultat.
+// dont ceci vient compléter le résultat. Chaque largeur/hauteur recalculée
+// après un accolement est repassée par clampSize() : sans ça, une pièce
+// accolée à un voisin situé loin de sa taille déjà pincée par applyHandle()
+// pouvait ressortir bien plus grande que MAX_SHAPE_SIZE (voire une largeur
+// négative si le voisin dépassait le bord opposé), un vrai bug — la pastille
+// de sélection (qui reflète toujours la géométrie exacte) se retrouvait
+// alors bien plus large que le rectangle réellement dessiné, resté limité
+// par une autre valeur en aval : symptôme observé d'un "mur invisible"
+// coupant la pièce en deux.
 export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeGeometry[]): ShapeGeometry {
   let { x, y, width, height } = next;
   const right = x + width;
@@ -39,7 +52,8 @@ export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeG
         break;
       }
     }
-    width = right - x;
+    width = clampSize(right - x);
+    x = right - width;
   }
   if (handle.includes('e')) {
     for (const o of others) {
@@ -52,6 +66,7 @@ export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeG
         break;
       }
     }
+    width = clampSize(width);
   }
   if (handle.includes('n')) {
     for (const o of others) {
@@ -64,7 +79,8 @@ export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeG
         break;
       }
     }
-    height = bottom - y;
+    height = clampSize(bottom - y);
+    y = bottom - height;
   }
   if (handle.includes('s')) {
     for (const o of others) {
@@ -77,6 +93,7 @@ export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeG
         break;
       }
     }
+    height = clampSize(height);
   }
   return { x, y, width, height };
 }
