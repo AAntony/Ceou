@@ -268,34 +268,42 @@ export function PlanCanvas({
     setZoom((z) => clampZoomState(z, viewportSize.width, viewportSize.height, minScale));
   }, [viewportSize, minScale]);
 
-  // Pincement = zoomer, glisser à deux doigts = déplacer la vue — le geste à
-  // UN doigt reste entièrement réservé au déplacement d'une pièce/pastille
-  // (minPointers(1).maxPointers(1) plus bas), donc aucun conflit entre les
-  // deux : ils se distinguent par le nombre de doigts, pas par une logique
-  // d'exclusivité à négocier. Chaque mise à jour repasse par clampZoomState
-  // pour ne jamais dézoomer sous minScale ni glisser hors de la feuille.
+  // Pincement = zoomer ET déplacer, comme une visionneuse de photos — pas un
+  // zoom scale-only combiné à un Gesture.Pan à deux doigts séparé (ancienne
+  // version) : les deux gestes tournant en Simultaneous écrivaient chacun
+  // leur propre translateX/Y sans se coordonner, d'où le rendu saccadé/
+  // "pas naturel" remonté. `pinchAnchor` capture, au DÉBUT du geste, le
+  // point du CONTENU (avant zoom/pan) qui se trouve sous le centre du
+  // pincement (event.focalX/focalY) ; à chaque frame, translateX/Y sont
+  // recalculés pour que CE MÊME point du contenu reste sous CE MÊME endroit
+  // à l'écran. Comme le centre du pincement suit aussi les doigts s'ils se
+  // déplacent ensemble (pas seulement s'ils s'écartent/rapprochent), cette
+  // unique formule gère à la fois le zoom sous les doigts ET le glissé à
+  // deux doigts — plus besoin d'un second geste. La cible du geste à UN
+  // doigt (déplacement de pièce/pastille) ne peut jamais s'en confondre :
+  // minPointers(1).maxPointers(1) plus bas exclut par le nombre de doigts,
+  // pas par une logique de priorité à négocier.
+  const pinchAnchor = useRef({ x: 0, y: 0 });
+
   const pinch = Gesture.Pinch()
     .runOnJS(true)
-    .onStart(() => {
+    .onStart((event) => {
       zoomOrigin.current = zoom;
+      pinchAnchor.current = {
+        x: (event.focalX - zoom.translateX) / zoom.scale,
+        y: (event.focalY - zoom.translateY) / zoom.scale,
+      };
     })
     .onUpdate((event) => {
-      const next = { ...zoomOrigin.current, scale: zoomOrigin.current.scale * event.scale };
-      setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
-    });
-
-  const twoFingerPan = Gesture.Pan()
-    .minPointers(2)
-    .maxPointers(2)
-    .runOnJS(true)
-    .onStart(() => {
-      zoomOrigin.current = zoom;
-    })
-    .onUpdate((event) => {
+      // Le scale est clampé AVANT de calculer translateX/Y (pas seulement
+      // par clampZoomState en aval) : une fois MIN_ZOOM/MAX_ZOOM atteint,
+      // le contenu doit continuer à suivre le centre du pincement au lieu
+      // de figer sa position pendant que l'utilisateur continue de pincer.
+      const scale = clamp(zoomOrigin.current.scale * event.scale, minScale, MAX_ZOOM);
       const next = {
-        ...zoomOrigin.current,
-        translateX: zoomOrigin.current.translateX + event.translationX,
-        translateY: zoomOrigin.current.translateY + event.translationY,
+        scale,
+        translateX: event.focalX - pinchAnchor.current.x * scale,
+        translateY: event.focalY - pinchAnchor.current.y * scale,
       };
       setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
     });
@@ -318,8 +326,8 @@ export function PlanCanvas({
   // n'est sélectionnée (sinon le doigt sert à la déplacer elle-même —
   // exclusion mutuelle garantie par cette même condition côté ShapeBody, donc
   // jamais les deux actifs en même temps). Avec quelque chose de sélectionné,
-  // le pan à deux doigts (ci-dessus) reste disponible pour naviguer sans
-  // désélectionner.
+  // le pincement à deux doigts (ci-dessus, qui gère aussi le glissé) reste
+  // disponible pour naviguer sans désélectionner.
   const backgroundPan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
@@ -380,7 +388,7 @@ export function PlanCanvas({
       className="rounded-2xl"
       onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
-      <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
+      <GestureDetector gesture={Gesture.Simultaneous(pinch, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
             visible, quel que soit le zoom — voir le commentaire sur
             backgroundPan plus haut. */}
