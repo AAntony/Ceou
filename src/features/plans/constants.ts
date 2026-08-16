@@ -41,9 +41,6 @@ export const ARTBOARD_BORDER = '#B8AF9C';
 // rouge (contour + petite flèche, voir PlanPinLayer.tsx) plutôt que du vert.
 export const HIGHLIGHT_GREEN_BORDER = '#4CAF50';
 
-// Fond du menu flottant "Emplacements à placer" (bord gauche du plan).
-export const MENU_PANEL_BACKGROUND = '#EDEBE7';
-
 // Palette pastel — volontairement distincte de celle des résultats de
 // recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
 // ici on distingue des PIÈCES entre elles sur un même plan. 15 teintes pour

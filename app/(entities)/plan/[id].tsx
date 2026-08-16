@@ -7,6 +7,7 @@ import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
 import { PlanCanvas } from '../../../src/features/plans/PlanCanvas';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
+import { UnplacedEmplacementsBar } from '../../../src/features/plans/UnplacedEmplacementsBar';
 import {
   useCreatePlanForme,
   useCreatePlanPin,
@@ -65,6 +66,7 @@ export default function PlanScreen() {
 
   const sheetPin = (pins ?? []).find((p) => p.id === sheetPinId) ?? null;
   const sheetPinDisplay = sheetPin ? (pinDisplay[sheetPin.emplacement_id] ?? null) : null;
+  const selectedForme = (formes ?? []).find((f) => f.id === selectedFormeId) ?? null;
 
   if (planLoading || !plan) {
     return (
@@ -94,6 +96,14 @@ export default function PlanScreen() {
           <Text className="text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
         </View>
 
+        {selectedForme?.piece_id ? (
+          <UnplacedEmplacementsBar
+            pieceId={selectedForme.piece_id}
+            pins={pins ?? []}
+            onPlace={(emplacementId) => createPin.mutate({ formeId: selectedForme.id, emplacementId })}
+          />
+        ) : null}
+
         <View className="flex-1 px-6 pb-4">
           <PlanCanvas
             formes={formes ?? []}
@@ -113,10 +123,6 @@ export default function PlanScreen() {
             onDeselect={() => setSelectedFormeId(null)}
             onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
             onPinTap={(pin) => setSheetPinId(pin.id)}
-            onPlaceEmplacement={(emplacementId) => {
-              if (!selectedFormeId) return;
-              createPin.mutate({ formeId: selectedFormeId, emplacementId });
-            }}
           />
         </View>
       </View>

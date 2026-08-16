@@ -20,7 +20,6 @@ import {
 import { PlanPinLayer } from './PlanPinLayer';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
-import { UnplacedEmplacementsBar } from './UnplacedEmplacementsBar';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
@@ -101,7 +100,6 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
-  onPlaceEmplacement: (emplacementId: string) => void;
 };
 
 export function PlanCanvas({
@@ -119,7 +117,6 @@ export function PlanCanvas({
   onDeselect,
   onPinDragEnd,
   onPinTap,
-  onPlaceEmplacement,
 }: PlanCanvasProps) {
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
@@ -258,6 +255,19 @@ export function PlanCanvas({
     centerOnGeo(geo);
   }, [highlightFormeId, geoById, viewportSize]);
 
+  // Le bloc "Emplacements non placés" au-dessus du plan apparaît/disparaît
+  // selon la sélection, ce qui redimensionne CE viewport bien plus souvent
+  // qu'une simple rotation d'écran. Sans ce recalage, un zoom/pan déjà en
+  // cours pouvait devenir invalide (glissé au-delà du bord de la feuille, ou
+  // sous minScale) dès que le viewport rétrécit ou grandit sans qu'aucun
+  // geste ne soit en train de se produire pour le repasser par
+  // clampZoomState.
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    if (!viewportSize.width || !viewportSize.height) return;
+    setZoom((z) => clampZoomState(z, viewportSize.width, viewportSize.height, minScale));
+  }, [viewportSize, minScale]);
+
   // Pincement = zoomer, glisser à deux doigts = déplacer la vue — le geste à
   // UN doigt reste entièrement réservé au déplacement d'une pièce/pastille
   // (minPointers(1).maxPointers(1) plus bas), donc aucun conflit entre les
@@ -370,13 +380,6 @@ export function PlanCanvas({
       className="rounded-2xl"
       onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
-      {/* Le geste de fond (pan/tap/pinch) ne doit couvrir QUE le contenu du
-          plan — s'il englobait aussi le menu HUD ci-dessous, un tap sur une
-          icône du menu serait aussi vu comme un tap "dans le vide" et
-          intercepté par ce GestureDetector avant d'atteindre le Pressable de
-          l'icône (le bug exact qui empêchait d'ajouter un Emplacement). Le
-          menu est donc rendu en dehors de ce sous-arbre, pas seulement
-          visuellement par-dessus. */}
       <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
             visible, quel que soit le zoom — voir le commentaire sur
@@ -482,12 +485,6 @@ export function PlanCanvas({
           </View>
         </View>
       </GestureDetector>
-
-      {/* HUD fixe — hors du sous-arbre du GestureDetector ci-dessus, pas
-          seulement visuellement par-dessus (voir commentaire plus haut) */}
-      {selectedForme?.piece_id ? (
-        <UnplacedEmplacementsBar pieceId={selectedForme.piece_id} pins={pins} onPlace={onPlaceEmplacement} />
-      ) : null}
     </View>
   );
 }
