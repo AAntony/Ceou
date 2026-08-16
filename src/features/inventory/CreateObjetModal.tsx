@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Modal, Text, View } from 'react-native';
+import { Text } from 'react-native';
+import { BottomSheetModal } from '../../components/BottomSheetModal';
 import type { LocationType } from '../../types/database';
 import { ObjetFormBody } from './ObjetFormBody';
 
@@ -14,13 +15,9 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
   const { t } = useTranslation();
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View className="flex-1 justify-end bg-black/40">
-        <View className="rounded-t-3xl bg-white pt-6">
-          <Text className="mb-4 px-6 text-xl font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
-          <ObjetFormBody parentType={parentType} parentId={parentId} active={visible} onDone={onClose} onCancel={onClose} />
-        </View>
-      </View>
-    </Modal>
+    <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-white pt-6">
+      <Text className="mb-4 px-6 text-xl font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
+      <ObjetFormBody parentType={parentType} parentId={parentId} active={visible} onDone={onClose} onCancel={onClose} />
+    </BottomSheetModal>
   );
 }
