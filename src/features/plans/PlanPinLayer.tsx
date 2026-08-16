@@ -5,7 +5,7 @@ import { Icon } from '../../components/Icon';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
-import { SNAP_THRESHOLD } from './snap';
+import { clamp, SNAP_THRESHOLD } from './snap';
 import type { ShapeGeometry } from './types';
 
 const HIGHLIGHT_RED = '#E53935';
@@ -13,6 +13,7 @@ const HIGHLIGHT_RED = '#E53935';
 // 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
 // plan une fois plusieurs pastilles posées.
 const PIN_SIZE = 21;
+const PIN_RADIUS = PIN_SIZE / 2;
 
 // Largeur fixe de la zone pastille+nom : permet de centrer le groupe sur
 // `screen.x` sans dépendre de la longueur du nom (le nom peut varier, la
@@ -94,20 +95,20 @@ export function PlanPinLayer({
   );
 }
 
-function clamp01(value: number): number {
-  return Math.min(1, Math.max(0, value));
-}
-
-// Aimante la pastille sur le bord de la pièce quand on l'en approche — même
-// seuil (en unités monde) que l'accolement entre pièces (snap.ts), converti
-// en fraction relative puisque rel_x/rel_y sont normalisées 0..1 dans le
-// repère de la pièce. Plus facile de poser une pastille exactement contre un
-// mur plutôt qu'à quelques pixels près.
-function snapRel(value: number, sideLength: number): number {
-  const thresholdRel = sideLength > 0 ? SNAP_THRESHOLD / sideLength : 0;
-  if (value < thresholdRel) return 0;
-  if (value > 1 - thresholdRel) return 1;
-  return value;
+// Borne ET aimante rel_x/rel_y sur un bord de la pièce quand on l'en
+// approche. Le rayon de la pastille (PIN_RADIUS, en unités monde comme
+// SNAP_THRESHOLD — PlanPinLayer vit dans le même contenu mis à l'échelle que
+// le reste du plan) est retranché de la plage autorisée : sans ça, rel=0/1
+// place le CENTRE de la pastille pile sur le mur, et sa moitié déborde hors
+// de la pièce. Le bord de l'icône touche donc le mur, jamais son centre.
+function resolveRel(value: number, sideLength: number): number {
+  if (sideLength <= 0) return clamp(value, 0, 1);
+  const edgeInsetRel = clamp(PIN_RADIUS / sideLength, 0, 0.5);
+  const thresholdRel = SNAP_THRESHOLD / sideLength;
+  const bounded = clamp(value, edgeInsetRel, 1 - edgeInsetRel);
+  if (bounded < edgeInsetRel + thresholdRel) return edgeInsetRel;
+  if (bounded > 1 - edgeInsetRel - thresholdRel) return 1 - edgeInsetRel;
+  return bounded;
 }
 
 function PinBadge({
@@ -132,6 +133,12 @@ function PinBadge({
   onTap: () => void;
 }) {
   const dragOrigin = useRef(pos);
+  // Le nom reste caché par défaut (trop de pastilles + noms en même temps
+  // rendait le plan illisible) — un tap simple le révèle/le cache, un
+  // double-tap ouvre la fiche "retirer" (onTap). `highlighted` (vient de
+  // "Voir sur le plan") force aussi l'affichage : le but de ce surlignage
+  // est justement d'identifier CETTE pastille sans manipulation.
+  const [nameVisible, setNameVisible] = useState(false);
 
   // Plan 2D top-down pur : x/y sont directement des coordonnées écran (dans
   // le repère du contenu zoomable), pas besoin de projeter quoi que ce soit.
@@ -139,12 +146,11 @@ function PinBadge({
 
   // Le geste rapporte un delta en pixels ÉCRAN (avant mise à l'échelle du
   // zoom) — diviser par `scale` pour obtenir le déplacement réel dans le
-  // repère (non zoomé) où vivent x/y. clamp01 borne dans la pièce, snapRel
-  // aimante sur un bord proche — même ordre que ShapeBody.resolve() côté
-  // pièces.
+  // repère (non zoomé) où vivent x/y, avant resolveRel (bornage + aimantation
+  // sur bord, rayon de la pastille inclus).
   const resolve = (translationX: number, translationY: number): RelPosition => ({
-    relX: snapRel(clamp01(dragOrigin.current.relX + translationX / scale / geo.width), geo.width),
-    relY: snapRel(clamp01(dragOrigin.current.relY + translationY / scale / geo.height), geo.height),
+    relX: resolveRel(dragOrigin.current.relX + translationX / scale / geo.width, geo.width),
+    relY: resolveRel(dragOrigin.current.relY + translationY / scale / geo.height, geo.height),
   });
 
   const pan = Gesture.Pan()
@@ -158,8 +164,17 @@ function PinBadge({
     .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
     .onEnd((event) => onDragEnd(resolve(event.translationX, event.translationY)));
 
-  const tap = Gesture.Tap().enabled(interactive).hitSlop(6).runOnJS(true).onEnd(() => onTap());
-  const gesture = Gesture.Exclusive(pan, tap);
+  // Même principe que ShapeBody (pièces) : doubleTap listé en premier dans
+  // Exclusive pour que singleTap attende de voir si un second tap suit.
+  const singleTap = Gesture.Tap()
+    .numberOfTaps(1)
+    .enabled(interactive)
+    .hitSlop(6)
+    .runOnJS(true)
+    .onEnd(() => setNameVisible((visible) => !visible));
+  const doubleTap = Gesture.Tap().numberOfTaps(2).enabled(interactive).hitSlop(6).runOnJS(true).onEnd(() => onTap());
+  const taps = Gesture.Exclusive(doubleTap, singleTap);
+  const gesture = Gesture.Exclusive(pan, taps);
 
   return (
     <GestureDetector gesture={gesture}>
@@ -178,27 +193,25 @@ function PinBadge({
           borderColor={highlighted ? HIGHLIGHT_RED : undefined}
           borderWidth={2.5}
         />
-        {/* Nom lisible sans avoir à taper sur la pastille — espace restreint
-            donc police et remplissage minimaux, tronqué sur une ligne, fond
-            pâle semi-opaque pour rester lisible sur n'importe quelle couleur
-            de sol. */}
-        <Text
-          numberOfLines={1}
-          style={{
-            marginTop: 2,
-            maxWidth: PIN_LABEL_WIDTH,
-            borderRadius: 4,
-            paddingHorizontal: 3,
-            paddingVertical: 1,
-            backgroundColor: 'rgba(255, 251, 248, 0.85)',
-            fontSize: 9,
-            lineHeight: 11,
-            textAlign: 'center',
-            color: '#2D2A26',
-          }}
-        >
-          {display.name}
-        </Text>
+        {nameVisible || highlighted ? (
+          <Text
+            numberOfLines={1}
+            style={{
+              marginTop: 2,
+              maxWidth: PIN_LABEL_WIDTH,
+              borderRadius: 4,
+              paddingHorizontal: 3,
+              paddingVertical: 1,
+              backgroundColor: 'rgba(255, 251, 248, 0.85)',
+              fontSize: 9,
+              lineHeight: 11,
+              textAlign: 'center',
+              color: '#2D2A26',
+            }}
+          >
+            {display.name}
+          </Text>
+        ) : null}
       </View>
     </GestureDetector>
   );
