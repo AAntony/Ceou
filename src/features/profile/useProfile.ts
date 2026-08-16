@@ -18,6 +18,25 @@ export function useProfile() {
   });
 }
 
+// Trace le consentement explicite à l'envoi de photos vers Google Gemini
+// (scan IA multi-objets) — distinct de l'acceptation générale de la
+// politique de confidentialité, voir app/privacy-policy.tsx. Demandé une
+// seule fois (gating dans AiPhotoScanFlow), horodatage conservé côté
+// profil pour survivre à une réinstallation/un changement d'appareil.
+export function useSetAiPhotoConsent() {
+  const { session } = useSession();
+  const userId = session?.user.id;
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('profiles').update({ ai_photo_consent_at: new Date().toISOString() }).eq('id', userId!);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', userId] }),
+  });
+}
+
 export function useUpdateProfile() {
   const { session } = useSession();
   const userId = session?.user.id;

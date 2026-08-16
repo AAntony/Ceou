@@ -1,13 +1,16 @@
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
-import { cropDetection, detectObjects, getImageSize } from '../../lib/ai/detectObjects';
+import { cropDetection, detectObjects, getImageSize, RateLimitedError } from '../../lib/ai/detectObjects';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
+import { useProfile, useSetAiPhotoConsent } from '../profile/useProfile';
 import { useCreateObjetsBulk } from './queries';
 
 export type CollectedScanItem = { name: string; localPhotoUri: string };
@@ -43,13 +46,17 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const createObjetsBulk = useCreateObjetsBulk();
+  const { data: profile } = useProfile();
+  const setAiPhotoConsent = useSetAiPhotoConsent();
   const [step, setStep] = useState<Step>('capture');
   const [items, setItems] = useState<ReviewItem[]>([]);
+  const [pendingSource, setPendingSource] = useState<'camera' | 'library' | null>(null);
 
   useEffect(() => {
     if (active) {
       setStep('capture');
       setItems([]);
+      setPendingSource(null);
     }
   }, [active]);
 
@@ -76,21 +83,46 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       );
       setItems(crops);
       setStep('review');
-    } catch {
-      Alert.alert(t('common.error_generic'));
+    } catch (err) {
+      Alert.alert(err instanceof RateLimitedError ? t('inventory.aiScan.rate_limited') : t('common.error_generic'));
       setStep('capture');
     }
   };
 
-  const handleTakePhoto = async () => {
-    const uri = await takePhoto(undefined, false);
+  const startCapture = async (source: 'camera' | 'library') => {
+    const uri = source === 'camera' ? await takePhoto(undefined, false) : await pickImage(undefined, false);
     if (uri) runDetection(uri);
   };
 
-  const handlePickPhoto = async () => {
-    const uri = await pickImage(undefined, false);
-    if (uri) runDetection(uri);
+  // Gate le tout premier scan derrière un consentement explicite (photos
+  // envoyées à Google Gemini, tiers hors UE — voir la politique de
+  // confidentialité) avant même de déclencher la prise/le choix de photo.
+  // `pendingSource` mémorise CE que l'utilisateur voulait faire pour
+  // l'enchaîner automatiquement une fois le consentement accordé.
+  const requestCapture = (source: 'camera' | 'library') => {
+    if (profile?.ai_photo_consent_at) {
+      startCapture(source);
+      return;
+    }
+    setPendingSource(source);
   };
+
+  const handleTakePhoto = () => requestCapture('camera');
+  const handlePickPhoto = () => requestCapture('library');
+
+  const handleConsentAccept = async () => {
+    const source = pendingSource;
+    setPendingSource(null);
+    try {
+      await setAiPhotoConsent.mutateAsync();
+    } catch {
+      Alert.alert(t('common.error_generic'));
+      return;
+    }
+    if (source) startCapture(source);
+  };
+
+  const handleConsentCancel = () => setPendingSource(null);
 
   const toggleSelected = (key: string) =>
     setItems((current) => current.map((i) => (i.key === key ? { ...i, selected: !i.selected } : i)));
@@ -133,6 +165,22 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
           <Button label={t('inventory.aiScan.pick_photo')} variant="ghost" onPress={handlePickPhoto} />
           <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
         </View>
+
+        <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-white px-6 pb-8 pt-6">
+          <Text className="mb-3 text-lg font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
+          <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
+          <Link href="/privacy-policy" className="mb-6 text-sm font-semibold text-coral-dark underline">
+            {t('profile.privacy_policy')}
+          </Link>
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button label={t('common.cancel')} variant="ghost" onPress={handleConsentCancel} />
+            </View>
+            <View className="flex-1">
+              <Button label={t('inventory.aiScan.consent_accept')} onPress={handleConsentAccept} loading={setAiPhotoConsent.isPending} />
+            </View>
+          </View>
+        </BottomSheetModal>
       </View>
     );
   }

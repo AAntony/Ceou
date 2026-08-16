@@ -10,7 +10,9 @@
     "close": "Close",
     "loading": "Loading...",
     "error_generic": "Something went wrong. Please try again.",
-    "other": "Other"
+    "other": "Other",
+    "error_boundary_title": "Something went wrong.",
+    "error_boundary_hint": "Restart the app. If the problem persists, contact us."
   },
   "auth": {
     "email": "Email",
@@ -28,7 +30,8 @@
       "submit": "Sign up",
       "has_account": "Already have an account?",
       "login_link": "Log in",
-      "success": "Account created. Check your email to confirm your address."
+      "success": "Account created. Check your email to confirm your address.",
+      "privacy_notice": "By creating an account, you accept our"
     },
     "forgot_password": {
       "title": "Forgot password",
@@ -57,7 +60,8 @@
       "change": "Change photo"
     },
     "saved": "Profile saved",
-    "version_label": "Version"
+    "version_label": "Version",
+    "privacy_policy": "Privacy Policy"
   },
   "home": {
     "tab_title": "Homes",
@@ -192,7 +196,11 @@
       "review_hint": "Uncheck anything that isn't an item, fix names if needed, then confirm.",
       "confirm": "Add ({{count}})",
       "next": "Next ({{count}})",
-      "saved_with_photo_failures": "Items saved, but the photo failed to upload for {{count}} of them. You can retry from their detail screen."
+      "saved_with_photo_failures": "Items saved, but the photo failed to upload for {{count}} of them. You can retry from their detail screen.",
+      "consent_title": "Before scanning a photo",
+      "consent_body": "This photo will be sent to Google's Gemini API to automatically detect the objects it contains. It is only used to answer this one-off request.",
+      "consent_accept": "Accept and continue",
+      "rate_limited": "You scanned a photo less than a minute ago — try again in a moment."
     }
   },
   "plans": {

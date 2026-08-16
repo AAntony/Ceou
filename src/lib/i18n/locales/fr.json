@@ -10,7 +10,9 @@
     "close": "Fermer",
     "loading": "Chargement...",
     "error_generic": "Une erreur est survenue. Réessaie.",
-    "other": "Autre"
+    "other": "Autre",
+    "error_boundary_title": "Une erreur est survenue.",
+    "error_boundary_hint": "Redémarre l'application. Si le problème persiste, contacte-nous."
   },
   "auth": {
     "email": "Email",
@@ -28,7 +30,8 @@
       "submit": "S'inscrire",
       "has_account": "Déjà un compte ?",
       "login_link": "Se connecter",
-      "success": "Compte créé. Vérifie tes emails pour confirmer ton adresse."
+      "success": "Compte créé. Vérifie tes emails pour confirmer ton adresse.",
+      "privacy_notice": "En créant un compte, tu acceptes notre"
     },
     "forgot_password": {
       "title": "Mot de passe oublié",
@@ -57,7 +60,8 @@
       "change": "Changer la photo"
     },
     "saved": "Profil enregistré",
-    "version_label": "Version"
+    "version_label": "Version",
+    "privacy_policy": "Politique de confidentialité"
   },
   "home": {
     "tab_title": "Habitations",
@@ -192,7 +196,11 @@
       "review_hint": "Décoche ce qui n'est pas un objet, corrige les noms si besoin, puis valide.",
       "confirm": "Ajouter ({{count}})",
       "next": "Suivant ({{count}})",
-      "saved_with_photo_failures": "Objets enregistrés, mais l'ajout de la photo a échoué pour {{count}} d'entre eux. Tu peux réessayer depuis leur fiche."
+      "saved_with_photo_failures": "Objets enregistrés, mais l'ajout de la photo a échoué pour {{count}} d'entre eux. Tu peux réessayer depuis leur fiche.",
+      "consent_title": "Avant de scanner une photo",
+      "consent_body": "Cette photo sera envoyée à l'API Gemini de Google pour détecter automatiquement les objets qu'elle contient. Elle n'est utilisée que pour répondre à cette demande ponctuelle.",
+      "consent_accept": "J'accepte et je continue",
+      "rate_limited": "Tu as scanné une photo il y a moins d'une minute — réessaie dans quelques instants."
     }
   },
   "plans": {

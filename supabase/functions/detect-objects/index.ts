@@ -4,9 +4,17 @@
 // plutôt qu'un appel direct depuis Ceou. La vérification JWT par défaut de
 // Supabase (verify_jwt, non désactivée ici) garantit que seul un
 // utilisateur connecté peut consommer le quota Gemini de ce projet.
+//
+// Cette clé est UNIQUE et PARTAGÉE entre tous les utilisateurs de l'app
+// (voir discussion Lead Dev) — RATE_LIMIT_COOLDOWN_SECONDS protège ce quota
+// commun contre un utilisateur (volontaire ou par bug client) qui
+// spammerait le scan et grillerait le tier gratuit pour tout le monde.
+
+import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const GEMINI_MODEL = 'gemini-3.6-flash';
 const MAX_DETECTIONS = 25;
+const RATE_LIMIT_COOLDOWN_SECONDS = 60;
 
 const DETECTION_PROMPT = `Détecte tous les objets physiques distincts et déplaçables visibles sur cette photo, dans le but de les cataloguer dans une application d'inventaire domestique. Ignore les murs, sols, plafonds, personnes, animaux et éléments de décor fixes (prises électriques, interrupteurs...). Pour chaque objet, donne un court label descriptif en français (2 à 4 mots, capitalisé comme un nom propre d'objet, ex: "Tasse bleue") et sa bounding box. Ne détecte pas plus de ${MAX_DETECTIONS} objets ; si plusieurs objets identiques se touchent (ex: une pile de livres identiques), regroupe-les en une seule détection plutôt que d'en créer une par unité.`;
 
@@ -75,6 +83,36 @@ Deno.serve(async (req: Request) => {
     console.error('GEMINI_API_KEY is not set');
     return jsonResponse({ error: 'missing_api_key' }, 500);
   }
+
+  // Résout l'utilisateur appelant à partir du header Authorization déjà
+  // vérifié par la plateforme (verify_jwt) — un client Supabase construit
+  // avec CE header (pas la clé anon seule) permet à auth.getUser() de le
+  // décoder/valider et de nous donner l'id fiable de l'utilisateur.
+  const authHeader = req.headers.get('Authorization');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  if (!authHeader || !supabaseUrl || !anonKey) return jsonResponse({ error: 'unauthorized' }, 401);
+
+  const callerClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
+  const { data: userData, error: userError } = await callerClient.auth.getUser();
+  if (userError || !userData.user) return jsonResponse({ error: 'unauthorized' }, 401);
+
+  // check_and_touch_ai_scan_rate_limit n'a aucune policy client (RLS
+  // bloque tout) — appelée ici via le client service_role, qui bypass RLS,
+  // exactement le cas d'usage prévu pour cette clé (jamais exposée au
+  // client, disponible par défaut à toute Edge Function Supabase).
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (!serviceRoleKey) return jsonResponse({ error: 'missing_service_role_key' }, 500);
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+  const { data: allowed, error: rateLimitError } = await serviceClient.rpc('check_and_touch_ai_scan_rate_limit', {
+    p_user_id: userData.user.id,
+    p_cooldown_seconds: RATE_LIMIT_COOLDOWN_SECONDS,
+  });
+  if (rateLimitError) {
+    console.error('Rate limit check failed', rateLimitError);
+    return jsonResponse({ error: 'rate_limit_check_failed' }, 500);
+  }
+  if (!allowed) return jsonResponse({ error: 'rate_limited', retryAfterSeconds: RATE_LIMIT_COOLDOWN_SECONDS }, 429);
 
   let body: { imageBase64?: string; mimeType?: string };
   try {

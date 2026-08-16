@@ -1,3 +1,4 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { Image as RNImage } from 'react-native';
 import { supabase } from '../supabase/client';
@@ -6,6 +7,15 @@ export type Detection = {
   label: string;
   box: { x: number; y: number; width: number; height: number };
 };
+
+export class RateLimitedError extends Error {
+  retryAfterSeconds: number;
+  constructor(retryAfterSeconds: number) {
+    super('rate_limited');
+    this.name = 'RateLimitedError';
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 // Taille envoyée à Gemini pour la détection — n'a AUCUN rapport avec la
 // résolution des vignettes gardées ensuite (voir cropDetection ci-dessous) :
@@ -34,7 +44,24 @@ export async function detectObjects(uri: string): Promise<Detection[]> {
   const { data, error } = await supabase.functions.invoke<{ detections: Detection[] }>('detect-objects', {
     body: { imageBase64: base64, mimeType: 'image/jpeg' },
   });
-  if (error) throw error;
+  if (error) {
+    // Convertit la réponse 429 de l'Edge Function (voir detect-objects,
+    // check_and_touch_ai_scan_rate_limit) en erreur typée reconnaissable par
+    // l'UI — sinon AiPhotoScanFlow ne pourrait pas distinguer "quota Gemini
+    // partagé throttlé" d'une vraie panne et afficherait un message générique
+    // trompeur. Dégrade silencieusement vers l'erreur générique existante si
+    // le corps ne correspond pas à la forme attendue (ne jamais planter sur
+    // cette étape purement cosmétique).
+    if (error instanceof FunctionsHttpError && error.context.status === 429) {
+      try {
+        const body = await error.context.clone().json();
+        if (body?.error === 'rate_limited') throw new RateLimitedError(body.retryAfterSeconds ?? 60);
+      } catch (parsed) {
+        if (parsed instanceof RateLimitedError) throw parsed;
+      }
+    }
+    throw error;
+  }
   return data?.detections ?? [];
 }
 

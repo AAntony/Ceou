@@ -70,6 +70,13 @@ export default function SignUpScreen() {
             {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
 
             <Button label={t('auth.sign_up.submit')} onPress={handleSubmit} loading={loading} />
+
+            <Text className="mt-4 text-center text-xs text-ink-soft">
+              {t('auth.sign_up.privacy_notice')}{' '}
+              <Link href="/privacy-policy" className="font-semibold text-ink-soft underline">
+                {t('profile.privacy_policy')}
+              </Link>
+            </Text>
           </>
         )}
 

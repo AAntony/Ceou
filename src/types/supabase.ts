@@ -39,6 +39,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_scan_rate_limit: {
+        Row: {
+          last_request_at: string
+          user_id: string
+        }
+        Insert: {
+          last_request_at?: string
+          user_id: string
+        }
+        Update: {
+          last_request_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      client_errors: {
+        Row: {
+          app_version: string | null
+          context: Json | null
+          created_at: string
+          git_commit: string | null
+          id: string
+          message: string
+          platform: string | null
+          stack: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          context?: Json | null
+          created_at?: string
+          git_commit?: string | null
+          id?: string
+          message: string
+          platform?: string | null
+          stack?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          context?: Json | null
+          created_at?: string
+          git_commit?: string | null
+          id?: string
+          message?: string
+          platform?: string | null
+          stack?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       conteneurs: {
         Row: {
           created_at: string
@@ -407,6 +458,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_photo_consent_at: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -414,6 +466,7 @@ export type Database = {
           locale: string
         }
         Insert: {
+          ai_photo_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -421,6 +474,7 @@ export type Database = {
           locale?: string
         }
         Update: {
+          ai_photo_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -434,6 +488,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_touch_ai_scan_rate_limit: {
+        Args: { p_cooldown_seconds: number; p_user_id: string }
+        Returns: boolean
+      }
       conteneur_owner: { Args: { p_conteneur_id: string }; Returns: string }
       conteneur_parent_owner: {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }

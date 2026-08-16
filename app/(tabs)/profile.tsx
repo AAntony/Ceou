@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
@@ -95,7 +96,11 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <Pressable onPress={() => supabase.auth.signOut()} className="mt-12">
+      <Link href="/privacy-policy" className="mt-12 text-center text-sm font-medium text-ink-soft">
+        {t('profile.privacy_policy')}
+      </Link>
+
+      <Pressable onPress={() => supabase.auth.signOut()} className="mt-6">
         <Text className="text-center text-sm font-semibold text-red-600">{t('profile.sign_out')}</Text>
       </Pressable>
 
