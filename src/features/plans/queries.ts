@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase/client';
 import type { Plan, PlanForme, PlanPin } from '../../types/database';
-import { CANVAS_WIDTH, DEFAULT_SHAPE_SIZE, type PlanShapeType } from './constants';
+import { DEFAULT_SHAPE_SIZE, WORLD_WIDTH, type PlanShapeType } from './constants';
 
 export function usePlans(habitationId: string) {
   return useQuery({
@@ -90,7 +90,7 @@ export function useCreatePlanForme(planId: string) {
         .insert({
           plan_id: planId,
           shape_type: shapeType,
-          x: CANVAS_WIDTH / 2 - DEFAULT_SHAPE_SIZE / 2,
+          x: WORLD_WIDTH / 2 - DEFAULT_SHAPE_SIZE / 2,
           y: 40,
           width: DEFAULT_SHAPE_SIZE,
           height: DEFAULT_SHAPE_SIZE,

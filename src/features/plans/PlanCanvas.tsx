@@ -5,6 +5,9 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import type { PlanForme, PlanPin } from '../../types/database';
 import {
+  ARTBOARD_BACKGROUND,
+  ARTBOARD_BORDER,
+  CANVAS_BACKGROUND,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   HIGHLIGHT_GREEN_BORDER,
@@ -14,9 +17,11 @@ import {
   MIN_ZOOM,
   roomColorForForme,
   shade,
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
 } from './constants';
 import { PlanPinLayer } from './PlanPinLayer';
-import { snapPosition, snapResize } from './snap';
+import { clampPositionToWorld, clampResizeToWorld, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
 import { UnplacedEmplacementsBar } from './UnplacedEmplacementsBar';
 
@@ -241,10 +246,19 @@ export function PlanCanvas({
       if (!isInsideAnyRoom(point.x, point.y)) onDeselect();
     });
 
+  // La pièce sélectionnée se dessine en dernier (donc par-dessus) — sans ça,
+  // une pièce en cours de glissé/redimensionnement pouvait passer sous une
+  // voisine dessinée après elle dans le tableau `formes` (simple ordre de
+  // création, sans rapport avec ce qui est en train d'être manipulé).
+  const sortedFormes = useMemo(
+    () => [...formes].sort((a, b) => (a.id === selectedFormeId ? 1 : 0) - (b.id === selectedFormeId ? 1 : 0)),
+    [formes, selectedFormeId],
+  );
+
   return (
     <View
-      style={{ width: '100%', height: CANVAS_HEIGHT, overflow: 'hidden' }}
-      className="rounded-2xl bg-sand-dark"
+      style={{ width: '100%', height: CANVAS_HEIGHT, overflow: 'hidden', backgroundColor: CANVAS_BACKGROUND }}
+      className="rounded-2xl"
       onLayout={(event) => setViewportWidth(event.nativeEvent.layout.width)}
     >
       {/* Le geste de fond (pan/tap/pinch) ne doit couvrir QUE le contenu du
@@ -255,16 +269,32 @@ export function PlanCanvas({
           menu est donc rendu en dehors de ce sous-arbre, pas seulement
           visuellement par-dessus. */}
       <GestureDetector gesture={Gesture.Simultaneous(pinch, twoFingerPan, Gesture.Exclusive(backgroundPan, backgroundTap))}>
+        {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
+            visible, quel que soit le zoom — voir le commentaire sur
+            backgroundPan plus haut. */}
         <View style={{ width: viewportWidth, height: CANVAS_HEIGHT }}>
+          {/* Le contenu réellement zoomable/déplaçable, LUI, doit couvrir
+              toute la FEUILLE (WORLD_WIDTH/HEIGHT), pas seulement la fenêtre
+              visible : un Canvas Skia ne peut jamais dessiner en dehors de
+              ses propres dimensions, quel que soit le zoom/pan appliqué à un
+              parent — le dimensionner à la taille de la fenêtre au lieu de
+              la feuille coupait silencieusement toute pièce dépassant la
+              largeur d'écran, sans qu'aucun zoom arrière ne puisse jamais le
+              révéler. C'était la cause réelle du "mur invisible". */}
           <View
             style={{
-              width: viewportWidth,
-              height: CANVAS_HEIGHT,
+              width: WORLD_WIDTH,
+              height: WORLD_HEIGHT,
               transform: [{ translateX: zoom.translateX }, { translateY: zoom.translateY }, { scale: zoom.scale }],
             }}
           >
-            <Canvas style={{ width: viewportWidth, height: CANVAS_HEIGHT }}>
-              {formes.map((forme) => {
+            <Canvas style={{ width: WORLD_WIDTH, height: WORLD_HEIGHT }}>
+              {/* La feuille elle-même, bien visible (fond clair + bord net)
+                  sur le fond plus sombre de la zone déplaçable — pour qu'on
+                  voie enfin où s'arrête la zone utile. */}
+              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BACKGROUND} style="fill" />
+              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BORDER} style="stroke" strokeWidth={2} />
+              {sortedFormes.map((forme) => {
                 const geo = geoById[forme.id];
                 const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
                 return (
@@ -413,7 +443,8 @@ function ShapeBody({
   const resolve = (translationX: number, translationY: number) => {
     const rawX = dragOrigin.current.x + translationX / scale;
     const rawY = dragOrigin.current.y + translationY / scale;
-    return snapPosition(rawX, rawY, geo.width, geo.height, others);
+    const snapped = snapPosition(rawX, rawY, geo.width, geo.height, others);
+    return clampPositionToWorld(snapped.x, snapped.y, geo.width, geo.height);
   };
 
   const pan = Gesture.Pan()
@@ -487,7 +518,7 @@ function HandleDot({
     })
     .onUpdate((event) => {
       const raw = applyHandle(origin.current, handle, event.translationX / scale, event.translationY / scale);
-      last.current = snapResize(raw, handle, others);
+      last.current = clampResizeToWorld(snapResize(raw, handle, others));
       onResize(last.current);
     })
     .onEnd(() => onResizeEnd(last.current));

@@ -12,8 +12,26 @@ export const MAX_SHAPE_SIZE = 300;
 export const CANVAS_WIDTH = 340;
 export const CANVAS_HEIGHT = 600;
 
+// Zone où les pièces peuvent réellement être posées — fixe et généreuse,
+// indépendante de la largeur d'écran (CANVAS_WIDTH/HEIGHT ci-dessus ne
+// décrivent que la FENÊTRE visible, zoomable/déplaçable). 1200×1200 laisse
+// la place à un vrai plan multi-pièces (une dizaine de pièces à taille
+// courante) sans obliger à dézoomer en permanence. Pattern "artboard borné
+// sur fond déplaçable" classique des éditeurs de canevas (Figma, Miro,
+// Excalidraw) : sans bord visible, rien n'indique où s'arrête la zone utile
+// — d'où ARTBOARD_*/CANVAS_BACKGROUND ci-dessous, pour que la limite se VOIE.
+export const WORLD_WIDTH = 1200;
+export const WORLD_HEIGHT = 1200;
+
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 3;
+
+// Fond de la zone déplaçable (en dehors de la feuille), volontairement plus
+// sombre/saturé que la feuille elle-même pour qu'on distingue au premier
+// coup d'œil "dans la zone utile" de "en dehors".
+export const CANVAS_BACKGROUND = '#E4DED2';
+export const ARTBOARD_BACKGROUND = '#FFFDFA';
+export const ARTBOARD_BORDER = '#B8AF9C';
 
 // Surlignage "Voir sur le plan" côté pièce : contour vert plus épais,
 // suffisamment saturé pour rester lisible sur n'importe quelle couleur de

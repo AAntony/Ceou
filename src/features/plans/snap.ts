@@ -1,4 +1,4 @@
-import { MAX_SHAPE_SIZE, MIN_SHAPE_SIZE } from './constants';
+import { MAX_SHAPE_SIZE, MIN_SHAPE_SIZE, WORLD_HEIGHT, WORLD_WIDTH } from './constants';
 import type { HandleId, ShapeGeometry } from './types';
 
 // Unités écran (~pixels) : une pièce glissée ou redimensionnée dont un bord
@@ -96,4 +96,38 @@ export function snapResize(next: ShapeGeometry, handle: HandleId, others: ShapeG
     height = clampSize(height);
   }
   return { x, y, width, height };
+}
+
+// Glissé : la pièce bute contre le bord de la feuille sans changer de
+// taille — x/y sont simplement bornés à [0, WORLD_WIDTH-width] /
+// [0, WORLD_HEIGHT-height].
+export function clampPositionToWorld(x: number, y: number, width: number, height: number): { x: number; y: number } {
+  return {
+    x: Math.min(Math.max(x, 0), Math.max(0, WORLD_WIDTH - width)),
+    y: Math.min(Math.max(y, 0), Math.max(0, WORLD_HEIGHT - height)),
+  };
+}
+
+// Redimensionnement : un bord précis (celui que la poignée déplace) a pu
+// dépasser la feuille — on RÉDUIT depuis ce bord-là plutôt que de
+// repositionner tout le rectangle, sinon pousser contre le bord droit de la
+// feuille ferait glisser toute la pièce vers la gauche au lieu de buter
+// dessus (le bord opposé, fixe pendant le geste, doit le rester ici aussi).
+export function clampResizeToWorld(geo: ShapeGeometry): ShapeGeometry {
+  let { x, y, width, height } = geo;
+  if (x < 0) {
+    width += x;
+    x = 0;
+  }
+  if (x + width > WORLD_WIDTH) {
+    width = WORLD_WIDTH - x;
+  }
+  if (y < 0) {
+    height += y;
+    y = 0;
+  }
+  if (y + height > WORLD_HEIGHT) {
+    height = WORLD_HEIGHT - y;
+  }
+  return { x, y, width: Math.max(width, MIN_SHAPE_SIZE), height: Math.max(height, MIN_SHAPE_SIZE) };
 }
