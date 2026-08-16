@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '../../components/Icon';
@@ -9,6 +9,10 @@ import { clamp, SNAP_THRESHOLD } from './snap';
 import type { ShapeGeometry } from './types';
 
 const HIGHLIGHT_RED = '#E53935';
+// Bordure fine, volontairement plus discrète que le rouge du surlignage
+// "Voir sur le plan" — même famille corail que la sélection d'une pièce
+// (ShapeBody), juste adoucie en opacité pour rester "légère" comme demandé.
+const SELECTED_BORDER = 'rgba(255, 107, 74, 0.6)';
 
 // 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
 // plan une fois plusieurs pastilles posées.
@@ -54,6 +58,12 @@ export function PlanPinLayer({
   onTap,
 }: PlanPinLayerProps) {
   const [positions, setPositions] = useState<Record<string, RelPosition>>({});
+  // Laquelle des pastilles est "sélectionnée" (un tap simple) — pilote à la
+  // fois le nom affiché, l'ordre de dessin (au premier plan) et la bordure
+  // légère, voir PinBadge. Vit ici plutôt que localement dans chaque
+  // PinBadge : l'ordre de dessin (sortedPins ci-dessous) doit connaître
+  // QUELLE pastille est sélectionnée pour la dessiner en dernier.
+  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
 
   useEffect(() => {
     setPositions((current) => {
@@ -69,9 +79,23 @@ export function PlanPinLayer({
     });
   }, [pins]);
 
+  // La pastille sélectionnée (ou surlignée depuis "Voir sur le plan") se
+  // dessine en dernier — sans ça, une pastille mise en avant pouvait rester
+  // partiellement recouverte par une voisine posée après elle, exactement
+  // le même souci déjà réglé pour les pièces (sortedFormes, PlanCanvas).
+  const sortedPins = useMemo(
+    () =>
+      [...pins].sort((a, b) => {
+        const aFront = a.id === selectedPinId || a.emplacement_id === highlightedEmplacementId ? 1 : 0;
+        const bFront = b.id === selectedPinId || b.emplacement_id === highlightedEmplacementId ? 1 : 0;
+        return aFront - bFront;
+      }),
+    [pins, selectedPinId, highlightedEmplacementId],
+  );
+
   return (
     <>
-      {pins.map((pin) => {
+      {sortedPins.map((pin) => {
         const geo = formeGeo[pin.forme_id];
         const display = pinDisplay[pin.emplacement_id];
         const pos = positions[pin.id] ?? { relX: pin.rel_x, relY: pin.rel_y };
@@ -83,10 +107,12 @@ export function PlanPinLayer({
             pos={pos}
             display={display}
             interactive={pin.forme_id === selectedFormeId}
+            selected={pin.id === selectedPinId}
             highlighted={pin.emplacement_id === highlightedEmplacementId}
             scale={scale}
             onMove={(next) => setPositions((current) => ({ ...current, [pin.id]: next }))}
             onDragEnd={(next) => onDragEnd(pin.id, next.relX, next.relY)}
+            onToggleSelect={() => setSelectedPinId((current) => (current === pin.id ? null : pin.id))}
             onTap={() => onTap(pin)}
           />
         );
@@ -116,29 +142,27 @@ function PinBadge({
   pos,
   display,
   interactive,
+  selected,
   highlighted,
   scale,
   onMove,
   onDragEnd,
+  onToggleSelect,
   onTap,
 }: {
   geo: ShapeGeometry;
   pos: RelPosition;
   display: { name: string; icon: IconName };
   interactive: boolean;
+  selected: boolean;
   highlighted: boolean;
   scale: number;
   onMove: (pos: RelPosition) => void;
   onDragEnd: (pos: RelPosition) => void;
+  onToggleSelect: () => void;
   onTap: () => void;
 }) {
   const dragOrigin = useRef(pos);
-  // Le nom reste caché par défaut (trop de pastilles + noms en même temps
-  // rendait le plan illisible) — un tap simple le révèle/le cache, un
-  // double-tap ouvre la fiche "retirer" (onTap). `highlighted` (vient de
-  // "Voir sur le plan") force aussi l'affichage : le but de ce surlignage
-  // est justement d'identifier CETTE pastille sans manipulation.
-  const [nameVisible, setNameVisible] = useState(false);
 
   // Plan 2D top-down pur : x/y sont directement des coordonnées écran (dans
   // le repère du contenu zoomable), pas besoin de projeter quoi que ce soit.
@@ -165,13 +189,11 @@ function PinBadge({
     .onEnd((event) => onDragEnd(resolve(event.translationX, event.translationY)));
 
   // Même principe que ShapeBody (pièces) : doubleTap listé en premier dans
-  // Exclusive pour que singleTap attende de voir si un second tap suit.
-  const singleTap = Gesture.Tap()
-    .numberOfTaps(1)
-    .enabled(interactive)
-    .hitSlop(6)
-    .runOnJS(true)
-    .onEnd(() => setNameVisible((visible) => !visible));
+  // Exclusive pour que singleTap attende de voir si un second tap suit. Un
+  // tap simple sélectionne/désélectionne (nom affiché, passe au premier
+  // plan, bordure légère — voir PlanPinLayer et le rendu plus bas) ; un
+  // double-tap ouvre la fiche "retirer" (onTap).
+  const singleTap = Gesture.Tap().numberOfTaps(1).enabled(interactive).hitSlop(6).runOnJS(true).onEnd(onToggleSelect);
   const doubleTap = Gesture.Tap().numberOfTaps(2).enabled(interactive).hitSlop(6).runOnJS(true).onEnd(() => onTap());
   const taps = Gesture.Exclusive(doubleTap, singleTap);
   const gesture = Gesture.Exclusive(pan, taps);
@@ -190,10 +212,10 @@ function PinBadge({
           icon={display.icon}
           fill="#FFFBF8"
           size={PIN_SIZE}
-          borderColor={highlighted ? HIGHLIGHT_RED : undefined}
-          borderWidth={2.5}
+          borderColor={highlighted ? HIGHLIGHT_RED : selected ? SELECTED_BORDER : undefined}
+          borderWidth={highlighted ? 2.5 : 1.5}
         />
-        {nameVisible || highlighted ? (
+        {selected || highlighted ? (
           <Text
             numberOfLines={1}
             style={{
