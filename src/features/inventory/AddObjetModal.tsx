@@ -1,67 +1,111 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { uploadImage } from '../../lib/images/pickAndUploadImage';
+import { supabase } from '../../lib/supabase/client';
 import type { LocationType } from '../../types/database';
-import { AiPhotoScanFlow } from './AiPhotoScanFlow';
+import { useSession } from '../auth/SessionProvider';
+import { AiPhotoScanFlow, type CollectedScanItem } from './AiPhotoScanFlow';
 import { LocationTreePicker } from './LocationTreePicker';
-import { ObjetFormBody } from './ObjetFormBody';
+import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
+import { useCreateObjet, useCreateObjetsBulk } from './queries';
 
 type AddObjetModalProps = {
   visible: boolean;
   onClose: () => void;
 };
 
-type Destination = { type: LocationType; id: string };
-type Mode = 'choice' | 'manual' | 'scan';
+// L'utilisateur commence par CE QU'IL AJOUTE (formulaire manuel ou scan
+// photo), et choisit l'emplacement de destination en dernier — la
+// destination n'a de sens à choisir qu'une fois qu'on sait ce qu'on range
+// (retour direct de l'utilisateur : demander l'emplacement AVANT de savoir
+// ce qu'on ajoute est contre-intuitif). ObjetFormBody/AiPhotoScanFlow
+// tournent donc en mode "collecte" ici (prop `onCollected`, pas de création
+// immédiate) ; la création réelle n'a lieu qu'à `handleChooseDestination`,
+// une fois la destination connue.
+type Step = 'choice' | 'manual' | 'scan' | 'destination';
 
-// Point d'entrée global du "+" de la barre d'onglets : choisir d'abord où
-// ranger l'objet (même arborescence que MoveObjetModal, avec création à la
-// volée à chaque niveau — voir LocationTreePicker), puis CHOISIR la façon
-// d'ajouter (formulaire manuel ou scan photo IA — voir AiPhotoScanFlow),
-// avant d'atteindre le formulaire/flux choisi.
 export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
   const { t } = useTranslation();
-  const [destination, setDestination] = useState<Destination | null>(null);
-  // Séparé de `destination` : le bouton retour repasse par l'étape
-  // précédente (choix du mode, puis sélecteur de destination) SANS démonter
-  // ObjetFormBody/AiPhotoScanFlow, donc sans perdre leur état en cours. Seule
-  // la fermeture de la modale (visible -> false -> true) repart de zéro.
-  const [mode, setMode] = useState<Mode>('choice');
+  const { session } = useSession();
+  const createObjet = useCreateObjet();
+  const createObjetsBulk = useCreateObjetsBulk();
+  const [step, setStep] = useState<Step>('choice');
+  const [pendingManual, setPendingManual] = useState<CollectedObjet | null>(null);
+  const [pendingScan, setPendingScan] = useState<CollectedScanItem[] | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (visible) {
-      setDestination(null);
-      setMode('choice');
+      setStep('choice');
+      setPendingManual(null);
+      setPendingScan(null);
+      setSaving(false);
     }
   }, [visible]);
 
-  const handleChoose = (type: LocationType, id: string) => {
-    setDestination({ type, id });
-    setMode('choice');
-  };
-
   const handleBack = () => {
-    if (destination && mode !== 'choice') {
-      setMode('choice');
+    if (step === 'destination') {
+      setStep(pendingManual ? 'manual' : 'scan');
       return;
     }
-    setDestination(null);
+    setStep('choice');
   };
 
-  const title = !destination
-    ? t('home.choose_location')
-    : mode === 'choice'
+  const handleChooseDestination = async (type: LocationType, id: string) => {
+    if (!session) return;
+    setSaving(true);
+    try {
+      if (pendingManual) {
+        const objet = await createObjet.mutateAsync({
+          parentType: type,
+          parentId: id,
+          name: pendingManual.name,
+          description: pendingManual.description,
+          photoUrl: null,
+          barcode: pendingManual.barcode,
+        });
+        if (pendingManual.localPhotoUri) {
+          try {
+            const photoUrl = await uploadImage(pendingManual.localPhotoUri, {
+              bucket: 'objets',
+              path: `${session.user.id}/${objet.id}.jpg`,
+            });
+            const { error } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objet.id);
+            if (error) throw error;
+          } catch {
+            Alert.alert(t('inventory.objet.saved_without_photo'));
+          }
+        }
+      } else if (pendingScan) {
+        const result = await createObjetsBulk.mutateAsync({ parentType: type, parentId: id, items: pendingScan });
+        if (result.photoFailures > 0) {
+          Alert.alert(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
+        }
+      }
+      onClose();
+    } catch {
+      Alert.alert(t('common.error_generic'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const title =
+    step === 'choice'
       ? t('inventory.aiScan.mode_choice_title')
-      : mode === 'scan'
-        ? t('inventory.aiScan.title')
-        : t('inventory.container.create_objet_title');
+      : step === 'manual'
+        ? t('inventory.container.create_objet_title')
+        : step === 'scan'
+          ? t('inventory.aiScan.title')
+          : t('home.choose_location');
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 bg-sand pt-16">
         <View className="mb-2 flex-row items-center justify-between px-6">
-          {destination ? (
+          {step !== 'choice' ? (
             <Pressable onPress={handleBack} hitSlop={8}>
               <Icon name="back" size={22} color="#2D2A26" />
             </Pressable>
@@ -74,25 +118,44 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
           </Pressable>
         </View>
 
-        <View style={{ flex: 1, display: !destination ? 'flex' : 'none' }}>
-          <ScrollView contentContainerClassName="px-6 pb-10 pt-2">
-            <LocationTreePicker active={visible} confirmLabel={t('home.choose_location_here')} onChoose={handleChoose} />
-          </ScrollView>
+        <View style={{ flex: 1, display: step === 'choice' ? 'flex' : 'none' }}>
+          <ModeChoiceStep onChooseManual={() => setStep('manual')} onChooseScan={() => setStep('scan')} />
         </View>
 
-        {destination ? (
-          <>
-            <View style={{ flex: 1, display: mode === 'choice' ? 'flex' : 'none' }}>
-              <ModeChoiceStep onChooseManual={() => setMode('manual')} onChooseScan={() => setMode('scan')} />
-            </View>
-            <View style={{ flex: 1, display: mode === 'manual' ? 'flex' : 'none' }}>
-              <ObjetFormBody parentType={destination.type} parentId={destination.id} active={false} onDone={onClose} onCancel={onClose} />
-            </View>
-            <View style={{ flex: 1, display: mode === 'scan' ? 'flex' : 'none' }}>
-              <AiPhotoScanFlow parentType={destination.type} parentId={destination.id} active={false} onDone={onClose} onCancel={onClose} />
-            </View>
-          </>
-        ) : null}
+        <View style={{ flex: 1, display: step === 'manual' ? 'flex' : 'none' }}>
+          <ObjetFormBody
+            active={visible}
+            onCancel={onClose}
+            onDone={onClose}
+            onCollected={(data) => {
+              setPendingManual(data);
+              setStep('destination');
+            }}
+          />
+        </View>
+
+        <View style={{ flex: 1, display: step === 'scan' ? 'flex' : 'none' }}>
+          <AiPhotoScanFlow
+            active={visible && step === 'scan'}
+            onCancel={onClose}
+            onDone={onClose}
+            onCollected={(items) => {
+              setPendingScan(items);
+              setStep('destination');
+            }}
+          />
+        </View>
+
+        <View style={{ flex: 1, display: step === 'destination' ? 'flex' : 'none' }}>
+          <ScrollView contentContainerClassName="px-6 pb-10 pt-2">
+            <LocationTreePicker
+              active={visible && step === 'destination'}
+              confirmLabel={t('home.choose_location_here')}
+              loading={saving}
+              onChoose={handleChooseDestination}
+            />
+          </ScrollView>
+        </View>
       </View>
     </Modal>
   );

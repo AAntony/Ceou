@@ -14,9 +14,14 @@ import { useSession } from '../auth/SessionProvider';
 import { BarcodeScanner } from './BarcodeScanner';
 import { useCreateObjet } from './queries';
 
+export type CollectedObjet = { name: string; description: string | null; localPhotoUri: string | null; barcode: string | null };
+
 type ObjetFormBodyProps = {
-  parentType: LocationType;
-  parentId: string;
+  // Absents quand `onCollected` est fourni (AddObjetModal, mode "objet
+  // d'abord, emplacement ensuite") — la destination n'est alors pas encore
+  // connue. Présents pour un usage "destination déjà connue" (CreateObjetModal).
+  parentType?: LocationType;
+  parentId?: string;
   // Remonte le formulaire à zéro à chaque fois que cette valeur passe à
   // true — nécessaire quand le composant reste monté d'une ouverture de
   // modale à l'autre (CreateObjetModal), inoffensif sinon (AddObjetModal le
@@ -24,17 +29,22 @@ type ObjetFormBodyProps = {
   active: boolean;
   onDone: () => void;
   onCancel: () => void;
+  // Quand fourni, le bouton principal devient "Suivant" et remonte les
+  // données saisies au lieu de créer l'objet directement — c'est l'appelant
+  // (AddObjetModal) qui crée l'objet une fois la destination choisie
+  // ensuite. Absent => comportement historique (crée immédiatement).
+  onCollected?: (data: CollectedObjet) => void;
 };
 
 // Corps de formulaire partagé entre CreateObjetModal (parent déjà connu,
-// feuille du bas) et AddObjetModal (parent choisi via l'arborescence,
-// plein écran) — même logique photo/scan/validation dans les deux cas.
-export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel }: ObjetFormBodyProps) {
+// feuille du bas) et AddObjetModal (parent choisi APRÈS ce formulaire via
+// onCollected) — même logique photo/scan/validation dans les deux cas.
+export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, onCollected }: ObjetFormBodyProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { session } = useSession();
   const queryClient = useQueryClient();
-  const createObjet = useCreateObjet(parentType, parentId);
+  const createObjet = useCreateObjet();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
@@ -71,11 +81,20 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel }
   };
 
   const handleSubmit = async () => {
-    if (!name.trim() || !session) return;
+    if (!name.trim()) return;
+
+    if (onCollected) {
+      onCollected({ name: name.trim(), description: description.trim() || null, localPhotoUri, barcode });
+      return;
+    }
+
+    if (!session || !parentType || !parentId) return;
 
     let objetId: string;
     try {
       const objet = await createObjet.mutateAsync({
+        parentType,
+        parentId,
         name: name.trim(),
         description: description.trim() || null,
         photoUrl: null,
@@ -139,7 +158,12 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel }
             <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
           </View>
           <View className="flex-1">
-            <Button label={t('common.save')} onPress={handleSubmit} loading={createObjet.isPending} disabled={!name.trim()} />
+            <Button
+              label={t(onCollected ? 'common.next' : 'common.save')}
+              onPress={handleSubmit}
+              loading={createObjet.isPending}
+              disabled={!name.trim()}
+            />
           </View>
         </View>
       </ScrollView>

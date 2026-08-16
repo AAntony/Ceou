@@ -326,11 +326,20 @@ export function useObjet(id: string) {
   });
 }
 
-export function useCreateObjet(parentType: LocationType, parentId: string) {
+// parentType/parentId font partie du payload de la mutation (pas des
+// arguments du hook) : AddObjetModal ne connaît la destination qu'à la toute
+// fin de son flux (objet d'abord, emplacement ensuite — voir AiPhotoScanFlow
+// et ObjetFormBody, mode "collecte"), donc le hook doit pouvoir être appelé
+// une seule fois puis déclenché avec une destination connue seulement au
+// moment du clic. CreateObjetModal (destination déjà connue dès l'ouverture)
+// passe simplement les mêmes valeurs à chaque appel, sans rien y perdre.
+export function useCreateObjet() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (input: {
+      parentType: LocationType;
+      parentId: string;
       name: string;
       description: string | null;
       photoUrl: string | null;
@@ -343,8 +352,8 @@ export function useCreateObjet(parentType: LocationType, parentId: string) {
           description: input.description,
           photo_url: input.photoUrl,
           barcode: input.barcode ?? null,
-          parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
-          parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
+          parent_emplacement_id: input.parentType === 'emplacement' ? input.parentId : null,
+          parent_conteneur_id: input.parentType === 'conteneur' ? input.parentId : null,
         })
         .select()
         .single();
@@ -362,18 +371,22 @@ export function useCreateObjet(parentType: LocationType, parentId: string) {
 // qui n'a pas de notion de transaction multi-lignes côté client. La photo de
 // chaque objet est uploadée APRÈS l'insert de sa ligne, même séquence que
 // ObjetFormBody.handleSubmit (l'id de l'objet sert de nom de fichier).
-export function useCreateObjetsBulk(parentType: LocationType, parentId: string) {
+// Même raisonnement que useCreateObjet ci-dessus : parentType/parentId dans
+// le payload, pas dans les arguments du hook.
+export function useCreateObjetsBulk() {
   const { session } = useSession();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      items: { name: string; localPhotoUri: string }[],
-    ): Promise<{ created: number; photoFailures: number }> => {
+    mutationFn: async (input: {
+      parentType: LocationType;
+      parentId: string;
+      items: { name: string; localPhotoUri: string }[];
+    }): Promise<{ created: number; photoFailures: number }> => {
       if (!session) throw new Error('no_session');
       let photoFailures = 0;
 
-      for (const item of items) {
+      for (const item of input.items) {
         const { data: objet, error } = await supabase
           .from('objets')
           .insert({
@@ -381,8 +394,8 @@ export function useCreateObjetsBulk(parentType: LocationType, parentId: string) 
             description: null,
             photo_url: null,
             barcode: null,
-            parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
-            parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
+            parent_emplacement_id: input.parentType === 'emplacement' ? input.parentId : null,
+            parent_conteneur_id: input.parentType === 'conteneur' ? input.parentId : null,
           })
           .select()
           .single();
@@ -397,7 +410,7 @@ export function useCreateObjetsBulk(parentType: LocationType, parentId: string) 
         }
       }
 
-      return { created: items.length, photoFailures };
+      return { created: input.items.length, photoFailures };
     },
     onSuccess: () => invalidateContainerContents(queryClient),
   });

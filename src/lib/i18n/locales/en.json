@@ -4,6 +4,7 @@
     "cancel": "Cancel",
     "save": "Save",
     "add": "Add",
+    "next": "Next",
     "delete": "Delete",
     "back": "Back",
     "close": "Close",
@@ -190,6 +191,7 @@
       "no_detections": "No item detected in this photo. Try another photo, or add the item by hand.",
       "review_hint": "Uncheck anything that isn't an item, fix names if needed, then confirm.",
       "confirm": "Add ({{count}})",
+      "next": "Next ({{count}})",
       "saved_with_photo_failures": "Items saved, but the photo failed to upload for {{count}} of them. You can retry from their detail screen."
     }
   },

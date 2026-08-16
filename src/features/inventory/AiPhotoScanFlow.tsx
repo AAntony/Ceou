@@ -10,15 +10,24 @@ import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useCreateObjetsBulk } from './queries';
 
+export type CollectedScanItem = { name: string; localPhotoUri: string };
+
 type AiPhotoScanFlowProps = {
-  parentType: LocationType;
-  parentId: string;
+  // Absents quand `onCollected` est fourni (AddObjetModal, mode "objets
+  // d'abord, emplacement ensuite"). Présents pour un usage "destination déjà
+  // connue" (CreateObjetModal) — même contrat que ObjetFormBody.
+  parentType?: LocationType;
+  parentId?: string;
   // Même contrat que ObjetFormBody : remonte le flux à zéro quand cette
   // valeur passe à true, pour rester montable d'une ouverture de modale à
   // l'autre sans fuiter l'état de la précédente.
   active: boolean;
   onDone: () => void;
   onCancel: () => void;
+  // Quand fourni, le bouton de confirmation devient "Suivant" et remonte la
+  // liste retenue au lieu de créer les objets directement — c'est l'appelant
+  // (AddObjetModal) qui les crée une fois la destination choisie ensuite.
+  onCollected?: (items: CollectedScanItem[]) => void;
 };
 
 type ReviewItem = { key: string; label: string; thumbUri: string; selected: boolean };
@@ -30,10 +39,10 @@ type Step = 'capture' | 'analyzing' | 'review';
 // motivé cette fonctionnalité. Même props shape que ObjetFormBody
 // (parentType/parentId/active/onDone/onCancel) : les deux sont interchangeables
 // dans CreateObjetModal/AddObjetModal selon le mode choisi par l'utilisateur.
-export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel }: AiPhotoScanFlowProps) {
+export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel, onCollected }: AiPhotoScanFlowProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const createObjetsBulk = useCreateObjetsBulk(parentType, parentId);
+  const createObjetsBulk = useCreateObjetsBulk();
   const [step, setStep] = useState<Step>('capture');
   const [items, setItems] = useState<ReviewItem[]>([]);
 
@@ -90,10 +99,16 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   const handleConfirm = async () => {
     const toCreate = items.filter((i) => i.selected && i.label.trim());
     if (toCreate.length === 0) return;
+    const collected = toCreate.map((i) => ({ name: i.label.trim(), localPhotoUri: i.thumbUri }));
+
+    if (onCollected) {
+      onCollected(collected);
+      return;
+    }
+
+    if (!parentType || !parentId) return;
     try {
-      const result = await createObjetsBulk.mutateAsync(
-        toCreate.map((i) => ({ name: i.label.trim(), localPhotoUri: i.thumbUri })),
-      );
+      const result = await createObjetsBulk.mutateAsync({ parentType, parentId, items: collected });
       if (result.photoFailures > 0) {
         Alert.alert(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
       }
@@ -156,7 +171,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
         </View>
         <View className="flex-1">
           <Button
-            label={t('inventory.aiScan.confirm', { count: selectedCount })}
+            label={t(onCollected ? 'inventory.aiScan.next' : 'inventory.aiScan.confirm', { count: selectedCount })}
             onPress={handleConfirm}
             loading={createObjetsBulk.isPending}
             disabled={selectedCount === 0}
