@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../features/auth/SessionProvider';
+import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { isSingleSpaceHabitation } from './constants';
@@ -18,22 +19,14 @@ export function useHabitations() {
   return useQuery({
     queryKey: ['habitations'],
     enabled: !!session,
-    queryFn: async (): Promise<Habitation[]> => {
-      const { data, error } = await supabase.from('habitations').select('*').order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Habitation>('habitations', undefined, 'created_at'),
   });
 }
 
 export function useHabitation(id: string) {
   return useQuery({
     queryKey: ['habitation', id],
-    queryFn: async (): Promise<Habitation> => {
-      const { data, error } = await supabase.from('habitations').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Habitation>('habitations', id),
   });
 }
 
@@ -86,10 +79,7 @@ export function useUpdateHabitation() {
 export function useDeleteHabitation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('habitations').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('habitations', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habitations'] });
       invalidateSearchIndex(queryClient);
@@ -102,26 +92,14 @@ export function useDeleteHabitation() {
 export function usePieces(habitationId: string) {
   return useQuery({
     queryKey: ['pieces', habitationId],
-    queryFn: async (): Promise<Piece[]> => {
-      const { data, error } = await supabase
-        .from('pieces')
-        .select('*')
-        .eq('habitation_id', habitationId)
-        .order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Piece>('pieces', { column: 'habitation_id', value: habitationId }, 'created_at'),
   });
 }
 
 export function usePiece(id: string) {
   return useQuery({
     queryKey: ['piece', id],
-    queryFn: async (): Promise<Piece> => {
-      const { data, error } = await supabase.from('pieces').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Piece>('pieces', id),
   });
 }
 
@@ -168,10 +146,7 @@ export function useUpdatePiece(habitationId: string) {
 export function useDeletePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('pieces').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('pieces', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
       invalidateSearchIndex(queryClient);
@@ -185,11 +160,7 @@ export function useEmplacements(pieceId: string) {
   return useQuery({
     queryKey: ['emplacements', pieceId],
     enabled: !!pieceId,
-    queryFn: async (): Promise<Emplacement[]> => {
-      const { data, error } = await supabase.from('emplacements').select('*').eq('piece_id', pieceId).order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Emplacement>('emplacements', { column: 'piece_id', value: pieceId }, 'created_at'),
   });
 }
 
@@ -213,11 +184,7 @@ export function useEmplacementsForPieces(pieceIds: string[]) {
 export function useEmplacement(id: string) {
   return useQuery({
     queryKey: ['emplacement', id],
-    queryFn: async (): Promise<Emplacement> => {
-      const { data, error } = await supabase.from('emplacements').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Emplacement>('emplacements', id),
   });
 }
 
@@ -260,10 +227,7 @@ export function useUpdateEmplacement(pieceId: string) {
 export function useDeleteEmplacement(pieceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('emplacements').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('emplacements', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
       invalidateSearchIndex(queryClient);
@@ -284,21 +248,13 @@ export function useContainerContents(parentType: LocationType, parentId: string)
   const conteneursQuery = useQuery({
     queryKey: ['containerContents', 'conteneurs', parentType, parentId],
     enabled: !!parentId,
-    queryFn: async (): Promise<Conteneur[]> => {
-      const { data, error } = await supabase.from('conteneurs').select('*').eq(column, parentId).order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Conteneur>('conteneurs', { column, value: parentId }, 'created_at'),
   });
 
   const objetsQuery = useQuery({
     queryKey: ['containerContents', 'objets', parentType, parentId],
     enabled: !!parentId,
-    queryFn: async (): Promise<Objet[]> => {
-      const { data, error } = await supabase.from('objets').select('*').eq(column, parentId).order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Objet>('objets', { column, value: parentId }, 'created_at'),
   });
 
   return {
@@ -316,11 +272,7 @@ function invalidateContainerContents(queryClient: ReturnType<typeof useQueryClie
 export function useConteneur(id: string) {
   return useQuery({
     queryKey: ['conteneur', id],
-    queryFn: async (): Promise<Conteneur> => {
-      const { data, error } = await supabase.from('conteneurs').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Conteneur>('conteneurs', id),
   });
 }
 
@@ -359,10 +311,7 @@ export function useUpdateConteneur() {
 export function useDeleteConteneur() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('conteneurs').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('conteneurs', id),
     onSuccess: () => invalidateContainerContents(queryClient),
   });
 }
@@ -372,11 +321,7 @@ export function useDeleteConteneur() {
 export function useObjet(id: string) {
   return useQuery({
     queryKey: ['objet', id],
-    queryFn: async (): Promise<Objet> => {
-      const { data, error } = await supabase.from('objets').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Objet>('objets', id),
   });
 }
 
@@ -426,10 +371,7 @@ export function useUpdateObjet(id: string) {
 export function useDeleteObjet() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('objets').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('objets', id),
     onSuccess: () => invalidateContainerContents(queryClient),
   });
 }

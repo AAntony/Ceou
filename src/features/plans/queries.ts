@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Plan, PlanForme, PlanPin } from '../../types/database';
 import { DEFAULT_SHAPE_SIZE, WORLD_WIDTH, type PlanShapeType } from './constants';
@@ -6,26 +7,14 @@ import { DEFAULT_SHAPE_SIZE, WORLD_WIDTH, type PlanShapeType } from './constants
 export function usePlans(habitationId: string) {
   return useQuery({
     queryKey: ['plans', habitationId],
-    queryFn: async (): Promise<Plan[]> => {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .eq('habitation_id', habitationId)
-        .order('floor_order');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<Plan>('plans', { column: 'habitation_id', value: habitationId }, 'floor_order'),
   });
 }
 
 export function usePlan(id: string) {
   return useQuery({
     queryKey: ['plan', id],
-    queryFn: async (): Promise<Plan> => {
-      const { data, error } = await supabase.from('plans').select('*').eq('id', id).single();
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectOne<Plan>('plans', id),
   });
 }
 
@@ -62,10 +51,7 @@ export function useUpdatePlan(habitationId: string) {
 export function useDeletePlan(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('plans').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('plans', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['plans', habitationId] }),
   });
 }
@@ -73,11 +59,7 @@ export function useDeletePlan(habitationId: string) {
 export function usePlanFormes(planId: string) {
   return useQuery({
     queryKey: ['planFormes', planId],
-    queryFn: async (): Promise<PlanForme[]> => {
-      const { data, error } = await supabase.from('plan_formes').select('*').eq('plan_id', planId).order('created_at');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<PlanForme>('plan_formes', { column: 'plan_id', value: planId }, 'created_at'),
   });
 }
 
@@ -163,10 +145,7 @@ export function usePieceLocationOnPlan(pieceId: string) {
 export function useDeletePlanForme(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('plan_formes').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('plan_formes', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planFormes', planId] }),
   });
 }
@@ -174,11 +153,7 @@ export function useDeletePlanForme(planId: string) {
 export function usePlanPins(planId: string) {
   return useQuery({
     queryKey: ['planPins', planId],
-    queryFn: async (): Promise<PlanPin[]> => {
-      const { data, error } = await supabase.from('plan_pins').select('*').eq('plan_id', planId);
-      if (error) throw error;
-      return data;
-    },
+    queryFn: () => selectMany<PlanPin>('plan_pins', { column: 'plan_id', value: planId }),
   });
 }
 
@@ -212,10 +187,7 @@ export function useUpdatePlanPin(planId: string) {
 export function useDeletePlanPin(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('plan_pins').delete().eq('id', id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => deleteRow('plan_pins', id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planPins', planId] }),
   });
 }

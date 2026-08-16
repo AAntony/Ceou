@@ -9,8 +9,18 @@ import type { HandleId, ShapeGeometry } from './types';
 // pièce plus tard n'entraîne pas ses voisines avec elle.
 export const SNAP_THRESHOLD = 10;
 
-function clampSize(value: number): number {
-  return Math.min(MAX_SHAPE_SIZE, Math.max(MIN_SHAPE_SIZE, value));
+// Partagé avec PlanCanvas.tsx (clamp générique borne aussi le zoom, pas
+// seulement une taille de pièce) — une seule définition plutôt que deux
+// copies identiques dans les deux fichiers.
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+// Également exportée : PlanCanvas.tsx la réutilise pour clamper la taille
+// pendant le redimensionnement brut (applyHandle), avant même le calcul
+// d'accolement magnétique ci-dessous.
+export function clampSize(value: number): number {
+  return clamp(value, MIN_SHAPE_SIZE, MAX_SHAPE_SIZE);
 }
 
 export function snapPosition(x: number, y: number, width: number, height: number, others: ShapeGeometry[]): { x: number; y: number } {

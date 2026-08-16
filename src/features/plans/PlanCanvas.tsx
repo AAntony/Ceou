@@ -9,9 +9,7 @@ import {
   ARTBOARD_BORDER,
   CANVAS_BACKGROUND,
   HIGHLIGHT_GREEN_BORDER,
-  MAX_SHAPE_SIZE,
   MAX_ZOOM,
-  MIN_SHAPE_SIZE,
   MIN_ZOOM,
   roomColorForForme,
   shade,
@@ -19,19 +17,11 @@ import {
   WORLD_WIDTH,
 } from './constants';
 import { PlanPinLayer } from './PlanPinLayer';
-import { clampPositionToWorld, clampResizeToWorld, snapPosition, snapResize } from './snap';
+import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
 import { UnplacedEmplacementsBar } from './UnplacedEmplacementsBar';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function clampSize(value: number): number {
-  return clamp(value, MIN_SHAPE_SIZE, MAX_SHAPE_SIZE);
-}
 
 function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
   const cx = geo.x + geo.width / 2;
