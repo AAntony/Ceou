@@ -12,9 +12,8 @@ import { EntityGrid } from '../../components/EntityGrid';
 import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Piece } from '../../types/database';
-import { PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
+import { DEFAULT_PIECE_COLOR, PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
 
 type PieceListProps = {
@@ -69,18 +68,21 @@ export function PieceList({ habitationId }: PieceListProps) {
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
           <EntityGrid>
-            {pieces?.map((piece) => (
-              <EntityCard
-                key={piece.id}
-                icon={getPieceIcon(piece.preset_key)}
-                title={piece.name}
-                bgColor={piece.color ?? HUE_CARD_BG_HEX.teal}
-                badgeColor={piece.color ? shade(piece.color, 0.35) : HUE_BADGE_FILL.teal}
-                onPress={() => router.push(`/piece/${piece.id}`)}
-                onLongPress={() => handleDelete(piece.id)}
-                onEdit={() => openEdit(piece)}
-              />
-            ))}
+            {pieces?.map((piece) => {
+              const pieceColor = piece.color ?? DEFAULT_PIECE_COLOR;
+              return (
+                <EntityCard
+                  key={piece.id}
+                  icon={getPieceIcon(piece.preset_key)}
+                  title={piece.name}
+                  bgColor={pieceColor}
+                  badgeColor={shade(pieceColor, 0.35)}
+                  onPress={() => router.push(`/piece/${piece.id}`)}
+                  onLongPress={() => handleDelete(piece.id)}
+                  onEdit={() => openEdit(piece)}
+                />
+              );
+            })}
           </EntityGrid>
         )}
       </ScrollView>

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '../../components/Icon';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
+import { SNAP_THRESHOLD } from './snap';
 import type { ShapeGeometry } from './types';
 
 const HIGHLIGHT_RED = '#E53935';
@@ -12,6 +13,12 @@ const HIGHLIGHT_RED = '#E53935';
 // 30% plus petit que l'ancienne taille (30) pour une meilleure lisibilité du
 // plan une fois plusieurs pastilles posées.
 const PIN_SIZE = 21;
+
+// Largeur fixe de la zone pastille+nom : permet de centrer le groupe sur
+// `screen.x` sans dépendre de la longueur du nom (le nom peut varier, la
+// pastille doit rester alignée) — les noms plus longs sont tronqués plutôt
+// que d'élargir la zone.
+const PIN_LABEL_WIDTH = 80;
 
 type RelPosition = { relX: number; relY: number };
 
@@ -91,6 +98,18 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+// Aimante la pastille sur le bord de la pièce quand on l'en approche — même
+// seuil (en unités monde) que l'accolement entre pièces (snap.ts), converti
+// en fraction relative puisque rel_x/rel_y sont normalisées 0..1 dans le
+// repère de la pièce. Plus facile de poser une pastille exactement contre un
+// mur plutôt qu'à quelques pixels près.
+function snapRel(value: number, sideLength: number): number {
+  const thresholdRel = sideLength > 0 ? SNAP_THRESHOLD / sideLength : 0;
+  if (value < thresholdRel) return 0;
+  if (value > 1 - thresholdRel) return 1;
+  return value;
+}
+
 function PinBadge({
   geo,
   pos,
@@ -120,7 +139,14 @@ function PinBadge({
 
   // Le geste rapporte un delta en pixels ÉCRAN (avant mise à l'échelle du
   // zoom) — diviser par `scale` pour obtenir le déplacement réel dans le
-  // repère (non zoomé) où vivent x/y.
+  // repère (non zoomé) où vivent x/y. clamp01 borne dans la pièce, snapRel
+  // aimante sur un bord proche — même ordre que ShapeBody.resolve() côté
+  // pièces.
+  const resolve = (translationX: number, translationY: number): RelPosition => ({
+    relX: snapRel(clamp01(dragOrigin.current.relX + translationX / scale / geo.width), geo.width),
+    relY: snapRel(clamp01(dragOrigin.current.relY + translationY / scale / geo.height), geo.height),
+  });
+
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
@@ -129,25 +155,17 @@ function PinBadge({
     .onStart(() => {
       dragOrigin.current = pos;
     })
-    .onUpdate((event) => {
-      onMove({
-        relX: clamp01(dragOrigin.current.relX + event.translationX / scale / geo.width),
-        relY: clamp01(dragOrigin.current.relY + event.translationY / scale / geo.height),
-      });
-    })
-    .onEnd((event) => {
-      onDragEnd({
-        relX: clamp01(dragOrigin.current.relX + event.translationX / scale / geo.width),
-        relY: clamp01(dragOrigin.current.relY + event.translationY / scale / geo.height),
-      });
-    });
+    .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
+    .onEnd((event) => onDragEnd(resolve(event.translationX, event.translationY)));
 
   const tap = Gesture.Tap().enabled(interactive).hitSlop(6).runOnJS(true).onEnd(() => onTap());
   const gesture = Gesture.Exclusive(pan, tap);
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={{ position: 'absolute', left: screen.x - PIN_SIZE / 2, top: screen.y - PIN_SIZE / 2 }}>
+      <View
+        style={{ position: 'absolute', left: screen.x - PIN_LABEL_WIDTH / 2, top: screen.y - PIN_SIZE / 2, width: PIN_LABEL_WIDTH, alignItems: 'center' }}
+      >
         {highlighted ? (
           <View style={{ position: 'absolute', top: -14, left: 0, right: 0, alignItems: 'center' }}>
             <Icon name="arrowDown" size={16} color={HIGHLIGHT_RED} />
@@ -160,6 +178,27 @@ function PinBadge({
           borderColor={highlighted ? HIGHLIGHT_RED : undefined}
           borderWidth={2.5}
         />
+        {/* Nom lisible sans avoir à taper sur la pastille — espace restreint
+            donc police et remplissage minimaux, tronqué sur une ligne, fond
+            pâle semi-opaque pour rester lisible sur n'importe quelle couleur
+            de sol. */}
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 2,
+            maxWidth: PIN_LABEL_WIDTH,
+            borderRadius: 4,
+            paddingHorizontal: 3,
+            paddingVertical: 1,
+            backgroundColor: 'rgba(255, 251, 248, 0.85)',
+            fontSize: 9,
+            lineHeight: 11,
+            textAlign: 'center',
+            color: '#2D2A26',
+          }}
+        >
+          {display.name}
+        </Text>
       </View>
     </GestureDetector>
   );

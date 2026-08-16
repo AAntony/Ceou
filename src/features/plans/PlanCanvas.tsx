@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
+import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanForme, PlanPin } from '../../types/database';
 import {
   ARTBOARD_BACKGROUND,
@@ -413,11 +414,19 @@ export function PlanCanvas({
               {sortedFormes.map((forme) => {
                 const geo = geoById[forme.id];
                 const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
+                // Une forme associée à une Pièce affiche la couleur de CETTE
+                // Pièce (même repli que la liste des Pièces d'une Habitation,
+                // DEFAULT_PIECE_COLOR — la couleur doit être identique aux
+                // deux endroits, c'est un attribut de la Pièce, pas du Plan).
+                // Une forme non associée n'a pas de Pièce dont hériter une
+                // couleur : elle garde son repli automatique par hash pour
+                // rester visuellement distincte de ses voisines.
+                const roomColor = forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
                 return (
                   <RoomVisual
                     key={forme.id}
                     geo={geo}
-                    color={info?.color ?? roomColorForForme(forme.id)}
+                    color={roomColor}
                     label={info?.name ?? ''}
                     font={font}
                     highlighted={forme.id === highlightFormeId}

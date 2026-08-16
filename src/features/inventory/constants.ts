@@ -2,6 +2,14 @@ import type { IconName } from '../../components/Icon';
 
 export const DEFAULT_ICON: IconName = 'autre';
 
+// Couleur affichée pour une Pièce sans couleur explicitement choisie — seule
+// définition, réutilisée à la fois par la liste des Pièces d'une Habitation
+// (PieceList.tsx) et par le Plan (PlanCanvas.tsx) : la couleur d'une Pièce
+// doit être IDENTIQUE partout où elle apparaît, ce repli y compris — sinon
+// une pièce sans couleur choisie ressortirait teal dans un écran et d'une
+// autre teinte automatique dans l'autre.
+export const DEFAULT_PIECE_COLOR = '#DBF7F4';
+
 // Les trois "get*Icon" ci-dessous (habitation/emplacement/pièce) ne sont
 // qu'une recherche par clé avec repli sur DEFAULT_ICON — factorisé une fois
 // ici plutôt que répété à l'identique pour chacune des trois listes.
