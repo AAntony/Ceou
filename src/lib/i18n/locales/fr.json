@@ -55,7 +55,8 @@
     "avatar": {
       "change": "Changer la photo"
     },
-    "saved": "Profil enregistré"
+    "saved": "Profil enregistré",
+    "version_label": "Version"
   },
   "home": {
     "tab_title": "Habitations",

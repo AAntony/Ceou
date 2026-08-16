@@ -1,3 +1,4 @@
+import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -97,6 +98,14 @@ export default function ProfileScreen() {
       <Pressable onPress={() => supabase.auth.signOut()} className="mt-12">
         <Text className="text-center text-sm font-semibold text-red-600">{t('profile.sign_out')}</Text>
       </Pressable>
+
+      {/* Le numéro "1.0.0" seul ne bouge presque jamais — le hash de commit
+          (injecté par app.config.js à chaque bundle/build) est ce qui
+          permet réellement de savoir quelle version est en train de tourner
+          sur un appareil de test. */}
+      <Text className="mt-10 text-center text-xs text-ink-soft">
+        {t('profile.version_label')} {Constants.expoConfig?.version ?? '?'} ({Constants.expoConfig?.extra?.gitCommit ?? '?'})
+      </Text>
     </ScrollView>
   );
 }

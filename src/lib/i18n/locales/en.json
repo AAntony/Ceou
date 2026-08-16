@@ -55,7 +55,8 @@
     "avatar": {
       "change": "Change photo"
     },
-    "saved": "Profile saved"
+    "saved": "Profile saved",
+    "version_label": "Version"
   },
   "home": {
     "tab_title": "Homes",
