@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../auth/SessionProvider';
 import { deleteRow, selectMany } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
-import type { EffectiveHabitationPermission, FriendGroup, HabitationPermission, LocationType, ShareInvite } from '../../types/database';
+import type { EffectiveHabitationPermission, FriendGroup, Habitation, HabitationPermission, LocationType, ShareInvite } from '../../types/database';
 
 // Résout le niveau de droit courant de l'utilisateur sur une Habitation
 // ('owner' | 'proprietaire' | 'modification' | 'consultation' | null) via
@@ -471,6 +471,21 @@ export function useSharesForUser(friendUserId: string | undefined) {
         createdAt: row.created_at,
       }));
     },
+  });
+}
+
+// Habitations que CET ami possède et a partagées AVEC MOI (sens inverse de
+// useSharesForUser, qui liste ce que JE partage avec lui) — utilisé par la
+// fiche Ami pour donner accès à ce qu'il a rendu consultable. Filtrer juste
+// par owner suffit : la RLS de `habitations` (habitations_select) n'autorise
+// déjà le SELECT que si je suis le propriétaire OU qu'un partage existe —
+// PostgREST ne peut donc renvoyer que des lignes réellement partagées avec
+// moi, pas besoin de refaire ce filtre côté client.
+export function useHabitationsSharedByFriend(friendUserId: string | undefined) {
+  return useQuery({
+    queryKey: ['habitationsSharedByFriend', friendUserId],
+    enabled: !!friendUserId,
+    queryFn: () => selectMany<Habitation>('habitations', { column: 'user_id', value: friendUserId! }, 'created_at'),
   });
 }
 

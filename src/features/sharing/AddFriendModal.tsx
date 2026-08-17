@@ -25,8 +25,16 @@ const ERROR_KEYS: Record<string, string> = {
   cannot_redeem_own_invite: 'friends.add.error_own_invite',
 };
 
+// `instanceof Error` ne suffit PAS ici : confirmé en test réel que l'objet
+// d'erreur renvoyé par supabase-js pour un RPC en échec n'est PAS reconnu
+// comme une instance d'Error au runtime (raison exacte non élucidée —
+// possiblement une frontière de bundle/realm), alors que `.message` existe
+// bel et bien dessus. Résultat observé avant ce correctif : TOUTE erreur
+// RPC (code introuvable, déjà en contact, auto-ajout...) retombait sur le
+// message générique au lieu du message spécifique correspondant. Test par
+// duck-typing (présence d'un `.message` string) plutôt que par prototype.
 function friendlyErrorKey(error: unknown): string {
-  const message = error instanceof Error ? error.message : '';
+  const message = typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : '';
   return ERROR_KEYS[message] ?? 'common.error_generic';
 }
 

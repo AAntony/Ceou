@@ -111,6 +111,7 @@
       "cancel": "Cancel"
     },
     "detail": {
+      "shared_with_me": "Shared with me",
       "shared_habitations": "Shared homes",
       "no_habitations": "You don't have a home to share yet.",
       "remove": "Remove this friend",

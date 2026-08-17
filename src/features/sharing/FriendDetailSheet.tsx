@@ -1,13 +1,25 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
+import { EntityCard } from '../../components/EntityCard';
+import { EntityGrid } from '../../components/EntityGrid';
 import { confirmDelete } from '../../lib/confirmDelete';
+import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { HabitationPermission } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
+import { getHabitationIcon } from '../inventory/constants';
 import { useHabitations } from '../inventory/queries';
 import { PermissionPicker } from './PermissionPicker';
-import { type FriendshipEntry, useDeleteHabitationShare, useRemoveFriend, useSharesForUser, useUpsertHabitationShare } from './queries';
+import {
+  type FriendshipEntry,
+  useDeleteHabitationShare,
+  useHabitationsSharedByFriend,
+  useRemoveFriend,
+  useSharesForUser,
+  useUpsertHabitationShare,
+} from './queries';
 
 type FriendDetailSheetProps = {
   friend: FriendshipEntry | null;
@@ -25,6 +37,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
   const { session } = useSession();
   const { data: habitations } = useHabitations();
   const { data: shares } = useSharesForUser(friend?.otherUserId);
+  const { data: sharedByFriend } = useHabitationsSharedByFriend(friend?.otherUserId);
   const upsertShare = useUpsertHabitationShare();
   const deleteShare = useDeleteHabitationShare();
   const removeFriend = useRemoveFriend();
@@ -50,6 +63,11 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
     });
   };
 
+  const handleOpenSharedHabitation = (habitationId: string) => {
+    onClose();
+    router.push(`/habitation/${habitationId}`);
+  };
+
   return (
     <BottomSheetModal
       visible={!!friend}
@@ -61,6 +79,25 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       <Text className="mb-4 text-xs text-ink-soft">{friend.otherFriendCode}</Text>
 
       <ScrollView contentContainerClassName="pb-6">
+        {sharedByFriend && sharedByFriend.length > 0 ? (
+          <View className="mb-6">
+            <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>
+            <EntityGrid>
+              {sharedByFriend.map((h) => (
+                <EntityCard
+                  key={h.id}
+                  icon={getHabitationIcon(h.type)}
+                  title={h.name}
+                  subtitle={t(`inventory.habitationTypes.${h.type}`)}
+                  bgColor={HUE_CARD_BG_HEX.teal}
+                  badgeColor={HUE_BADGE_FILL.teal}
+                  onPress={() => handleOpenSharedHabitation(h.id)}
+                />
+              ))}
+            </EntityGrid>
+          </View>
+        ) : null}
+
         <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_habitations')}</Text>
         {myHabitations.length === 0 ? (
           <Text className="mb-4 text-sm text-ink-soft">{t('friends.detail.no_habitations')}</Text>

@@ -111,6 +111,7 @@
       "cancel": "Annuler"
     },
     "detail": {
+      "shared_with_me": "Partagé avec moi",
       "shared_habitations": "Habitations partagées",
       "no_habitations": "Tu n'as pas encore d'Habitation à partager.",
       "remove": "Retirer cet ami",
