@@ -58,7 +58,12 @@ export type IconName =
   | 'arrowDown'
   | 'scan'
   | 'included'
-  | 'excluded';
+  | 'excluded'
+  | 'friends'
+  | 'addFriend'
+  | 'qrcode'
+  | 'share'
+  | 'group';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -115,6 +120,11 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   scan: 'creation',
   included: 'check-circle',
   excluded: 'checkbox-blank-circle-outline',
+  friends: 'account-group',
+  addFriend: 'account-plus',
+  qrcode: 'qrcode',
+  share: 'share-variant',
+  group: 'account-multiple',
 };
 
 type IconProps = {

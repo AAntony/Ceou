@@ -5,10 +5,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
+import { Icon } from '../../src/components/Icon';
+import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
 import { useSession } from '../../src/features/auth/SessionProvider';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
+import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
+import { ShareInviteModal } from '../../src/features/sharing/ShareInviteModal';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../src/lib/i18n';
 import { supabase } from '../../src/lib/supabase/client';
 
@@ -21,6 +25,8 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [myCodeOpen, setMyCodeOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   useEffect(() => {
     if (profile) setDisplayName(profile.display_name ?? '');
@@ -96,7 +102,26 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <Link href="/privacy-policy" className="mt-12 text-center text-sm font-medium text-ink-soft">
+      <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
+      <Pressable
+        onPress={() => setMyCodeOpen((current) => !current)}
+        className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-sand-dark px-4 py-3"
+      >
+        <Text className="text-base font-bold tracking-widest text-ink">{profile?.friend_code}</Text>
+        <Icon name={myCodeOpen ? 'excluded' : 'qrcode'} size={20} color="#6B6459" />
+      </Pressable>
+      {myCodeOpen && profile ? (
+        <View className="mt-3 items-center">
+          <QrCode value={formatFriendCodeQrValue(profile.friend_code)} size={160} />
+          <Text className="mt-2 text-center text-xs text-ink-soft">{t('friends.my_code.hint')}</Text>
+        </View>
+      ) : null}
+
+      <View className="mt-3">
+        <Button label={t('friends.share.entry')} variant="ghost" onPress={() => setShareModalOpen(true)} />
+      </View>
+
+      <Link href="/privacy-policy" className="mt-8 text-center text-sm font-medium text-ink-soft">
         {t('profile.privacy_policy')}
       </Link>
 
@@ -111,6 +136,8 @@ export default function ProfileScreen() {
       <Text className="mt-10 text-center text-xs text-ink-soft">
         {t('profile.version_label')} {Constants.expoConfig?.version ?? '?'} ({Constants.expoConfig?.extra?.gitCommit ?? '?'})
       </Text>
+
+      <ShareInviteModal visible={shareModalOpen} onClose={() => setShareModalOpen(false)} />
     </ScrollView>
   );
 }

@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -65,9 +66,20 @@ export function HomeDashboard() {
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-40 pt-16">
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-ink">{greeting}</Text>
-          <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
+        <View className="mb-6 flex-row items-start justify-between">
+          <View className="flex-1 pr-4">
+            <Text className="text-2xl font-bold text-ink">{greeting}</Text>
+            <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
+          </View>
+          {/* Profil déménagé ici (icône discrète) — le bouton "Amis" prend
+              sa place dans la barre d'onglets, plus utilisé au quotidien. */}
+          <Pressable
+            onPress={() => router.navigate('/profile')}
+            hitSlop={8}
+            className="h-10 w-10 items-center justify-center rounded-full bg-white"
+          >
+            <Icon name="profile" size={22} color="#2D2A26" />
+          </Pressable>
         </View>
 
         {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre

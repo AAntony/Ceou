@@ -673,11 +673,37 @@ export type Database = {
         Args: { p_conteneur_id: string }
         Returns: string
       }
+      create_share_invite: {
+        Args: {
+          p_habitation_ids: string[]
+          p_permission: string
+          p_target_type: string
+        }
+        Returns: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          habitation_ids: string[]
+          id: string
+          permission: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          target_type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "share_invites"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       emplacement_habitation: {
         Args: { p_emplacement_id: string }
         Returns: string
       }
       generate_friend_code: { Args: never; Returns: string }
+      generate_invite_code: { Args: never; Returns: string }
       get_effective_habitation_permission: {
         Args: { p_habitation_id: string }
         Returns: string
@@ -693,6 +719,33 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      list_friendships: {
+        Args: never
+        Returns: {
+          created_at: string
+          direction: string
+          id: string
+          other_avatar_url: string
+          other_display_name: string
+          other_friend_code: string
+          other_user_id: string
+          responded_at: string
+          source_invite_id: string
+          status: string
+        }[]
+      }
+      list_habitation_shares: {
+        Args: { p_habitation_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          permission: string
+          shared_with_group_id: string
+          shared_with_group_name: string
+          shared_with_user_display_name: string
+          shared_with_user_id: string
+        }[]
       }
       location_habitation: {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
@@ -714,6 +767,11 @@ export type Database = {
       piece_habitation: { Args: { p_piece_id: string }; Returns: string }
       plan_habitation: { Args: { p_plan_id: string }; Returns: string }
       redeem_share_invite: { Args: { p_code: string }; Returns: Json }
+      remove_friend: { Args: { p_friend_user_id: string }; Returns: undefined }
+      resolve_location_habitation: {
+        Args: { p_id: string; p_type: string }
+        Returns: string
+      }
       respond_to_friendship: {
         Args: { p_accept: boolean; p_friendship_id: string }
         Returns: undefined
@@ -735,6 +793,15 @@ export type Database = {
         }[]
       }
       send_friend_request: { Args: { p_friend_code: string }; Returns: string }
+      upsert_habitation_share: {
+        Args: {
+          p_habitation_id: string
+          p_permission: string
+          p_shared_with_group_id: string
+          p_shared_with_user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

@@ -12,6 +12,7 @@ import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Emplacement } from '../../types/database';
+import { canModify, usePiecePermission } from '../sharing/queries';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
 import { useCreateEmplacement, useDeleteEmplacement, useEmplacements, useUpdateEmplacement } from './queries';
 
@@ -22,6 +23,8 @@ type PieceEmplacementsProps = {
 export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const { t } = useTranslation();
   const { data: emplacements, isLoading } = useEmplacements(pieceId);
+  const { data: permission } = usePiecePermission(pieceId);
+  const editable = canModify(permission);
   const createEmplacement = useCreateEmplacement(pieceId);
   const updateEmplacement = useUpdateEmplacement(pieceId);
   const deleteEmplacement = useDeleteEmplacement(pieceId);
@@ -74,19 +77,21 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
                 bgColor={HUE_CARD_BG_HEX.mustard}
                 badgeColor={HUE_BADGE_FILL.mustard}
                 onPress={() => router.push(`/emplacement/${emplacement.id}`)}
-                onLongPress={() => handleDelete(emplacement.id)}
-                onEdit={() => openEdit(emplacement)}
+                onLongPress={editable ? () => handleDelete(emplacement.id) : undefined}
+                onEdit={editable ? () => openEdit(emplacement) : undefined}
               />
             ))}
           </EntityGrid>
         )}
       </ScrollView>
 
-      <BottomActionBar extraBottomOffset={88}>
-        <View className="flex-1">
-          <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
-        </View>
-      </BottomActionBar>
+      {editable ? (
+        <BottomActionBar extraBottomOffset={88}>
+          <View className="flex-1">
+            <Button label={t('inventory.emplacements.add')} onPress={openCreate} />
+          </View>
+        </BottomActionBar>
+      ) : null}
 
       <CreateEntityModal
         visible={modalOpen}

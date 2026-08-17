@@ -11,6 +11,7 @@ import { EntityGrid } from '../../components/EntityGrid';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Conteneur, LocationType } from '../../types/database';
+import { canModify, useLocationPermission } from '../sharing/queries';
 import { CreateObjetModal } from './CreateObjetModal';
 import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDeleteObjet, useUpdateConteneur } from './queries';
 
@@ -22,6 +23,8 @@ type ContainerContentsProps = {
 export function ContainerContents({ parentType, parentId }: ContainerContentsProps) {
   const { t } = useTranslation();
   const { conteneurs, objets, isLoading } = useContainerContents(parentType, parentId);
+  const { data: permission } = useLocationPermission(parentType, parentId);
+  const editable = canModify(permission);
   const createConteneur = useCreateConteneur(parentType, parentId);
   const updateConteneur = useUpdateConteneur();
   const deleteConteneur = useDeleteConteneur();
@@ -58,12 +61,16 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 bgColor={HUE_CARD_BG_HEX.sky}
                 badgeColor={HUE_BADGE_FILL.sky}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
-                onLongPress={() => handleDeleteConteneur(conteneur.id)}
-                onEdit={() => {
-                  setEditingConteneur(conteneur);
-                  setConteneurName(conteneur.name);
-                  setConteneurModalOpen(true);
-                }}
+                onLongPress={editable ? () => handleDeleteConteneur(conteneur.id) : undefined}
+                onEdit={
+                  editable
+                    ? () => {
+                        setEditingConteneur(conteneur);
+                        setConteneurName(conteneur.name);
+                        setConteneurModalOpen(true);
+                      }
+                    : undefined
+                }
               />
             ))}
             {objets.map((objet) => (
@@ -75,29 +82,31 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
                 bgColor={HUE_CARD_BG_HEX.coral}
                 badgeColor={HUE_BADGE_FILL.coral}
                 onPress={() => router.push(`/objet/${objet.id}`)}
-                onLongPress={() => handleDeleteObjet(objet.id)}
+                onLongPress={editable ? () => handleDeleteObjet(objet.id) : undefined}
               />
             ))}
           </EntityGrid>
         )}
       </ScrollView>
 
-      <BottomActionBar extraBottomOffset={88}>
-        <View className="flex-1">
-          <Button
-            label={t('inventory.container.add_conteneur')}
-            variant="ghost"
-            onPress={() => {
-              setEditingConteneur(null);
-              setConteneurName('');
-              setConteneurModalOpen(true);
-            }}
-          />
-        </View>
-        <View className="flex-1">
-          <Button label={t('inventory.container.add_objet')} onPress={() => setObjetModalOpen(true)} />
-        </View>
-      </BottomActionBar>
+      {editable ? (
+        <BottomActionBar extraBottomOffset={88}>
+          <View className="flex-1">
+            <Button
+              label={t('inventory.container.add_conteneur')}
+              variant="ghost"
+              onPress={() => {
+                setEditingConteneur(null);
+                setConteneurName('');
+                setConteneurModalOpen(true);
+              }}
+            />
+          </View>
+          <View className="flex-1">
+            <Button label={t('inventory.container.add_objet')} onPress={() => setObjetModalOpen(true)} />
+          </View>
+        </BottomActionBar>
+      ) : null}
 
       <CreateEntityModal
         visible={conteneurModalOpen}

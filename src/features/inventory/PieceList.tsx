@@ -13,6 +13,7 @@ import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
 import type { Piece } from '../../types/database';
+import { canModify, useHabitationPermission } from '../sharing/queries';
 import { DEFAULT_PIECE_COLOR, PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
 
@@ -23,6 +24,8 @@ type PieceListProps = {
 export function PieceList({ habitationId }: PieceListProps) {
   const { t } = useTranslation();
   const { data: pieces, isLoading } = usePieces(habitationId);
+  const { data: permission } = useHabitationPermission(habitationId);
+  const editable = canModify(permission);
   const createPiece = useCreatePiece(habitationId);
   const updatePiece = useUpdatePiece(habitationId);
   const deletePiece = useDeletePiece(habitationId);
@@ -78,8 +81,8 @@ export function PieceList({ habitationId }: PieceListProps) {
                   bgColor={pieceColor}
                   badgeColor={shade(pieceColor, 0.35)}
                   onPress={() => router.push(`/piece/${piece.id}`)}
-                  onLongPress={() => handleDelete(piece.id)}
-                  onEdit={() => openEdit(piece)}
+                  onLongPress={editable ? () => handleDelete(piece.id) : undefined}
+                  onEdit={editable ? () => openEdit(piece) : undefined}
                 />
               );
             })}
@@ -87,11 +90,13 @@ export function PieceList({ habitationId }: PieceListProps) {
         )}
       </ScrollView>
 
-      <BottomActionBar extraBottomOffset={88}>
-        <View className="flex-1">
-          <Button label={t('inventory.pieces.add')} onPress={openCreate} />
-        </View>
-      </BottomActionBar>
+      {editable ? (
+        <BottomActionBar extraBottomOffset={88}>
+          <View className="flex-1">
+            <Button label={t('inventory.pieces.add')} onPress={openCreate} />
+          </View>
+        </BottomActionBar>
+      ) : null}
 
       <CreateEntityModal
         visible={modalOpen}

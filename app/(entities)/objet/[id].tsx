@@ -12,6 +12,7 @@ import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBrea
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
 import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useUpdateObjet } from '../../../src/features/inventory/queries';
 import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
+import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
 
@@ -24,6 +25,9 @@ export default function ObjetScreen() {
   const { data: locationChain } = useObjetLocationChain(id);
   const pieceId = locationChain?.find((node) => node.kind === 'piece')?.id;
   const emplacementId = locationChain?.find((node) => node.kind === 'emplacement')?.id;
+  const habitationId = locationChain?.find((node) => node.kind === 'habitation')?.id;
+  const { data: permission } = useHabitationPermission(habitationId);
+  const editable = canModify(permission);
   const updateObjet = useUpdateObjet(id);
   const deleteObjet = useDeleteObjet();
 
@@ -80,7 +84,7 @@ export default function ObjetScreen() {
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6">
         <View className="mb-6 self-center">
           <Pressable
-            onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : handleChangePhoto())}
+            onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : editable ? handleChangePhoto() : undefined)}
             className="h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-sand-dark"
           >
             {photoUploading ? (
@@ -88,10 +92,10 @@ export default function ObjetScreen() {
             ) : objet.photo_url ? (
               <Image source={{ uri: objet.photo_url }} style={{ width: 160, height: 160 }} />
             ) : (
-              <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
+              <Text className="px-2 text-center text-sm text-ink-soft">{editable ? t('inventory.objet.add_photo') : ''}</Text>
             )}
           </Pressable>
-          {objet.photo_url ? (
+          {objet.photo_url && editable ? (
             <Pressable
               onPress={handleChangePhoto}
               hitSlop={8}
@@ -106,22 +110,26 @@ export default function ObjetScreen() {
         <LocationBreadcrumb objetId={id} />
         <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} />
 
-        <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} />
+        <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} editable={editable} />
         <TextField
           label={t('inventory.objet.description_label')}
           value={description}
           onChangeText={setDescription}
           multiline
           numberOfLines={3}
+          editable={editable}
         />
 
-        <View className="mb-6">
-          <Button label={t('common.save')} onPress={handleSave} loading={updateObjet.isPending} />
-        </View>
-
-        <View className="mb-8">
-          <Button label={t('inventory.objet.move')} variant="ghost" onPress={() => setMoveModalOpen(true)} />
-        </View>
+        {editable ? (
+          <>
+            <View className="mb-6">
+              <Button label={t('common.save')} onPress={handleSave} loading={updateObjet.isPending} />
+            </View>
+            <View className="mb-8">
+              <Button label={t('inventory.objet.move')} variant="ghost" onPress={() => setMoveModalOpen(true)} />
+            </View>
+          </>
+        ) : null}
 
         <Text className="mb-2 text-base font-bold text-ink">{t('inventory.objet.history_title')}</Text>
         {history && history.length > 0 ? (
@@ -137,9 +145,11 @@ export default function ObjetScreen() {
           <Text className="text-sm text-ink-soft">{t('inventory.objet.history_empty')}</Text>
         )}
 
-        <Pressable onPress={handleDelete} className="mt-10">
-          <Text className="text-center text-sm font-semibold text-red-600">{t('common.delete')}</Text>
-        </Pressable>
+        {editable ? (
+          <Pressable onPress={handleDelete} className="mt-10">
+            <Text className="text-center text-sm font-semibold text-red-600">{t('common.delete')}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       <MoveObjetModal visible={moveModalOpen} onClose={() => setMoveModalOpen(false)} objetId={id} />

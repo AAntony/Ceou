@@ -79,6 +79,77 @@
     "voice_search_permission_message": "Allow microphone access to search by voice.",
     "voice_search_error": "Speech recognition didn't work. Try again."
   },
+  "friends": {
+    "tab_title": "Friends",
+    "empty": "No friends yet — add one to start sharing your Homes.",
+    "list_title": "My friends",
+    "ungrouped_title": "Ungrouped",
+    "my_code": {
+      "title": "My friend code",
+      "hint": "A friend can scan this QR to add you — no shared access until you grant one via \"Share my code\"."
+    },
+    "add": {
+      "entry": "Add a friend",
+      "title": "Add a friend",
+      "code_label": "Friend code",
+      "submit": "Send request",
+      "or": "or",
+      "scan": "Scan a QR code",
+      "invalid_qr": "This QR doesn't match a friend code or a Ceou invite.",
+      "error_not_found": "No account matches this code.",
+      "error_self": "You can't add yourself.",
+      "error_exists": "You're already connected (or a request is already pending).",
+      "error_invite_not_found": "This invite doesn't exist or is no longer valid.",
+      "error_invite_redeemed": "This invite has already been used.",
+      "error_invite_expired": "This invite has expired.",
+      "error_own_invite": "You can't use your own invite."
+    },
+    "scan_hint": "Point at the QR code",
+    "requests": {
+      "incoming_title": "Received requests",
+      "outgoing_title": "Sent requests",
+      "cancel": "Cancel"
+    },
+    "detail": {
+      "shared_habitations": "Shared homes",
+      "no_habitations": "You don't have a home to share yet.",
+      "remove": "Remove this friend",
+      "remove_confirm_title": "Remove this friend?",
+      "remove_confirm_message": "The homes you share with them (and the ones they share with you) will no longer be accessible."
+    },
+    "permission": {
+      "none": "No access",
+      "consultation": "View",
+      "modification": "Edit",
+      "proprietaire": "Owner"
+    },
+    "groups": {
+      "title": "Groups",
+      "name_label": "Group name",
+      "add": "Create group",
+      "empty": "No group yet.",
+      "members": "Members",
+      "no_friends": "Add friends before building a group.",
+      "delete": "Delete this group",
+      "delete_confirm_title": "Delete this group?",
+      "delete_confirm_message": "Shares made with this group will be removed. Friends themselves aren't affected."
+    },
+    "share": {
+      "entry": "Share my code",
+      "title": "Share my code",
+      "target_type": "For",
+      "target_friend": "A friend (with account)",
+      "target_guest": "A guest (no account)",
+      "choose_habitations": "Homes to share",
+      "permission": "Permission granted",
+      "guest_permission_note": "A guest always only gets View access, never editing.",
+      "generate": "Generate code",
+      "result_title": "Ready to share",
+      "expires_hint": "This code expires in 7 days if unused.",
+      "share_button": "Share",
+      "share_message": "Join me on Ceou! Use this code in the app: {{code}}"
+    }
+  },
   "inventory": {
     "habitations": {
       "title": "My homes",

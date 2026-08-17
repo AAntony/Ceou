@@ -79,6 +79,77 @@
     "voice_search_permission_message": "Autorise l'accès au microphone pour rechercher à la voix.",
     "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie."
   },
+  "friends": {
+    "tab_title": "Amis",
+    "empty": "Aucun ami pour l'instant — ajoute-en un pour commencer à partager tes Habitations.",
+    "list_title": "Mes amis",
+    "ungrouped_title": "Sans groupe",
+    "my_code": {
+      "title": "Mon code ami",
+      "hint": "Un ami peut scanner ce QR pour t'ajouter — sans accès partagé tant que tu ne lui en donnes pas via \"Partager mon code\"."
+    },
+    "add": {
+      "entry": "Ajouter un ami",
+      "title": "Ajouter un ami",
+      "code_label": "Code ami",
+      "submit": "Envoyer la demande",
+      "or": "ou",
+      "scan": "Scanner un QR",
+      "invalid_qr": "Ce QR ne correspond ni à un code ami ni à une invitation Céoù.",
+      "error_not_found": "Aucun compte ne correspond à ce code.",
+      "error_self": "Tu ne peux pas t'ajouter toi-même.",
+      "error_exists": "Vous êtes déjà en contact (ou une demande est déjà en attente).",
+      "error_invite_not_found": "Cette invitation n'existe pas ou plus.",
+      "error_invite_redeemed": "Cette invitation a déjà été utilisée.",
+      "error_invite_expired": "Cette invitation a expiré.",
+      "error_own_invite": "Tu ne peux pas utiliser ta propre invitation."
+    },
+    "scan_hint": "Vise le QR code",
+    "requests": {
+      "incoming_title": "Demandes reçues",
+      "outgoing_title": "Demandes envoyées",
+      "cancel": "Annuler"
+    },
+    "detail": {
+      "shared_habitations": "Habitations partagées",
+      "no_habitations": "Tu n'as pas encore d'Habitation à partager.",
+      "remove": "Retirer cet ami",
+      "remove_confirm_title": "Retirer cet ami ?",
+      "remove_confirm_message": "Les Habitations que tu partages avec lui (et celles qu'il partage avec toi) ne seront plus accessibles."
+    },
+    "permission": {
+      "none": "Aucun accès",
+      "consultation": "Consultation",
+      "modification": "Modification",
+      "proprietaire": "Propriétaire"
+    },
+    "groups": {
+      "title": "Groupes",
+      "name_label": "Nom du groupe",
+      "add": "Créer le groupe",
+      "empty": "Aucun groupe pour l'instant.",
+      "members": "Membres",
+      "no_friends": "Ajoute des amis avant de composer un groupe.",
+      "delete": "Supprimer ce groupe",
+      "delete_confirm_title": "Supprimer ce groupe ?",
+      "delete_confirm_message": "Les partages faits avec ce groupe seront retirés. Les amis eux-mêmes ne sont pas affectés."
+    },
+    "share": {
+      "entry": "Partager mon code",
+      "title": "Partager mon code",
+      "target_type": "Pour",
+      "target_friend": "Un ami (avec compte)",
+      "target_guest": "Un invité (sans compte)",
+      "choose_habitations": "Habitations à partager",
+      "permission": "Droit accordé",
+      "guest_permission_note": "Un invité n'a toujours que la Consultation, sans possibilité de modifier.",
+      "generate": "Générer le code",
+      "result_title": "Prêt à partager",
+      "expires_hint": "Ce code expire dans 7 jours s'il n'est pas utilisé.",
+      "share_button": "Partager",
+      "share_message": "Rejoins-moi sur Céoù ! Utilise ce code dans l'app : {{code}}"
+    }
+  },
   "inventory": {
     "habitations": {
       "title": "Mes habitations",

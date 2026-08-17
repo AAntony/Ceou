@@ -19,8 +19,8 @@ export function AppTabBar() {
   const onHome = pathname === '/';
   const leftLabel = onHome ? t('home.tab_title') : t('app_name');
   const leftOnPress = () => router.navigate(onHome ? '/habitations' : '/');
-  const leftActive = pathname !== '/profile';
-  const rightActive = pathname === '/profile';
+  const rightActive = pathname === '/friends';
+  const leftActive = !rightActive;
 
   return (
     <>
@@ -33,10 +33,10 @@ export function AppTabBar() {
             </Text>
           </Pressable>
 
-          <Pressable onPress={() => router.navigate('/profile')} className="flex-1 items-center justify-center py-2">
-            <Icon name="profile" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
+          <Pressable onPress={() => router.navigate('/friends')} className="flex-1 items-center justify-center py-2">
+            <Icon name="friends" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
             <Text className="mt-0.5 text-xs font-medium" style={{ color: rightActive ? '#FF6B4A' : '#A39C8F' }}>
-              {t('profile.title')}
+              {t('friends.tab_title')}
             </Text>
           </Pressable>
         </View>
