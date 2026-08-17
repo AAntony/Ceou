@@ -131,7 +131,7 @@ function GroupDetailView({ group, onBack, onDeleted }: { group: FriendGroup; onB
   const handleShareChange = (habitationId: string, permission: HabitationPermission | null) => {
     const existing = shareByHabitation.get(habitationId);
     if (permission === null) {
-      if (existing) deleteShare.mutate({ shareId: existing.id, habitationId });
+      if (existing) deleteShare.mutate({ shareId: existing.id, habitationId, target: { groupId: group.id } });
       return;
     }
     upsertShare.mutate({ habitationId, target: { groupId: group.id }, permission });

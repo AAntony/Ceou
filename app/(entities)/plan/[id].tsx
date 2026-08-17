@@ -1,11 +1,11 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { Icon } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
-import { PlanCanvas } from '../../../src/features/plans/PlanCanvas';
+import { PlanCanvas, type PlanCanvasHandle } from '../../../src/features/plans/PlanCanvas';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
 import { UnplacedEmplacementsBar } from '../../../src/features/plans/UnplacedEmplacementsBar';
 import {
@@ -48,6 +48,7 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
+  const canvasRef = useRef<PlanCanvasHandle>(null);
 
   const pieceInfo = useMemo(
     () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, color: p.color }])),
@@ -87,7 +88,7 @@ export default function PlanScreen() {
             elle-même (voir PlanCanvas, qui gère son propre zoom/pan borné). */}
         <View className="px-6 pb-2 pt-4">
           <Pressable
-            onPress={() => createForme.mutate('rectangle')}
+            onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
             className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
           >
             <Icon name="add" size={18} color="#fff" />
@@ -106,6 +107,7 @@ export default function PlanScreen() {
 
         <View className="flex-1 px-6 pb-4">
           <PlanCanvas
+            ref={canvasRef}
             formes={formes ?? []}
             pieceInfo={pieceInfo}
             pins={pins ?? []}

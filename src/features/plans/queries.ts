@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
+import { clampPositionToWorld } from './snap';
 import type { Plan, PlanForme, PlanPin } from '../../types/database';
-import { DEFAULT_SHAPE_SIZE, WORLD_WIDTH, type PlanShapeType } from './constants';
+import { DEFAULT_SHAPE_SIZE, WORLD_HEIGHT, WORLD_WIDTH, type PlanShapeType } from './constants';
 
 export function usePlans(habitationId: string) {
   return useQuery({
@@ -66,17 +67,24 @@ export function usePlanFormes(planId: string) {
 export function useCreatePlanForme(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (shapeType: PlanShapeType): Promise<PlanForme> => {
+    // `center` = point du monde actuellement visible au centre du viewport
+    // (voir PlanCanvas.getViewportCenter, via le ref exposé dans
+    // plan/[id].tsx) — sans ça, une nouvelle pièce apparaissait toujours au
+    // même endroit fixe de la feuille, invisible si l'utilisateur avait
+    // zoomé/déplacé la vue ailleurs sur un grand plan. Repli sur le centre
+    // de la feuille si le ref n'est pas encore prêt (cas limite).
+    mutationFn: async (input: { shapeType: PlanShapeType; center?: { x: number; y: number } }): Promise<PlanForme> => {
+      const centerX = input.center?.x ?? WORLD_WIDTH / 2;
+      const centerY = input.center?.y ?? WORLD_HEIGHT / 2;
+      const { x, y } = clampPositionToWorld(
+        centerX - DEFAULT_SHAPE_SIZE / 2,
+        centerY - DEFAULT_SHAPE_SIZE / 2,
+        DEFAULT_SHAPE_SIZE,
+        DEFAULT_SHAPE_SIZE,
+      );
       const { data, error } = await supabase
         .from('plan_formes')
-        .insert({
-          plan_id: planId,
-          shape_type: shapeType,
-          x: WORLD_WIDTH / 2 - DEFAULT_SHAPE_SIZE / 2,
-          y: 40,
-          width: DEFAULT_SHAPE_SIZE,
-          height: DEFAULT_SHAPE_SIZE,
-        })
+        .insert({ plan_id: planId, shape_type: input.shapeType, x, y, width: DEFAULT_SHAPE_SIZE, height: DEFAULT_SHAPE_SIZE })
         .select()
         .single();
       if (error) throw error;

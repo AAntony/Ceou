@@ -355,14 +355,21 @@ export function useHabitationShares(habitationId: string | undefined) {
 // n'a qu'une seule ligne de partage par ami/groupe (index unique partiel
 // côté base) — passe par upsert_habitation_share() plutôt qu'un .upsert()
 // client, qui ne peut pas cibler fiablement un index partiel.
+
+type ShareTarget = { userId: string } | { groupId: string };
+
+// Clé exacte lue par useSharesForUser/useSharesForGroup selon la cible —
+// factorisée ici car utilisée à la fois pour l'invalidation ET la mise à
+// jour optimiste ci-dessous (onMutate doit écrire dans la MÊME clé que
+// celle que l'écran appelant lit, sinon rien ne bouge à l'écran).
+function shareTargetQueryKey(target: ShareTarget) {
+  return 'userId' in target ? (['habitationShares', 'forUser', target.userId] as const) : (['habitationShares', 'forGroup', target.groupId] as const);
+}
+
 export function useUpsertHabitationShare() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      habitationId: string;
-      target: { userId: string } | { groupId: string };
-      permission: HabitationPermission;
-    }) => {
+    mutationFn: async (input: { habitationId: string; target: ShareTarget; permission: HabitationPermission }) => {
       // `supabase gen types` ne sait pas que ces deux paramètres SQL sont
       // nullable (un seul des deux est fourni à la fois, voir la fonction) —
       // le cast documente que c'est volontaire, pas un oubli de typage.
@@ -374,22 +381,70 @@ export function useUpsertHabitationShare() {
       });
       if (error) throw error;
     },
-    // Invalide TOUT le préfixe ['habitationShares', ...] plutôt que la seule
-    // clé ['habitationShares', habitationId] : useSharesForUser/useSharesForGroup
-    // (fiche Ami/Groupe, qui déclenchent cette mutation) lisent sous des clés
-    // ['habitationShares', 'forUser'|'forGroup', id] — la clé étroite ne les
-    // matchait jamais, donc le droit changeait bien en base (RPC 200 vérifié)
-    // mais l'écran restait figé sur l'ancienne valeur tant qu'on ne
-    // remontait pas la feuille. Bug confirmé en test direct le 2026-08-17.
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
+    // Mise à jour optimiste : le picker de droit doit bouger AU TAP, pas
+    // après l'aller-retour réseau (écriture + relecture) — retour utilisateur
+    // du 2026-08-17 ("le changement visuel est très long") après que
+    // l'invalidation ci-dessous a été élargie pour vraiment déclencher un
+    // refetch (avant, elle ne matchait même pas la bonne clé, donc l'écran ne
+    // bougeait jamais du tout — voir l'historique de ce fichier).
+    onMutate: async (input) => {
+      const queryKey = shareTargetQueryKey(input.target);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<HabitationShareEntry[]>(queryKey);
+      queryClient.setQueryData<HabitationShareEntry[]>(queryKey, (current) => {
+        const list = current ?? [];
+        const index = list.findIndex((s) => s.habitationId === input.habitationId);
+        if (index === -1) {
+          return [
+            ...list,
+            {
+              id: `optimistic-${input.habitationId}`,
+              habitationId: input.habitationId,
+              permission: input.permission,
+              sharedWithUserId: 'userId' in input.target ? input.target.userId : null,
+              sharedWithUserDisplayName: null,
+              sharedWithGroupId: 'groupId' in input.target ? input.target.groupId : null,
+              sharedWithGroupName: null,
+              createdAt: new Date().toISOString(),
+            },
+          ];
+        }
+        const next = [...list];
+        next[index] = { ...next[index], permission: input.permission };
+        return next;
+      });
+      return { queryKey, previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previous);
+    },
+    // Invalide TOUT le préfixe ['habitationShares', ...] (pas la seule clé
+    // ['habitationShares', habitationId]) : useSharesForUser/useSharesForGroup
+    // lisent sous des clés ['habitationShares', 'forUser'|'forGroup', id] —
+    // la clé étroite ne les matchait jamais. Se déclenche APRÈS la mise à
+    // jour optimiste ci-dessus, pour réconcilier avec la valeur réelle du
+    // serveur (id définitif, etc.) une fois la requête terminée.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
   });
 }
 
 export function useDeleteHabitationShare() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { shareId: string; habitationId: string }) => deleteRow('habitation_shares', input.shareId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
+    mutationFn: (input: { shareId: string; habitationId: string; target: ShareTarget }) => deleteRow('habitation_shares', input.shareId),
+    onMutate: async (input) => {
+      const queryKey = shareTargetQueryKey(input.target);
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<HabitationShareEntry[]>(queryKey);
+      queryClient.setQueryData<HabitationShareEntry[]>(queryKey, (current) =>
+        (current ?? []).filter((s) => s.habitationId !== input.habitationId),
+      );
+      return { queryKey, previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
   });
 }
 

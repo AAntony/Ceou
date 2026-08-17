@@ -37,7 +37,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
   const handleChange = (habitationId: string, permission: HabitationPermission | null) => {
     const existing = shareByHabitation.get(habitationId);
     if (permission === null) {
-      if (existing) deleteShare.mutate({ shareId: existing.id, habitationId });
+      if (existing) deleteShare.mutate({ shareId: existing.id, habitationId, target: { userId: friend.otherUserId } });
       return;
     }
     upsertShare.mutate({ habitationId, target: { userId: friend.otherUserId }, permission });

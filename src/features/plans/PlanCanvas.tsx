@@ -1,5 +1,5 @@
 import { Canvas, matchFont, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
@@ -102,22 +102,34 @@ type PlanCanvasProps = {
   onPinTap: (pin: PlanPin) => void;
 };
 
-export function PlanCanvas({
-  formes,
-  pieceInfo,
-  pins,
-  pinDisplay,
-  highlightFormeId,
-  highlightEmplacementId,
-  selectedFormeId,
-  onDragEnd,
-  onResizeEnd,
-  onSelect,
-  onOpenSheet,
-  onDeselect,
-  onPinDragEnd,
-  onPinTap,
-}: PlanCanvasProps) {
+// Exposé via ref pour que l'écran parent (bouton "Ajouter une pièce", hors
+// du canevas) puisse savoir où l'utilisateur regarde ACTUELLEMENT — le zoom/
+// pan vit uniquement dans ce composant (state interne, mis à jour à chaque
+// frame de geste), pas question de le faire remonter en props/callback à
+// chaque frame juste pour ce besoin ponctuel.
+export type PlanCanvasHandle = {
+  getViewportCenter: () => { x: number; y: number };
+};
+
+export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function PlanCanvas(
+  {
+    formes,
+    pieceInfo,
+    pins,
+    pinDisplay,
+    highlightFormeId,
+    highlightEmplacementId,
+    selectedFormeId,
+    onDragEnd,
+    onResizeEnd,
+    onSelect,
+    onOpenSheet,
+    onDeselect,
+    onPinDragEnd,
+    onPinTap,
+  },
+  ref,
+) {
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
@@ -316,6 +328,11 @@ export function PlanCanvas({
     x: (vx - zoom.translateX) / zoom.scale,
     y: (vy - zoom.translateY) / zoom.scale,
   });
+
+  useImperativeHandle(ref, () => ({
+    getViewportCenter: () => viewportToContent(viewportSize.width / 2, viewportSize.height / 2),
+  }));
+
   const isInsideAnyRoom = (x: number, y: number) =>
     formes.some((f) => {
       const g = geoById[f.id];
@@ -495,7 +512,7 @@ export function PlanCanvas({
       </GestureDetector>
     </View>
   );
-}
+});
 
 // Rectangle plein (couleur par pièce individuelle) + contour + nom centré —
 // plan 2D top-down pur, aucune projection. `highlighted` (vient de "Voir sur
