@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddObjetModal } from '../features/inventory/AddObjetModal';
+import { useFriendships } from '../features/sharing/queries';
 import { Icon } from './Icon';
 
 // Rendu depuis app/_layout.tsx (racine), pas depuis le navigateur Tabs :
@@ -15,6 +16,11 @@ export function AppTabBar() {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const [addObjetOpen, setAddObjetOpen] = useState(false);
+  // Pastille de demandes d'ami en attente — pas de notification push (voir
+  // Phase 8, hors scope explicite), mais au moins un signal visible dès que
+  // l'app est ouverte plutôt que de devoir penser à vérifier l'onglet Amis.
+  const { data: friendships } = useFriendships();
+  const pendingIncomingCount = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'incoming').length;
 
   const onHome = pathname === '/';
   const leftLabel = onHome ? t('home.tab_title') : t('app_name');
@@ -34,7 +40,27 @@ export function AppTabBar() {
           </Pressable>
 
           <Pressable onPress={() => router.navigate('/friends')} className="flex-1 items-center justify-center py-2">
-            <Icon name="friends" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
+            <View style={{ position: 'relative' }}>
+              <Icon name="friends" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
+              {pendingIncomingCount > 0 ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -8,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    paddingHorizontal: 3,
+                    backgroundColor: '#E5484D',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{pendingIncomingCount > 9 ? '9+' : pendingIncomingCount}</Text>
+                </View>
+              ) : null}
+            </View>
             <Text className="mt-0.5 text-xs font-medium" style={{ color: rightActive ? '#FF6B4A' : '#A39C8F' }}>
               {t('friends.tab_title')}
             </Text>
