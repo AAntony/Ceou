@@ -3,7 +3,7 @@ import { useSession } from '../../features/auth/SessionProvider';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
-import type { Conteneur, Emplacement, Habitation, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
+import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { isSingleSpaceHabitation } from './constants';
 
 // Toute mutation qui change un nom/une position dans la hiérarchie doit
@@ -83,6 +83,71 @@ export function useDeleteHabitation() {
     mutationFn: (id: string) => deleteRow('habitations', id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habitations'] });
+      invalidateSearchIndex(queryClient);
+    },
+  });
+}
+
+// === Favoris d'Habitation (Phase 9b) ==================================
+// Filtre l'accueil (search_index() côté SQL) aux seules Habitations
+// favorites — évite qu'ajouter un ami ne noie l'accueil sous ses objets.
+// Existence-based (pas de colonne booléenne), même pattern que
+// habitation_shares/friend_group_members.
+
+function favoriteQueryKey() {
+  return ['habitationFavorites'] as const;
+}
+
+export function useHabitationFavorites() {
+  const { session } = useSession();
+  return useQuery({
+    queryKey: favoriteQueryKey(),
+    enabled: !!session,
+    queryFn: () => selectMany<HabitationFavorite>('habitation_favorites'),
+  });
+}
+
+export function useIsHabitationFavorite(habitationId: string | undefined): boolean {
+  const { data: favorites } = useHabitationFavorites();
+  return !!habitationId && !!favorites?.some((f) => f.habitation_id === habitationId);
+}
+
+export function useToggleHabitationFavorite() {
+  const { session } = useSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: { habitationId: string; isFavorite: boolean }) => {
+      if (input.isFavorite) {
+        const { error } = await supabase
+          .from('habitation_favorites')
+          .delete()
+          .eq('habitation_id', input.habitationId)
+          .eq('user_id', session!.user.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('habitation_favorites')
+          .upsert({ habitation_id: input.habitationId, user_id: session!.user.id }, { onConflict: 'habitation_id,user_id' });
+        if (error) throw error;
+      }
+    },
+    onMutate: async (input) => {
+      const queryKey = favoriteQueryKey();
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<HabitationFavorite[]>(queryKey);
+      queryClient.setQueryData<HabitationFavorite[]>(queryKey, (current) => {
+        const list = current ?? [];
+        if (input.isFavorite) return list.filter((f) => f.habitation_id !== input.habitationId);
+        return [...list, { habitation_id: input.habitationId, user_id: session!.user.id, created_at: new Date().toISOString() }];
+      });
+      return { queryKey, previous };
+    },
+    onError: (_error, _input, context) => {
+      if (context) queryClient.setQueryData(context.queryKey, context.previous);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: favoriteQueryKey() });
       invalidateSearchIndex(queryClient);
     },
   });

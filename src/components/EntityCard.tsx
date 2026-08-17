@@ -12,6 +12,8 @@ type EntityCardProps = {
   onPress: () => void;
   onLongPress?: () => void;
   onEdit?: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 };
 
 // Teinte par défaut (teal) pour les appelants qui n'en précisent pas encore
@@ -35,6 +37,8 @@ export function EntityCard({
   onPress,
   onLongPress,
   onEdit,
+  isFavorite,
+  onToggleFavorite,
 }: EntityCardProps) {
   return (
     <Pressable
@@ -46,6 +50,11 @@ export function EntityCard({
       {onEdit ? (
         <Pressable onPress={onEdit} hitSlop={8} className="absolute right-2 top-2 z-10 rounded-full bg-white/70 p-1.5">
           <Icon name="pencil" size={14} color="#6B6459" />
+        </Pressable>
+      ) : null}
+      {onToggleFavorite ? (
+        <Pressable onPress={onToggleFavorite} hitSlop={8} className="absolute bottom-2 right-2 z-10 rounded-full bg-white/70 p-1.5">
+          <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? '#FFC857' : '#A39C8F'} />
         </Pressable>
       ) : null}
       <View className="mb-3">
