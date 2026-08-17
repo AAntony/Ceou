@@ -15,5 +15,12 @@ export type Plan = Tables['plans']['Row'];
 export type PlanForme = Tables['plan_formes']['Row'];
 export type PlanPin = Tables['plan_pins']['Row'];
 export type ClientErrorInsert = Tables['client_errors']['Insert'];
+export type Friendship = Tables['friendships']['Row'];
+export type FriendGroup = Tables['friend_groups']['Row'];
+export type FriendGroupMember = Tables['friend_group_members']['Row'];
+export type HabitationShare = Tables['habitation_shares']['Row'];
+export type ShareInvite = Tables['share_invites']['Row'];
 
 export type LocationType = 'emplacement' | 'conteneur';
+export type HabitationPermission = 'consultation' | 'modification' | 'proprietaire';
+export type EffectiveHabitationPermission = 'owner' | HabitationPermission;

@@ -161,6 +161,133 @@ export type Database = {
           },
         ]
       }
+      friend_group_members: {
+        Row: {
+          friend_user_id: string
+          group_id: string
+        }
+        Insert: {
+          friend_user_id: string
+          group_id: string
+        }
+        Update: {
+          friend_user_id?: string
+          group_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "friend_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friend_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      friendships: {
+        Row: {
+          addressee_id: string
+          created_at: string
+          id: string
+          requester_id: string
+          responded_at: string | null
+          source_invite_id: string | null
+          status: string
+        }
+        Insert: {
+          addressee_id: string
+          created_at?: string
+          id?: string
+          requester_id: string
+          responded_at?: string | null
+          source_invite_id?: string | null
+          status?: string
+        }
+        Update: {
+          addressee_id?: string
+          created_at?: string
+          id?: string
+          requester_id?: string
+          responded_at?: string | null
+          source_invite_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friendships_source_invite_fkey"
+            columns: ["source_invite_id"]
+            isOneToOne: false
+            referencedRelation: "share_invites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habitation_shares: {
+        Row: {
+          created_at: string
+          habitation_id: string
+          id: string
+          permission: string
+          shared_by: string
+          shared_with_group_id: string | null
+          shared_with_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          habitation_id: string
+          id?: string
+          permission: string
+          shared_by: string
+          shared_with_group_id?: string | null
+          shared_with_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          habitation_id?: string
+          id?: string
+          permission?: string
+          shared_by?: string
+          shared_with_group_id?: string | null
+          shared_with_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habitation_shares_habitation_id_fkey"
+            columns: ["habitation_id"]
+            isOneToOne: false
+            referencedRelation: "habitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habitation_shares_shared_with_group_id_fkey"
+            columns: ["shared_with_group_id"]
+            isOneToOne: false
+            referencedRelation: "friend_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habitations: {
         Row: {
           created_at: string
@@ -462,6 +589,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          friend_code: string
           id: string
           locale: string
         }
@@ -470,6 +598,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          friend_code: string
           id: string
           locale?: string
         }
@@ -478,8 +607,48 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          friend_code?: string
           id?: string
           locale?: string
+        }
+        Relationships: []
+      }
+      share_invites: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string
+          habitation_ids: string[]
+          id: string
+          permission: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          target_type: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          habitation_ids: string[]
+          id?: string
+          permission: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          target_type: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          habitation_ids?: string[]
+          id?: string
+          permission?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          target_type?: string
         }
         Relationships: []
       }
@@ -488,21 +657,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_habitation_sharing: {
+        Args: { p_habitation_id: string; p_user_id: string }
+        Returns: boolean
+      }
       check_and_touch_ai_scan_rate_limit: {
         Args: { p_cooldown_seconds: number; p_user_id: string }
         Returns: boolean
       }
-      conteneur_owner: { Args: { p_conteneur_id: string }; Returns: string }
-      conteneur_parent_owner: {
-        Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
+      conteneur_habitation: {
+        Args: { p_conteneur_id: string }
         Returns: string
       }
       conteneur_root_emplacement: {
         Args: { p_conteneur_id: string }
         Returns: string
       }
-      emplacement_owner: { Args: { p_emplacement_id: string }; Returns: string }
-      habitation_owner: { Args: { p_habitation_id: string }; Returns: string }
+      emplacement_habitation: {
+        Args: { p_emplacement_id: string }
+        Returns: string
+      }
+      generate_friend_code: { Args: never; Returns: string }
+      get_effective_habitation_permission: {
+        Args: { p_habitation_id: string }
+        Returns: string
+      }
+      habitation_share_permission: {
+        Args: { p_habitation_id: string; p_user_id: string }
+        Returns: string
+      }
+      has_habitation_access: {
+        Args: {
+          p_habitation_id: string
+          p_min_permission: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      location_habitation: {
+        Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
+        Returns: string
+      }
       move_objet: {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
@@ -516,11 +711,13 @@ export type Database = {
           preset_key: string
         }[]
       }
-      objet_owner: {
-        Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
-        Returns: string
+      piece_habitation: { Args: { p_piece_id: string }; Returns: string }
+      plan_habitation: { Args: { p_plan_id: string }; Returns: string }
+      redeem_share_invite: { Args: { p_code: string }; Returns: Json }
+      respond_to_friendship: {
+        Args: { p_accept: boolean; p_friendship_id: string }
+        Returns: undefined
       }
-      piece_owner: { Args: { p_piece_id: string }; Returns: string }
       search_index: {
         Args: never
         Returns: {
@@ -537,6 +734,7 @@ export type Database = {
           preset_key: string
         }[]
       }
+      send_friend_request: { Args: { p_friend_code: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
