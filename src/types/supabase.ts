@@ -161,50 +161,6 @@ export type Database = {
           },
         ]
       }
-      friend_group_members: {
-        Row: {
-          friend_user_id: string
-          group_id: string
-        }
-        Insert: {
-          friend_user_id: string
-          group_id: string
-        }
-        Update: {
-          friend_user_id?: string
-          group_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "friend_group_members_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "friend_groups"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      friend_groups: {
-        Row: {
-          created_at: string
-          id: string
-          name: string
-          owner_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          name: string
-          owner_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          name?: string
-          owner_id?: string
-        }
-        Relationships: []
-      }
       friendships: {
         Row: {
           addressee_id: string
@@ -243,6 +199,32 @@ export type Database = {
           },
         ]
       }
+      habitation_favorites: {
+        Row: {
+          created_at: string
+          habitation_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          habitation_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          habitation_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habitation_favorites_habitation_id_fkey"
+            columns: ["habitation_id"]
+            isOneToOne: false
+            referencedRelation: "habitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habitation_shares: {
         Row: {
           created_at: string
@@ -250,8 +232,7 @@ export type Database = {
           id: string
           permission: string
           shared_by: string
-          shared_with_group_id: string | null
-          shared_with_user_id: string | null
+          shared_with_user_id: string
         }
         Insert: {
           created_at?: string
@@ -259,8 +240,7 @@ export type Database = {
           id?: string
           permission: string
           shared_by: string
-          shared_with_group_id?: string | null
-          shared_with_user_id?: string | null
+          shared_with_user_id: string
         }
         Update: {
           created_at?: string
@@ -268,8 +248,7 @@ export type Database = {
           id?: string
           permission?: string
           shared_by?: string
-          shared_with_group_id?: string | null
-          shared_with_user_id?: string | null
+          shared_with_user_id?: string
         }
         Relationships: [
           {
@@ -277,13 +256,6 @@ export type Database = {
             columns: ["habitation_id"]
             isOneToOne: false
             referencedRelation: "habitations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "habitation_shares_shared_with_group_id_fkey"
-            columns: ["shared_with_group_id"]
-            isOneToOne: false
-            referencedRelation: "friend_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -741,8 +713,6 @@ export type Database = {
           created_at: string
           id: string
           permission: string
-          shared_with_group_id: string
-          shared_with_group_name: string
           shared_with_user_display_name: string
           shared_with_user_id: string
         }[]
@@ -797,7 +767,6 @@ export type Database = {
         Args: {
           p_habitation_id: string
           p_permission: string
-          p_shared_with_group_id: string
           p_shared_with_user_id: string
         }
         Returns: string

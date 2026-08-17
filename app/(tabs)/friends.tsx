@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
@@ -8,48 +8,25 @@ import { EntityGrid } from '../../src/components/EntityGrid';
 import { Icon } from '../../src/components/Icon';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
-import { GroupManagerSheet } from '../../src/features/sharing/GroupManagerSheet';
-import {
-  type FriendshipEntry,
-  useAllGroupMemberships,
-  useCancelFriendRequest,
-  useFriendGroups,
-  useFriendships,
-  useRespondToFriendship,
-} from '../../src/features/sharing/queries';
+import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespondToFriendship } from '../../src/features/sharing/queries';
 
 export default function FriendsScreen() {
   const { t } = useTranslation();
   const { data: friendships, isLoading } = useFriendships();
-  const { data: groups } = useFriendGroups();
-  const { data: memberships } = useAllGroupMemberships();
   const respond = useRespondToFriendship();
   const cancelRequest = useCancelFriendRequest();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [groupManagerOpen, setGroupManagerOpen] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendshipEntry | null>(null);
 
   const incoming = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'incoming');
   const outgoing = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'outgoing');
-  const accepted = (friendships ?? []).filter((f) => f.status === 'accepted');
-
-  const groupIdsByFriend = useMemo(() => {
-    const map = new Map<string, string[]>();
-    (memberships ?? []).forEach((m) => {
-      const list = map.get(m.friendUserId) ?? [];
-      list.push(m.groupId);
-      map.set(m.friendUserId, list);
-    });
-    return map;
-  }, [memberships]);
-
-  const grouped = (groups ?? [])
-    .map((g) => ({ group: g, friends: accepted.filter((f) => (groupIdsByFriend.get(f.otherUserId) ?? []).includes(g.id)) }))
-    .filter((section) => section.friends.length > 0);
-
-  const hasGroups = (groups ?? []).length > 0;
-  const ungrouped = hasGroups ? accepted.filter((f) => (groupIdsByFriend.get(f.otherUserId) ?? []).length === 0) : accepted;
+  // Groupes retirés (Phase 9a) : plus de sections par groupe, une seule
+  // liste triée alphabétiquement — même liste réutilisée par l'onglet
+  // "Partagées" de l'écran Habitations (Phase 9c).
+  const accepted = (friendships ?? [])
+    .filter((f) => f.status === 'accepted')
+    .sort((a, b) => (a.otherDisplayName || a.otherFriendCode).localeCompare(b.otherDisplayName || b.otherFriendCode));
 
   if (isLoading) {
     return (
@@ -62,11 +39,8 @@ export default function FriendsScreen() {
   return (
     <>
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-16">
-        <View className="mb-6 flex-row items-center justify-between">
+        <View className="mb-6">
           <Text className="text-2xl font-bold text-ink">{t('friends.tab_title')}</Text>
-          <Pressable onPress={() => setGroupManagerOpen(true)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-full bg-white">
-            <Icon name="group" size={20} color="#2D2A26" />
-          </Pressable>
         </View>
 
         <View className="mb-6">
@@ -114,28 +88,11 @@ export default function FriendsScreen() {
           <EmptyState icon="friends" title={t('friends.empty')} />
         ) : null}
 
-        {grouped.map(({ group, friends }) => (
-          <View key={group.id} className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{group.name}</Text>
-            <EntityGrid>
-              {friends.map((f) => (
-                <EntityCard
-                  key={f.id}
-                  icon="profile"
-                  imageUri={f.otherAvatarUrl}
-                  title={f.otherDisplayName || f.otherFriendCode}
-                  onPress={() => setSelectedFriend(f)}
-                />
-              ))}
-            </EntityGrid>
-          </View>
-        ))}
-
-        {ungrouped.length > 0 ? (
+        {accepted.length > 0 ? (
           <View className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{hasGroups ? t('friends.ungrouped_title') : t('friends.list_title')}</Text>
+            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.list_title')}</Text>
             <EntityGrid>
-              {ungrouped.map((f) => (
+              {accepted.map((f) => (
                 <EntityCard
                   key={f.id}
                   icon="profile"
@@ -150,7 +107,6 @@ export default function FriendsScreen() {
       </ScrollView>
 
       <AddFriendModal visible={addModalOpen} onClose={() => setAddModalOpen(false)} />
-      <GroupManagerSheet visible={groupManagerOpen} onClose={() => setGroupManagerOpen(false)} />
       <FriendDetailSheet friend={selectedFriend} onClose={() => setSelectedFriend(null)} />
     </>
   );

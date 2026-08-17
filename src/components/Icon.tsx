@@ -63,7 +63,8 @@ export type IconName =
   | 'addFriend'
   | 'qrcode'
   | 'share'
-  | 'group';
+  | 'star'
+  | 'starOutline';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -124,7 +125,8 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   addFriend: 'account-plus',
   qrcode: 'qrcode',
   share: 'share-variant',
-  group: 'account-multiple',
+  star: 'star',
+  starOutline: 'star-outline',
 };
 
 type IconProps = {

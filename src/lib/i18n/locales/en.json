@@ -83,7 +83,6 @@
     "tab_title": "Friends",
     "empty": "No friends yet — add one to start sharing your Homes.",
     "list_title": "My friends",
-    "ungrouped_title": "Ungrouped",
     "my_code": {
       "title": "My friend code",
       "hint": "A friend can scan this QR to add you — no shared access until you grant one via \"Share my code\"."
@@ -123,17 +122,6 @@
       "consultation": "View",
       "modification": "Edit",
       "proprietaire": "Owner"
-    },
-    "groups": {
-      "title": "Groups",
-      "name_label": "Group name",
-      "add": "Create group",
-      "empty": "No group yet.",
-      "members": "Members",
-      "no_friends": "Add friends before building a group.",
-      "delete": "Delete this group",
-      "delete_confirm_title": "Delete this group?",
-      "delete_confirm_message": "Shares made with this group will be removed. Friends themselves aren't affected."
     },
     "share": {
       "entry": "Share my code",

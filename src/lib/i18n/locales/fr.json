@@ -83,7 +83,6 @@
     "tab_title": "Amis",
     "empty": "Aucun ami pour l'instant — ajoute-en un pour commencer à partager tes Habitations.",
     "list_title": "Mes amis",
-    "ungrouped_title": "Sans groupe",
     "my_code": {
       "title": "Mon code ami",
       "hint": "Un ami peut scanner ce QR pour t'ajouter — sans accès partagé tant que tu ne lui en donnes pas via \"Partager mon code\"."
@@ -123,17 +122,6 @@
       "consultation": "Consultation",
       "modification": "Modification",
       "proprietaire": "Propriétaire"
-    },
-    "groups": {
-      "title": "Groupes",
-      "name_label": "Nom du groupe",
-      "add": "Créer le groupe",
-      "empty": "Aucun groupe pour l'instant.",
-      "members": "Membres",
-      "no_friends": "Ajoute des amis avant de composer un groupe.",
-      "delete": "Supprimer ce groupe",
-      "delete_confirm_title": "Supprimer ce groupe ?",
-      "delete_confirm_message": "Les partages faits avec ce groupe seront retirés. Les amis eux-mêmes ne sont pas affectés."
     },
     "share": {
       "entry": "Partager mon code",

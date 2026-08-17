@@ -14,8 +14,8 @@ const OPTIONS: { value: HabitationPermission | null; labelKey: string }[] = [
   { value: 'proprietaire', labelKey: 'friends.permission.proprietaire' },
 ];
 
-// Réutilisé par la fiche Ami ET la gestion de groupe — même vocabulaire de
-// droits partout (voir modèle de droits du plan Phase 8).
+// Réutilisé partout où un droit d'accès Habitation se choisit — même
+// vocabulaire de droits partout (voir modèle de droits du plan Phase 8).
 export function PermissionPicker({ value, onChange }: PermissionPickerProps) {
   const { t } = useTranslation();
   return (
