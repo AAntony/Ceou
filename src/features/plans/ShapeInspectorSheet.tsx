@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { ColorPicker } from '../../components/ColorPicker';
@@ -62,9 +62,9 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onChoosePiece, onC
           </>
         ) : null}
 
-        <Pressable onPress={onDelete} className="mb-3 mt-2">
-          <Text className="text-center text-sm font-semibold text-red-600">{t('common.delete')}</Text>
-        </Pressable>
+        <View className="mb-3 mt-2">
+          <Button label={t('common.delete')} variant="danger" onPress={onDelete} />
+        </View>
         <Button label={t('common.close')} variant="ghost" onPress={onClose} />
       </ScrollView>
     </BottomSheetModal>

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { IconBadge } from '../../components/IconBadge';
@@ -32,9 +32,9 @@ export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetPr
         </>
       ) : null}
 
-      <Pressable onPress={onRemove} className="mb-3 mt-2">
-        <Text className="text-center text-sm font-semibold text-red-600">{t('plans.pins.remove')}</Text>
-      </Pressable>
+      <View className="mb-3 mt-2">
+        <Button label={t('plans.pins.remove')} variant="danger" onPress={onRemove} />
+      </View>
       <Button label={t('common.close')} variant="ghost" onPress={onClose} />
     </BottomSheetModal>
   );

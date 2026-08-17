@@ -146,9 +146,9 @@ export default function ObjetScreen() {
         )}
 
         {editable ? (
-          <Pressable onPress={handleDelete} className="mt-10">
-            <Text className="text-center text-sm font-semibold text-red-600">{t('common.delete')}</Text>
-          </Pressable>
+          <View className="mt-10">
+            <Button label={t('common.delete')} variant="danger" onPress={handleDelete} />
+          </View>
         ) : null}
       </ScrollView>
 

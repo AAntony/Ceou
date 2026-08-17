@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
@@ -35,7 +34,6 @@ type GroupManagerSheetProps = {
 // par-dessus (comportement flou avec deux fonds semi-transparents cumulés).
 export function GroupManagerSheet({ visible, onClose }: GroupManagerSheetProps) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { data: groups } = useFriendGroups();
   const createGroup = useCreateFriendGroup();
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -72,7 +70,7 @@ export function GroupManagerSheet({ visible, onClose }: GroupManagerSheetProps) 
       ) : (
         <>
           <Text className="mb-4 text-xl font-bold text-ink">{t('friends.groups.title')}</Text>
-          <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+          <ScrollView contentContainerClassName="pb-6">
             {(groups ?? []).map((g) => (
               <Pressable
                 key={g.id}
@@ -179,8 +177,8 @@ function GroupDetailView({ group, onBack, onDeleted }: { group: FriendGroup; onB
         ))
       )}
 
-      <View className="mb-8 mt-2">
-        <Button label={t('friends.groups.delete')} variant="ghost" onPress={handleDelete} />
+      <View className="mb-8 mt-4">
+        <Button label={t('friends.groups.delete')} variant="danger" onPress={handleDelete} />
       </View>
     </ScrollView>
   );

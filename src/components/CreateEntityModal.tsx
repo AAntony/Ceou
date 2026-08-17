@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from './BottomSheetModal';
 import { Button } from './Button';
 import { TextField } from './TextField';
@@ -40,7 +39,6 @@ export function CreateEntityModal({
   children,
 }: CreateEntityModalProps) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
@@ -55,8 +53,7 @@ export function CreateEntityModal({
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-6 pt-6"
-      sheetStyle={{ paddingBottom: insets.bottom + 24 }}
+      sheetClassName="rounded-t-3xl bg-white px-6 pb-6 pt-6"
     >
       <ScrollView keyboardShouldPersistTaps="handled">
         <Text className="mb-4 text-xl font-bold text-ink">{title}</Text>

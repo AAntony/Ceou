@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { confirmDelete } from '../../lib/confirmDelete';
@@ -23,7 +22,6 @@ type FriendDetailSheetProps = {
 // besoin de repartage en cascade se confirme.
 export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { session } = useSession();
   const { data: habitations } = useHabitations();
   const { data: shares } = useSharesForUser(friend?.otherUserId);
@@ -62,7 +60,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       <Text className="mb-1 text-xl font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
       <Text className="mb-4 text-xs text-ink-soft">{friend.otherFriendCode}</Text>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
+      <ScrollView contentContainerClassName="pb-6">
         <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_habitations')}</Text>
         {myHabitations.length === 0 ? (
           <Text className="mb-4 text-sm text-ink-soft">{t('friends.detail.no_habitations')}</Text>
@@ -75,8 +73,8 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
           ))
         )}
 
-        <View className="mt-2">
-          <Button label={t('friends.detail.remove')} variant="ghost" onPress={handleRemove} />
+        <View className="mb-2 mt-4 items-center">
+          <Button label={t('friends.detail.remove')} variant="danger" onPress={handleRemove} />
         </View>
       </ScrollView>
     </BottomSheetModal>

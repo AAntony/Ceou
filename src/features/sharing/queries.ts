@@ -374,7 +374,14 @@ export function useUpsertHabitationShare() {
       });
       if (error) throw error;
     },
-    onSuccess: (_data, input) => queryClient.invalidateQueries({ queryKey: ['habitationShares', input.habitationId] }),
+    // Invalide TOUT le préfixe ['habitationShares', ...] plutôt que la seule
+    // clé ['habitationShares', habitationId] : useSharesForUser/useSharesForGroup
+    // (fiche Ami/Groupe, qui déclenchent cette mutation) lisent sous des clés
+    // ['habitationShares', 'forUser'|'forGroup', id] — la clé étroite ne les
+    // matchait jamais, donc le droit changeait bien en base (RPC 200 vérifié)
+    // mais l'écran restait figé sur l'ancienne valeur tant qu'on ne
+    // remontait pas la feuille. Bug confirmé en test direct le 2026-08-17.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
   });
 }
 
@@ -382,7 +389,7 @@ export function useDeleteHabitationShare() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { shareId: string; habitationId: string }) => deleteRow('habitation_shares', input.shareId),
-    onSuccess: (_data, input) => queryClient.invalidateQueries({ queryKey: ['habitationShares', input.habitationId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['habitationShares'] }),
   });
 }
 
