@@ -64,13 +64,24 @@ export function PlanPinLayer({
   // PinBadge : l'ordre de dessin (sortedPins ci-dessous) doit connaître
   // QUELLE pastille est sélectionnée pour la dessiner en dernier.
   const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  // Id de la pastille EN COURS de glisser (pas forcément selectedPinId, qui
+  // ne suit que le tap) — protège juste cette pastille-là d'un écrasement
+  // par un refetch pendant le geste, voir l'effet ci-dessous.
+  const draggingIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setPositions((current) => {
       const next = { ...current };
       const ids = new Set(pins.map((p) => p.id));
       for (const pin of pins) {
-        if (!(pin.id in next)) next[pin.id] = { relX: pin.rel_x, relY: pin.rel_y };
+        // Resynchronise TOUJOURS depuis le serveur, sauf la pastille en
+        // plein geste — même correctif que `shapes` dans PlanCanvas : avant
+        // ça, une pastille déjà connue de `next` ne recevait plus jamais de
+        // valeur fraîche d'un refetch ultérieur (position figée jusqu'au
+        // prochain montage complet), symptôme "il faut redémarrer l'app
+        // pour voir la modification" alors qu'elle était bien enregistrée.
+        if (pin.id === draggingIdRef.current) continue;
+        next[pin.id] = { relX: pin.rel_x, relY: pin.rel_y };
       }
       for (const id of Object.keys(next)) {
         if (!ids.has(id)) delete next[id];
@@ -110,8 +121,14 @@ export function PlanPinLayer({
             selected={pin.id === selectedPinId}
             highlighted={pin.emplacement_id === highlightedEmplacementId}
             scale={scale}
+            onDragStart={() => {
+              draggingIdRef.current = pin.id;
+            }}
             onMove={(next) => setPositions((current) => ({ ...current, [pin.id]: next }))}
-            onDragEnd={(next) => onDragEnd(pin.id, next.relX, next.relY)}
+            onDragEnd={(next) => {
+              draggingIdRef.current = null;
+              onDragEnd(pin.id, next.relX, next.relY);
+            }}
             onToggleSelect={() => setSelectedPinId((current) => (current === pin.id ? null : pin.id))}
             onTap={() => onTap(pin)}
           />
@@ -145,6 +162,7 @@ function PinBadge({
   selected,
   highlighted,
   scale,
+  onDragStart,
   onMove,
   onDragEnd,
   onToggleSelect,
@@ -157,6 +175,7 @@ function PinBadge({
   selected: boolean;
   highlighted: boolean;
   scale: number;
+  onDragStart: () => void;
   onMove: (pos: RelPosition) => void;
   onDragEnd: (pos: RelPosition) => void;
   onToggleSelect: () => void;
@@ -184,6 +203,7 @@ function PinBadge({
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = pos;
+      onDragStart();
     })
     .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
     .onEnd((event) => onDragEnd(resolve(event.translationX, event.translationY)));

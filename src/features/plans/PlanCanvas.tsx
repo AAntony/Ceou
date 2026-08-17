@@ -166,14 +166,24 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       const next = { ...current };
       const ids = new Set(formes.map((f) => f.id));
       for (const forme of formes) {
-        if (!(forme.id in next)) next[forme.id] = { x: forme.x, y: forme.y, width: forme.width, height: forme.height };
+        // Resynchronise TOUJOURS depuis le serveur, sauf la forme
+        // actuellement sélectionnée (seule susceptible d'être en plein
+        // geste de glisser/redimensionner — un refetch qui arriverait
+        // pendant ce geste ne doit pas la faire "sauter" sous le doigt).
+        // Avant ce correctif, une forme déjà connue de `next` (dès le
+        // premier glissé) ne recevait plus JAMAIS de valeur fraîche d'un
+        // refetch ultérieur — elle restait figée jusqu'au prochain montage
+        // complet du composant, d'où "il faut fermer et rouvrir l'app"
+        // pour voir une modification pourtant bien enregistrée côté serveur.
+        if (forme.id === selectedFormeId && forme.id in next) continue;
+        next[forme.id] = { x: forme.x, y: forme.y, width: forme.width, height: forme.height };
       }
       for (const id of Object.keys(next)) {
         if (!ids.has(id)) delete next[id];
       }
       return next;
     });
-  }, [formes]);
+  }, [formes, selectedFormeId]);
 
   const geoById = useMemo(() => {
     const map: Record<string, ShapeGeometry> = {};
