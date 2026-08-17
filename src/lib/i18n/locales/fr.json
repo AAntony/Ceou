@@ -113,6 +113,7 @@
       "shared_with_me": "Partagé avec moi",
       "shared_habitations": "Habitations partagées",
       "no_habitations": "Tu n'as pas encore d'Habitation à partager.",
+      "friend_no_shared": "Cet ami n'a partagé aucune Habitation avec toi.",
       "remove": "Retirer cet ami",
       "remove_confirm_title": "Retirer cet ami ?",
       "remove_confirm_message": "Les Habitations que tu partages avec lui (et celles qu'il partage avec toi) ne seront plus accessibles."
@@ -141,7 +142,9 @@
   },
   "inventory": {
     "habitations": {
-      "title": "Mes habitations",
+      "title": "Habitations",
+      "tab_personal": "Personnelles",
+      "tab_shared": "Partagées",
       "empty": "Aucune habitation pour l'instant.",
       "add": "Ajouter une habitation",
       "create_title": "Nouvelle habitation",

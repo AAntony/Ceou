@@ -113,6 +113,7 @@
       "shared_with_me": "Shared with me",
       "shared_habitations": "Shared homes",
       "no_habitations": "You don't have a home to share yet.",
+      "friend_no_shared": "This friend hasn't shared any home with you yet.",
       "remove": "Remove this friend",
       "remove_confirm_title": "Remove this friend?",
       "remove_confirm_message": "The homes you share with them (and the ones they share with you) will no longer be accessible."
@@ -141,7 +142,9 @@
   },
   "inventory": {
     "habitations": {
-      "title": "My homes",
+      "title": "Homes",
+      "tab_personal": "Personal",
+      "tab_shared": "Shared",
       "empty": "No home yet.",
       "add": "Add a home",
       "create_title": "New home",
