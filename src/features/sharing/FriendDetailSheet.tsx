@@ -78,7 +78,13 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       <Text className="mb-1 text-xl font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
       <Text className="mb-4 text-xs text-ink-soft">{friend.otherFriendCode}</Text>
 
-      <ScrollView contentContainerClassName="pb-6">
+      {/* style flex:1 indispensable ici : sans lui, un ScrollView enfant
+          direct d'un conteneur à maxHeight (pas de flex/height fixe) ne se
+          borne pas et déborde du bas de l'écran au lieu de défiler en
+          interne — c'est ce qui rendait "Supprimer" inatteignable derrière
+          les boutons natifs quand la liste d'Habitations est longue (retour
+          utilisateur du 2026-08-18). */}
+      <ScrollView style={{ flex: 1 }} contentContainerClassName="pb-6">
         {sharedByFriend && sharedByFriend.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>

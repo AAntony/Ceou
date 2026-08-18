@@ -216,6 +216,8 @@
       "add_objet": "Ajouter un objet",
       "create_conteneur_title": "Nouveau conteneur",
       "create_objet_title": "Nouvel objet",
+      "tab_manual": "Saisie manuelle",
+      "tab_scan": "Scan IA",
       "name_label": "Nom"
     },
     "conteneurs": {

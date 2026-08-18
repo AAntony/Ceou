@@ -28,6 +28,11 @@ export function AppTabBar() {
   const rightActive = pathname === '/friends';
   const leftActive = !rightActive;
 
+  // Le texte légal doit se lire sans un menu flottant par-dessus le bas de
+  // la page (retour utilisateur du 2026-08-18) — seul écran hors (tabs)/
+  // (entities) qui a besoin de ce traitement pour l'instant.
+  if (pathname === '/privacy-policy') return null;
+
   return (
     <>
       <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 12 }}>

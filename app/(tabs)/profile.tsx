@@ -118,12 +118,14 @@ export default function ProfileScreen() {
       ) : null}
 
       <View className="mt-3">
-        <Button label={t('friends.share.entry')} variant="ghost" onPress={() => setShareModalOpen(true)} />
+        <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
       </View>
 
-      <Link href="/privacy-policy" className="mt-8 text-center text-sm font-medium text-ink-soft">
-        {t('profile.privacy_policy')}
-      </Link>
+      <View className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3">
+        <Link href="/privacy-policy" className="text-sm font-medium text-ink-soft underline">
+          {t('profile.privacy_policy')}
+        </Link>
+      </View>
 
       <Pressable onPress={() => supabase.auth.signOut()} className="mt-6">
         <Text className="text-center text-sm font-semibold text-red-600">{t('profile.sign_out')}</Text>

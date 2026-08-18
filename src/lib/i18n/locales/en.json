@@ -216,6 +216,8 @@
       "add_objet": "Add an item",
       "create_conteneur_title": "New container",
       "create_objet_title": "New item",
+      "tab_manual": "Manual entry",
+      "tab_scan": "AI scan",
       "name_label": "Name"
     },
     "conteneurs": {
