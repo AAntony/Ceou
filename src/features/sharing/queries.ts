@@ -78,9 +78,14 @@ export function canModify(permission: EffectiveHabitationPermission | null | und
   return !!permission && PERMISSION_RANK[permission] >= PERMISSION_RANK.modification;
 }
 
-export function canManageSharing(permission: EffectiveHabitationPermission | null | undefined): boolean {
-  return permission === 'owner' || permission === 'proprietaire';
-}
+// NOTE (audit 2026-08-19) : il existait ici un `canManageSharing()` symétrique
+// (owner | proprietaire), supprimé car jamais appelé. Ce n'est pas un oubli :
+// la capacité qu'il devait garder — repartager une Habitation dont on n'est
+// que 'proprietaire' — est délibérément non exposée côté UI (voir la note de
+// FriendDetailSheet), qui ne propose que les Habitations réellement possédées.
+// Le serveur, lui, l'autorise déjà (upsert_habitation_share vérifie
+// can_manage_habitation_sharing). Si cette capacité est ouverte un jour, ce
+// helper est à réécrire en trois lignes ici.
 
 // === QR : encoder/décoder ce qu'une pastille peut représenter ===========
 // Un friend_code (identité permanente) et un share_invite.code (offre
@@ -227,24 +232,13 @@ export type HabitationShareEntry = {
   createdAt: string;
 };
 
-export function useHabitationShares(habitationId: string | undefined) {
-  return useQuery({
-    queryKey: ['habitationShares', habitationId],
-    enabled: !!habitationId,
-    queryFn: async (): Promise<HabitationShareEntry[]> => {
-      const { data, error } = await supabase.rpc('list_habitation_shares', { p_habitation_id: habitationId! });
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        id: row.id,
-        habitationId: habitationId!,
-        permission: row.permission as HabitationPermission,
-        sharedWithUserId: row.shared_with_user_id,
-        sharedWithUserDisplayName: row.shared_with_user_display_name,
-        createdAt: row.created_at,
-      }));
-    },
-  });
-}
+// NOTE (audit 2026-08-19) : un `useHabitationShares(habitationId)` vivait ici
+// — lecture des partages D'UNE Habitation via la RPC list_habitation_shares.
+// Supprimé car jamais appelé : l'UI attaque le partage par l'AMI
+// (useSharesForUser ci-dessous), jamais par l'Habitation. La fonction SQL
+// list_habitation_shares est volontairement CONSERVÉE côté base — la retirer
+// demanderait une migration pour zéro gain, et c'est exactement la lecture
+// dont aurait besoin un futur écran « qui a accès à cette Habitation ? ».
 
 // habitationId fait partie du payload (pas un argument du hook) : la fiche
 // ami doit pouvoir upsert sur PLUSIEURS Habitations différentes depuis une

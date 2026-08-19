@@ -107,11 +107,6 @@ export function useHabitationFavorites() {
   });
 }
 
-export function useIsHabitationFavorite(habitationId: string | undefined): boolean {
-  const { data: favorites } = useHabitationFavorites();
-  return !!habitationId && !!favorites?.some((f) => f.habitation_id === habitationId);
-}
-
 export function useToggleHabitationFavorite() {
   const { session } = useSession();
   const queryClient = useQueryClient();

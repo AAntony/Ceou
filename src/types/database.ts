@@ -15,8 +15,12 @@ export type Plan = Tables['plans']['Row'];
 export type PlanForme = Tables['plan_formes']['Row'];
 export type PlanPin = Tables['plan_pins']['Row'];
 export type ClientErrorInsert = Tables['client_errors']['Insert'];
-export type Friendship = Tables['friendships']['Row'];
-export type HabitationShare = Tables['habitation_shares']['Row'];
+// `Friendship` et `HabitationShare` (les Row brutes de friendships /
+// habitation_shares) vivaient ici, retirés à l'audit du 2026-08-19 : aucun
+// consommateur. Le partage et l'amitié ne s'exposent jamais en ligne brute
+// côté app, toujours via les types remodelés de sharing/queries.ts
+// (`FriendshipEntry`, `HabitationShareEntry`) qui résolvent en plus le
+// nom/avatar de l'autre partie. Une ligne à réécrire si le besoin revient.
 export type ShareInvite = Tables['share_invites']['Row'];
 export type HabitationFavorite = Tables['habitation_favorites']['Row'];
 

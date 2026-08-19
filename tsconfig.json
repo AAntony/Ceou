@@ -1,7 +1,13 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    // Ajoutés à l'audit du 2026-08-19 : sans eux, un import ou une variable
+    // morte passait totalement inaperçue (ni tsc ni lint ne les voyaient).
+    // Le code était propre au moment de leur activation — ils servent donc à
+    // le GARDER propre, pas à rattraper une dette.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   },
   "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js", "android", "ios", "supabase/functions"]
 }
