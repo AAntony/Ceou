@@ -88,7 +88,13 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
       sheetStyle={{ maxHeight: '85%' }}
     >
       {step === 'configure' ? (
-        <ScrollView keyboardShouldPersistTaps="handled">
+        // `flexShrink: 1` (et pas `flex: 1`) pour la même raison que dans
+        // FriendDetailSheet, où les deux erreurs ont été commises tour à
+        // tour : sans lui, ce ScrollView refuse de rétrécir sous la taille
+        // de son contenu et la liste d'Habitations finit tronquée par le
+        // maxHeight de la feuille au lieu de défiler — invisible tant qu'on
+        // a peu d'Habitations, bloquant dès qu'on en a beaucoup.
+        <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
           <Text className="mb-4 text-xl font-bold text-ink">{t('friends.share.title')}</Text>
 
           <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.share.target_type')}</Text>

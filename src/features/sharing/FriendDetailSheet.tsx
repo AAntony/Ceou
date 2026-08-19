@@ -78,13 +78,26 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       <Text className="mb-1 text-xl font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
       <Text className="mb-4 text-xs text-ink-soft">{friend.otherFriendCode}</Text>
 
-      {/* style flex:1 indispensable ici : sans lui, un ScrollView enfant
-          direct d'un conteneur à maxHeight (pas de flex/height fixe) ne se
-          borne pas et déborde du bas de l'écran au lieu de défiler en
-          interne — c'est ce qui rendait "Supprimer" inatteignable derrière
-          les boutons natifs quand la liste d'Habitations est longue (retour
-          utilisateur du 2026-08-18). */}
-      <ScrollView style={{ flex: 1 }} contentContainerClassName="pb-6">
+      {/* `flexShrink: 1` et SURTOUT PAS `flex: 1` — les deux extrêmes cassent,
+          chacun à sa façon, et ce composant les a connus tous les deux :
+          - sans rien : le ScrollView ne se borne pas et déborde sous les
+            boutons natifs, "Retirer cet ami" devient inatteignable (retour
+            utilisateur du 2026-08-18) ;
+          - avec `flex: 1` : `flexBasis` passe à 0, donc le ScrollView ne
+            compte plus dans la hauteur mesurée du parent. Or ce parent
+            (la feuille) n'a qu'un `maxHeight`, pas de hauteur définie : sa
+            hauteur vient de son contenu, il n'y a donc aucun espace libre à
+            distribuer et l'enfant reste à 0. Résultat observé sur appareil :
+            une pop-up minuscule ne montrant que le nom et le code, tous les
+            réglages de partage invisibles (retour utilisateur du
+            2026-08-19). ATTENTION, ce cas ne se reproduit PAS dans l'aperçu
+            web : react-native-web utilise la flexbox CSS, qui dimensionne ce
+            même parent en max-content et donne au ScrollView une hauteur non
+            nulle, là où Yoga le laisse à 0.
+          `flexShrink: 1` garde `flexBasis: auto` : le ScrollView est mesuré
+          à la taille de son contenu (donc visible), et rétrécit seulement
+          quand la feuille atteint son maxHeight (donc il défile). */}
+      <ScrollView style={{ flexShrink: 1 }} contentContainerClassName="pb-6">
         {sharedByFriend && sharedByFriend.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>
