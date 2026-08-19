@@ -1,8 +1,8 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, View } from 'react-native';
-import { BottomActionBar } from '../../components/BottomActionBar';
+import { ScrollView, Text, View } from 'react-native';
+import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
@@ -19,9 +19,10 @@ import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDelete
 type ContainerContentsProps = {
   parentType: LocationType;
   parentId: string;
+  addSignal?: number;
 };
 
-export function ContainerContents({ parentType, parentId }: ContainerContentsProps) {
+export function ContainerContents({ parentType, parentId, addSignal }: ContainerContentsProps) {
   const { t } = useTranslation();
   const { conteneurs, objets, isLoading, isError, refetch } = useContainerContents(parentType, parentId);
   const { data: permission } = useLocationPermission(parentType, parentId);
@@ -45,11 +46,20 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
     confirmDelete(t, 'inventory.objet.delete_confirm_title', 'inventory.objet.delete_confirm_message', () => deleteObjet.mutate(id));
   };
 
+  // Seul ecran a proposer DEUX ajouts (un Emplacement contient a la fois des
+  // Conteneurs et des Objets), donc le "+" de l'en-tete y pose la question au
+  // lieu de deviner. Un tap de plus, sur un seul ecran, contre la suppression
+  // d'une barre d'action partout ailleurs.
+  const [choiceOpen, setChoiceOpen] = useState(false);
+  useEffect(() => {
+    if (addSignal) setChoiceOpen(true);
+  }, [addSignal]);
+
   const isEmpty = !isLoading && conteneurs.length === 0 && objets.length === 0;
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (
@@ -92,24 +102,32 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
         )}
       </ScrollView>
 
-      {editable ? (
-        <BottomActionBar extraBottomOffset={88}>
-          <View className="flex-1">
-            <Button
-              label={t('inventory.container.add_conteneur')}
-              variant="ghost"
-              onPress={() => {
-                setEditingConteneur(null);
-                setConteneurName('');
-                setConteneurModalOpen(true);
-              }}
-            />
-          </View>
-          <View className="flex-1">
-            <Button label={t('inventory.container.add_objet')} onPress={() => setObjetModalOpen(true)} />
-          </View>
-        </BottomActionBar>
-      ) : null}
+      <BottomSheetModal
+        visible={choiceOpen && editable}
+        onClose={() => setChoiceOpen(false)}
+        sheetClassName="rounded-t-3xl bg-white px-6 pb-4 pt-6"
+      >
+        <Text className="mb-4 text-xl font-bold text-ink">{t('inventory.container.add_choice_title')}</Text>
+        <View className="mb-3">
+          <Button
+            label={t('inventory.container.add_objet')}
+            onPress={() => {
+              setChoiceOpen(false);
+              setObjetModalOpen(true);
+            }}
+          />
+        </View>
+        <Button
+          label={t('inventory.container.add_conteneur')}
+          variant="outline"
+          onPress={() => {
+            setChoiceOpen(false);
+            setEditingConteneur(null);
+            setConteneurName('');
+            setConteneurModalOpen(true);
+          }}
+        />
+      </BottomSheetModal>
 
       <CreateEntityModal
         visible={conteneurModalOpen}

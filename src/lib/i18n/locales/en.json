@@ -155,7 +155,10 @@
       "name_label": "Name",
       "type_label": "Type",
       "delete_confirm_title": "Delete this home?",
-      "delete_confirm_message": "All the rooms, spots and items it contains will be deleted."
+      "delete_confirm_message": "All the rooms, spots and items it contains will be deleted.",
+      "tab_pieces": "Rooms",
+      "tab_emplacements": "Spots",
+      "tab_plans": "Plans"
     },
     "habitationTypes": {
       "maison": "House",
@@ -221,7 +224,8 @@
       "create_objet_title": "New item",
       "tab_manual": "Manual entry",
       "tab_scan": "AI scan",
-      "name_label": "Name"
+      "name_label": "Name",
+      "add_choice_title": "Add what?"
     },
     "conteneurs": {
       "edit_title": "Edit container",

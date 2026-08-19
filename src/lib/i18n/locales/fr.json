@@ -155,7 +155,10 @@
       "name_label": "Nom",
       "type_label": "Type",
       "delete_confirm_title": "Supprimer cette habitation ?",
-      "delete_confirm_message": "Toutes les pièces, emplacements et objets qu'elle contient seront supprimés."
+      "delete_confirm_message": "Toutes les pièces, emplacements et objets qu'elle contient seront supprimés.",
+      "tab_pieces": "Pièces",
+      "tab_emplacements": "Emplacements",
+      "tab_plans": "Plans"
     },
     "habitationTypes": {
       "maison": "Maison",
@@ -221,7 +224,8 @@
       "create_objet_title": "Nouvel objet",
       "tab_manual": "Saisie manuelle",
       "tab_scan": "Scan IA",
-      "name_label": "Nom"
+      "name_label": "Nom",
+      "add_choice_title": "Ajouter quoi ?"
     },
     "conteneurs": {
       "edit_title": "Modifier le conteneur",

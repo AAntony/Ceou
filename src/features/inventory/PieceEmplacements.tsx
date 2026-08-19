@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { BottomActionBar } from '../../components/BottomActionBar';
@@ -19,9 +19,10 @@ import { useCreateEmplacement, useDeleteEmplacement, useEmplacements, useUpdateE
 
 type PieceEmplacementsProps = {
   pieceId: string;
+  addSignal?: number;
 };
 
-export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
+export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps) {
   const { t } = useTranslation();
   const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
   const { data: permission } = usePiecePermission(pieceId);
@@ -61,11 +62,21 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
     if (!editingEmplacement) setName(t(`inventory.emplacementPresets.${key}`));
   };
 
+
+// Ouvre la creation depuis le "+" de l'en-tete natif, qui est rendu par le
+// FICHIER DE ROUTE (il doit connaitre l'onglet actif la ou il y en a un) mais
+// dont l'action vit ICI, avec l'etat de la modale. Un compteur qui
+// s'incremente plutot qu'un booleen : deux demandes successives doivent
+// rouvrir la modale, ce qu'un booleen deja a true ne declencherait pas.
+  useEffect(() => {
+    if (addSignal) openCreate();
+  }, [addSignal]);
+
   const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (

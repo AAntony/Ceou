@@ -1,14 +1,14 @@
 import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, Text, View } from 'react-native';
-import { BottomActionBar } from '../../../src/components/BottomActionBar';
-import { Button } from '../../../src/components/Button';
+import { ScrollView, View } from 'react-native';
 import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityCard } from '../../../src/components/EntityCard';
 import { EntityGrid } from '../../../src/components/EntityGrid';
 import { ErrorState } from '../../../src/components/ErrorState';
+import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
+import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
@@ -94,27 +94,28 @@ export default function HabitationsScreen() {
           retour native n'a donc aucune destination pertinente ("précédent"
           n'existe pas dans ce modèle de navigation, seuls Céoù/Profil le
           sont, déjà dans la barre du bas). */}
-      <Stack.Screen options={{ title: t('inventory.habitations.title'), headerBackVisible: false }} />
+      <Stack.Screen
+        options={{
+          title: t('inventory.habitations.title'),
+          headerBackVisible: false,
+          // Seul l'onglet Personnelles peut recevoir une creation : l'onglet
+          // Partagees liste des amis, pas des habitations a soi.
+          headerRight: () =>
+            tab === 'personal' ? (
+              <HeaderAddButton onPress={openCreate} accessibilityLabel={t('inventory.habitations.add')} />
+            ) : null,
+        }}
+      />
       <View className="flex-1 bg-sand">
-        <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
-          <View className="mb-4 flex-row gap-2">
-            <Pressable
-              onPress={() => setTab('personal')}
-              className={`flex-1 items-center rounded-xl border px-4 py-3 ${tab === 'personal' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-            >
-              <Text className={tab === 'personal' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
-                {t('inventory.habitations.tab_personal')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => setTab('shared')}
-              className={`flex-1 items-center rounded-xl border px-4 py-3 ${tab === 'shared' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-            >
-              <Text className={tab === 'shared' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
-                {t('inventory.habitations.tab_shared')}
-              </Text>
-            </Pressable>
-          </View>
+        <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+          <SegmentedTabs
+            options={[
+              { value: 'personal', label: t('inventory.habitations.tab_personal') },
+              { value: 'shared', label: t('inventory.habitations.tab_shared') },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
 
           {tab === 'personal' ? (
             // L'échec passe AVANT l'état vide : sans lui, une lecture ratée
@@ -160,14 +161,6 @@ export default function HabitationsScreen() {
             </EntityGrid>
           )}
         </ScrollView>
-
-        {tab === 'personal' ? (
-          <BottomActionBar extraBottomOffset={88}>
-            <View className="flex-1">
-              <Button label={t('inventory.habitations.add')} onPress={openCreate} />
-            </View>
-          </BottomActionBar>
-        ) : null}
 
         <CreateEntityModal
           visible={modalOpen}

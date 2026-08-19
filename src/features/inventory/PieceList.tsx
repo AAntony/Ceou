@@ -1,9 +1,7 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
-import { BottomActionBar } from '../../components/BottomActionBar';
-import { Button } from '../../components/Button';
 import { ColorPicker } from '../../components/ColorPicker';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
@@ -20,9 +18,10 @@ import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './que
 
 type PieceListProps = {
   habitationId: string;
+  addSignal?: number;
 };
 
-export function PieceList({ habitationId }: PieceListProps) {
+export function PieceList({ habitationId, addSignal }: PieceListProps) {
   const { t } = useTranslation();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
   const { data: permission } = useHabitationPermission(habitationId);
@@ -63,11 +62,21 @@ export function PieceList({ habitationId }: PieceListProps) {
     if (!editingPiece) setName(t(`inventory.pieceTypes.${key}`));
   };
 
+
+// Ouvre la creation depuis le "+" de l'en-tete natif, qui est rendu par le
+// FICHIER DE ROUTE (il doit connaitre l'onglet actif la ou il y en a un) mais
+// dont l'action vit ICI, avec l'etat de la modale. Un compteur qui
+// s'incremente plutot qu'un booleen : deux demandes successives doivent
+// rouvrir la modale, ce qu'un booleen deja a true ne declencherait pas.
+  useEffect(() => {
+    if (addSignal) openCreate();
+  }, [addSignal]);
+
   const isEmpty = !isLoading && (pieces?.length ?? 0) === 0;
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (
@@ -92,14 +101,6 @@ export function PieceList({ habitationId }: PieceListProps) {
           </EntityGrid>
         )}
       </ScrollView>
-
-      {editable ? (
-        <BottomActionBar extraBottomOffset={88}>
-          <View className="flex-1">
-            <Button label={t('inventory.pieces.add')} onPress={openCreate} />
-          </View>
-        </BottomActionBar>
-      ) : null}
 
       <CreateEntityModal
         visible={modalOpen}

@@ -1,9 +1,7 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
-import { BottomActionBar } from '../../components/BottomActionBar';
-import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
@@ -15,9 +13,10 @@ import { useCreatePlan, useDeletePlan, usePlans, useUpdatePlan } from './queries
 
 type PlansListProps = {
   habitationId: string;
+  addSignal?: number;
 };
 
-export function PlansList({ habitationId }: PlansListProps) {
+export function PlansList({ habitationId, addSignal }: PlansListProps) {
   const { t } = useTranslation();
   const { data: plans, isLoading, isError, refetch } = usePlans(habitationId);
   const createPlan = useCreatePlan(habitationId);
@@ -31,11 +30,26 @@ export function PlansList({ habitationId }: PlansListProps) {
     confirmDelete(t, 'plans.delete_confirm_title', 'plans.delete_confirm_message', () => deletePlan.mutate(id));
   };
 
+  const openCreate = () => {
+    setEditingPlan(null);
+    setName('');
+    setModalOpen(true);
+  };
+
+// Ouvre la creation depuis le "+" de l'en-tete natif, qui est rendu par le
+// FICHIER DE ROUTE (il doit connaitre l'onglet actif la ou il y en a un) mais
+// dont l'action vit ICI, avec l'etat de la modale. Un compteur qui
+// s'incremente plutot qu'un booleen : deux demandes successives doivent
+// rouvrir la modale, ce qu'un booleen deja a true ne declencherait pas.
+  useEffect(() => {
+    if (addSignal) openCreate();
+  }, [addSignal]);
+
   const isEmpty = !isLoading && (plans?.length ?? 0) === 0;
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (
@@ -59,19 +73,6 @@ export function PlansList({ habitationId }: PlansListProps) {
           </EntityGrid>
         )}
       </ScrollView>
-
-      <BottomActionBar extraBottomOffset={88}>
-        <View className="flex-1">
-          <Button
-            label={t('plans.add')}
-            onPress={() => {
-              setEditingPlan(null);
-              setName('');
-              setModalOpen(true);
-            }}
-          />
-        </View>
-      </BottomActionBar>
 
       <CreateEntityModal
         visible={modalOpen}
