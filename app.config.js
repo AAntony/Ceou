@@ -32,7 +32,7 @@ module.exports = {
     android: {
       package: 'com.aantony.ceou',
       adaptiveIcon: {
-        backgroundColor: '#E6F4FE',
+        backgroundColor: '#1591EA',
         foregroundImage: './assets/android-icon-foreground.png',
         backgroundImage: './assets/android-icon-background.png',
         monochromeImage: './assets/android-icon-monochrome.png',
