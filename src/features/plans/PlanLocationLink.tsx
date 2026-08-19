@@ -27,7 +27,7 @@ export function PlanLocationLink({ pieceId, emplacementId }: PlanLocationLinkPro
       }
       className="mb-6 flex-row items-center justify-center gap-2 rounded-xl border border-coral/30 bg-coral-light px-4 py-3 active:opacity-70"
     >
-      <Icon name="plan" size={18} color="#E2543A" />
+      <Icon name="plan" size={18} color="#0B5E9E" />
       <Text className="text-sm font-semibold text-coral-dark">{t('inventory.objet.view_on_plan')}</Text>
     </Pressable>
   );

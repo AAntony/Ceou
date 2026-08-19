@@ -27,7 +27,7 @@ export function ErrorState({ onRetry, title }: ErrorStateProps) {
   return (
     <View className="flex-1 items-center justify-center px-6 py-16">
       <View className="mb-3 h-16 w-16 items-center justify-center rounded-full bg-coral-light">
-        <Icon name="alert" size={30} color="#E2543A" />
+        <Icon name="alert" size={30} color="#0B5E9E" />
       </View>
       <Text className="mb-1 text-center text-base font-medium text-ink">{title ?? t('common.error_load_title')}</Text>
       <Text className="mb-4 text-center text-sm text-ink-soft">{t('common.error_load_hint')}</Text>

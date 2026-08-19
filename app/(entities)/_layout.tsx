@@ -9,7 +9,7 @@ export default function EntitiesLayout() {
           headerShown: true,
           headerBackTitle: '',
           headerStyle: { backgroundColor: '#FFFBF8' },
-          headerTintColor: '#FF6B4A',
+          headerTintColor: '#1591EA',
           headerTitleStyle: { color: '#2D2A26' },
         }}
       />

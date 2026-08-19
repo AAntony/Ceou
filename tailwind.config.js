@@ -9,9 +9,9 @@ module.exports = {
         // Identité visuelle Ceou — corail/turquoise/moutarde plutôt que du
         // gris neutre, pour un ton joueur cohérent avec "retrouver ses affaires".
         coral: {
-          DEFAULT: '#FF6B4A',
-          dark: '#E2543A',
-          light: '#FFE4DB',
+          DEFAULT: '#1591EA',
+          dark: '#0B5E9E',
+          light: '#D8E8F3',
         },
         teal: {
           DEFAULT: '#2EC4B6',

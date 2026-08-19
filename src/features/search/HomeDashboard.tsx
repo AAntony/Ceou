@@ -104,7 +104,7 @@ function HomeHeader({
             hitSlop={8}
             className="ml-2"
           >
-            <Icon name="microphone" size={20} color={voiceSearch.isListening ? '#FF6B4A' : '#A39C8F'} />
+            <Icon name="microphone" size={20} color={voiceSearch.isListening ? '#1591EA' : '#A39C8F'} />
           </Pressable>
         </View>
       </View>

@@ -172,7 +172,7 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         onPress={onChooseScan}
         className="items-center gap-2 rounded-2xl border-2 border-coral bg-coral-light px-6 py-6 active:opacity-70"
       >
-        <Icon name="scan" size={32} color="#E2543A" />
+        <Icon name="scan" size={32} color="#0B5E9E" />
         <Text className="text-base font-bold text-coral-dark">{t('inventory.aiScan.entry_title')}</Text>
         <Text className="text-center text-sm text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
       </Pressable>

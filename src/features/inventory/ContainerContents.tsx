@@ -71,8 +71,8 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
                 key={conteneur.id}
                 icon="conteneur"
                 title={conteneur.name}
-                bgColor={HUE_CARD_BG_HEX.sky}
-                badgeColor={HUE_BADGE_FILL.sky}
+                bgColor={HUE_CARD_BG_HEX.lavender}
+                badgeColor={HUE_BADGE_FILL.lavender}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
                 onLongPress={editable ? () => handleDeleteConteneur(conteneur.id) : undefined}
                 onEdit={

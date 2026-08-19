@@ -170,7 +170,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   if (step === 'capture') {
     return (
       <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: insets.bottom + 24 }}>
-        <Icon name="scan" size={48} color="#E2543A" />
+        <Icon name="scan" size={48} color="#0B5E9E" />
         <Text className="mb-1 mt-4 text-center text-lg font-bold text-ink">{t('inventory.aiScan.capture_title')}</Text>
         <Text className="mb-6 text-center text-sm text-ink-soft">{t('inventory.aiScan.capture_hint')}</Text>
         <View className="w-full gap-3">
@@ -201,7 +201,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   if (step === 'analyzing') {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <ActivityIndicator size="large" color="#E2543A" />
+        <ActivityIndicator size="large" color="#0B5E9E" />
         <Text className="mt-4 text-center text-sm text-ink-soft">{t('inventory.aiScan.analyzing')}</Text>
       </View>
     );

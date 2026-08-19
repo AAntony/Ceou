@@ -555,7 +555,7 @@ function RoomVisual({
       <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="fill" />
       <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={borderColor} style="stroke" strokeWidth={2} />
       {selected ? (
-        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#FF6B4A" style="stroke" strokeWidth={3} />
+        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#1591EA" style="stroke" strokeWidth={3} />
       ) : highlighted ? (
         <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={HIGHLIGHT_GREEN_BORDER} style="stroke" strokeWidth={4} />
       ) : null}
@@ -698,7 +698,7 @@ function HandleDot({
             width: HANDLE_DOT_SIZE,
             height: HANDLE_DOT_SIZE,
             borderRadius: HANDLE_DOT_SIZE / 2,
-            backgroundColor: '#FF6B4A',
+            backgroundColor: '#1591EA',
             borderWidth: 2,
             borderColor: '#fff',
           }}

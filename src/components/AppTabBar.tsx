@@ -54,15 +54,15 @@ export function AppTabBar() {
       >
         <View className="h-16 flex-row items-center px-2">
           <Pressable onPress={leftOnPress} className="flex-1 items-center justify-center py-2">
-            <Icon name="home" size={22} color={leftActive ? '#FF6B4A' : '#A39C8F'} />
-            <Text className="mt-0.5 text-xs font-medium" style={{ color: leftActive ? '#FF6B4A' : '#A39C8F' }}>
+            <Icon name="home" size={22} color={leftActive ? '#1591EA' : '#A39C8F'} />
+            <Text className="mt-0.5 text-xs font-medium" style={{ color: leftActive ? '#1591EA' : '#A39C8F' }}>
               {leftLabel}
             </Text>
           </Pressable>
 
           <Pressable onPress={() => router.navigate('/friends')} className="flex-1 items-center justify-center py-2">
             <View style={{ position: 'relative' }}>
-              <Icon name="friends" size={22} color={rightActive ? '#FF6B4A' : '#A39C8F'} />
+              <Icon name="friends" size={22} color={rightActive ? '#1591EA' : '#A39C8F'} />
               {pendingIncomingCount > 0 ? (
                 <View
                   style={{
@@ -82,7 +82,7 @@ export function AppTabBar() {
                 </View>
               ) : null}
             </View>
-            <Text className="mt-0.5 text-xs font-medium" style={{ color: rightActive ? '#FF6B4A' : '#A39C8F' }}>
+            <Text className="mt-0.5 text-xs font-medium" style={{ color: rightActive ? '#1591EA' : '#A39C8F' }}>
               {t('friends.tab_title')}
             </Text>
           </Pressable>
@@ -96,7 +96,7 @@ export function AppTabBar() {
             width: 56,
             height: 56,
             borderRadius: 28,
-            backgroundColor: '#FF6B4A',
+            backgroundColor: '#1591EA',
             elevation: 6,
             shadowColor: '#2D2A26',
             shadowOpacity: 0.25,
