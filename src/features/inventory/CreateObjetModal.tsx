@@ -28,14 +28,12 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
       visible={visible}
       onClose={onClose}
       sheetClassName="rounded-t-3xl bg-white pt-6"
-      // Les deux modes n'ont PAS le même besoin de hauteur, d'où deux
-      // réglages distincts plutôt qu'un seul :
-      // - scan : hauteur DÉFINIE (88%), parce qu'AiPhotoScanFlow s'appuie
-      //   dessus (états centrés en `flex-1`, barre d'actions en `absolute
-      //   bottom-0`) — il lui faut un cadre stable à remplir.
-      // - manuel : simple PLAFOND, la feuille se dimensionne sur le
-      //   formulaire (court) et ne défile qu'une fois le plafond atteint.
-      sheetStyle={mode === 'scan' ? { height: '88%' } : { maxHeight: '88%' }}
+      // Mode scan : hauteur DÉFINIE, parce qu'AiPhotoScanFlow s'appuie dessus
+      // (états centrés en `flex-1`, barre d'actions en `absolute bottom-0`)
+      // — il lui faut un cadre stable à remplir.
+      // Mode manuel : AUCUN style de hauteur, la feuille se mesure sur le
+      // formulaire. Voir le commentaire de la branche manuelle plus bas.
+      sheetStyle={mode === 'scan' ? { height: '88%' } : undefined}
     >
       <View className="mb-4 px-6">
         <Text className="mb-4 text-xl font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
@@ -64,18 +62,20 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
           </Pressable>
         </View>
       </View>
-      {/* `flexShrink: 1` et SURTOUT PAS `flex: 1` — même piège que dans
-          FriendDetailSheet/ShareInviteModal, ici sous une forme plus
-          trompeuse encore. `flex: 1` met `flexBasis` à 0 : ce bloc ne
-          compte alors pour RIEN dans la hauteur d'une feuille qui n'a qu'un
-          `maxHeight`, la feuille se réduit au titre + aux deux pastilles,
-          et le formulaire est rendu avec une hauteur nulle. Symptôme vu par
-          l'utilisateur : appuyer sur "Saisie manuelle" ne fait "rien",
-          aucun champ n'apparaît. Ne se reproduit PAS sur navigateur, où
-          react-native-web retombe sur le dimensionnement max-content du
-          CSS. `flexShrink: 1` garde `flexBasis: auto` : mesuré sur son
-          contenu, il ne se comprime qu'au plafond de la feuille. */}
-      <View style={{ flexShrink: 1, display: mode === 'manual' ? 'flex' : 'none' }}>
+      {/* AUCUNE propriété flex ici, volontairement — `display` et rien
+          d'autre. La feuille n'a pas de hauteur définie en mode manuel :
+          elle se mesure sur son contenu. Or `flex: 1` (flexBasis 0) comme
+          `flexShrink: 1` ont tous les deux été essayés ici et laissaient le
+          formulaire à hauteur nulle sur téléphone — invisible, sans erreur
+          ni warning, et non reproductible dans le navigateur (react-native-web
+          retombe sur le dimensionnement max-content du CSS).
+          Sans propriété flex, ce bloc prend la hauteur de son contenu :
+          c'est exactement la forme de CreateEntityModal, la seule recette de
+          feuille dont on ait la preuve qu'elle fonctionne sur l'appareil de
+          l'utilisateur (c'est elle qui sert à créer un Conteneur, juste à
+          côté, depuis le même écran). Ne pas y remettre de flex sans
+          l'avoir vérifié sur un vrai téléphone. */}
+      <View style={{ display: mode === 'manual' ? 'flex' : 'none' }}>
         <ObjetFormBody parentType={parentType} parentId={parentId} active={visible} onDone={onClose} onCancel={onClose} />
       </View>
       <View style={{ flex: 1, display: mode === 'scan' ? 'flex' : 'none' }}>

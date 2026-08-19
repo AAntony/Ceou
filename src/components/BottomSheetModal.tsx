@@ -40,11 +40,17 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-white';
 // cette mesure — la feuille se réduit à ses éléments non-flex et l'enfant
 // est rendu avec une hauteur nulle (contenu invisible, pas d'erreur, pas de
 // warning). Deux recettes selon le besoin :
-// - contenu qui doit s'adapter puis défiler → `sheetStyle={{ maxHeight }}`
-//   + `flexShrink: 1` (jamais `flex: 1`) sur l'enfant ET sur son ScrollView
-//   (dont le défaut RN est `flexShrink: 0`, contrairement au CSS) ;
+// - contenu court, qui doit juste s'afficher en entier → AUCUNE propriété
+//   flex nulle part et pas de `sheetStyle` (cas de CreateEntityModal et de
+//   la branche manuelle de CreateObjetModal). C'est la seule forme dont on
+//   ait la preuve qu'elle fonctionne sur l'appareil de l'utilisateur ;
 // - contenu qui doit remplir un cadre stable → `sheetStyle={{ height }}`
-//   (hauteur DÉFINIE) et là `flex: 1` fonctionne normalement.
+//   (hauteur DÉFINIE) et là `flex: 1` fonctionne normalement (branche scan
+//   de CreateObjetModal) ;
+// - liste longue qui doit défiler sous un plafond → `maxHeight` +
+//   `flexShrink: 1` sur le ScrollView (FriendDetailSheet, ShareInviteModal).
+//   Attention : cette recette-là a échoué dans CreateObjetModal pour une
+//   raison non élucidée — la vérifier sur téléphone avant de s'y fier.
 // À vérifier sur téléphone, pas dans le navigateur : react-native-web
 // retombe sur le dimensionnement max-content du CSS et ne reproduit pas le
 // bug.
