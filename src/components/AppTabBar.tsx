@@ -28,15 +28,31 @@ export function AppTabBar() {
   const rightActive = pathname === '/friends';
   const leftActive = !rightActive;
 
-  // Le texte légal doit se lire sans un menu flottant par-dessus le bas de
-  // la page (retour utilisateur du 2026-08-18) — seul écran hors (tabs)/
-  // (entities) qui a besoin de ce traitement pour l'instant.
-  if (pathname === '/privacy-policy') return null;
+  // Deux écrans se lisent/s'utilisent mal avec la barre par-dessus :
+  // - la politique de confidentialité, dont le texte passait sous le menu
+  //   (retour utilisateur du 2026-08-18) ;
+  // - l'éditeur de Plan, où le canvas occupe toute la hauteur restante et se
+  //   pilote au doigt : la barre y masquait le bas du plan ET interceptait
+  //   les gestes, donc glisser une pièce vers le bas revenait à appuyer sur
+  //   "Amis". Une zone morte dans un outil de manipulation directe, pas une
+  //   simple gêne visuelle.
+  // `/plan/` ne capture QUE l'éditeur : la liste des plans est `/plans/`,
+  // qui ne correspond pas à ce préfixe (le `s` tombe avant le `/`).
+  if (pathname === '/privacy-policy' || pathname.startsWith('/plan/')) return null;
 
   return (
     <>
-      <View className="absolute left-6 right-6" style={{ bottom: insets.bottom + 12 }}>
-        <View className="h-16 flex-row items-center rounded-full bg-white px-2 shadow-lg">
+      {/* Barre pleine largeur collée au bas, PAS une pastille flottante : le
+          fond blanc descend jusqu'au bord de l'écran en traversant
+          `insets.bottom`, si bien que les boutons/gestes natifs du téléphone
+          se posent sur le même blanc que le menu au lieu de flotter sur le
+          fond de l'app. Le rembourrage bas garde les libellés au-dessus de
+          cette zone système. */}
+      <View
+        className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-white"
+        style={{ paddingBottom: insets.bottom }}
+      >
+        <View className="h-16 flex-row items-center px-2">
           <Pressable onPress={leftOnPress} className="flex-1 items-center justify-center py-2">
             <Icon name="home" size={22} color={leftActive ? '#FF6B4A' : '#A39C8F'} />
             <Text className="mt-0.5 text-xs font-medium" style={{ color: leftActive ? '#FF6B4A' : '#A39C8F' }}>
