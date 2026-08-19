@@ -102,7 +102,7 @@ export default function HabitationsScreen() {
           // Partagees liste des amis, pas des habitations a soi.
           headerRight: () =>
             tab === 'personal' ? (
-              <HeaderAddButton onPress={openCreate} accessibilityLabel={t('inventory.habitations.add')} />
+              <HeaderAddButton onPress={openCreate} label={t('inventory.habitations.add')} />
             ) : null,
         }}
       />

@@ -36,7 +36,7 @@ export default function PieceScreen() {
         options={{
           title: piece.name,
           headerRight: () => (
-            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} accessibilityLabel={t('inventory.emplacements.add')} />
+            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('inventory.emplacements.add')} />
           ),
         }}
       />

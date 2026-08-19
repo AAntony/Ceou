@@ -36,7 +36,7 @@ export default function EmplacementScreen() {
         options={{
           title: emplacement.name,
           headerRight: () => (
-            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} accessibilityLabel={t('inventory.container.add_choice_title')} />
+            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('common.add')} />
           ),
         }}
       />

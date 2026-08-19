@@ -65,7 +65,7 @@ export default function HabitationScreen() {
       <Stack.Screen
         options={{
           title: habitation.name,
-          headerRight: () => <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} accessibilityLabel={addLabel} />,
+          headerRight: () => <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={addLabel} />,
         }}
       />
       <View className="flex-1 bg-sand">
