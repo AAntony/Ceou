@@ -19,10 +19,24 @@ type HeaderAddButtonProps = {
 //
 // `accessibilityLabel` est obligatoire : un "+" seul ne dit pas ce qu'il
 // ajoute à un lecteur d'écran, et il change de cible selon l'écran.
+// Pastille et non icône nue : un "+" seul sur le fond de l'en-tête se lisait
+// comme un ornement plutôt que comme un bouton (retour utilisateur du
+// 2026-08-19). Le cerne et le fond lui donnent une surface cliquable visible.
+//
+// Volontairement en corail CLAIR bordé, et pas en corail plein comme le "+"
+// de la barre du bas : les deux boutons portent des actions différentes
+// (objet ici, structure là), ils ne doivent donc pas se ressembler au point
+// d'être confondus. Même langage que la variante `outline` du Button.
 export function HeaderAddButton({ onPress, accessibilityLabel }: HeaderAddButtonProps) {
   return (
-    <Pressable onPress={onPress} hitSlop={12} accessibilityRole="button" accessibilityLabel={accessibilityLabel}>
-      <Icon name="add" size={24} color="#FF6B4A" />
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      className="h-9 w-9 items-center justify-center rounded-full border-2 border-coral bg-coral-light active:opacity-70"
+    >
+      <Icon name="add" size={20} color="#E2543A" />
     </Pressable>
   );
 }
