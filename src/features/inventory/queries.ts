@@ -328,6 +328,15 @@ export function useContainerContents(parentType: LocationType, parentId: string)
     conteneurs: conteneursQuery.data ?? [],
     objets: objetsQuery.data ?? [],
     isLoading: conteneursQuery.isLoading || objetsQuery.isLoading,
+    // Une seule des deux requêtes en échec suffit à rendre l'écran faux (il
+    // afficherait la moitié du contenu comme si c'était le tout) — d'où le
+    // OU, et un refetch qui relance les deux sans se demander laquelle a
+    // lâché.
+    isError: conteneursQuery.isError || objetsQuery.isError,
+    refetch: () => {
+      conteneursQuery.refetch();
+      objetsQuery.refetch();
+    },
   };
 }
 

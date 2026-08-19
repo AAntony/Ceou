@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
@@ -24,7 +25,7 @@ function searchTermsFor(query: string): string[] {
 export function HomeDashboard() {
   const { t } = useTranslation();
   const { data: profile } = useProfile();
-  const { data: entries, isLoading } = useSearchIndex();
+  const { data: entries, isLoading, isError, refetch } = useSearchIndex();
 
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
@@ -141,7 +142,9 @@ export function HomeDashboard() {
           </ScrollView>
         ) : null}
 
-        {!isLoading && filtered.length === 0 ? (
+        {isError ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : !isLoading && filtered.length === 0 ? (
           <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
         ) : (
           <EntityGrid>

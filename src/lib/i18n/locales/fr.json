@@ -12,7 +12,10 @@
     "error_generic": "Une erreur est survenue. Réessaie.",
     "other": "Autre",
     "error_boundary_title": "Une erreur est survenue.",
-    "error_boundary_hint": "Redémarre l'application. Si le problème persiste, contacte-nous."
+    "error_boundary_hint": "Redémarre l'application. Si le problème persiste, contacte-nous.",
+    "error_load_title": "Impossible de charger cette page.",
+    "error_load_hint": "Vérifie ta connexion, puis réessaie.",
+    "retry": "Réessayer"
   },
   "auth": {
     "email": "Email",

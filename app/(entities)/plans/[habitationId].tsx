@@ -1,13 +1,22 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
+import { ErrorState } from '../../../src/components/ErrorState';
 import { PlansList } from '../../../src/features/plans/PlansList';
 import { useHabitation } from '../../../src/features/inventory/queries';
 
 export default function PlansScreen() {
   const { habitationId } = useLocalSearchParams<{ habitationId: string }>();
   const { t } = useTranslation();
-  const { data: habitation, isLoading } = useHabitation(habitationId);
+  const { data: habitation, isLoading, isError, refetch } = useHabitation(habitationId);
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (isLoading || !habitation) {
     return (

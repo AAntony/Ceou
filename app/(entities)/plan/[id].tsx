@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ErrorState } from '../../../src/components/ErrorState';
 import { Icon } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
@@ -29,7 +30,7 @@ export default function PlanScreen() {
     highlightEmplacementId?: string;
   }>();
   const { t } = useTranslation();
-  const { data: plan, isLoading: planLoading } = usePlan(id);
+  const { data: plan, isLoading: planLoading, isError: planError, refetch } = usePlan(id);
   const { data: formes } = usePlanFormes(id);
   const { data: pieces } = usePieces(plan?.habitation_id ?? '');
   const { data: pins } = usePlanPins(id);
@@ -68,6 +69,14 @@ export default function PlanScreen() {
   const sheetPin = (pins ?? []).find((p) => p.id === sheetPinId) ?? null;
   const sheetPinDisplay = sheetPin ? (pinDisplay[sheetPin.emplacement_id] ?? null) : null;
   const selectedForme = (formes ?? []).find((f) => f.id === selectedFormeId) ?? null;
+
+  if (planError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (planLoading || !plan) {
     return (

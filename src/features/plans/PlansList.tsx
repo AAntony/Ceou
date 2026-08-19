@@ -8,6 +8,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Plan } from '../../types/database';
 import { useCreatePlan, useDeletePlan, usePlans, useUpdatePlan } from './queries';
@@ -18,7 +19,7 @@ type PlansListProps = {
 
 export function PlansList({ habitationId }: PlansListProps) {
   const { t } = useTranslation();
-  const { data: plans, isLoading } = usePlans(habitationId);
+  const { data: plans, isLoading, isError, refetch } = usePlans(habitationId);
   const createPlan = useCreatePlan(habitationId);
   const updatePlan = useUpdatePlan(habitationId);
   const deletePlan = useDeletePlan(habitationId);
@@ -35,7 +36,9 @@ export function PlansList({ habitationId }: PlansListProps) {
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
-        {isEmpty ? (
+        {isError ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : isEmpty ? (
           <EmptyState icon="plan" title={t('plans.empty')} />
         ) : (
           <EntityGrid>

@@ -9,6 +9,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
@@ -23,7 +24,7 @@ type PieceListProps = {
 
 export function PieceList({ habitationId }: PieceListProps) {
   const { t } = useTranslation();
-  const { data: pieces, isLoading } = usePieces(habitationId);
+  const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
   const { data: permission } = useHabitationPermission(habitationId);
   const editable = canModify(permission);
   const createPiece = useCreatePiece(habitationId);
@@ -67,7 +68,9 @@ export function PieceList({ habitationId }: PieceListProps) {
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
-        {isEmpty ? (
+        {isError ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : isEmpty ? (
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
           <EntityGrid>

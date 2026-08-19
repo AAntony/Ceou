@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
+import { ErrorState } from '../../src/components/ErrorState';
 import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
@@ -19,7 +20,7 @@ import { supabase } from '../../src/lib/supabase/client';
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { session } = useSession();
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile, isLoading, isError, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
 
   const [displayName, setDisplayName] = useState('');
@@ -53,6 +54,14 @@ export default function ProfileScreen() {
       setAvatarUploading(false);
     }
   };
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (

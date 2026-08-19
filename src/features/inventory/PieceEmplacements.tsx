@@ -8,6 +8,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
@@ -22,7 +23,7 @@ type PieceEmplacementsProps = {
 
 export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   const { t } = useTranslation();
-  const { data: emplacements, isLoading } = useEmplacements(pieceId);
+  const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
   const { data: permission } = usePiecePermission(pieceId);
   const editable = canModify(permission);
   const createEmplacement = useCreateEmplacement(pieceId);
@@ -65,7 +66,9 @@ export function PieceEmplacements({ pieceId }: PieceEmplacementsProps) {
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
-        {isEmpty ? (
+        {isError ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : isEmpty ? (
           <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
           <EntityGrid>

@@ -5,6 +5,7 @@ import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { EntityCard } from '../../src/components/EntityCard';
 import { EntityGrid } from '../../src/components/EntityGrid';
+import { ErrorState } from '../../src/components/ErrorState';
 import { Icon } from '../../src/components/Icon';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
@@ -12,7 +13,7 @@ import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespon
 
 export default function FriendsScreen() {
   const { t } = useTranslation();
-  const { data: friendships, isLoading } = useFriendships();
+  const { data: friendships, isLoading, isError, refetch } = useFriendships();
   const respond = useRespondToFriendship();
   const cancelRequest = useCancelFriendRequest();
 
@@ -27,6 +28,14 @@ export default function FriendsScreen() {
   const accepted = (friendships ?? [])
     .filter((f) => f.status === 'accepted')
     .sort((a, b) => (a.otherDisplayName || a.otherFriendCode).localeCompare(b.otherDisplayName || b.otherFriendCode));
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -64,7 +64,8 @@ export type IconName =
   | 'qrcode'
   | 'share'
   | 'star'
-  | 'starOutline';
+  | 'starOutline'
+  | 'alert';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -127,6 +128,7 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   share: 'share-variant',
   star: 'star',
   starOutline: 'star-outline',
+  alert: 'alert-circle-outline',
 };
 
 type IconProps = {

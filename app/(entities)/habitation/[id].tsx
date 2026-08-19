@@ -1,6 +1,7 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ErrorState } from '../../../src/components/ErrorState';
 import { isSingleSpaceHabitation } from '../../../src/features/inventory/constants';
 import { PieceEmplacements } from '../../../src/features/inventory/PieceEmplacements';
 import { PieceList } from '../../../src/features/inventory/PieceList';
@@ -9,9 +10,17 @@ import { useHabitation, usePieces } from '../../../src/features/inventory/querie
 export default function HabitationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
-  const { data: habitation, isLoading } = useHabitation(id);
+  const { data: habitation, isLoading, isError, refetch } = useHabitation(id);
   const singleSpace = habitation ? isSingleSpaceHabitation(habitation.type) : false;
   const { data: pieces } = usePieces(id);
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (isLoading || !habitation) {
     return (

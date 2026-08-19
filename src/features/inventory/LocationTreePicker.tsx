@@ -6,6 +6,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { supabase } from '../../lib/supabase/client';
@@ -136,12 +137,12 @@ function AddInlineCard({ label, onPress }: { label: string; onPress: () => void 
 
 function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => void }) {
   const { t } = useTranslation();
-  const { data: habitations, isLoading } = useHabitations();
+  const { data: habitations, isLoading, isError, refetch } = useHabitations();
   const createHabitation = useCreateHabitation();
   const [modalOpen, setModalOpen] = useState(false);
   const [type, setType] = useState<HabitationTypeKey>('maison');
   const [name, setName] = useState('');
-  const isEmpty = !isLoading && (habitations?.length ?? 0) === 0;
+  const isEmpty = !isLoading && !isError && (habitations?.length ?? 0) === 0;
 
   const handleSelectType = (key: HabitationTypeKey) => {
     setType(key);
@@ -150,6 +151,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
 
   return (
     <>
+      {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="home" title={t('home.onboarding_hint')} /> : null}
       <EntityGrid>
         {habitations?.map((habitation) => (
@@ -195,12 +197,12 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
 
 function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect: (piece: Piece) => void }) {
   const { t } = useTranslation();
-  const { data: pieces, isLoading } = usePieces(habitationId);
+  const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
   const createPiece = useCreatePiece(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
   const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
   const [name, setName] = useState('');
-  const isEmpty = !isLoading && (pieces?.length ?? 0) === 0;
+  const isEmpty = !isLoading && !isError && (pieces?.length ?? 0) === 0;
 
   const handleSelectPreset = (key: PieceTypeKey) => {
     setPresetKey(key);
@@ -209,6 +211,7 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
 
   return (
     <>
+      {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="piece" title={t('inventory.pieces.empty')} /> : null}
       <EntityGrid>
         {pieces?.map((piece) => (
@@ -261,12 +264,12 @@ function EmplacementsStep({
   onCreated: (emplacement: Emplacement) => void;
 }) {
   const { t } = useTranslation();
-  const { data: emplacements, isLoading } = useEmplacements(pieceId);
+  const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
   const createEmplacement = useCreateEmplacement(pieceId);
   const [modalOpen, setModalOpen] = useState(false);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
   const [name, setName] = useState('');
-  const isEmpty = !isLoading && (emplacements?.length ?? 0) === 0;
+  const isEmpty = !isLoading && !isError && (emplacements?.length ?? 0) === 0;
 
   const handleSelectPreset = (key: EmplacementPresetKey) => {
     setPresetKey(key);
@@ -275,6 +278,7 @@ function EmplacementsStep({
 
   return (
     <>
+      {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} /> : null}
       <EntityGrid>
         {emplacements?.map((emplacement) => (

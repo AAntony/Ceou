@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
+import { ErrorState } from '../../../src/components/ErrorState';
 import { Icon } from '../../../src/components/Icon';
 import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
 import { TextField } from '../../../src/components/TextField';
@@ -20,7 +21,7 @@ export default function ObjetScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { session } = useSession();
-  const { data: objet, isLoading } = useObjet(id);
+  const { data: objet, isLoading, isError, refetch } = useObjet(id);
   const { data: history } = useObjetHistory(id);
   const { data: locationChain } = useObjetLocationChain(id);
   const pieceId = locationChain?.find((node) => node.kind === 'piece')?.id;
@@ -69,6 +70,14 @@ export default function ObjetScreen() {
       router.back();
     });
   };
+
+  if (isError) {
+    return (
+      <View className="flex-1 bg-sand">
+        <ErrorState onRetry={() => refetch()} />
+      </View>
+    );
+  }
 
   if (isLoading || !objet) {
     return (

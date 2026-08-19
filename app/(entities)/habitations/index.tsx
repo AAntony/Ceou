@@ -8,6 +8,7 @@ import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityCard } from '../../../src/components/EntityCard';
 import { EntityGrid } from '../../../src/components/EntityGrid';
+import { ErrorState } from '../../../src/components/ErrorState';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
@@ -29,7 +30,7 @@ type Tab = 'personal' | 'shared';
 export default function HabitationsScreen() {
   const { t } = useTranslation();
   const { session } = useSession();
-  const { data: habitations, isLoading } = useHabitations();
+  const { data: habitations, isLoading, isError, refetch } = useHabitations();
   const { data: favorites } = useHabitationFavorites();
   const toggleFavorite = useToggleHabitationFavorite();
   const { data: friendships } = useFriendships();
@@ -116,7 +117,12 @@ export default function HabitationsScreen() {
           </View>
 
           {tab === 'personal' ? (
-            isPersonalEmpty ? (
+            // L'échec passe AVANT l'état vide : sans lui, une lecture ratée
+            // affichait "Aucune habitation", ce qui laisse croire à une perte
+            // de données alors que rien n'a été lu.
+            isError ? (
+              <ErrorState onRetry={() => refetch()} />
+            ) : isPersonalEmpty ? (
               <EmptyState icon="home" title={t('inventory.habitations.empty')} />
             ) : (
               <EntityGrid>

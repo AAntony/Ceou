@@ -8,6 +8,7 @@ import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { ErrorState } from '../../components/ErrorState';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Conteneur, LocationType } from '../../types/database';
@@ -22,7 +23,7 @@ type ContainerContentsProps = {
 
 export function ContainerContents({ parentType, parentId }: ContainerContentsProps) {
   const { t } = useTranslation();
-  const { conteneurs, objets, isLoading } = useContainerContents(parentType, parentId);
+  const { conteneurs, objets, isLoading, isError, refetch } = useContainerContents(parentType, parentId);
   const { data: permission } = useLocationPermission(parentType, parentId);
   const editable = canModify(permission);
   const createConteneur = useCreateConteneur(parentType, parentId);
@@ -49,7 +50,9 @@ export function ContainerContents({ parentType, parentId }: ContainerContentsPro
   return (
     <View className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="px-6 pb-52 pt-4">
-        {isEmpty ? (
+        {isError ? (
+          <ErrorState onRetry={() => refetch()} />
+        ) : isEmpty ? (
           <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
           <EntityGrid>
