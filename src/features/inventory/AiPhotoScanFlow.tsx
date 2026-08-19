@@ -8,6 +8,7 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { cropDetection, detectObjects, getImageSize, RateLimitedError } from '../../lib/ai/detectObjects';
+import { logClientError } from '../../lib/errorLogging';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useProfile, useSetAiPhotoConsent } from '../profile/useProfile';
@@ -84,6 +85,12 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       setItems(crops);
       setStep('review');
     } catch (err) {
+      // Le throttling du quota Gemini partagé est un cas NORMAL, déjà
+      // expliqué à l'utilisateur par son propre message — le journaliser
+      // noierait les vraies pannes de détection sous du bruit attendu.
+      if (!(err instanceof RateLimitedError)) {
+        logClientError(err, { source: 'ai_photo_scan', step: 'detect' });
+      }
       Alert.alert(
         err instanceof RateLimitedError
           ? t('inventory.aiScan.rate_limited', { seconds: err.retryAfterSeconds })
@@ -119,7 +126,8 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
     setPendingSource(null);
     try {
       await setAiPhotoConsent.mutateAsync();
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'ai_photo_scan', step: 'consent' });
       Alert.alert(t('common.error_generic'));
       return;
     }
@@ -151,7 +159,8 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       if (result.photoFailures > 0) {
         Alert.alert(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
       }
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'ai_photo_scan', step: 'bulk_create', count: collected.length });
       Alert.alert(t('common.error_generic'));
       return;
     }

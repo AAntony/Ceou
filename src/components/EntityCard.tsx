@@ -14,6 +14,11 @@ type EntityCardProps = {
   onEdit?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
+  // Vrai pendant que le basculement de CETTE carte est en vol. La mise à
+  // jour du cache étant optimiste, l'étoile change d'état immédiatement :
+  // sans ce verrou, un double tap rapide envoyait un delete et un upsert
+  // concurrents dont l'ordre d'arrivée décidait de l'état final.
+  favoriteDisabled?: boolean;
 };
 
 // Teinte par défaut (teal) pour les appelants qui n'en précisent pas encore
@@ -39,6 +44,7 @@ export function EntityCard({
   onEdit,
   isFavorite,
   onToggleFavorite,
+  favoriteDisabled,
 }: EntityCardProps) {
   return (
     <Pressable
@@ -53,7 +59,12 @@ export function EntityCard({
         </Pressable>
       ) : null}
       {onToggleFavorite ? (
-        <Pressable onPress={onToggleFavorite} hitSlop={8} className="absolute bottom-2 right-2 z-10 rounded-full bg-white/70 p-1.5">
+        <Pressable
+          onPress={onToggleFavorite}
+          disabled={favoriteDisabled}
+          hitSlop={8}
+          className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/70 p-1.5 ${favoriteDisabled ? 'opacity-50' : ''}`}
+        >
           <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? '#FFC857' : '#A39C8F'} />
         </Pressable>
       ) : null}

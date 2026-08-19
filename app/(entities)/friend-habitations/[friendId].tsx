@@ -22,6 +22,10 @@ export default function FriendHabitationsScreen() {
   const toggleFavorite = useToggleHabitationFavorite();
 
   const favoriteIds = new Set((favorites ?? []).map((f) => f.habitation_id));
+  // Ciblé sur l'Habitation réellement en cours de bascule (et pas sur
+  // `isPending` seul) : une seule étoile se verrouille, pas toute la grille.
+  const isFavoritePending = (habitationId: string) =>
+    toggleFavorite.isPending && toggleFavorite.variables?.habitationId === habitationId;
   const isEmpty = !isLoading && (habitations?.length ?? 0) === 0;
 
   return (
@@ -44,6 +48,7 @@ export default function FriendHabitationsScreen() {
                   onPress={() => router.push(`/habitation/${h.id}`)}
                   isFavorite={favoriteIds.has(h.id)}
                   onToggleFavorite={() => toggleFavorite.mutate({ habitationId: h.id, isFavorite: favoriteIds.has(h.id) })}
+                  favoriteDisabled={isFavoritePending(h.id)}
                 />
               ))}
             </EntityGrid>

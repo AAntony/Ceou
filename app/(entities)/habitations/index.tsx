@@ -43,6 +43,10 @@ export default function HabitationsScreen() {
   const [name, setName] = useState('');
 
   const favoriteIds = new Set((favorites ?? []).map((f) => f.habitation_id));
+  // Ciblé sur l'Habitation réellement en cours de bascule (et pas sur
+  // `isPending` seul) : une seule étoile se verrouille, pas toute la grille.
+  const isFavoritePending = (habitationId: string) =>
+    toggleFavorite.isPending && toggleFavorite.variables?.habitationId === habitationId;
   const myHabitations = (habitations ?? []).filter((h) => h.user_id === session?.user.id);
   const acceptedFriends = (friendships ?? [])
     .filter((f) => f.status === 'accepted')
@@ -129,6 +133,7 @@ export default function HabitationsScreen() {
                     onEdit={() => openEdit(habitation)}
                     isFavorite={favoriteIds.has(habitation.id)}
                     onToggleFavorite={() => toggleFavorite.mutate({ habitationId: habitation.id, isFavorite: favoriteIds.has(habitation.id) })}
+                    favoriteDisabled={isFavoritePending(habitation.id)}
                   />
                 ))}
               </EntityGrid>

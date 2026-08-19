@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../features/auth/SessionProvider';
+import { logClientError } from '../../lib/errorLogging';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
@@ -138,7 +139,12 @@ export function useToggleHabitationFavorite() {
       });
       return { queryKey, previous };
     },
-    onError: (_error, _input, context) => {
+    onError: (error, input, context) => {
+      // Le rollback optimiste remet l'étoile dans son état d'origine sans
+      // rien dire à l'utilisateur (choix conservé : un favori raté ne
+      // mérite pas une alerte bloquante) — mais l'échec doit au moins
+      // laisser une trace exploitable côté diagnostic.
+      logClientError(error, { source: 'toggle_habitation_favorite', habitationId: input.habitationId });
       if (context) queryClient.setQueryData(context.queryKey, context.previous);
     },
     onSettled: () => {
@@ -465,7 +471,11 @@ export function useCreateObjetsBulk() {
           const photoUrl = await uploadImage(item.localPhotoUri, { bucket: 'objets', path: `${session.user.id}/${objet.id}.jpg` });
           const { error: updateError } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objet.id);
           if (updateError) throw updateError;
-        } catch {
+        } catch (err) {
+          // Déjà COMPTÉ et signalé à l'utilisateur ("N photos non
+          // enregistrées"), mais jamais journalisé jusqu'ici : on savait
+          // qu'une photo avait échoué, jamais pourquoi.
+          logClientError(err, { source: 'create_objets_bulk', step: 'photo_upload', objetId: objet.id });
           photoFailures += 1;
         }
       }

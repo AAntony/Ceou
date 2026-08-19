@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { logClientError } from '../../lib/errorLogging';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
 import { supabase } from '../../lib/supabase/client';
 import type { LocationType } from '../../types/database';
@@ -74,7 +75,8 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
             });
             const { error } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objet.id);
             if (error) throw error;
-          } catch {
+          } catch (err) {
+            logClientError(err, { source: 'add_objet_modal', step: 'photo_upload', objetId: objet.id });
             Alert.alert(t('inventory.objet.saved_without_photo'));
           }
         }
@@ -85,7 +87,8 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
         }
       }
       onClose();
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'add_objet_modal', step: 'save', mode: pendingScan ? 'scan' : 'manual' });
       Alert.alert(t('common.error_generic'));
     } finally {
       setSaving(false);

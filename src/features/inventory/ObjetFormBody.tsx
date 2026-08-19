@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'rea
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { lookupBarcode } from '../../lib/barcode/lookupBarcode';
+import { logClientError } from '../../lib/errorLogging';
 import { pickImage, uploadImage } from '../../lib/images/pickAndUploadImage';
 import { supabase } from '../../lib/supabase/client';
 import type { LocationType } from '../../types/database';
@@ -99,7 +100,8 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
         barcode,
       });
       objetId = objet.id;
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'objet_form', step: 'create', parentType });
       Alert.alert(t('common.error_generic'));
       return;
     }
@@ -112,7 +114,8 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
         });
         const { error } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objetId);
         if (error) throw error;
-      } catch {
+      } catch (err) {
+        logClientError(err, { source: 'objet_form', step: 'photo_upload', objetId });
         Alert.alert(t('inventory.objet.saved_without_photo'));
       }
     }

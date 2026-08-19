@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
+import { logClientError } from '../lib/errorLogging';
 import { BottomSheetModal } from './BottomSheetModal';
 import { Button } from './Button';
 import { TextField } from './TextField';
@@ -44,7 +45,8 @@ export function CreateEntityModal({
     if (!name.trim()) return;
     try {
       await onSubmit(name.trim());
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'create_entity_modal', title });
       Alert.alert(t('common.error_generic'));
     }
   };

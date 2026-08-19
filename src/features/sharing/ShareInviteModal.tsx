@@ -5,6 +5,7 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { QrCode } from '../../components/QrCode';
+import { logClientError } from '../../lib/errorLogging';
 import type { HabitationPermission, ShareInvite } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { useHabitations } from '../inventory/queries';
@@ -64,7 +65,8 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
       });
       setResultInvite(invite);
       setStep('result');
-    } catch {
+    } catch (err) {
+      logClientError(err, { source: 'share_invite', targetType, habitationCount: selectedHabitationIds.length });
       Alert.alert(t('common.error_generic'));
     }
   };
