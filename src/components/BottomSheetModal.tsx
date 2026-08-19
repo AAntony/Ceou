@@ -33,6 +33,21 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-white';
 //   propre à chaque appelant (jamais à sa place, en plus) — fonctionne que
 //   `children` soit un `ScrollView` (le spacer reste hors de la zone
 //   scrollable, donc toujours visible) ou un simple `View`.
+// ⚠️ PIÈGE DE HAUTEUR, rencontré trois fois (FriendDetailSheet,
+// ShareInviteModal, CreateObjetModal) : la feuille n'a JAMAIS de hauteur
+// définie par défaut, elle se mesure sur son contenu. Un enfant en
+// `flex: 1` y passe donc à `flexBasis: 0` et ne compte pour RIEN dans
+// cette mesure — la feuille se réduit à ses éléments non-flex et l'enfant
+// est rendu avec une hauteur nulle (contenu invisible, pas d'erreur, pas de
+// warning). Deux recettes selon le besoin :
+// - contenu qui doit s'adapter puis défiler → `sheetStyle={{ maxHeight }}`
+//   + `flexShrink: 1` (jamais `flex: 1`) sur l'enfant ET sur son ScrollView
+//   (dont le défaut RN est `flexShrink: 0`, contrairement au CSS) ;
+// - contenu qui doit remplir un cadre stable → `sheetStyle={{ height }}`
+//   (hauteur DÉFINIE) et là `flex: 1` fonctionne normalement.
+// À vérifier sur téléphone, pas dans le navigateur : react-native-web
+// retombe sur le dimensionnement max-content du CSS et ne reproduit pas le
+// bug.
 export function BottomSheetModal({ visible, onClose, sheetClassName, sheetStyle, children }: BottomSheetModalProps) {
   const insets = useSafeAreaInsets();
   return (

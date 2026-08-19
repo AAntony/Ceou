@@ -126,7 +126,16 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
 
   return (
     <>
-      <ScrollView contentContainerClassName="px-6 pb-6 pt-2" keyboardShouldPersistTaps="handled">
+      {/* `flexShrink: 1` : dans RN le défaut est 0 (contrairement au CSS),
+          donc sans ça ce ScrollView garde la hauteur de son contenu et
+          DÉBORDE de son parent au lieu de défiler à l'intérieur — visible
+          dès que la feuille de CreateObjetModal atteint son plafond, ou sur
+          un petit écran clavier ouvert. */}
+      <ScrollView
+        style={{ flexShrink: 1 }}
+        contentContainerClassName="px-6 pb-6 pt-2"
+        keyboardShouldPersistTaps="handled"
+      >
         <Pressable onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
           {lookupLoading ? (
             <ActivityIndicator />

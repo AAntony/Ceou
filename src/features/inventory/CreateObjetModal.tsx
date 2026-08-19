@@ -28,7 +28,14 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
       visible={visible}
       onClose={onClose}
       sheetClassName="rounded-t-3xl bg-white pt-6"
-      sheetStyle={mode === 'scan' ? { height: '88%' } : undefined}
+      // Les deux modes n'ont PAS le même besoin de hauteur, d'où deux
+      // réglages distincts plutôt qu'un seul :
+      // - scan : hauteur DÉFINIE (88%), parce qu'AiPhotoScanFlow s'appuie
+      //   dessus (états centrés en `flex-1`, barre d'actions en `absolute
+      //   bottom-0`) — il lui faut un cadre stable à remplir.
+      // - manuel : simple PLAFOND, la feuille se dimensionne sur le
+      //   formulaire (court) et ne défile qu'une fois le plafond atteint.
+      sheetStyle={mode === 'scan' ? { height: '88%' } : { maxHeight: '88%' }}
     >
       <View className="mb-4 px-6">
         <Text className="mb-4 text-xl font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
@@ -57,7 +64,18 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
           </Pressable>
         </View>
       </View>
-      <View style={{ flex: 1, display: mode === 'manual' ? 'flex' : 'none' }}>
+      {/* `flexShrink: 1` et SURTOUT PAS `flex: 1` — même piège que dans
+          FriendDetailSheet/ShareInviteModal, ici sous une forme plus
+          trompeuse encore. `flex: 1` met `flexBasis` à 0 : ce bloc ne
+          compte alors pour RIEN dans la hauteur d'une feuille qui n'a qu'un
+          `maxHeight`, la feuille se réduit au titre + aux deux pastilles,
+          et le formulaire est rendu avec une hauteur nulle. Symptôme vu par
+          l'utilisateur : appuyer sur "Saisie manuelle" ne fait "rien",
+          aucun champ n'apparaît. Ne se reproduit PAS sur navigateur, où
+          react-native-web retombe sur le dimensionnement max-content du
+          CSS. `flexShrink: 1` garde `flexBasis: auto` : mesuré sur son
+          contenu, il ne se comprime qu'au plafond de la feuille. */}
+      <View style={{ flexShrink: 1, display: mode === 'manual' ? 'flex' : 'none' }}>
         <ObjetFormBody parentType={parentType} parentId={parentId} active={visible} onDone={onClose} onCancel={onClose} />
       </View>
       <View style={{ flex: 1, display: mode === 'scan' ? 'flex' : 'none' }}>
