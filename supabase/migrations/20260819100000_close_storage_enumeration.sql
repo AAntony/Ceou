@@ -1,0 +1,43 @@
+-- Audit sécurité du 2026-08-19 : fermeture de l'énumération des buckets.
+--
+-- CONSTAT (démontré, pas supposé) : avec la seule clé anon — celle qui est
+-- embarquée dans l'APK, donc récupérable par quiconque installe l'app — et
+-- SANS aucune session, il était possible d'appeler
+-- storage.from('objets').list() et d'obtenir la liste complète des dossiers
+-- utilisateur puis de tous les fichiers, puis de les télécharger un par un
+-- (HTTP 200, JPEG valide). Les DONNÉES, elles, étaient bien protégées : la
+-- même requête anonyme sur la table `objets` renvoyait 0 ligne. Seul le
+-- stockage de fichiers était resté en dehors du durcissement RLS de la
+-- Phase 8a, parce qu'il avait été conçu (Phase 0/2) quand chaque compte
+-- était encore parfaitement étanche — avant que le partage entre comptes et
+-- le mode Invité n'existent.
+--
+-- CAUSE : ces deux policies autorisaient le SELECT sur la seule condition
+-- d'appartenance au bucket, sans aucune condition sur le demandeur :
+--     for select using (bucket_id = 'objets')
+--
+-- CE QUE CETTE MIGRATION CORRIGE : l'énumération. Les buckets restent
+-- `public = true`, et l'endpoint public (/storage/v1/object/public/...) sert
+-- ses fichiers sans consulter la RLS — les URLs déjà stockées dans
+-- `objets.photo_url` / `profiles.avatar_url` continuent donc de fonctionner
+-- exactement comme avant. En revanche l'API authentifiée (list(), et l'accès
+-- via /object/) repasse par ces policies : sans elles, plus de listing. Les
+-- chemins étant de la forme <uuid utilisateur>/<uuid objet>.jpg, ils
+-- redeviennent impossibles à deviner.
+--
+-- AUCUN IMPACT APPLICATIF : vérifié, rien dans le client ni dans les Edge
+-- Functions n'appelle .list() sur le stockage — uniquement upload() et
+-- getPublicUrl(). L'écriture n'est pas touchée : les policies
+-- insert/update/delete (restreintes au dossier de l'utilisateur via
+-- storage.foldername(name))[1] = auth.uid()) restent en place telles quelles.
+--
+-- CE QUE CETTE MIGRATION NE CORRIGE PAS : quelqu'un qui a DÉJÀ obtenu une
+-- URL (un ami à qui l'habitation a été partagée, un invité) la conserve
+-- indéfiniment, même après révocation du partage. Y remédier demande de
+-- passer les buckets en privé + URLs signées à durée limitée, ce qui n'est
+-- pas un simple changement de policy : `photo_url` stocke aujourd'hui une
+-- URL PERMANENTE en base, or une URL signée expire et doit donc être
+-- générée à la lecture. Chantier à part, délibérément non entrepris ici.
+
+drop policy if exists "avatar_public_read" on storage.objects;
+drop policy if exists "objets_photo_public_read" on storage.objects;
