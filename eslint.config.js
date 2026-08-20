@@ -26,6 +26,26 @@ module.exports = defineConfig([
     ],
   },
   {
+    // Outillage Node lance a la main (jamais bundle dans l'app) : il utilise
+    // les globales Node, absentes des globals navigateur/React Native que
+    // pose eslint-config-expo. Sans cette declaration, require/module/Buffer
+    // y sont signales comme non definis.
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly',
+        module: 'writable',
+        exports: 'writable',
+        process: 'readonly',
+        console: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx'],
     plugins: { '@typescript-eslint': typescriptEslint },
     rules: {

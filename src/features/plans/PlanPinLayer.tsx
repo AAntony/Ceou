@@ -8,7 +8,26 @@ import type { PlanPin } from '../../types/database';
 import { clamp, SNAP_THRESHOLD } from './snap';
 import type { ShapeGeometry } from './types';
 
-const HIGHLIGHT_RED = '#E53935';
+// === Marqueur de localisation ============================================
+// Remplace l'ancienne flèche rouge (arrow-down-bold, 16px, #E53935) qui
+// flottait au-dessus de la pastille. Deux défauts : elle était minuscule et
+// se perdait sur les pastels clairs du plan, et son rouge n'appartenait à
+// aucune palette de l'app.
+//
+// Le marqueur reprend le PIN DU LOGO — le « o » de Céoù, déjà l'icône de
+// l'onglet Accueil — dans le bleu d'action de l'app. Sa pointe désigne le
+// point exact, un halo au sol l'ancre, et il REMPLACE la pastille au lieu de
+// s'ajouter par-dessus : un seul objet à l'écran pour un seul message.
+//
+// Composé de View + glyphe, jamais de SVG : react-native-svg est absent du
+// projet et son usage planterait l'app (voir le commentaire d'IconBadge).
+const MARKER_COLOR = '#1591EA';
+const MARKER_SIZE = 44;
+// Le glyphe map-marker est plein : cette pastille blanche redessine le trou
+// central, c'est ce qui fait ressembler le marqueur au logo et non à une
+// simple goutte.
+const MARKER_HOLE_RATIO = 0.3;
+const MARKER_HOLE_TOP_RATIO = 0.235;
 // Bordure fine, volontairement plus discrète que le rouge du surlignage
 // "Voir sur le plan" — même famille corail que la sélection d'une pièce
 // (ShapeBody), juste adoucie en opacité pour rester "légère" comme demandé.
@@ -228,18 +247,51 @@ function PinBadge({
       <View
         style={{ position: 'absolute', left: screen.x - PIN_LABEL_WIDTH / 2, top: screen.y - PIN_SIZE / 2, width: PIN_LABEL_WIDTH, alignItems: 'center' }}
       >
-        {highlighted ? (
-          <View style={{ position: 'absolute', top: -14, left: 0, right: 0, alignItems: 'center' }}>
-            <Icon name="arrowDown" size={16} color={HIGHLIGHT_RED} />
-          </View>
-        ) : null}
-        <IconBadge
-          icon={display.icon}
-          fill="#FFFBF8"
-          size={PIN_SIZE}
-          borderColor={highlighted ? HIGHLIGHT_RED : selected ? SELECTED_BORDER : undefined}
-          borderWidth={highlighted ? 2.5 : 1.5}
-        />
+{highlighted ? (
+          <>
+            {/* Halo au sol, centré sur le point désigné : ancre le marqueur
+                et le rend lisible même posé sur une pièce très colorée. */}
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', top: PIN_RADIUS - 4.5, left: 0, right: 0, alignItems: 'center' }}
+            >
+              <View style={{ width: 26, height: 9, borderRadius: 13, backgroundColor: 'rgba(21, 145, 234, 0.22)' }} />
+            </View>
+
+            {/* Le marqueur, pointe posée sur le point. */}
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', top: PIN_RADIUS - MARKER_SIZE, left: 0, right: 0, alignItems: 'center' }}
+            >
+              <View style={{ width: MARKER_SIZE, height: MARKER_SIZE, alignItems: 'center' }}>
+                <Icon name="location" size={MARKER_SIZE} color={MARKER_COLOR} />
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: MARKER_SIZE * MARKER_HOLE_TOP_RATIO,
+                    width: MARKER_SIZE * MARKER_HOLE_RATIO,
+                    height: MARKER_SIZE * MARKER_HOLE_RATIO,
+                    borderRadius: (MARKER_SIZE * MARKER_HOLE_RATIO) / 2,
+                    backgroundColor: '#FFFFFF',
+                  }}
+                />
+              </View>
+            </View>
+
+            {/* Réserve la hauteur qu'occupait la pastille, pour que le nom
+                affiché en dessous ne remonte pas quand le marqueur la
+                remplace. */}
+            <View style={{ height: PIN_SIZE }} />
+          </>
+        ) : (
+          <IconBadge
+            icon={display.icon}
+            fill="#FFFBF8"
+            size={PIN_SIZE}
+            borderColor={selected ? SELECTED_BORDER : undefined}
+            borderWidth={1.5}
+          />
+        )}
         {selected || highlighted ? (
           <Text
             numberOfLines={1}

@@ -16,11 +16,13 @@ import {
   useDeletePlanPin,
   usePlan,
   usePlanFormes,
+  usePieceObjectCounts,
   usePlanPins,
   useUpdatePlanForme,
   useUpdatePlanPin,
 } from '../../../src/features/plans/queries';
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
+import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanModeSwitch';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import type { PlanForme } from '../../../src/types/database';
 
@@ -35,6 +37,7 @@ export default function PlanScreen() {
   const { data: formes } = usePlanFormes(id);
   const { data: pieces } = usePieces(plan?.habitation_id ?? '');
   const { data: pins } = usePlanPins(id);
+  const { data: roomCounts } = usePieceObjectCounts(plan?.habitation_id ?? undefined);
   const createForme = useCreatePlanForme(id);
   const updateForme = useUpdatePlanForme(id);
   const deleteForme = useDeletePlanForme(id);
@@ -57,7 +60,15 @@ export default function PlanScreen() {
   // Un visiteur ou un ami en Consultation obtient donc canEdit = false, et
   // l'écran devient un explorateur plutôt qu'un éditeur.
   const { data: permission } = useHabitationPermission(plan?.habitation_id ?? undefined);
-  const canEdit = canModify(permission);
+  const canManage = canModify(permission);
+
+  // LE PLAN S'OUVRE EN LECTURE. C'est le changement d'ergonomie central :
+  // jusqu'ici l'écran était un éditeur en permanence (poignées, glisser,
+  // bouton d'ajout, rappel des gestes), alors qu'on l'ouvre presque toujours
+  // pour répondre à « où est mon truc ? ». Modifier devient un choix
+  // explicite, avec ses propres outils.
+  const [mode, setMode] = useState<PlanMode>('explore');
+  const editing = canManage && mode === 'edit';
 
   const pieceInfo = useMemo(
     () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, color: p.color }])),
@@ -104,7 +115,21 @@ export default function PlanScreen() {
             n'a désormais de sens qu'À L'INTÉRIEUR de la zone du plan
             elle-même (voir PlanCanvas, qui gère son propre zoom/pan borné). */}
         <View className="px-6 pb-2 pt-4">
-          {canEdit ? (
+          {/* Un visiteur ou un ami en Consultation ne voit pas la bascule :
+              lui proposer Modifier serait une promesse que la RLS refuserait. */}
+          {canManage ? (
+            <PlanModeSwitch
+              mode={mode}
+              onChange={(next) => {
+                setMode(next);
+                // Quitter l’édition relâche la sélection : garder une pièce
+                // sélectionnée en lecture laisserait un contour bleu sans
+                // aucune action possible derrière.
+                if (next === 'explore') setSelectedFormeId(null);
+              }}
+            />
+          ) : null}
+          {editing ? (
             <Pressable
               onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
               className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
@@ -115,10 +140,10 @@ export default function PlanScreen() {
           ) : null}
           {/* Le rappel des gestes décrit l'ÉDITION : l'afficher en
               consultation promettrait des actions qui ne répondent pas. */}
-          <Text className="text-xs text-ink-soft">{t(canEdit ? 'plans.canvas_hint' : 'plans.canvas_hint_readonly')}</Text>
+          <Text className="text-xs text-ink-soft">{t(editing ? 'plans.canvas_hint' : 'plans.canvas_hint_readonly')}</Text>
         </View>
 
-        {canEdit && selectedForme?.piece_id ? (
+        {editing && selectedForme?.piece_id ? (
           <UnplacedEmplacementsBar
             pieceId={selectedForme.piece_id}
             pins={pins ?? []}
@@ -136,7 +161,8 @@ export default function PlanScreen() {
             highlightFormeId={highlightFormeId}
             highlightEmplacementId={highlightEmplacementId}
             selectedFormeId={selectedFormeId}
-            readOnly={!canEdit}
+            roomCounts={roomCounts}
+            readOnly={!editing}
             onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
             onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
             onSelect={(forme) => setSelectedFormeId(forme.id)}

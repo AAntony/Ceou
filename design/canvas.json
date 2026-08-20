@@ -1,0 +1,36 @@
+{
+  "pages": [
+    { "id": "trouver", "name": "Trouver un objet" },
+    { "id": "creer", "name": "Créer son plan" },
+    { "id": "comparaison", "name": "Avant / après" }
+  ],
+  "artboards": [
+    { "file": "Recherche.dc.html", "page": "trouver", "title": "Localiser — le marqueur", "x": 0, "y": 0, "w": 375, "h": 812 },
+    { "file": "Main.dc.html", "page": "trouver", "title": "Explorer (défaut)", "x": 435, "y": 0, "w": 375, "h": 812 },
+    { "file": "FichePiece.dc.html", "page": "trouver", "title": "Fiche de pièce", "x": 870, "y": 0, "w": 375, "h": 812 },
+
+    { "file": "Demarrer.dc.html", "page": "creer", "title": "Démarrer — pas de page blanche", "x": 0, "y": 0, "w": 375, "h": 812 },
+    { "file": "Modifier.dc.html", "page": "creer", "title": "Modifier — portes au tap", "x": 435, "y": 0, "w": 375, "h": 812 },
+
+    { "file": "Avant.dc.html", "page": "comparaison", "title": "Avant", "x": 0, "y": 0, "w": 375, "h": 620 },
+    { "file": "Apres.dc.html", "page": "comparaison", "title": "Après", "x": 435, "y": 0, "w": 375, "h": 620 }
+  ],
+  "annotations": [
+    {
+      "id": "priorite",
+      "x": 0,
+      "y": -200,
+      "w": 810,
+      "text": "Priorité : localiser un objet.\n\nLe marqueur devient le pin du logo — le « o » de Céoù — au lieu de la petite flèche rouge de 16 px, sans rapport avec l'identité de l'app. Pointe sur le point exact, halo au sol, visible sur n'importe quelle couleur de pièce."
+    },
+    {
+      "id": "creation",
+      "x": 0,
+      "y": -200,
+      "w": 810,
+      "page": "creer",
+      "text": "Priorité : créer sans savoir dessiner.\n\nOn supprime la page blanche (on part d'un logement type), le double-tap (difficile passé un certain âge), et les cotes chiffrées (elles ne veulent rien dire sans échelle). Une porte = un tap sur le mur, rien à régler."
+    }
+  ],
+  "launch": { "view": "canvas", "page": "trouver" }
+}

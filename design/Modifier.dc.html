@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; }
+    a { color: #1591EA; } a:hover { color: #0B5E9E; }
+    .room-name { font-size: 12px; font-weight: 600; fill: #2D2A26; }
+    .chip { font-size: 10px; font-weight: 700; fill: #FFFFFF; }
+  </style>
+</helmet>
+
+<div style="width: 375px; height: 812px; background: #FFFBF8; display: flex; flex-direction: column; overflow: hidden;">
+
+  <div style="height: 56px; background: #FFFBF8; border-bottom: 1px solid rgba(45,42,38,0.1); display: flex; align-items: center; padding: 0 8px; gap: 4px; flex-shrink: 0;">
+    <div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1591EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </div>
+    <div style="font-size: 20px; font-weight: 600; color: #2D2A26; flex-grow: 1;">Rez-de-chaussée</div>
+  </div>
+
+  <div style="padding: 12px 16px 8px; display: flex; gap: 8px; flex-shrink: 0;">
+    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; border: 1px solid rgba(45,42,38,0.1); padding: 10px 0;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6459" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <span style="font-size: 14px; color: #6B6459;">Explorer</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; border: 2px solid #1591EA; background: #D8E8F3; padding: 9px 0;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B5E9E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/></svg>
+      <span style="font-size: 14px; font-weight: 600; color: #0B5E9E;">Modifier</span>
+    </div>
+  </div>
+
+  <div style="padding: 4px 16px 10px; display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 6px; border-radius: 9999px; background: #1591EA; padding: 10px 16px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span style="font-size: 14px; font-weight: 600; color: #FFFFFF;">Pièce</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px; border-radius: 9999px; border: 1px solid rgba(45,42,38,0.12); padding: 9px 16px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6459" stroke-width="2.2" stroke-linecap="round"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>
+      <span style="font-size: 14px; color: #6B6459;">Rangement</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; align-items: center; border-radius: 9999px; border: 1px solid rgba(45,42,38,0.12); padding: 9px 16px;">
+      <span style="font-size: 14px; font-weight: 600; color: #2D2A26;">Terminé</span>
+    </div>
+  </div>
+
+  <!-- Une seule consigne a la fois, ecrite en clair -->
+  <div style="padding: 0 16px 8px; flex-shrink: 0;">
+    <div style="display: flex; align-items: center; gap: 8px; border-radius: 12px; background: #FFF3DA; padding: 10px 12px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E0A93C" stroke-width="2.2" stroke-linecap="round" flex-shrink="0"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.4.3.5.7.5 1.1h6c0-.4.1-.8.5-1.1A6 6 0 0 0 12 3z"/></svg>
+      <span style="font-size: 13px; color: #2D2A26; line-height: 18px;">Touche un mur pour y poser une porte.</span>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; margin: 0 16px 12px; border-radius: 16px; background: #F5EEE6; position: relative; overflow: hidden;">
+    <svg viewBox="0 0 343 470" style="width: 100%; height: 100%; display: block;">
+      <defs>
+        <filter id="floorShadow4" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#2D2A26" flood-opacity="0.13"/>
+        </filter>
+        <pattern id="grid" width="16" height="16" patternUnits="userSpaceOnUse">
+          <path d="M16 0H0v16" fill="none" stroke="#2D2A26" stroke-width="0.5" opacity="0.07"/>
+        </pattern>
+      </defs>
+
+      <!-- Trame visible SEULEMENT en edition : elle montre le magnetisme
+           au lieu de le laisser deviner. -->
+      <rect x="26" y="34" width="291" height="400" rx="4" fill="#FFFFFF" filter="url(#floorShadow4)"/>
+      <rect x="26" y="34" width="291" height="400" fill="url(#grid)"/>
+
+      <g opacity="0.45">
+        <rect x="26" y="284" width="170" height="150" fill="#E8D5C4"/>
+        <rect x="196" y="34" width="121" height="150" fill="#FCE8A8"/>
+        <rect x="196" y="184" width="121" height="140" fill="#F3C6D9"/>
+        <rect x="196" y="324" width="121" height="110" fill="#BEE3DB"/>
+      </g>
+      <rect x="26" y="34" width="170" height="250" fill="#C9E4C5" opacity="0.55"/>
+
+      <g stroke="#2D2A26" stroke-width="3" stroke-linecap="square">
+        <line x1="26" y1="284" x2="196" y2="284"/>
+        <line x1="196" y1="184" x2="317" y2="184"/>
+        <line x1="196" y1="324" x2="317" y2="324"/>
+        <line x1="196" y1="34" x2="196" y2="434"/>
+      </g>
+      <rect x="26" y="34" width="291" height="400" fill="none" stroke="#2D2A26" stroke-width="5"/>
+
+      <!-- Porte deja posee : le mur s'interrompt + arc de debattement.
+           Aucun reglage, aucune poignee : elle se place au point touche. -->
+      <line x1="96" y1="284" x2="140" y2="284" stroke="#FFFFFF" stroke-width="5"/>
+      <path d="M96 284 A44 44 0 0 0 140 284" fill="none" stroke="#6B6459" stroke-width="1.4" stroke-dasharray="3 3"/>
+
+      <!-- Guides d'alignement pendant le geste -->
+      <g stroke="#1591EA" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.85">
+        <line x1="196" y1="14" x2="196" y2="454"/>
+        <line x1="12" y1="284" x2="331" y2="284"/>
+      </g>
+
+      <text class="room-name" x="111" y="364" text-anchor="middle">Entrée</text>
+      <text class="room-name" x="256" y="114" text-anchor="middle">Cuisine</text>
+      <text class="room-name" x="256" y="258" text-anchor="middle">Chambre</text>
+      <text class="room-name" x="256" y="384" text-anchor="middle">Salle de bain</text>
+
+      <rect x="26" y="34" width="170" height="250" fill="none" stroke="#1591EA" stroke-width="4"/>
+      <text class="room-name" x="111" y="164" text-anchor="middle">Séjour</text>
+
+      <!-- Points d'ajout de porte sur les murs de la piece selectionnee :
+           une cible visible, donc decouvrable, plutot qu'un geste a deviner. -->
+      <g opacity="0.85">
+        <circle cx="196" cy="150" r="12" fill="#FFFFFF" stroke="#1591EA" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M196 145v10M191 150h10" stroke="#1591EA" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="111" cy="34" r="12" fill="#FFFFFF" stroke="#1591EA" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M111 29v10M106 34h10" stroke="#1591EA" stroke-width="2.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Poignees de redimensionnement : grosses cibles (44px reels),
+           pas les petits points d'aujourd'hui. -->
+      <g>
+        <circle cx="26" cy="34" r="14" fill="#FFFFFF" stroke="#1591EA" stroke-width="4"/>
+        <circle cx="196" cy="34" r="14" fill="#FFFFFF" stroke="#1591EA" stroke-width="4"/>
+        <circle cx="26" cy="284" r="14" fill="#FFFFFF" stroke="#1591EA" stroke-width="4"/>
+        <circle cx="196" cy="284" r="14" fill="#FFFFFF" stroke="#1591EA" stroke-width="4"/>
+      </g>
+
+      <!-- Confirmation du magnetisme, sans chiffre : "collé" dit ce qui
+           compte, une cote en unites brutes ne dirait rien a personne. -->
+      <rect x="206" y="270" width="58" height="20" rx="10" fill="#1591EA"/>
+      <text class="chip" x="235" y="284" text-anchor="middle">Collé</text>
+    </svg>
+  </div>
+
+  <div style="margin: 0 16px 20px; background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(45,42,38,0.1); box-shadow: 0 2px 12px rgba(45,42,38,0.1); padding: 12px 14px; display: flex; align-items: center; gap: 10px;">
+    <div style="width: 34px; height: 34px; border-radius: 10px; background: #DBF7F4; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#219488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+    </div>
+    <div style="flex-grow: 1;">
+      <div style="font-size: 15px; font-weight: 600; color: #2D2A26;">Séjour</div>
+      <div style="font-size: 12px; color: #6B6459;">Pièce associée</div>
+    </div>
+    <div style="width: 40px; height: 40px; border-radius: 9999px; border: 1px solid rgba(45,42,38,0.12); display: flex; align-items: center; justify-content: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B6459" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17v3z"/></svg>
+    </div>
+    <div style="width: 40px; height: 40px; border-radius: 9999px; border: 1px solid rgba(220,38,38,0.35); display: flex; align-items: center; justify-content: center;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

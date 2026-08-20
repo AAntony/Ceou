@@ -31,9 +31,28 @@ export const MAX_ZOOM = 3;
 // Fond de la zone déplaçable (en dehors de la feuille), volontairement plus
 // sombre/saturé que la feuille elle-même pour qu'on distingue au premier
 // coup d'œil "dans la zone utile" de "en dehors".
-export const CANVAS_BACKGROUND = '#E4DED2';
-export const ARTBOARD_BACKGROUND = '#FFFDFA';
-export const ARTBOARD_BORDER = '#B8AF9C';
+export const CANVAS_BACKGROUND = '#F5EEE6';
+export const ARTBOARD_BACKGROUND = '#FFFFFF';
+export const ARTBOARD_BORDER = '#E4DCCF';
+
+// === Murs =================================================================
+// Le defaut le plus visible de l'ancien rendu : une piece etait un aplat
+// pastel avec un contour de 2px de sa propre couleur assombrie. Deux pieces
+// accolees produisaient donc DEUX contours cote a cote -- une couture, pas
+// une cloison -- et le remplissage d'une piece dessinee plus tard pouvait
+// recouvrir le contour de sa voisine.
+//
+// Desormais : un seul trait a l'encre, epais, identique pour toutes les
+// pieces, et dessine EN DERNIER (voir les trois passes de PlanCanvas). Deux
+// pieces accolees posent leur trait exactement au meme endroit : les deux se
+// superposent et se lisent comme un mur unique.
+export const WALL_COLOR = '#2D2A26';
+export const WALL_WIDTH = 4;
+
+// La couleur de la piece passe en TEINTE plutot qu'en aplat : c'est la
+// structure (les murs) qui porte le contraste, la couleur ne sert plus qu'a
+// distinguer les pieces entre elles.
+export const ROOM_FILL_OPACITY = 0.5;
 
 // Surlignage "Voir sur le plan" côté pièce : contour vert plus épais,
 // suffisamment saturé pour rester lisible sur n'importe quelle couleur de

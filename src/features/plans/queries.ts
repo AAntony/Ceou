@@ -200,3 +200,21 @@ export function useDeletePlanPin(planId: string) {
   });
 }
 
+
+// Nombre d'objets par Pièce, pour l'afficher sur le plan.
+//
+// Une seule requête pour toute l'habitation, pas une par pièce : le plan les
+// affiche toutes en même temps. Voir la migration piece_object_counts, qui
+// remonte aussi les objets rangés dans des conteneurs imbriqués.
+export function usePieceObjectCounts(habitationId: string | undefined) {
+  return useQuery({
+    queryKey: ['pieceObjectCounts', habitationId],
+    enabled: !!habitationId,
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.rpc('piece_object_counts', { p_habitation_id: habitationId as string });
+      if (error) throw error;
+      const rows = (data ?? []) as { piece_id: string; objet_count: number }[];
+      return Object.fromEntries(rows.map((row) => [row.piece_id, Number(row.objet_count)]));
+    },
+  });
+}

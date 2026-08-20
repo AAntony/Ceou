@@ -415,6 +415,8 @@
       "remove": "Retirer du plan"
     },
     "section_label": "Plans",
-    "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule."
+    "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule.",
+    "mode_explore": "Explorer",
+    "mode_edit": "Modifier"
   }
 }

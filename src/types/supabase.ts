@@ -788,6 +788,10 @@ export type Database = {
         }[]
       }
       piece_habitation: { Args: { p_piece_id: string }; Returns: string }
+      piece_object_counts: {
+        Args: { p_habitation_id: string }
+        Returns: { piece_id: string; objet_count: number }[]
+      }
       plan_habitation: { Args: { p_plan_id: string }; Returns: string }
       redeem_share_invite: { Args: { p_code: string }; Returns: Json }
       remove_friend: { Args: { p_friend_user_id: string }; Returns: undefined }

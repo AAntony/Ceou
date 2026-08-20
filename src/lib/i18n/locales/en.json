@@ -415,6 +415,8 @@
       "remove": "Remove from plan"
     },
     "section_label": "Plans",
-    "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only."
+    "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only.",
+    "mode_explore": "Explore",
+    "mode_edit": "Edit"
   }
 }

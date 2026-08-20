@@ -13,7 +13,9 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   roomColorForForme,
-  shade,
+  ROOM_FILL_OPACITY,
+  WALL_COLOR,
+  WALL_WIDTH,
   WORLD_HEIGHT,
   WORLD_WIDTH,
 } from './constants';
@@ -100,6 +102,9 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
+  /** Nombre d'objets par Pièce — une pièce qui n'annonce pas son contenu ne
+   *  répond pas à la question que le plan est censé aider à résoudre. */
+  roomCounts?: Record<string, number>;
   // Consultation seule : le plan reste explorable (zoom, déplacement de la
   // vue, lecture des noms et des pastilles) mais plus rien n'est modifiable.
   // Sans ça, un ami en Consultation ou un visiteur pouvait glisser une pièce
@@ -133,6 +138,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDeselect,
     onPinDragEnd,
     onPinTap,
+    roomCounts,
     readOnly = false,
   },
   ref,
@@ -160,8 +166,21 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   const font = useMemo(() => {
     try {
       return matchFont({
-        fontFamily: Platform.select({ android: 'sans-serif', ios: 'Helvetica', default: 'sans-serif' }),
+        fontFamily: Platform.select({ android: 'sans-serif-medium', ios: 'Helvetica', default: 'sans-serif' }),
         fontSize: 12,
+      });
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Seconde police pour le nombre d'objets : plus petite et plus discrète que
+  // le nom, pour que la hiérarchie se lise sans couleur supplémentaire.
+  const countFont = useMemo(() => {
+    try {
+      return matchFont({
+        fontFamily: Platform.select({ android: 'sans-serif', ios: 'Helvetica', default: 'sans-serif' }),
+        fontSize: 9,
       });
     } catch {
       return null;
@@ -416,6 +435,32 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     [formes, selectedFormeId],
   );
 
+  // Tout ce dont les quatre passes de dessin ont besoin, resolu UNE fois :
+  // les passes parcourent la meme liste, il serait absurde de recalculer la
+  // couleur et le libelle de chaque piece a chacune.
+  //
+  // Couleur : une forme associee a une Piece prend la couleur de CETTE Piece
+  // (meme repli DEFAULT_PIECE_COLOR que la liste des Pieces d une Habitation
+  // — c est un attribut de la Piece, pas du Plan). Une forme non associee n a
+  // pas de Piece dont heriter : elle garde son repli par hash pour rester
+  // visuellement distincte de ses voisines.
+  const roomVisuals = useMemo(
+    () =>
+      sortedFormes.map((forme) => {
+        const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
+        return {
+          id: forme.id,
+          geo: geoById[forme.id],
+          color: forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id),
+          label: info?.name ?? "",
+          count: forme.piece_id ? (roomCounts?.[forme.piece_id] ?? null) : null,
+          selected: forme.id === selectedFormeId,
+          highlighted: forme.id === highlightFormeId,
+        };
+      }),
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId],
+  );
+
   return (
     <View
       style={{ flex: 1, overflow: 'hidden', backgroundColor: CANVAS_BACKGROUND }}
@@ -456,29 +501,72 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   voie enfin où s'arrête la zone utile. */}
               <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BACKGROUND} style="fill" />
               <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BORDER} style="stroke" strokeWidth={2} />
-              {sortedFormes.map((forme) => {
-                const geo = geoById[forme.id];
-                const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
-                // Une forme associée à une Pièce affiche la couleur de CETTE
-                // Pièce (même repli que la liste des Pièces d'une Habitation,
-                // DEFAULT_PIECE_COLOR — la couleur doit être identique aux
-                // deux endroits, c'est un attribut de la Pièce, pas du Plan).
-                // Une forme non associée n'a pas de Pièce dont hériter une
-                // couleur : elle garde son repli automatique par hash pour
-                // rester visuellement distincte de ses voisines.
-                const roomColor = forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
-                return (
-                  <RoomVisual
-                    key={forme.id}
-                    geo={geo}
-                    color={roomColor}
-                    label={info?.name ?? ''}
-                    font={font}
-                    highlighted={forme.id === highlightFormeId}
-                    selected={forme.id === selectedFormeId}
+              {/* TROIS PASSES, et c'est le changement structurant du rendu.
+                  Avant, chaque pièce dessinait son fond PUIS son contour, l'une
+                  après l'autre : le fond d'une pièce dessinée plus tard passait
+                  donc par-dessus le contour de sa voisine, et deux pièces
+                  accolées montraient deux traits côte à côte au lieu d'une
+                  cloison. En séparant les passes, tous les sols sont posés
+                  d'abord, tous les murs ensuite — deux pièces accolées posent
+                  leur mur exactement au même endroit et se lisent comme un
+                  seul trait. */}
+
+              {/* Passe 1 — les sols */}
+              {roomVisuals.map((room) => (
+                <Rect
+                  key={`fill-${room.id}`}
+                  x={room.geo.x}
+                  y={room.geo.y}
+                  width={room.geo.width}
+                  height={room.geo.height}
+                  color={room.color}
+                  opacity={ROOM_FILL_OPACITY}
+                  style="fill"
+                />
+              ))}
+
+              {/* Passe 2 — les murs */}
+              {roomVisuals.map((room) => (
+                <Rect
+                  key={`wall-${room.id}`}
+                  x={room.geo.x}
+                  y={room.geo.y}
+                  width={room.geo.width}
+                  height={room.geo.height}
+                  color={WALL_COLOR}
+                  style="stroke"
+                  strokeWidth={WALL_WIDTH}
+                />
+              ))}
+
+              {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
+                  murs pour ne jamais être coupées par la voisine. */}
+              {roomVisuals.map((room) =>
+                room.selected || room.highlighted ? (
+                  <Rect
+                    key={`state-${room.id}`}
+                    x={room.geo.x}
+                    y={room.geo.y}
+                    width={room.geo.width}
+                    height={room.geo.height}
+                    color={room.selected ? '#1591EA' : HIGHLIGHT_GREEN_BORDER}
+                    style="stroke"
+                    strokeWidth={WALL_WIDTH + 1}
                   />
-                );
-              })}
+                ) : null,
+              )}
+
+              {/* Passe 4 — les libellés, toujours au-dessus */}
+              {roomVisuals.map((room) => (
+                <RoomLabel
+                  key={`label-${room.id}`}
+                  geo={room.geo}
+                  label={room.label}
+                  count={room.count}
+                  font={font}
+                  countFont={countFont}
+                />
+              ))}
             </Canvas>
 
             {formes.map((forme) => {
@@ -543,39 +631,77 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
 // vert et plus épais. `selected` (édition en cours) prend le pas en corail
 // si les deux sont vrais en même temps (cas rare : la pièce surlignée est
 // aussi celle qu'on édite).
-function RoomVisual({
+/**
+ * Largeur réelle d'un texte, pour le centrer POUR DE VRAI.
+ *
+ * L'ancien rendu approximait avec `x = centre - longueur * 3`, ce qui décalait
+ * chaque nom d'autant plus qu'il était long ou court ("Salle de bain" et "WC"
+ * ne tombaient pas au même endroit). Le repli sur cette approximation ne sert
+ * qu'au cas où la police n'expose pas de mesure.
+ */
+function measureWidth(font: SkFont, text: string): number {
+  try {
+    return font.measureText(text).width;
+  } catch {
+    return text.length * 6;
+  }
+}
+
+/**
+ * Nom de la pièce + nombre d'objets, centrés dans la pièce.
+ *
+ * ⚠️ Skia place le `y` d'un Text sur sa LIGNE DE BASE, pas sur son centre.
+ * L'ancien rendu passait le centre vertical de la pièce directement, ce qui
+ * faisait flotter tous les noms trop bas. On remonte donc d'environ un tiers
+ * de la taille de police pour retrouver un centrage optique.
+ */
+function RoomLabel({
   geo,
-  color,
   label,
+  count,
   font,
-  highlighted,
-  selected,
+  countFont,
 }: {
   geo: ShapeGeometry;
-  color: string;
   label: string;
+  count: number | null;
   font: SkFont | null;
-  highlighted: boolean;
-  selected: boolean;
+  countFont: SkFont | null;
 }) {
-  const borderColor = shade(color, 0.25);
+  if (!label || !font) return null;
+
   const centerX = geo.x + geo.width / 2;
   const centerY = geo.y + geo.height / 2;
+  const hasCount = count !== null && countFont !== null;
+
+  // Avec un compte, le bloc fait deux lignes : on remonte le nom pour que
+  // l'ENSEMBLE reste centré, plutôt que le nom seul.
+  const nameBaseline = hasCount ? centerY : centerY + 4;
 
   return (
     <>
-      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={color} style="fill" />
-      <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={borderColor} style="stroke" strokeWidth={2} />
-      {selected ? (
-        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color="#1591EA" style="stroke" strokeWidth={3} />
-      ) : highlighted ? (
-        <Rect x={geo.x} y={geo.y} width={geo.width} height={geo.height} color={HIGHLIGHT_GREEN_BORDER} style="stroke" strokeWidth={4} />
-      ) : null}
-      {label && font ? (
-        <SkiaText x={centerX - label.length * 3} y={centerY} text={label} font={font} color="#2D2A26" />
+      <SkiaText
+        x={centerX - measureWidth(font, label) / 2}
+        y={nameBaseline}
+        text={label}
+        font={font}
+        color="#2D2A26"
+      />
+      {hasCount && countFont ? (
+        <SkiaText
+          x={centerX - measureWidth(countFont, formatCount(count)) / 2}
+          y={centerY + 13}
+          text={formatCount(count)}
+          font={countFont}
+          color="#6B6459"
+        />
       ) : null}
     </>
   );
+}
+
+function formatCount(count: number): string {
+  return count === 1 ? '1 objet' : `${count} objets`;
 }
 
 // Déplacement (tout le corps de la forme, uniquement quand sélectionnée) +
