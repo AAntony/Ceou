@@ -52,9 +52,20 @@ export default function LoginScreen() {
           textClassName="text-center text-sm text-ink-soft"
         />
 
+        {/* Seule porte d'entrée sans compte. Placée AVANT l'inscription :
+            un visiteur qui vient de scanner le QR d'un hôte n'a aucune raison
+            de créer un compte, et c'est précisément ce qu'il ferait s'il ne
+            trouvait que « S'inscrire » sur cet écran. */}
+        <TextLink
+          href="/guest-invite"
+          label={t('guest.entry')}
+          className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+          textClassName="text-center text-sm font-semibold text-ink"
+        />
+
         {/* items-center : le lien a désormais une hauteur de cible minimale,
             sans quoi le texte voisin s'étirerait et se décalerait vers le haut. */}
-        <View className="mt-8 flex-row items-center justify-center gap-1">
+        <View className="mt-6 flex-row items-center justify-center gap-1">
           <Text className="text-sm text-ink-soft">{t('auth.login.no_account')}</Text>
           <TextLink
             href="/(auth)/sign-up"

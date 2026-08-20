@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../auth/SessionProvider';
 import { deleteRow, selectMany } from '../../lib/supabase/crud';
+import { inviteWebUrl } from '../../lib/links';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission, Habitation, HabitationPermission, LocationType, ShareInvite } from '../../types/database';
 
@@ -100,16 +101,41 @@ export function formatFriendCodeQrValue(code: string): string {
   return `${FRIEND_QR_PREFIX}${code}`;
 }
 
+// Une invitation encode désormais une URL https et non plus la chaîne brute
+// `ceou:invite:CODE`. Raison : l'appareil photo natif d'un téléphone ne sait
+// rien faire d'un schéma inconnu, et une invitation est justement destinée à
+// quelqu'un qui n'a PAS encore l'app — il voyait du texte incompréhensible.
+// Le code ami, lui, garde sa forme brute : il ne s'échange qu'entre deux
+// personnes qui ont déjà l'app, donc toujours via le scanner intégré.
 export function formatInviteQrValue(code: string): string {
-  return `${INVITE_QR_PREFIX}${code}`;
+  return inviteWebUrl(code);
 }
 
 export type ParsedScannedCode = { type: 'friend'; code: string } | { type: 'invite'; code: string } | { type: 'unknown' };
 
 export function parseScannedCode(raw: string): ParsedScannedCode {
-  if (raw.startsWith(FRIEND_QR_PREFIX)) return { type: 'friend', code: raw.slice(FRIEND_QR_PREFIX.length) };
-  if (raw.startsWith(INVITE_QR_PREFIX)) return { type: 'invite', code: raw.slice(INVITE_QR_PREFIX.length) };
+  const trimmed = raw.trim();
+  if (trimmed.startsWith(FRIEND_QR_PREFIX)) return { type: 'friend', code: trimmed.slice(FRIEND_QR_PREFIX.length) };
+  // Forme historique, toujours acceptée : des QR déjà imprimés ou partagés
+  // avant la bascule vers l'URL continuent de fonctionner.
+  if (trimmed.startsWith(INVITE_QR_PREFIX)) return { type: 'invite', code: trimmed.slice(INVITE_QR_PREFIX.length) };
+
+  const fromUrl = inviteCodeFromUrl(trimmed);
+  if (fromUrl) return { type: 'invite', code: fromUrl };
+
   return { type: 'unknown' };
+}
+
+// Accepte aussi bien l'URL web (`https://.../?invite=CODE`) que le lien
+// profond (`ceou://invite?code=CODE`) : le scanner intégré, l'appareil photo
+// natif et le bouton de la page web produisent ces trois formes.
+export function inviteCodeFromUrl(raw: string): string | null {
+  try {
+    const url = new URL(raw);
+    return url.searchParams.get('invite') ?? url.searchParams.get('code');
+  } catch {
+    return null;
+  }
 }
 
 // === Amis =================================================================
@@ -369,20 +395,125 @@ export function useHabitationsSharedByFriend(friendUserId: string | undefined) {
 
 // === Invitations (Partager mon code / Inviter un invité) ================
 
+export type ShareInviteOptions = {
+  habitationIds: string[];
+  permission: HabitationPermission;
+  targetType: 'friend' | 'guest';
+  // null = illimité / n'expire jamais. Le serveur force ces deux valeurs à
+  // (1, +7 jours) pour une invitation d'ami, quoi qu'envoie le client.
+  maxUses: number | null;
+  expiresAt: string | null;
+  label: string | null;
+};
+
 export function useCreateShareInvite() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: {
-      habitationIds: string[];
-      permission: HabitationPermission;
-      targetType: 'friend' | 'guest';
-    }): Promise<ShareInvite> => {
+    mutationFn: async (input: ShareInviteOptions): Promise<ShareInvite> => {
       const { data, error } = await supabase.rpc('create_share_invite', {
         p_habitation_ids: input.habitationIds,
         p_permission: input.permission,
         p_target_type: input.targetType,
+        p_max_uses: input.maxUses,
+        p_expires_at: input.expiresAt,
+        p_label: input.label,
       });
       if (error) throw error;
       return data as ShareInvite;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myShareInvites'] }),
+  });
+}
+
+// === Gestion des codes par leur propriétaire ============================
+
+export type ShareInviteEntry = {
+  id: string;
+  code: string;
+  label: string | null;
+  targetType: 'friend' | 'guest';
+  permission: HabitationPermission;
+  habitationIds: string[];
+  habitationNames: string[];
+  maxUses: number | null;
+  useCount: number;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
+type ShareInviteRow = {
+  id: string;
+  code: string;
+  label: string | null;
+  target_type: 'friend' | 'guest';
+  permission: HabitationPermission;
+  habitation_ids: string[];
+  habitation_names: string[];
+  max_uses: number | null;
+  use_count: number;
+  expires_at: string | null;
+  created_at: string;
+};
+
+export function useMyShareInvites() {
+  return useQuery({
+    queryKey: ['myShareInvites'],
+    queryFn: async (): Promise<ShareInviteEntry[]> => {
+      const { data, error } = await supabase.rpc('list_my_share_invites');
+      if (error) throw error;
+      return ((data ?? []) as ShareInviteRow[]).map((row) => ({
+        id: row.id,
+        code: row.code,
+        label: row.label,
+        targetType: row.target_type,
+        permission: row.permission,
+        habitationIds: row.habitation_ids ?? [],
+        habitationNames: row.habitation_names ?? [],
+        maxUses: row.max_uses,
+        useCount: row.use_count,
+        expiresAt: row.expires_at,
+        createdAt: row.created_at,
+      }));
+    },
+  });
+}
+
+export function useUpdateShareInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      inviteId: string;
+      maxUses: number | null;
+      expiresAt: string | null;
+      resetUses: boolean;
+      label: string | null;
+    }): Promise<ShareInvite> => {
+      const { data, error } = await supabase.rpc('update_share_invite', {
+        p_invite_id: input.inviteId,
+        p_max_uses: input.maxUses,
+        p_expires_at: input.expiresAt,
+        p_reset_uses: input.resetUses,
+        p_label: input.label,
+      });
+      if (error) throw error;
+      return data as ShareInvite;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myShareInvites'] }),
+  });
+}
+
+// Suppression directe : la policy share_invites_delete (created_by =
+// auth.uid()) suffit, pas besoin d'une RPC. L'effet de bord est VOULU et
+// central au modèle « l'accès suit le code » — supprimer la ligne emporte en
+// cascade share_invite_redemptions, donc coupe instantanément l'accès de tous
+// les visiteurs entrés par ce code.
+export function useDeleteShareInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => deleteRow('share_invites', inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myShareInvites'] });
+      queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
     },
   });
 }

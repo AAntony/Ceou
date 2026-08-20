@@ -130,6 +130,17 @@ export default function ProfileScreen() {
         <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
       </View>
 
+      {/* Nécessaire dès lors qu'un code peut être permanent et multi-usage :
+          un code éphémère à usage unique se gérait tout seul en expirant, un
+          QR laissé affiché dans un logement demande de pouvoir savoir qui
+          l'a utilisé et de le couper. */}
+      <TextLink
+        href="/invites"
+        label={t('invites.entry')}
+        className="mt-3 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        textClassName="text-sm font-semibold text-ink"
+      />
+
       {/* Adresse, mot de passe et suppression vivent sur un écran à part :
           cet écran-ci porte l'identité PUBLIQUE (nom affiché, avatar, code
           ami, langue), pas les clés d'accès. */}

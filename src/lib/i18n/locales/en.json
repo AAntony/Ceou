@@ -93,6 +93,24 @@
       "wrong_password": "Incorrect password."
     }
   },
+  "guest": {
+    "entry": "I have an invitation code",
+    "title": "Invitation code",
+    "description": "Enter the code your host gave you. No account needed: you go straight to what they shared.",
+    "code_label": "Code",
+    "submit": "Enter",
+    "joining": "Opening access…",
+    "no_account_note": "You enter in view-only mode: you can browse everything, but change nothing.",
+    "back_to_login": "I already have an account",
+    "banner": "Guest mode — view only. You see what was shared with you.",
+    "errors": {
+      "not_found": "This code does not exist. Check what you typed.",
+      "expired": "This code has expired. Ask your host for a new one.",
+      "exhausted": "This code has reached its maximum number of uses.",
+      "own_invite": "This is your own code.",
+      "friend_code": "This code is a friend invitation: it requires an account. Create one to use it."
+    }
+  },
   "profile": {
     "title": "Profile",
     "display_name": "Display name",
@@ -143,7 +161,8 @@
       "error_invite_not_found": "This invite doesn't exist or is no longer valid.",
       "error_invite_redeemed": "This invite has already been used.",
       "error_invite_expired": "This invite has expired.",
-      "error_own_invite": "You can't use your own invite."
+      "error_own_invite": "You can't use your own invite.",
+      "error_invite_exhausted": "This code has reached its maximum number of uses."
     },
     "scan_hint": "Point at the QR code",
     "requests": {
@@ -179,8 +198,41 @@
       "result_title": "Ready to share",
       "expires_hint": "This code expires in 7 days if unused.",
       "share_button": "Share",
-      "share_message": "Join me on Ceou! Use this code in the app: {{code}}"
+      "share_message": "Join me on Ceou! Use this code in the app: {{code}}",
+      "validity": "Code validity",
+      "validity_limited": "Limited",
+      "validity_permanent": "Permanent",
+      "permanent_note": "The code stays valid indefinitely and can be used by as many guests as you like. You can delete it any time from \"My invitation codes\".",
+      "max_uses": "Uses",
+      "duration_days": "Valid for (days)",
+      "label_optional": "Code name (optional)",
+      "label_placeholder": "July tenants",
+      "share_message_guest": "I am sharing access to my place on Ceou. Open this link: {{url}} (code: {{code}})"
     }
+  },
+  "invites": {
+    "entry": "My invitation codes",
+    "title": "My invitation codes",
+    "intro": "Each code grants view-only access to the chosen homes. Deleting a code immediately cuts off access for everyone who used it.",
+    "untitled": "Untitled",
+    "badge_guest": "Guest",
+    "badge_friend": "Friend",
+    "uses_unlimited": "{{used}} use(s) — unlimited",
+    "uses_limited": "{{used}} / {{max}} use(s)",
+    "exhausted": "no slots left",
+    "never_expires": "Never expires",
+    "expired": "Expired — access cut off",
+    "expires_on": "Expires on {{date}}",
+    "show_qr": "QR / share",
+    "renew": "Renew",
+    "renew_title": "Renew this code",
+    "renew_body": "Extend the code validity. Since access follows the code, this also restores access for guests who already came in.",
+    "reset_uses": "Reset the counter (reopens the code to new guests)",
+    "delete_title": "Delete this code?",
+    "delete_body_used": "{{used}} person(s) came in with this code. Deleting it cuts their access immediately. This cannot be undone.",
+    "delete_body_unused": "This code has never been used. This cannot be undone.",
+    "empty_title": "No codes yet",
+    "empty_subtitle": "Generate one from \"Share my code\" to give access to a home."
   },
   "inventory": {
     "habitations": {

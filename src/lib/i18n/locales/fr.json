@@ -93,6 +93,24 @@
       "wrong_password": "Mot de passe incorrect."
     }
   },
+  "guest": {
+    "entry": "J'ai un code d'invitation",
+    "title": "Code d’invitation",
+    "description": "Saisis le code que ton hôte t’a transmis. Pas besoin de créer de compte : tu accèdes directement à ce qu’il a partagé.",
+    "code_label": "Code",
+    "submit": "Entrer",
+    "joining": "Ouverture de l’accès…",
+    "no_account_note": "Tu entres en consultation seule : tu peux tout parcourir, mais rien modifier ni ajouter.",
+    "back_to_login": "J’ai déjà un compte",
+    "banner": "Mode invité — consultation seule. Tu vois ce qui t’a été partagé.",
+    "errors": {
+      "not_found": "Ce code n’existe pas. Vérifie la saisie.",
+      "expired": "Ce code a expiré. Demande-en un nouveau à ton hôte.",
+      "exhausted": "Ce code a atteint son nombre maximum d’utilisations.",
+      "own_invite": "C’est ton propre code.",
+      "friend_code": "Ce code est une invitation entre amis : il demande un compte. Crée-en un pour l’utiliser."
+    }
+  },
   "profile": {
     "title": "Profil",
     "display_name": "Nom affiché",
@@ -143,7 +161,8 @@
       "error_invite_not_found": "Cette invitation n'existe pas ou plus.",
       "error_invite_redeemed": "Cette invitation a déjà été utilisée.",
       "error_invite_expired": "Cette invitation a expiré.",
-      "error_own_invite": "Tu ne peux pas utiliser ta propre invitation."
+      "error_own_invite": "Tu ne peux pas utiliser ta propre invitation.",
+      "error_invite_exhausted": "Ce code a atteint son nombre maximum d’utilisations."
     },
     "scan_hint": "Vise le QR code",
     "requests": {
@@ -179,8 +198,41 @@
       "result_title": "Prêt à partager",
       "expires_hint": "Ce code expire dans 7 jours s'il n'est pas utilisé.",
       "share_button": "Partager",
-      "share_message": "Rejoins-moi sur Céoù ! Utilise ce code dans l'app : {{code}}"
+      "share_message": "Rejoins-moi sur Céoù ! Utilise ce code dans l'app : {{code}}",
+      "validity": "Validité du code",
+      "validity_limited": "Limité",
+      "validity_permanent": "Permanent",
+      "permanent_note": "Le code reste valable indéfiniment et peut servir à autant de visiteurs que tu veux. Tu pourras le supprimer à tout moment depuis « Mes codes d’invitation ».",
+      "max_uses": "Utilisations",
+      "duration_days": "Valable (jours)",
+      "label_optional": "Nom du code (facultatif)",
+      "label_placeholder": "Locataires de juillet",
+      "share_message_guest": "Je te partage un accès à mon logement sur Céoù. Ouvre ce lien : {{url}} (code : {{code}})"
     }
+  },
+  "invites": {
+    "entry": "Mes codes d’invitation",
+    "title": "Mes codes d’invitation",
+    "intro": "Chaque code donne accès en consultation aux habitations choisies. Supprimer un code coupe immédiatement l’accès de ceux qui l’ont utilisé.",
+    "untitled": "Sans nom",
+    "badge_guest": "Invité",
+    "badge_friend": "Ami",
+    "uses_unlimited": "{{used}} utilisation(s) — illimité",
+    "uses_limited": "{{used}} / {{max}} utilisation(s)",
+    "exhausted": "plus de place",
+    "never_expires": "N’expire jamais",
+    "expired": "Expiré — les accès sont coupés",
+    "expires_on": "Expire le {{date}}",
+    "show_qr": "QR / partager",
+    "renew": "Renouveler",
+    "renew_title": "Renouveler ce code",
+    "renew_body": "Prolonge la validité du code. Comme l’accès suit le code, cela rend aussi l’accès aux visiteurs déjà entrés.",
+    "reset_uses": "Remettre le compteur à zéro (rouvre le code à de nouveaux visiteurs)",
+    "delete_title": "Supprimer ce code ?",
+    "delete_body_used": "{{used}} personne(s) sont entrées avec ce code. Les supprimer leur coupe l’accès immédiatement. Cette action est définitive.",
+    "delete_body_unused": "Ce code n’a jamais été utilisé. Cette action est définitive.",
+    "empty_title": "Aucun code pour l’instant",
+    "empty_subtitle": "Génère un code depuis « Partager mon code » pour donner accès à une habitation."
   },
   "inventory": {
     "habitations": {

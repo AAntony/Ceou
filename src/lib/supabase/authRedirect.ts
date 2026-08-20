@@ -1,4 +1,5 @@
 import type { SupportedLanguage } from '../i18n';
+import { CEOU_WEB_BASE } from '../links';
 
 // Destination des liens contenus dans les e-mails d'authentification.
 //
@@ -20,7 +21,6 @@ import type { SupportedLanguage } from '../i18n';
 // silence. L'URL doit tout de même figurer dans la liste blanche de
 // redirection du projet Supabase — Auth refuse tout `redirect_to` non
 // autorisé.
-const WELCOME_URL = 'https://aantony.github.io/Ceou/';
 
 export type AuthEmailFlow = 'signup' | 'recovery' | 'email_change';
 
@@ -28,5 +28,5 @@ export function authRedirectUrl(flow: AuthEmailFlow, language: string): string {
   // `i18n.language` peut valoir « fr-FR » ; la page n'en connaît que le
   // préfixe, et retombe de toute façon sur le français pour tout le reste.
   const lang: SupportedLanguage = language.toLowerCase().startsWith('en') ? 'en' : 'fr';
-  return `${WELCOME_URL}?flow=${flow}&lang=${lang}`;
+  return `${CEOU_WEB_BASE}?flow=${flow}&lang=${lang}`;
 }

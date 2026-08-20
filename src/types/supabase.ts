@@ -585,42 +585,51 @@ export type Database = {
         }
         Relationships: []
       }
+      share_invite_redemptions: {
+        Row: { id: string; invite_id: string; redeemed_at: string; user_id: string }
+        Insert: { id?: string; invite_id: string; redeemed_at?: string; user_id: string }
+        Update: { id?: string; invite_id?: string; redeemed_at?: string; user_id?: string }
+        Relationships: []
+      }
       share_invites: {
         Row: {
           code: string
           created_at: string
           created_by: string
-          expires_at: string
+          expires_at: string | null
           habitation_ids: string[]
           id: string
+          label: string | null
+          max_uses: number | null
           permission: string
-          redeemed_at: string | null
-          redeemed_by: string | null
           target_type: string
+          use_count: number
         }
         Insert: {
           code: string
           created_at?: string
           created_by: string
-          expires_at?: string
+          expires_at?: string | null
           habitation_ids: string[]
           id?: string
+          label?: string | null
+          max_uses?: number | null
           permission: string
-          redeemed_at?: string | null
-          redeemed_by?: string | null
           target_type: string
+          use_count?: number
         }
         Update: {
           code?: string
           created_at?: string
           created_by?: string
-          expires_at?: string
+          expires_at?: string | null
           habitation_ids?: string[]
           id?: string
+          label?: string | null
+          max_uses?: number | null
           permission?: string
-          redeemed_at?: string | null
-          redeemed_by?: string | null
           target_type?: string
+          use_count?: number
         }
         Relationships: []
       }
@@ -645,23 +654,65 @@ export type Database = {
         Args: { p_conteneur_id: string }
         Returns: string
       }
-      create_share_invite: {
+      list_my_share_invites: {
+        Args: Record<string, never>
+        Returns: {
+          id: string
+          code: string
+          label: string | null
+          target_type: string
+          permission: string
+          habitation_ids: string[]
+          habitation_names: string[]
+          max_uses: number | null
+          use_count: number
+          expires_at: string | null
+          created_at: string
+        }[]
+      }
+      update_share_invite: {
         Args: {
-          p_habitation_ids: string[]
-          p_permission: string
-          p_target_type: string
+          p_invite_id: string
+          p_max_uses: number | null
+          p_expires_at: string | null
+          p_reset_uses?: boolean
+          p_label?: string | null
         }
         Returns: {
           code: string
           created_at: string
           created_by: string
-          expires_at: string
+          expires_at: string | null
           habitation_ids: string[]
           id: string
+          label: string | null
+          max_uses: number | null
           permission: string
-          redeemed_at: string | null
-          redeemed_by: string | null
           target_type: string
+          use_count: number
+        }
+      }
+      create_share_invite: {
+        Args: {
+          p_habitation_ids: string[]
+          p_permission: string
+          p_target_type: string
+          p_max_uses?: number | null
+          p_expires_at?: string | null
+          p_label?: string | null
+        }
+        Returns: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          habitation_ids: string[]
+          id: string
+          label: string | null
+          max_uses: number | null
+          permission: string
+          target_type: string
+          use_count: number
         }
         SetofOptions: {
           from: "*"

@@ -5,6 +5,7 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { parseScannedCode, useRedeemShareInvite, useSendFriendRequest } from './queries';
+import { rpcErrorCode } from './rpcError';
 import { QrScanner } from './QrScanner';
 
 type AddFriendModalProps = {
@@ -22,20 +23,15 @@ const ERROR_KEYS: Record<string, string> = {
   invite_not_found: 'friends.add.error_invite_not_found',
   invite_already_redeemed: 'friends.add.error_invite_redeemed',
   invite_expired: 'friends.add.error_invite_expired',
+  invite_exhausted: 'friends.add.error_invite_exhausted',
   cannot_redeem_own_invite: 'friends.add.error_own_invite',
 };
 
-// `instanceof Error` ne suffit PAS ici : confirmé en test réel que l'objet
-// d'erreur renvoyé par supabase-js pour un RPC en échec n'est PAS reconnu
-// comme une instance d'Error au runtime (raison exacte non élucidée —
-// possiblement une frontière de bundle/realm), alors que `.message` existe
-// bel et bien dessus. Résultat observé avant ce correctif : TOUTE erreur
-// RPC (code introuvable, déjà en contact, auto-ajout...) retombait sur le
-// message générique au lieu du message spécifique correspondant. Test par
-// duck-typing (présence d'un `.message` string) plutôt que par prototype.
+// L'extraction du code d'erreur brut vit maintenant dans rpcError.ts —
+// l'écran d'entrée visiteur en a besoin aussi, et son contournement de
+// duck-typing (documenté là-bas) est trop subtil pour être recopié.
 function friendlyErrorKey(error: unknown): string {
-  const message = typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string' ? error.message : '';
-  return ERROR_KEYS[message] ?? 'common.error_generic';
+  return ERROR_KEYS[rpcErrorCode(error)] ?? 'common.error_generic';
 }
 
 // Deux chemins d'ajout, comme demandé : taper le code ami permanent

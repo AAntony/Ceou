@@ -3,6 +3,7 @@ import { router, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsAnonymous } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/profile/useProfile';
 import { useFriendships } from '../features/sharing/queries';
 import { Icon, type IconName } from './Icon';
@@ -123,6 +124,7 @@ export function AppTabBar() {
   // l'app est ouverte plutôt que de devoir penser à vérifier l'onglet Amis.
   const { data: friendships } = useFriendships();
   const { data: profile } = useProfile();
+  const isGuest = useIsAnonymous();
 
   const pendingIncomingCount = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'incoming').length;
 
@@ -136,7 +138,10 @@ export function AppTabBar() {
   //   simple gêne visuelle.
   // `/plan/` ne capture QUE l'éditeur : la liste des plans est `/plans/`,
   // qui ne correspond pas à ce préfixe (le `s` tombe avant le `/`).
-  if (pathname === '/privacy-policy' || pathname.startsWith('/plan/')) return null;
+  // `/guest-invite` s'ajoute à la liste : l'écran ouvre une session anonyme
+  // en cours de route, si bien que la barre apparaîtrait par-dessus un écran
+  // encore en train de décider où envoyer le visiteur.
+  if (pathname === '/privacy-policy' || pathname === '/guest-invite' || pathname.startsWith('/plan/')) return null;
 
   const onHome = pathname === '/';
   const onHabitations = HABITATION_PREFIXES.some((prefix) => pathname.startsWith(prefix));
@@ -165,13 +170,19 @@ export function AppTabBar() {
           active={onHabitations}
           onPress={() => router.navigate('/habitations')}
         />
-        <TabItem
-          label={t('friends.tab_title')}
-          iconName="friends"
-          active={onFriends}
-          badgeCount={pendingIncomingCount}
-          onPress={() => router.navigate('/friends')}
-        />
+        {/* Un visiteur anonyme n'a pas de vie sociale dans l'app : ni code
+            ami exploitable, ni possibilité d'être ajouté en retour (une
+            session anonyme n'est joignable par personne). L'onglet ne mène
+            qu'à une page vide, autant ne pas le montrer. */}
+        {isGuest ? null : (
+          <TabItem
+            label={t('friends.tab_title')}
+            iconName="friends"
+            active={onFriends}
+            badgeCount={pendingIncomingCount}
+            onPress={() => router.navigate('/friends')}
+          />
+        )}
         <TabItem
           label={t('profile.title')}
           iconName="profile"

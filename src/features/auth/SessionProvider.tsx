@@ -32,3 +32,19 @@ export function SessionProvider({ children }: PropsWithChildren) {
 export function useSession() {
   return useContext(SessionContext);
 }
+
+/**
+ * Vrai quand la session courante est une session ANONYME — un visiteur entré
+ * par code d'invitation, sans compte. Supabase expose `is_anonymous` sur
+ * l'utilisateur du jeton ; c'est la source de vérité, pas une supposition
+ * tirée de l'absence d'e-mail.
+ *
+ * Sert uniquement à ADAPTER L'INTERFACE (masquer ce qui n'a pas de sens pour
+ * un visiteur). La sécurité, elle, est posée côté serveur : la RLS refuse
+ * déjà toute écriture à une session anonyme, indépendamment de ce que
+ * l'interface affiche.
+ */
+export function useIsAnonymous(): boolean {
+  const { session } = useSession();
+  return session?.user.is_anonymous === true;
+}

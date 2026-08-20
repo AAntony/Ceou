@@ -4,6 +4,7 @@ import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-na
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
+import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
@@ -38,6 +39,7 @@ const COLUMN_WRAPPER = { justifyContent: 'space-between' as const };
 
 type HomeHeaderProps = {
   greeting: string;
+  isGuest: boolean;
   searchText: string;
   onSearchTextChange: (text: string) => void;
   voiceSearch: ReturnType<typeof useVoiceSearch>;
@@ -57,6 +59,7 @@ type HomeHeaderProps = {
 // HomeDashboard est ce qui garantit un type stable.
 function HomeHeader({
   greeting,
+  isGuest,
   searchText,
   onSearchTextChange,
   voiceSearch,
@@ -82,6 +85,7 @@ function HomeHeader({
             possible ; le libellé lève le reste du doute. Profil est parti
             dans la barre d'onglets. `shrink-0` : c'est la salutation qui se
             replie sur deux lignes si la place manque, jamais la pastille. */}
+        {isGuest ? null : (
         <Pressable
           onPress={onAddObjet}
           accessibilityRole="button"
@@ -90,7 +94,20 @@ function HomeHeader({
           <Icon name="add" size={18} color="#FFFFFF" />
           <Text className="text-sm font-semibold text-white">{t('home.add_objet')}</Text>
         </Pressable>
+        )}
       </View>
+
+      {/* Bandeau visiteur : dit ce qu'on peut faire, sans promettre autre
+          chose. Un visiteur n'a AUCUNE donnee a lui dans l'app (la RLS lui
+          refuse toute ecriture), donc pas de "cree un compte pour ne rien
+          perdre" ici -- il n'a rien a perdre, et lui dire le contraire
+          serait faux. */}
+      {isGuest ? (
+        <View className="mb-6 flex-row items-center gap-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3">
+          <Icon name="profile" size={18} color="#2EC4B6" />
+          <Text className="flex-1 text-xs leading-4 text-ink-soft">{t('guest.banner')}</Text>
+        </View>
+      ) : null}
 
       {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
           colorée façon maquette n'est pas fiable sur Android (elevation
@@ -228,6 +245,8 @@ export function HomeDashboard() {
     return list;
   }, [entries, trimmedSearch, searchTerms, selectedPiece]);
 
+  const isGuest = useIsAnonymous();
+
   const greeting = profile?.display_name
     ? t('home.greeting', { name: profile.display_name })
     : t('home.greeting_anonymous');
@@ -257,6 +276,7 @@ export function HomeDashboard() {
         ListHeaderComponent={
           <HomeHeader
             greeting={greeting}
+            isGuest={isGuest}
             searchText={searchText}
             onSearchTextChange={setSearchText}
             voiceSearch={voiceSearch}
