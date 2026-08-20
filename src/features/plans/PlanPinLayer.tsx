@@ -22,12 +22,21 @@ import type { ShapeGeometry } from './types';
 // Composé de View + glyphe, jamais de SVG : react-native-svg est absent du
 // projet et son usage planterait l'app (voir le commentaire d'IconBadge).
 const MARKER_COLOR = '#1591EA';
-const MARKER_SIZE = 44;
-// Le glyphe map-marker est plein : cette pastille blanche redessine le trou
-// central, c'est ce qui fait ressembler le marqueur au logo et non à une
-// simple goutte.
-const MARKER_HOLE_RATIO = 0.3;
-const MARKER_HOLE_TOP_RATIO = 0.235;
+const MARKER_ICON_SIZE = 22;
+
+// Le nom de l'Emplacement vit DANS le marqueur, sous le rond blanc.
+//
+// Il était auparavant posé sous la pointe, comme pour les pastilles normales.
+// Défaut signalé en test : le nom désignait alors un endroit PLUS BAS que
+// celui que la pointe vise, on croyait l'objet rangé là où était le texte.
+// Désormais plus rien ne descend sous la pointe — elle seule marque le point.
+//
+// Hauteur de bloc fixe + contenu aligné en bas : le nom peut prendre une ou
+// deux lignes sans jamais déplacer la pointe, qui doit rester exactement sur
+// le point désigné.
+const CALLOUT_BLOCK_HEIGHT = 104;
+const CALLOUT_MAX_WIDTH = 118;
+const CALLOUT_TAIL_HEIGHT = 8;
 // Bordure fine, volontairement plus discrète que le rouge du surlignage
 // "Voir sur le plan" — même famille corail que la sélection d'une pièce
 // (ShapeBody), juste adoucie en opacité pour rester "légère" comme demandé.
@@ -258,28 +267,78 @@ function PinBadge({
               <View style={{ width: 26, height: 9, borderRadius: 13, backgroundColor: 'rgba(21, 145, 234, 0.22)' }} />
             </View>
 
-            {/* Le marqueur, pointe posée sur le point. */}
+            {/* Le marqueur : bulle bleue posée SUR le point, jamais en
+                dessous. Le rond blanc reprend le « o » du logo, le nom vit
+                dans le bleu juste en dessous, et la pointe désigne
+                l'emplacement exact.
+
+                Débordement latéral (left/right négatifs) : la bulle doit
+                pouvoir être plus large que la colonne de 80px prévue pour
+                les pastilles normales, sans quoi les noms seraient tronqués
+                dès trois mots. */}
             <View
               pointerEvents="none"
-              style={{ position: 'absolute', top: PIN_RADIUS - MARKER_SIZE, left: 0, right: 0, alignItems: 'center' }}
+              style={{
+                position: 'absolute',
+                top: PIN_RADIUS - CALLOUT_BLOCK_HEIGHT,
+                left: -24,
+                right: -24,
+                height: CALLOUT_BLOCK_HEIGHT,
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+              }}
             >
-              <View style={{ width: MARKER_SIZE, height: MARKER_SIZE, alignItems: 'center' }}>
-                <Icon name="location" size={MARKER_SIZE} color={MARKER_COLOR} />
-                <View
+              <View
+                style={{
+                  maxWidth: CALLOUT_MAX_WIDTH,
+                  alignItems: 'center',
+                  backgroundColor: MARKER_COLOR,
+                  borderRadius: 13,
+                  paddingHorizontal: 10,
+                  paddingTop: 9,
+                  paddingBottom: 8,
+                  shadowColor: '#0B5E9E',
+                  shadowOpacity: 0.35,
+                  shadowRadius: 5,
+                  shadowOffset: { width: 0, height: 3 },
+                  elevation: 4,
+                }}
+              >
+                <Icon name="location" size={MARKER_ICON_SIZE} color="#FFFFFF" />
+                <Text
+                  numberOfLines={2}
                   style={{
-                    position: 'absolute',
-                    top: MARKER_SIZE * MARKER_HOLE_TOP_RATIO,
-                    width: MARKER_SIZE * MARKER_HOLE_RATIO,
-                    height: MARKER_SIZE * MARKER_HOLE_RATIO,
-                    borderRadius: (MARKER_SIZE * MARKER_HOLE_RATIO) / 2,
-                    backgroundColor: '#FFFFFF',
+                    marginTop: 5,
+                    fontSize: 10,
+                    lineHeight: 12,
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    color: '#FFFFFF',
                   }}
-                />
+                >
+                  {display.name}
+                </Text>
               </View>
+
+              {/* Pointe : un triangle fait de bordures, faute de SVG dans ce
+                  projet (voir IconBadge). Sa base épouse la bulle, son sommet
+                  tombe pile sur le point désigné. */}
+              <View
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeftWidth: 7,
+                  borderRightWidth: 7,
+                  borderTopWidth: CALLOUT_TAIL_HEIGHT,
+                  borderLeftColor: 'transparent',
+                  borderRightColor: 'transparent',
+                  borderTopColor: MARKER_COLOR,
+                }}
+              />
             </View>
 
-            {/* Réserve la hauteur qu'occupait la pastille, pour que le nom
-                affiché en dessous ne remonte pas quand le marqueur la
+            {/* Réserve la hauteur qu'occupait la pastille pour que la mise en
+                page de la colonne ne bouge pas quand le marqueur la
                 remplace. */}
             <View style={{ height: PIN_SIZE }} />
           </>
@@ -292,7 +351,10 @@ function PinBadge({
             borderWidth={1.5}
           />
         )}
-        {selected || highlighted ? (
+        {/* Uniquement pour une pastille SÉLECTIONNÉE : celle mise en
+            évidence porte déjà son nom dans le marqueur, et le répéter ici le
+            replacerait sous la pointe — exactement le défaut corrigé. */}
+        {selected && !highlighted ? (
           <Text
             numberOfLines={1}
             style={{
