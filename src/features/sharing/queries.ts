@@ -414,9 +414,15 @@ export function useCreateShareInvite() {
         p_habitation_ids: input.habitationIds,
         p_permission: input.permission,
         p_target_type: input.targetType,
-        p_max_uses: input.maxUses,
-        p_expires_at: input.expiresAt,
-        p_label: input.label,
+        // supabase gen types ne modélise pas la nullabilité des PARAMÈTRES
+        // de fonction : il les déclare non-nullables alors que NULL est
+        // précisément ce qui encode « illimité » et « n’expire jamais » côté
+        // SQL (DEFAULT NULL, voir la migration 20260820120000). L’assertion
+        // porte donc sur une limite du générateur, pas sur notre modèle — ne
+        // pas la « corriger » en interdisant null côté client.
+        p_max_uses: input.maxUses as number,
+        p_expires_at: input.expiresAt as string,
+        p_label: input.label as string,
       });
       if (error) throw error;
       return data as ShareInvite;
@@ -490,10 +496,11 @@ export function useUpdateShareInvite() {
     }): Promise<ShareInvite> => {
       const { data, error } = await supabase.rpc('update_share_invite', {
         p_invite_id: input.inviteId,
-        p_max_uses: input.maxUses,
-        p_expires_at: input.expiresAt,
+        // Même limite du générateur que dans useCreateShareInvite ci-dessus.
+        p_max_uses: input.maxUses as number,
+        p_expires_at: input.expiresAt as string,
         p_reset_uses: input.resetUses,
-        p_label: input.label,
+        p_label: input.label as string,
       });
       if (error) throw error;
       return data as ShareInvite;

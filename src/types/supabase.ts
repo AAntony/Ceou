@@ -586,10 +586,33 @@ export type Database = {
         Relationships: []
       }
       share_invite_redemptions: {
-        Row: { id: string; invite_id: string; redeemed_at: string; user_id: string }
-        Insert: { id?: string; invite_id: string; redeemed_at?: string; user_id: string }
-        Update: { id?: string; invite_id?: string; redeemed_at?: string; user_id?: string }
-        Relationships: []
+        Row: {
+          id: string
+          invite_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invite_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invite_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_invite_redemptions_invite_id_fkey"
+            columns: ["invite_id"]
+            isOneToOne: false
+            referencedRelation: "share_invites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       share_invites: {
         Row: {
@@ -654,52 +677,14 @@ export type Database = {
         Args: { p_conteneur_id: string }
         Returns: string
       }
-      list_my_share_invites: {
-        Args: Record<string, never>
-        Returns: {
-          id: string
-          code: string
-          label: string | null
-          target_type: string
-          permission: string
-          habitation_ids: string[]
-          habitation_names: string[]
-          max_uses: number | null
-          use_count: number
-          expires_at: string | null
-          created_at: string
-        }[]
-      }
-      update_share_invite: {
-        Args: {
-          p_invite_id: string
-          p_max_uses: number | null
-          p_expires_at: string | null
-          p_reset_uses?: boolean
-          p_label?: string | null
-        }
-        Returns: {
-          code: string
-          created_at: string
-          created_by: string
-          expires_at: string | null
-          habitation_ids: string[]
-          id: string
-          label: string | null
-          max_uses: number | null
-          permission: string
-          target_type: string
-          use_count: number
-        }
-      }
       create_share_invite: {
         Args: {
+          p_expires_at?: string
           p_habitation_ids: string[]
+          p_label?: string
+          p_max_uses?: number
           p_permission: string
           p_target_type: string
-          p_max_uses?: number | null
-          p_expires_at?: string | null
-          p_label?: string | null
         }
         Returns: {
           code: string
@@ -743,6 +728,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_anonymous: { Args: never; Returns: boolean }
       list_friendships: {
         Args: never
         Returns: {
@@ -766,6 +752,22 @@ export type Database = {
           permission: string
           shared_with_user_display_name: string
           shared_with_user_id: string
+        }[]
+      }
+      list_my_share_invites: {
+        Args: never
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string
+          habitation_ids: string[]
+          habitation_names: string[]
+          id: string
+          label: string
+          max_uses: number
+          permission: string
+          target_type: string
+          use_count: number
         }[]
       }
       location_habitation: {
@@ -814,6 +816,34 @@ export type Database = {
         }[]
       }
       send_friend_request: { Args: { p_friend_code: string }; Returns: string }
+      update_share_invite: {
+        Args: {
+          p_expires_at: string
+          p_invite_id: string
+          p_label?: string
+          p_max_uses: number
+          p_reset_uses?: boolean
+        }
+        Returns: {
+          code: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          habitation_ids: string[]
+          id: string
+          label: string | null
+          max_uses: number | null
+          permission: string
+          target_type: string
+          use_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "share_invites"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       upsert_habitation_share: {
         Args: {
           p_habitation_id: string
