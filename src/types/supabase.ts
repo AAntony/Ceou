@@ -661,6 +661,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_plan_template: {
+        Args: { p_plan_id: string; p_rooms: Json }
+        Returns: {
+          created_at: string
+          height: number
+          id: string
+          piece_id: string | null
+          plan_id: string
+          rotation: number
+          shape_type: string
+          width: number
+          x: number
+          y: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "plan_formes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       can_manage_habitation_sharing: {
         Args: { p_habitation_id: string; p_user_id: string }
         Returns: boolean

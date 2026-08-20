@@ -219,6 +219,21 @@ export function usePieceObjectCounts(habitationId: string | undefined) {
   });
 }
 
+/**
+ * Forme exacte attendue par apply_plan_template.
+ *
+ * Typée précisément, et non Record<string, unknown> : le paramètre p_rooms
+ * des types générés est un `Json`, auquel `unknown` n'est pas assignable.
+ */
+type TemplateRoomPayload = {
+  name: string;
+  preset_key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 // Applique un départ de plan (voir templates.ts et la migration
 // apply_plan_template). Une seule requête : créer les Pièces manquantes puis
 // poser les formes doit réussir ou échouer d'un bloc, sinon un échec réseau à
@@ -226,7 +241,7 @@ export function usePieceObjectCounts(habitationId: string | undefined) {
 export function useApplyPlanTemplate(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (rooms: Record<string, unknown>[]): Promise<void> => {
+    mutationFn: async (rooms: TemplateRoomPayload[]): Promise<void> => {
       const { error } = await supabase.rpc('apply_plan_template', { p_plan_id: planId, p_rooms: rooms });
       if (error) throw error;
     },
