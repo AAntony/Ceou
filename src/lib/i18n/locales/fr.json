@@ -55,6 +55,44 @@
       "password_too_short": "Le mot de passe doit faire au moins 8 caractères"
     }
   },
+  "account": {
+    "entry": "Mon compte",
+    "title": "Mon compte",
+    "email": {
+      "title": "Adresse e-mail",
+      "current": "Adresse actuelle",
+      "new": "Nouvelle adresse",
+      "placeholder": "nouvelle@adresse.fr",
+      "submit": "Changer d'adresse",
+      "hint": "Un lien de confirmation est envoyé à l'ancienne comme à la nouvelle adresse. Le changement ne prend effet qu'une fois les deux confirmés.",
+      "success": "Confirme le changement depuis les liens envoyés à {{email}} et à ton adresse actuelle.",
+      "errors": {
+        "same": "C'est déjà ton adresse actuelle."
+      }
+    },
+    "password": {
+      "title": "Mot de passe",
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe",
+      "submit": "Changer le mot de passe",
+      "success": "Ton mot de passe a été changé."
+    },
+    "delete": {
+      "title": "Supprimer mon compte",
+      "description": "Supprime définitivement ton compte, tes habitations, tes objets, tes photos et tes partages. Les habitations que des amis ont partagées avec toi ne sont pas supprimées : tu perds simplement leur accès.",
+      "entry": "Supprimer mon compte",
+      "confirm_title": "Cette action est définitive",
+      "confirm_body": "Tout est effacé immédiatement et rien ne peut être récupéré ensuite. Saisis ton mot de passe pour confirmer que c'est bien toi.",
+      "confirm_password": "Ton mot de passe",
+      "confirm_submit": "Supprimer définitivement",
+      "errors": {
+        "failed": "La suppression n'a pas abouti. Ton compte est intact — réessaie dans un instant."
+      }
+    },
+    "errors": {
+      "wrong_password": "Mot de passe incorrect."
+    }
+  },
   "profile": {
     "title": "Profil",
     "display_name": "Nom affiché",

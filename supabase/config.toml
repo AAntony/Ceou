@@ -412,3 +412,12 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+
+# delete-account garde la verification JWT ACTIVE (valeur par defaut,
+# rappelee ici explicitement parce que la fonction detruit des donnees) :
+# l'identite supprimee est celle du jeton, la fonction ne prend aucun
+# parametre, donc personne ne peut demander la suppression du compte d'un
+# autre.
+[functions.delete-account]
+verify_jwt = true

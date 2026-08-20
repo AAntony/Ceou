@@ -55,6 +55,44 @@
       "password_too_short": "Password must be at least 8 characters"
     }
   },
+  "account": {
+    "entry": "My account",
+    "title": "My account",
+    "email": {
+      "title": "Email address",
+      "current": "Current address",
+      "new": "New address",
+      "placeholder": "new@address.com",
+      "submit": "Change address",
+      "hint": "A confirmation link is sent to both the old and the new address. The change only takes effect once both are confirmed.",
+      "success": "Confirm the change from the links sent to {{email}} and to your current address.",
+      "errors": {
+        "same": "That is already your current address."
+      }
+    },
+    "password": {
+      "title": "Password",
+      "current": "Current password",
+      "new": "New password",
+      "submit": "Change password",
+      "success": "Your password has been changed."
+    },
+    "delete": {
+      "title": "Delete my account",
+      "description": "Permanently deletes your account, your homes, your items, your photos and your shares. Homes that friends shared with you are not deleted: you simply lose access to them.",
+      "entry": "Delete my account",
+      "confirm_title": "This cannot be undone",
+      "confirm_body": "Everything is erased immediately and nothing can be recovered afterwards. Enter your password to confirm it is really you.",
+      "confirm_password": "Your password",
+      "confirm_submit": "Delete permanently",
+      "errors": {
+        "failed": "The deletion did not go through. Your account is intact — try again in a moment."
+      }
+    },
+    "errors": {
+      "wrong_password": "Incorrect password."
+    }
+  },
   "profile": {
     "title": "Profile",
     "display_name": "Display name",

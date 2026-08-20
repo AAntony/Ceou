@@ -130,12 +130,22 @@ export default function ProfileScreen() {
         <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
       </View>
 
+      {/* Adresse, mot de passe et suppression vivent sur un écran à part :
+          cet écran-ci porte l'identité PUBLIQUE (nom affiché, avatar, code
+          ami, langue), pas les clés d'accès. */}
+      <TextLink
+        href="/account"
+        label={t('account.entry')}
+        className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        textClassName="text-sm font-semibold text-ink"
+      />
+
       {/* La carte ELLE-MÊME est le bouton : c'était un View inerte dont seul
           le texte réagissait — le défaut signalé par les testeurs. */}
       <TextLink
         href="/privacy-policy"
         label={t('profile.privacy_policy')}
-        className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        className="mt-3 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
         textClassName="text-sm font-medium text-ink-soft underline"
       />
 

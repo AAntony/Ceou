@@ -1,14 +1,14 @@
-import * as Linking from 'expo-linking';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
+import { authRedirectUrl } from '../../src/lib/supabase/authRedirect';
 import { supabase } from '../../src/lib/supabase/client';
 
 export default function ForgotPasswordScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,8 +17,16 @@ export default function ForgotPasswordScreen() {
   const handleSubmit = async () => {
     setError(null);
     setLoading(true);
+    // Linking.createURL() produisait un lien `ceou://` placé DIRECTEMENT
+    // dans l'e-mail : beaucoup de clients de messagerie refusent d'ouvrir un
+    // schéma non-http, et le lien y paraissait mort. On passe maintenant par
+    // la page `welcome` (https, donc toujours cliquable), qui propose
+    // ensuite un bouton vers `ceou://reset-password?code=...` — le lien
+    // profond n'est plus ouvert par le client mail mais par le navigateur,
+    // sur un geste explicite de l'utilisateur. useAuthDeepLinks le reçoit
+    // exactement comme avant, rien à changer côté app.
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: Linking.createURL('reset-password'),
+      redirectTo: authRedirectUrl('recovery', i18n.language),
     });
     setLoading(false);
 

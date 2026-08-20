@@ -6,10 +6,11 @@ import { Button } from '../../src/components/Button';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
 import { isPasswordValid } from '../../src/features/auth/validation';
+import { authRedirectUrl } from '../../src/lib/supabase/authRedirect';
 import { supabase } from '../../src/lib/supabase/client';
 
 export default function SignUpScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +31,15 @@ export default function SignUpScreen() {
     }
 
     setLoading(true);
-    const { error: signUpError } = await supabase.auth.signUp({ email, password });
+    // Sans emailRedirectTo, Supabase retombe sur la « Site URL » du projet
+    // — restée à http://localhost:3000 — et le lien de confirmation menait
+    // à une page d'erreur de navigateur alors même que le compte venait
+    // d'être activé. On vise désormais explicitement la page `welcome`.
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: authRedirectUrl('signup', i18n.language) },
+    });
     setLoading(false);
 
     if (signUpError) setError(signUpError.message);

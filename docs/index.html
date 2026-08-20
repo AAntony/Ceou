@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex">
+<title>Ceou</title>
+<!--
+  Page d'atterrissage des liens envoyés par e-mail par Supabase Auth
+  (confirmation d'inscription, changement d'adresse, mot de passe oublié).
+
+  LE PROBLÈME QU'ELLE RÉSOUT : sans elle, Supabase redirige vers la « Site
+  URL » du projet, restée à sa valeur d'usine http://localhost:3000.
+  L'utilisateur cliquait donc sur le lien de confirmation reçu par e-mail et
+  tombait sur une page d'erreur de navigateur, alors même que son compte
+  venait bien d'être activé. Rien n'était cassé côté serveur, mais rien ne le
+  disait non plus.
+
+  POURQUOI GITHUB PAGES ET PAS UNE EDGE FUNCTION SUPABASE : une Edge Function
+  a d'abord été écrite et déployée pour ça, puis retirée — la passerelle
+  Supabase réécrit le Content-Type de toute réponse en `text/plain` et ajoute
+  `Content-Security-Policy: default-src 'none'; sandbox` + `nosniff`. C'est
+  une protection délibérée contre l'hébergement de pages d'hameçonnage sur le
+  domaine *.supabase.co, et elle rend impossible d'y servir une vraie page :
+  le navigateur affichait le HTML en texte brut et le bouton était inerte.
+  GitHub Pages sert le fichier tel quel, ne coûte rien sur un dépôt public, et
+  la page reste versionnée avec le reste du projet.
+
+  Tout est volontairement contenu dans ce seul fichier (styles et script
+  compris) : aucune ressource externe à charger, donc rien qui puisse casser
+  la page si un chemin change.
+-->
+<style>
+  :root { --blue: #1591EA; --blue-dark: #0B5E9E; --sand: #FFFBF8; --ink: #2D2A26; --ink-soft: #6B6459; --card: #FFFFFF; --line: rgba(45,42,38,.1); }
+  @media (prefers-color-scheme: dark) {
+    :root { --sand: #1A1815; --ink: #F5F1EC; --ink-soft: #A39C8F; --card: #262320; --line: rgba(245,241,236,.12); }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+         background: var(--sand); color: var(--ink);
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif; }
+  .card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line);
+          border-radius: 24px; padding: 40px 28px; text-align: center; }
+  .mark { width: 64px; height: 64px; margin: 0 auto 24px; display: block; }
+  h1 { margin: 0 0 12px; font-size: 24px; line-height: 1.25; }
+  p { margin: 0 0 8px; font-size: 16px; line-height: 1.55; color: var(--ink-soft); }
+  .cta { display: block; margin: 28px 0 0; padding: 15px 24px; border-radius: 14px; background: var(--blue);
+         color: #fff; font-size: 16px; font-weight: 600; text-decoration: none; }
+  .cta:active { background: var(--blue-dark); }
+  .cta[hidden] { display: none; }
+  .fallback { margin-top: 20px; font-size: 13px; }
+  .footer { margin-top: 28px; font-size: 12px; color: var(--ink-soft); opacity: .7; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="#1591EA"/>
+      <circle cx="32" cy="22" r="7.5" fill="#FFFBF8"/>
+    </svg>
+    <!-- Contenu par défaut = le cas le plus fréquent (confirmation
+         d'inscription réussie), déjà correct sans JavaScript. Le script
+         ci-dessous ne fait que l'affiner selon les paramètres d'URL. -->
+    <h1 id="title">Ton compte est activé</h1>
+    <p id="body">C&rsquo;est tout bon : ton adresse e-mail est confirmée. Tu peux maintenant te connecter à Ceou.</p>
+    <a class="cta" id="cta" href="ceou://">Ouvrir l&rsquo;application</a>
+    <p class="fallback" id="fallback">Si le bouton ne fait rien, ouvre l&rsquo;application Ceou toi-même depuis ton téléphone : l&rsquo;opération est déjà enregistrée.</p>
+    <p class="footer">Ceou &mdash; retrouve tes affaires</p>
+  </main>
+
+<script>
+(function () {
+  'use strict';
+
+  var SCHEME = 'ceou';
+
+  var COPY = {
+    fr: {
+      signup: {
+        title: 'Ton compte est activé',
+        body: 'C’est tout bon : ton adresse e-mail est confirmée. Tu peux maintenant te connecter à Ceou et commencer à ranger tes affaires.',
+        cta: 'Ouvrir l’application'
+      },
+      recovery: {
+        title: 'Choisis ton nouveau mot de passe',
+        body: 'Lien vérifié. La suite se passe dans l’application : appuie sur le bouton pour choisir ton nouveau mot de passe.',
+        cta: 'Choisir un nouveau mot de passe'
+      },
+      email_change: {
+        title: 'Ta nouvelle adresse est confirmée',
+        body: 'Ton adresse e-mail a bien été mise à jour. C’est celle-ci qu’il faudra utiliser pour te connecter désormais.',
+        cta: 'Ouvrir l’application'
+      },
+      errorTitle: 'Ce lien ne fonctionne plus',
+      errorBody: 'Il a peut-être expiré, ou il a déjà été utilisé. Refais la demande depuis l’application pour en recevoir un nouveau.',
+      fallback: 'Si le bouton ne fait rien, ouvre l’application Ceou toi-même depuis ton téléphone : l’opération est déjà enregistrée.'
+    },
+    en: {
+      signup: {
+        title: 'Your account is active',
+        body: 'All set: your email address is confirmed. You can now sign in to Ceou and start organising your things.',
+        cta: 'Open the app'
+      },
+      recovery: {
+        title: 'Choose your new password',
+        body: 'Link verified. The rest happens in the app: tap the button to choose a new password.',
+        cta: 'Choose a new password'
+      },
+      email_change: {
+        title: 'Your new address is confirmed',
+        body: 'Your email address has been updated. Use this one to sign in from now on.',
+        cta: 'Open the app'
+      },
+      errorTitle: 'This link no longer works',
+      errorBody: 'It may have expired, or it has already been used. Request a new one from the app.',
+      fallback: 'If the button does nothing, open the Ceou app yourself: the operation is already saved.'
+    }
+  };
+
+  // Supabase répartit ses paramètres entre la query string (flux PKCE :
+  // ?code=...) et le fragment (flux implicite et LA PLUPART DES ERREURS :
+  // #error=...&error_description=...). Lire les deux, sinon un lien périmé
+  // afficherait « ton compte est activé » — le pire message possible,
+  // puisqu'il serait faux.
+  function params() {
+    var merged = {};
+    var sources = [window.location.search, window.location.hash];
+    for (var i = 0; i < sources.length; i++) {
+      var raw = sources[i];
+      if (!raw || raw.length < 2) continue;
+      var usp = new URLSearchParams(raw.slice(1));
+      usp.forEach(function (value, key) { merged[key] = value; });
+    }
+    return merged;
+  }
+
+  var p = params();
+
+  var lang = p.lang === 'en' || p.lang === 'fr'
+    ? p.lang
+    : ((navigator.language || 'fr').toLowerCase().indexOf('en') === 0 ? 'en' : 'fr');
+  var copy = COPY[lang];
+
+  var titleEl = document.getElementById('title');
+  var bodyEl = document.getElementById('body');
+  var ctaEl = document.getElementById('cta');
+  var fallbackEl = document.getElementById('fallback');
+
+  document.documentElement.lang = lang;
+  fallbackEl.textContent = copy.fallback;
+
+  var error = p.error_description || p.error;
+  if (error) {
+    titleEl.textContent = copy.errorTitle;
+    bodyEl.textContent = copy.errorBody;
+    ctaEl.hidden = true;
+    fallbackEl.hidden = true;
+    document.title = copy.errorTitle;
+    return;
+  }
+
+  var flow = p.flow === 'recovery' || p.flow === 'email_change' ? p.flow : 'signup';
+  var text = copy[flow];
+
+  titleEl.textContent = text.title;
+  bodyEl.textContent = text.body;
+  ctaEl.textContent = text.cta;
+  document.title = text.title;
+
+  // Seul le flux « mot de passe oublié » doit repasser par l'app avec son
+  // code : c'est l'app qui détient le vérificateur PKCE et qui affiche
+  // l'écran de choix du mot de passe (voir useAuthDeepLinks). Les deux autres
+  // flux sont déjà terminés côté serveur quand cette page s'affiche, le
+  // bouton se contente d'ouvrir l'app.
+  ctaEl.href = flow === 'recovery' && p.code
+    ? SCHEME + '://reset-password?code=' + encodeURIComponent(p.code)
+    : SCHEME + '://';
+})();
+</script>
+</body>
+</html>

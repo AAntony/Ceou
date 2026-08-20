@@ -45,7 +45,7 @@ const CONTENT: Record<'fr' | 'en', { title: string; updated: string; sections: {
       },
       {
         heading: 'Tes droits',
-        body: "Tu peux à tout moment consulter et modifier tes données directement dans l'application. Pour demander l'export ou la suppression complète de ton compte et de tes données, écris à aldana.antony@gmail.com — la demande est traitée manuellement pour l'instant, une fonctionnalité de suppression directement dans l'app est prévue.",
+        body: "Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à aldana.antony@gmail.com.",
       },
     ],
   },
@@ -87,7 +87,7 @@ const CONTENT: Record<'fr' | 'en', { title: string; updated: string; sections: {
       },
       {
         heading: 'Your rights',
-        body: "You can view and edit your data directly in the app at any time. To request an export or full deletion of your account and data, write to aldana.antony@gmail.com — requests are handled manually for now; an in-app deletion feature is planned.",
+        body: "You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then \"My account\", then \"Delete my account\". It is immediate and permanent, photos included. For a data export, write to aldana.antony@gmail.com.",
       },
     ],
   },
