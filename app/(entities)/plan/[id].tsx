@@ -23,6 +23,7 @@ import {
 } from '../../../src/features/plans/queries';
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
 import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanModeSwitch';
+import { PlanTemplatePicker } from '../../../src/features/plans/PlanTemplatePicker';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import type { PlanForme } from '../../../src/types/database';
 
@@ -105,6 +106,21 @@ export default function PlanScreen() {
     );
   }
 
+  // Plan vierge : des logements types plutot qu une feuille blanche. Place
+  // APRES les gardes de chargement, donc tous les hooks ont deja ete appeles.
+  // Un invite ou un ami en Consultation ne voit pas ce selecteur : il ne peut
+  // rien poser, il verra le plan vide tel quel.
+  if ((formes ?? []).length === 0 && canManage) {
+    return (
+      <>
+        <Stack.Screen options={{ title: plan.name }} />
+        <View className="flex-1 bg-sand">
+          <PlanTemplatePicker planId={id} />
+        </View>
+      </>
+    );
+  }
+
   return (
     <>
       <Stack.Screen options={{ title: plan.name }} />
@@ -151,6 +167,27 @@ export default function PlanScreen() {
           />
         ) : null}
 
+        {/* Barre d'action de la pièce sélectionnée. Remplace le double-tap
+            qui ouvrait la fiche : une cible large et visible plutôt qu'un
+            geste que rien n'annonçait. */}
+        {editing && selectedForme ? (
+          <View className="mx-6 mb-2 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-white px-4 py-3">
+            <Text className="flex-1 text-base font-semibold text-ink" numberOfLines={1}>
+              {selectedForme.piece_id
+                ? (pieces ?? []).find((piece) => piece.id === selectedForme.piece_id)?.name ?? t('plans.unassigned_room')
+                : t('plans.unassigned_room')}
+            </Text>
+            <Pressable
+              onPress={() => setSheetForme(selectedForme)}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.edit')}
+              className="h-11 w-11 items-center justify-center rounded-full border border-ink/10 active:opacity-70"
+            >
+              <Icon name="pencil" size={18} color="#6B6459" />
+            </Pressable>
+          </View>
+        ) : null}
+
         <View className="flex-1 px-6 pb-4">
           <PlanCanvas
             ref={canvasRef}
@@ -166,10 +203,6 @@ export default function PlanScreen() {
             onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
             onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
             onSelect={(forme) => setSelectedFormeId(forme.id)}
-            onOpenSheet={(forme) => {
-              setSelectedFormeId(forme.id);
-              setSheetForme(forme);
-            }}
             onDeselect={() => setSelectedFormeId(null)}
             onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
             onPinTap={(pin) => setSheetPinId(pin.id)}

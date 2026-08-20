@@ -16,7 +16,8 @@
     "error_load_title": "Couldn't load this page.",
     "error_load_hint": "Check your connection, then try again.",
     "retry": "Retry",
-    "clear": "Clear"
+    "clear": "Clear",
+    "edit": "Edit"
   },
   "auth": {
     "email": "Email",
@@ -417,6 +418,18 @@
     "section_label": "Plans",
     "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only.",
     "mode_explore": "Explore",
-    "mode_edit": "Edit"
+    "mode_edit": "Edit",
+    "templates": {
+      "title": "What does your home look like?",
+      "description": "Pick the closest one. You can move, rename and resize everything afterwards.",
+      "studio": "Studio",
+      "two_rooms": "2 rooms",
+      "three_rooms": "3 rooms",
+      "house": "House",
+      "room_count": "{{n}} spaces",
+      "apply": "Use this starting point",
+      "note": "Missing rooms will be created in your home. Existing ones are reused."
+    },
+    "unassigned_room": "Unassigned room"
   }
 }

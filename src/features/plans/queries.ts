@@ -218,3 +218,23 @@ export function usePieceObjectCounts(habitationId: string | undefined) {
     },
   });
 }
+
+// Applique un départ de plan (voir templates.ts et la migration
+// apply_plan_template). Une seule requête : créer les Pièces manquantes puis
+// poser les formes doit réussir ou échouer d'un bloc, sinon un échec réseau à
+// mi-parcours laisserait un plan à moitié posé.
+export function useApplyPlanTemplate(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rooms: Record<string, unknown>[]): Promise<void> => {
+      const { error } = await supabase.rpc('apply_plan_template', { p_plan_id: planId, p_rooms: rooms });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['planFormes', planId] });
+      // Le départ crée des Pièces : les écrans d'inventaire doivent les voir.
+      queryClient.invalidateQueries({ queryKey: ['pieces'] });
+      queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
+    },
+  });
+}

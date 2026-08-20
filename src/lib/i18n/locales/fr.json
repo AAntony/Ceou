@@ -16,7 +16,8 @@
     "error_load_title": "Impossible de charger cette page.",
     "error_load_hint": "Vérifie ta connexion, puis réessaie.",
     "retry": "Réessayer",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "edit": "Modifier"
   },
   "auth": {
     "email": "Email",
@@ -417,6 +418,18 @@
     "section_label": "Plans",
     "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule.",
     "mode_explore": "Explorer",
-    "mode_edit": "Modifier"
+    "mode_edit": "Modifier",
+    "templates": {
+      "title": "Ton logement ressemble à quoi ?",
+      "description": "Choisis le plus proche. Tu pourras tout déplacer, renommer et agrandir ensuite.",
+      "studio": "Studio",
+      "two_rooms": "2 pièces",
+      "three_rooms": "3 pièces",
+      "house": "Maison",
+      "room_count": "{{n}} espaces",
+      "apply": "Utiliser ce départ",
+      "note": "Les pièces qui manquent seront créées dans ton habitation. Celles qui existent déjà sont réutilisées."
+    },
+    "unassigned_room": "Pièce non associée"
   }
 }

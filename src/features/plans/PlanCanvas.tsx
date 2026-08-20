@@ -98,7 +98,6 @@ type PlanCanvasProps = {
   onDragEnd: (id: string, x: number, y: number) => void;
   onResizeEnd: (id: string, x: number, y: number, width: number, height: number) => void;
   onSelect: (forme: PlanForme) => void;
-  onOpenSheet: (forme: PlanForme) => void;
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
@@ -134,7 +133,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDragEnd,
     onResizeEnd,
     onSelect,
-    onOpenSheet,
     onDeselect,
     onPinDragEnd,
     onPinTap,
@@ -584,7 +582,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
                   onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
                   onSelect={() => onSelect(forme)}
-                  onOpenSheet={() => onOpenSheet(forme)}
                 />
               );
             })}
@@ -719,7 +716,6 @@ function ShapeBody({
   onMove,
   onDragEnd,
   onSelect,
-  onOpenSheet,
 }: {
   geo: ShapeGeometry;
   others: ShapeGeometry[];
@@ -729,7 +725,6 @@ function ShapeBody({
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onSelect: () => void;
-  onOpenSheet: () => void;
 }) {
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
@@ -761,24 +756,17 @@ function ShapeBody({
       onDragEnd(snapped.x, snapped.y);
     });
 
-  // Un tap simple sélectionne (déplacer/redimensionner) — toujours actif,
-  // même sur une pièce non sélectionnée pendant qu'une autre l'est, pour
-  // pouvoir enchaîner les pièces sans étape de validation intermédiaire. Il
-  // faut un double-tap pour ouvrir la fiche (choix de pièce/suppression) ;
-  // doubleTap doit être listé en premier dans Exclusive pour faire attendre
-  // singleTap le temps de voir si un second tap suit.
+  // UN SEUL TAP, ET C'EST TOUT. La fiche d'édition s'ouvrait au DOUBLE-tap :
+  // un geste que rien n'annonçait à l'écran, et une vraie difficulté motrice
+  // passé un certain âge — or l'objectif est que le plan reste utilisable à
+  // tout âge. Le tap simple sélectionne, et c'est la barre d'action en bas
+  // d'écran (voir plan/[id].tsx) qui donne accès à l'édition : une cible
+  // large, visible, sans geste à deviner.
+  //
+  // Il reste actif en consultation : il ne modifie rien et sert à mettre une
+  // pièce en évidence.
   const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onSelect());
-  // Le tap simple (sélection) reste actif en consultation : il ne modifie
-  // rien et sert à mettre une pièce en évidence. Seul le double-tap, qui
-  // ouvre la fiche d'édition, est coupé.
-  const doubleTap = Gesture.Tap()
-    .numberOfTaps(2)
-    .enabled(!readOnly)
-    .hitSlop(HIT_SLOP)
-    .runOnJS(true)
-    .onEnd(() => onOpenSheet());
-  const taps = Gesture.Exclusive(doubleTap, singleTap);
-  const gesture = Gesture.Exclusive(pan, taps);
+  const gesture = Gesture.Exclusive(pan, singleTap);
 
   return (
     <GestureDetector gesture={gesture}>
@@ -787,8 +775,10 @@ function ShapeBody({
   );
 }
 
-const HANDLE_TOUCH_SIZE = 32;
-const HANDLE_DOT_SIZE = 12;
+// 44px : le minimum recommandé pour une cible tactile. Les 32px précédents
+// étaient en dessous, et redimensionner une pièce demandait de viser.
+const HANDLE_TOUCH_SIZE = 44;
+const HANDLE_DOT_SIZE = 18;
 
 // Petit point d'ancrage — sa propre zone de geste (32x32, centrée sur le
 // point), rendu par-dessus ShapeBody pour que le toucher y soit prioritaire
