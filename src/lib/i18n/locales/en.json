@@ -15,7 +15,8 @@
     "error_boundary_hint": "Restart the app. If the problem persists, contact us.",
     "error_load_title": "Couldn't load this page.",
     "error_load_hint": "Check your connection, then try again.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "clear": "Clear"
   },
   "auth": {
     "email": "Email",
@@ -67,7 +68,6 @@
     "privacy_policy": "Privacy Policy"
   },
   "home": {
-    "tab_title": "Homes",
     "greeting": "Hi, {{name}}",
     "greeting_anonymous": "Hi there!",
     "tagline": "Find everything you've put away.",
@@ -80,7 +80,8 @@
     "onboarding_hint": "An item always needs a place to live. Create your first home to start organizing your things.",
     "voice_search_listening": "Listening...",
     "voice_search_permission_message": "Allow microphone access to search by voice.",
-    "voice_search_error": "Speech recognition didn't work. Try again."
+    "voice_search_error": "Speech recognition didn't work. Try again.",
+    "add_objet": "Add an item"
   },
   "friends": {
     "tab_title": "Friends",

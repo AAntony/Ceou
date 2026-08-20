@@ -1,5 +1,4 @@
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -7,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
+import { TextLink } from '../../components/TextLink';
 import { cropDetection, detectObjects, getImageSize, RateLimitedError } from '../../lib/ai/detectObjects';
 import { logClientError } from '../../lib/errorLogging';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
@@ -182,9 +182,12 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
         <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-white px-6 pb-8 pt-6">
           <Text className="mb-3 text-lg font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
           <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
-          <Link href="/privacy-policy" className="mb-6 text-sm font-semibold text-coral-dark underline">
-            {t('profile.privacy_policy')}
-          </Link>
+          <TextLink
+            href="/privacy-policy"
+            label={t('profile.privacy_policy')}
+            className="mb-6 self-start"
+            textClassName="text-sm font-semibold text-coral-dark underline"
+          />
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Button label={t('common.cancel')} variant="ghost" onPress={handleConsentCancel} />

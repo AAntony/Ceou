@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
+import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
@@ -41,6 +41,7 @@ type HomeHeaderProps = {
   searchText: string;
   onSearchTextChange: (text: string) => void;
   voiceSearch: ReturnType<typeof useVoiceSearch>;
+  onAddObjet: () => void;
   pieceOptions: string[];
   selectedPiece: string | null;
   onSelectPiece: (piece: string | null) => void;
@@ -59,6 +60,7 @@ function HomeHeader({
   searchText,
   onSearchTextChange,
   voiceSearch,
+  onAddObjet,
   pieceOptions,
   selectedPiece,
   onSelectPiece,
@@ -72,14 +74,21 @@ function HomeHeader({
           <Text className="text-2xl font-bold text-ink">{greeting}</Text>
           <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
         </View>
-        {/* Profil déménagé ici (icône discrète) — le bouton "Amis" prend
-            sa place dans la barre d'onglets, plus utilisé au quotidien. */}
+        {/* Ancien "+" central de la barre d'onglets. Il y annonçait un ajout
+            CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des écrans
+            qui ont déjà leur propre bouton "Ajouter" dans l'en-tête natif —
+            d'où la confusion signalée par les testeurs. L'Accueil est le seul
+            écran SANS contexte, donc le seul où le geste n'a qu'un sens
+            possible ; le libellé lève le reste du doute. Profil est parti
+            dans la barre d'onglets. `shrink-0` : c'est la salutation qui se
+            replie sur deux lignes si la place manque, jamais la pastille. */}
         <Pressable
-          onPress={() => router.navigate('/profile')}
-          hitSlop={8}
-          className="h-10 w-10 items-center justify-center rounded-full bg-white"
+          onPress={onAddObjet}
+          accessibilityRole="button"
+          className="shrink-0 flex-row items-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80"
         >
-          <Icon name="profile" size={22} color="#2D2A26" />
+          <Icon name="add" size={18} color="#FFFFFF" />
+          <Text className="text-sm font-semibold text-white">{t('home.add_objet')}</Text>
         </Pressable>
       </View>
 
@@ -88,7 +97,10 @@ function HomeHeader({
           ne rend qu'une ombre grise), ce cerne fait l'effet sans lib
           supplémentaire ni rendu différent iOS/Android. */}
       <View className="mb-4 rounded-full bg-teal/15 p-[3px]">
-        <View className="flex-row items-center rounded-full border border-teal/30 bg-white px-4 py-3">
+        {/* py-1.5 + pastille de 36 px : la hauteur de la barre est désormais
+            portée par le micro, pas par le rembourrage — sans ça la barre
+            passait de 44 à 60 px de haut. */}
+        <View className="flex-row items-center rounded-full border border-teal/30 bg-white py-1.5 pl-4 pr-1.5">
           <Icon name="search" size={20} color="#A39C8F" />
           <TextInput
             value={searchText}
@@ -99,12 +111,37 @@ function HomeHeader({
             autoCorrect={false}
             className="ml-2 flex-1 text-base text-ink"
           />
+
+          {/* Seulement quand il y a du texte : toujours visible, ce bouton
+              serait mort la moitié du temps et se lirait comme un "fermer la
+              recherche". Placé AVANT le micro — la croix agit sur le texte,
+              le micro est une action à part. */}
+          {searchText.length > 0 ? (
+            <Pressable
+              onPress={() => onSearchTextChange('')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.clear')}
+              className="ml-1 h-9 w-9 items-center justify-center rounded-full active:opacity-60"
+            >
+              <Icon name="close" size={18} color="#A39C8F" />
+            </Pressable>
+          ) : null}
+
+          {/* En pastille : l'icône nue offrait une cible d'environ 20 dp,
+              moins de la moitié du minimum recommandé, et ne se lisait pas
+              comme un bouton. */}
           <Pressable
             onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
             hitSlop={8}
-            className="ml-2"
+            accessibilityRole="button"
+            accessibilityState={{ selected: voiceSearch.isListening }}
+            accessibilityLabel={t('home.voice_search_listening')}
+            className={`ml-1 h-9 w-9 items-center justify-center rounded-full active:opacity-80 ${
+              voiceSearch.isListening ? 'bg-coral' : 'bg-sand-dark'
+            }`}
           >
-            <Icon name="microphone" size={20} color={voiceSearch.isListening ? '#1591EA' : '#A39C8F'} />
+            <Icon name="microphone" size={18} color={voiceSearch.isListening ? '#FFFFFF' : '#6B6459'} />
           </Pressable>
         </View>
       </View>
@@ -152,6 +189,7 @@ export function HomeDashboard() {
 
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
+  const [addObjetOpen, setAddObjetOpen] = useState(false);
   const voiceSearch = useVoiceSearch(setSearchText);
 
   const pieceOptions = useMemo(() => {
@@ -215,6 +253,7 @@ export function HomeDashboard() {
             searchText={searchText}
             onSearchTextChange={setSearchText}
             voiceSearch={voiceSearch}
+            onAddObjet={() => setAddObjetOpen(true)}
             pieceOptions={pieceOptions}
             selectedPiece={selectedPiece}
             onSelectPiece={setSelectedPiece}
@@ -228,6 +267,10 @@ export function HomeDashboard() {
           ) : null
         }
       />
+
+      {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"
+          n'existe plus, il appartient maintenant à cet écran. */}
+      <AddObjetModal visible={addObjetOpen} onClose={() => setAddObjetOpen(false)} />
     </View>
   );
 }

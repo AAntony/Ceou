@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { TextField } from '../../src/components/TextField';
+import { TextLink } from '../../src/components/TextLink';
 import { isPasswordValid } from '../../src/features/auth/validation';
 import { supabase } from '../../src/lib/supabase/client';
 
@@ -80,11 +81,14 @@ export default function SignUpScreen() {
           </>
         )}
 
-        <View className="mt-8 flex-row justify-center gap-1">
+        <View className="mt-8 flex-row items-center justify-center gap-1">
           <Text className="text-sm text-ink-soft">{t('auth.sign_up.has_account')}</Text>
-          <Link href="/(auth)/login" className="text-sm font-semibold text-ink">
-            {t('auth.sign_up.login_link')}
-          </Link>
+          <TextLink
+            href="/(auth)/login"
+            label={t('auth.sign_up.login_link')}
+            className="px-1"
+            textClassName="text-sm font-semibold text-ink"
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

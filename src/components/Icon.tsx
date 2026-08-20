@@ -49,6 +49,8 @@ export type IconName =
   | 'delete'
   | 'add'
   | 'home'
+  | 'location'
+  | 'habitations'
   | 'back'
   | 'close'
   | 'search'
@@ -112,6 +114,14 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   delete: 'trash-can-outline',
   add: 'plus',
   home: 'home-outline',
+  // Le pin plein reprend le "o" du logo Ceou (clin d'oeil au nom), et evite
+  // surtout la collision d'icones de la barre d'onglets : l'app PARLE
+  // d'habitations, donc le pictogramme maison est deja pris au sens propre
+  // par l'onglet Habitations et ne peut pas servir aussi d'icone d'accueil.
+  location: 'map-marker',
+  // Distinct de 'maison' (type d'habitation) bien que meme glyphe : changer
+  // l'icone du TYPE maison ne doit pas changer celle de la SECTION.
+  habitations: 'home-variant',
   back: 'arrow-left',
   close: 'close',
   search: 'magnify',

@@ -15,7 +15,8 @@
     "error_boundary_hint": "Redémarre l'application. Si le problème persiste, contacte-nous.",
     "error_load_title": "Impossible de charger cette page.",
     "error_load_hint": "Vérifie ta connexion, puis réessaie.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "clear": "Effacer"
   },
   "auth": {
     "email": "Email",
@@ -67,7 +68,6 @@
     "privacy_policy": "Politique de confidentialité"
   },
   "home": {
-    "tab_title": "Habitations",
     "greeting": "Bonjour, {{name}}",
     "greeting_anonymous": "Bonjour !",
     "tagline": "Retrouve tout ce que tu as rangé.",
@@ -80,7 +80,8 @@
     "onboarding_hint": "Un objet a toujours besoin d'un endroit où vivre. Crée ta première habitation pour commencer à ranger tes affaires.",
     "voice_search_listening": "Je t'écoute...",
     "voice_search_permission_message": "Autorise l'accès au microphone pour rechercher à la voix.",
-    "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie."
+    "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie.",
+    "add_objet": "Ajouter un objet"
   },
   "friends": {
     "tab_title": "Amis",

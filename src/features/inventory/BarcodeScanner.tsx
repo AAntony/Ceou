@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
+import { TextLink } from '../../components/TextLink';
 
 type BarcodeScannerProps = {
   visible: boolean;
@@ -34,9 +35,7 @@ export function BarcodeScanner({ visible, onClose, onScanned }: BarcodeScannerPr
           <View className="flex-1 items-center justify-center px-8">
             <Text className="mb-4 text-center text-base text-white">{t('inventory.objet.scan_permission_message')}</Text>
             <Button label={t('inventory.objet.scan_permission_grant')} onPress={requestPermission} />
-            <Pressable onPress={onClose} className="mt-4">
-              <Text className="text-white">{t('common.cancel')}</Text>
-            </Pressable>
+            <TextLink onPress={onClose} label={t('common.cancel')} className="mt-4 items-center px-4" textClassName="text-white" />
           </View>
         ) : (
           <>

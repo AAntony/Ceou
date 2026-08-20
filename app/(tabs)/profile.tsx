@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
-import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
@@ -9,6 +8,7 @@ import { ErrorState } from '../../src/components/ErrorState';
 import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
+import { TextLink } from '../../src/components/TextLink';
 import { useSession } from '../../src/features/auth/SessionProvider';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
@@ -130,15 +130,21 @@ export default function ProfileScreen() {
         <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
       </View>
 
-      <View className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3">
-        <Link href="/privacy-policy" className="text-sm font-medium text-ink-soft underline">
-          {t('profile.privacy_policy')}
-        </Link>
-      </View>
+      {/* La carte ELLE-MÊME est le bouton : c'était un View inerte dont seul
+          le texte réagissait — le défaut signalé par les testeurs. */}
+      <TextLink
+        href="/privacy-policy"
+        label={t('profile.privacy_policy')}
+        className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        textClassName="text-sm font-medium text-ink-soft underline"
+      />
 
-      <Pressable onPress={() => supabase.auth.signOut()} className="mt-6">
-        <Text className="text-center text-sm font-semibold text-red-600">{t('profile.sign_out')}</Text>
-      </Pressable>
+      <TextLink
+        onPress={() => supabase.auth.signOut()}
+        label={t('profile.sign_out')}
+        className="mt-6"
+        textClassName="text-center text-sm font-semibold text-red-600"
+      />
 
       {/* Le numéro "1.0.0" seul ne bouge presque jamais — le hash de commit
           (injecté par app.config.js à chaque bundle/build) est ce qui

@@ -1,9 +1,9 @@
-import { Link } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { TextField } from '../../src/components/TextField';
+import { TextLink } from '../../src/components/TextLink';
 import { supabase } from '../../src/lib/supabase/client';
 
 export default function LoginScreen() {
@@ -45,15 +45,23 @@ export default function LoginScreen() {
 
         <Button label={t('auth.login.submit')} onPress={handleSubmit} loading={loading} />
 
-        <Link href="/(auth)/forgot-password" className="mt-4 text-center text-sm text-ink-soft">
-          {t('auth.login.forgot_password_link')}
-        </Link>
+        <TextLink
+          href="/(auth)/forgot-password"
+          label={t('auth.login.forgot_password_link')}
+          className="mt-4 items-center"
+          textClassName="text-center text-sm text-ink-soft"
+        />
 
-        <View className="mt-8 flex-row justify-center gap-1">
+        {/* items-center : le lien a désormais une hauteur de cible minimale,
+            sans quoi le texte voisin s'étirerait et se décalerait vers le haut. */}
+        <View className="mt-8 flex-row items-center justify-center gap-1">
           <Text className="text-sm text-ink-soft">{t('auth.login.no_account')}</Text>
-          <Link href="/(auth)/sign-up" className="text-sm font-semibold text-ink">
-            {t('auth.login.sign_up_link')}
-          </Link>
+          <TextLink
+            href="/(auth)/sign-up"
+            label={t('auth.login.sign_up_link')}
+            className="px-1"
+            textClassName="text-sm font-semibold text-ink"
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
