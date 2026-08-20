@@ -34,6 +34,10 @@ type PlanPinLayerProps = {
   selectedFormeId: string | null;
   highlightedEmplacementId?: string | null;
   scale: number;
+  // Consultation seule : les pastilles restent AFFICHÉES (c'est tout leur
+  // intérêt — voir où sont les Emplacements) mais ne se déplacent plus et
+  // n'ouvrent plus leur fiche, qui ne propose que « Retirer du plan ».
+  readOnly?: boolean;
   onDragEnd: (pinId: string, relX: number, relY: number) => void;
   onTap: (pin: PlanPin) => void;
 };
@@ -54,6 +58,7 @@ export function PlanPinLayer({
   selectedFormeId,
   highlightedEmplacementId,
   scale,
+  readOnly = false,
   onDragEnd,
   onTap,
 }: PlanPinLayerProps) {
@@ -117,7 +122,7 @@ export function PlanPinLayer({
             geo={geo}
             pos={pos}
             display={display}
-            interactive={pin.forme_id === selectedFormeId}
+            interactive={!readOnly && pin.forme_id === selectedFormeId}
             selected={pin.id === selectedPinId}
             highlighted={pin.emplacement_id === highlightedEmplacementId}
             scale={scale}

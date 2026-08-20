@@ -109,6 +109,30 @@
       "exhausted": "Ce code a atteint son nombre maximum d’utilisations.",
       "own_invite": "C’est ton propre code.",
       "friend_code": "Ce code est une invitation entre amis : il demande un compte. Crée-en un pour l’utiliser."
+    },
+    "no_habitation": "Rien ne t’a encore été partagé. Demande un nouveau code à ton hôte si celui que tu as utilisé a expiré.",
+    "leave": "Quitter le mode invité",
+    "pitch": {
+      "tagline": "Sache toujours où sont tes affaires, chez toi comme ailleurs.",
+      "search": "Retrouve un objet en le cherchant par son nom, ou à la voix.",
+      "organise": "Range tes affaires par habitation, pièce, meuble et boîte.",
+      "plan": "Dessine le plan de ton logement et vois d’un coup d’œil dans quelle pièce se trouve un objet.",
+      "share": "Partage un accès à tes proches, ou un code de consultation à tes invités."
+    },
+    "upgrade": {
+      "entry": "Créer mon compte",
+      "title": "Créer mon compte",
+      "description": "Choisis une adresse e-mail et un mot de passe. Tu gardes tout ce qui t’a déjà été partagé, et tu pourras créer ton propre inventaire.",
+      "submit": "Créer mon compte",
+      "keeps_access": "Les habitations partagées avec toi restent accessibles : pas besoin de redemander le code à ton hôte.",
+      "sent_title": "Vérifie tes e-mails",
+      "sent_body": "Un lien de confirmation a été envoyé à {{email}}. Ton compte reste en mode invité tant que tu n’as pas cliqué dessus. Rouvre l’application ensuite.",
+      "errors": {
+        "email_invalid": "Cette adresse e-mail n’est pas valide.",
+        "email_taken": "Un compte existe déjà avec cette adresse. Connecte-toi avec ce compte, puis redemande le code à ton hôte pour retrouver l’accès.",
+        "validation": "Impossible de créer le compte avec ces informations. Vérifie l’adresse et le mot de passe.",
+        "rate_limit": "Trop de tentatives. Réessaie dans quelques minutes."
+      }
     }
   },
   "profile": {
@@ -387,6 +411,8 @@
     },
     "pins": {
       "remove": "Retirer du plan"
-    }
+    },
+    "section_label": "Plans",
+    "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule."
   }
 }

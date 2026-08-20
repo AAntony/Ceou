@@ -100,6 +100,12 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
+  // Consultation seule : le plan reste explorable (zoom, déplacement de la
+  // vue, lecture des noms et des pastilles) mais plus rien n'est modifiable.
+  // Sans ça, un ami en Consultation ou un visiteur pouvait glisser une pièce
+  // et voir la RLS refuser l'écriture côté serveur — la pièce revenait à sa
+  // place sans un mot d'explication.
+  readOnly?: boolean;
 };
 
 // Exposé via ref pour que l'écran parent (bouton "Ajouter une pièce", hors
@@ -127,6 +133,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDeselect,
     onPinDragEnd,
     onPinTap,
+    readOnly = false,
   },
   ref,
 ) {
@@ -484,6 +491,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   geo={geo}
                   others={others}
                   isSelected={isSelected}
+                  readOnly={readOnly}
                   scale={zoom.scale}
                   onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
                   onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
@@ -493,7 +501,10 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               );
             })}
 
-            {selectedForme
+            {/* Poignées de redimensionnement : pas rendues du tout en
+                consultation, plutôt que rendues et inertes — une poignée
+                visible qui ne répond pas se lit comme un bug. */}
+            {selectedForme && !readOnly
               ? HANDLES.map((handle) => (
                   <HandleDot
                     key={handle}
@@ -514,6 +525,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               selectedFormeId={selectedFormeId}
               highlightedEmplacementId={highlightEmplacementId}
               scale={zoom.scale}
+              readOnly={readOnly}
               onDragEnd={onPinDragEnd}
               onTap={onPinTap}
             />
@@ -576,6 +588,7 @@ function ShapeBody({
   geo,
   others,
   isSelected,
+  readOnly,
   scale,
   onMove,
   onDragEnd,
@@ -585,6 +598,7 @@ function ShapeBody({
   geo: ShapeGeometry;
   others: ShapeGeometry[];
   isSelected: boolean;
+  readOnly?: boolean;
   scale: number;
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
@@ -607,7 +621,7 @@ function ShapeBody({
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .enabled(isSelected)
+    .enabled(isSelected && !readOnly)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = geo;
@@ -628,7 +642,15 @@ function ShapeBody({
   // doubleTap doit être listé en premier dans Exclusive pour faire attendre
   // singleTap le temps de voir si un second tap suit.
   const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onSelect());
-  const doubleTap = Gesture.Tap().numberOfTaps(2).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onOpenSheet());
+  // Le tap simple (sélection) reste actif en consultation : il ne modifie
+  // rien et sert à mettre une pièce en évidence. Seul le double-tap, qui
+  // ouvre la fiche d'édition, est coupé.
+  const doubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .enabled(!readOnly)
+    .hitSlop(HIT_SLOP)
+    .runOnJS(true)
+    .onEnd(() => onOpenSheet());
   const taps = Gesture.Exclusive(doubleTap, singleTap);
   const gesture = Gesture.Exclusive(pan, taps);
 

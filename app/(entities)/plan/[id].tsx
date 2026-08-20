@@ -21,6 +21,7 @@ import {
   useUpdatePlanPin,
 } from '../../../src/features/plans/queries';
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
+import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import type { PlanForme } from '../../../src/types/database';
 
 export default function PlanScreen() {
@@ -50,6 +51,13 @@ export default function PlanScreen() {
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
   const canvasRef = useRef<PlanCanvasHandle>(null);
+
+  // Le droit se résout sur l'HABITATION du plan, pas sur le plan lui-même :
+  // c'est l'habitation qui porte les partages (voir habitation_share_permission).
+  // Un visiteur ou un ami en Consultation obtient donc canEdit = false, et
+  // l'écran devient un explorateur plutôt qu'un éditeur.
+  const { data: permission } = useHabitationPermission(plan?.habitation_id ?? undefined);
+  const canEdit = canModify(permission);
 
   const pieceInfo = useMemo(
     () => Object.fromEntries((pieces ?? []).map((p) => [p.id, { name: p.name, color: p.color }])),
@@ -96,17 +104,21 @@ export default function PlanScreen() {
             n'a désormais de sens qu'À L'INTÉRIEUR de la zone du plan
             elle-même (voir PlanCanvas, qui gère son propre zoom/pan borné). */}
         <View className="px-6 pb-2 pt-4">
-          <Pressable
-            onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
-            className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
-          >
-            <Icon name="add" size={18} color="#fff" />
-            <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
-          </Pressable>
-          <Text className="text-xs text-ink-soft">{t('plans.canvas_hint')}</Text>
+          {canEdit ? (
+            <Pressable
+              onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
+              className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
+            >
+              <Icon name="add" size={18} color="#fff" />
+              <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
+            </Pressable>
+          ) : null}
+          {/* Le rappel des gestes décrit l'ÉDITION : l'afficher en
+              consultation promettrait des actions qui ne répondent pas. */}
+          <Text className="text-xs text-ink-soft">{t(canEdit ? 'plans.canvas_hint' : 'plans.canvas_hint_readonly')}</Text>
         </View>
 
-        {selectedForme?.piece_id ? (
+        {canEdit && selectedForme?.piece_id ? (
           <UnplacedEmplacementsBar
             pieceId={selectedForme.piece_id}
             pins={pins ?? []}
@@ -124,6 +136,7 @@ export default function PlanScreen() {
             highlightFormeId={highlightFormeId}
             highlightEmplacementId={highlightEmplacementId}
             selectedFormeId={selectedFormeId}
+            readOnly={!canEdit}
             onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
             onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
             onSelect={(forme) => setSelectedFormeId(forme.id)}

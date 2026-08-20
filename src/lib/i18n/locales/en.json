@@ -109,6 +109,30 @@
       "exhausted": "This code has reached its maximum number of uses.",
       "own_invite": "This is your own code.",
       "friend_code": "This code is a friend invitation: it requires an account. Create one to use it."
+    },
+    "no_habitation": "Nothing has been shared with you yet. Ask your host for a new code if the one you used has expired.",
+    "leave": "Leave guest mode",
+    "pitch": {
+      "tagline": "Always know where your things are, at home and elsewhere.",
+      "search": "Find an item by searching its name, or with your voice.",
+      "organise": "Organise your things by home, room, furniture and box.",
+      "plan": "Draw your floor plan and see at a glance which room an item is in.",
+      "share": "Share access with the people close to you, or a view-only code with your guests."
+    },
+    "upgrade": {
+      "entry": "Create my account",
+      "title": "Create my account",
+      "description": "Choose an email address and a password. You keep everything already shared with you, and you can start your own inventory.",
+      "submit": "Create my account",
+      "keeps_access": "Homes shared with you stay accessible: no need to ask your host for the code again.",
+      "sent_title": "Check your email",
+      "sent_body": "A confirmation link was sent to {{email}}. Your account stays in guest mode until you tap it. Reopen the app afterwards.",
+      "errors": {
+        "email_invalid": "This email address is not valid.",
+        "email_taken": "An account already exists with this address. Sign in with it, then ask your host for the code again to regain access.",
+        "validation": "The account could not be created with these details. Check the address and password.",
+        "rate_limit": "Too many attempts. Try again in a few minutes."
+      }
     }
   },
   "profile": {
@@ -387,6 +411,8 @@
     },
     "pins": {
       "remove": "Remove from plan"
-    }
+    },
+    "section_label": "Plans",
+    "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only."
   }
 }

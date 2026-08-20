@@ -9,7 +9,8 @@ import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
-import { useSession } from '../../src/features/auth/SessionProvider';
+import { GuestProfile } from '../../src/features/auth/GuestProfile';
+import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
 import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
@@ -20,6 +21,7 @@ import { supabase } from '../../src/lib/supabase/client';
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { session } = useSession();
+  const isGuest = useIsAnonymous();
   const { data: profile, isLoading, isError, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
 
@@ -54,6 +56,12 @@ export default function ProfileScreen() {
       setAvatarUploading(false);
     }
   };
+
+  // Un visiteur n’a ni nom affiche, ni avatar, ni code ami : le Profil normal
+  // lui presenterait une fiche vide. Il obtient a la place une presentation de
+  // Ceou et une invitation a creer un compte. Place APRES tous les hooks pour
+  // ne pas changer leur ordre d’appel d’un rendu a l’autre.
+  if (isGuest) return <GuestProfile />;
 
   if (isError) {
     return (

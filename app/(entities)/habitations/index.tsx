@@ -10,8 +10,9 @@ import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
 import { PresetPicker } from '../../../src/components/PresetPicker';
-import { useSession } from '../../../src/features/auth/SessionProvider';
+import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
+import { GuestHabitationSection } from '../../../src/features/inventory/GuestHabitationSection';
 import {
   useCreateHabitation,
   useDeleteHabitation,
@@ -37,6 +38,7 @@ export default function HabitationsScreen() {
   const createHabitation = useCreateHabitation();
   const updateHabitation = useUpdateHabitation();
   const deleteHabitation = useDeleteHabitation();
+  const isGuest = useIsAnonymous();
   const [tab, setTab] = useState<Tab>('personal');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
@@ -49,6 +51,9 @@ export default function HabitationsScreen() {
   const isFavoritePending = (habitationId: string) =>
     toggleFavorite.isPending && toggleFavorite.variables?.habitationId === habitationId;
   const myHabitations = (habitations ?? []).filter((h) => h.user_id === session?.user.id);
+  // Un visiteur ne possede aucune habitation : tout ce que la RLS lui renvoie
+  // est, par construction, ce qui lui a ete partage via son code.
+  const guestHabitations = habitations ?? [];
   const acceptedFriends = (friendships ?? [])
     .filter((f) => f.status === 'accepted')
     .sort((a, b) => (a.otherDisplayName || a.otherFriendCode).localeCompare(b.otherDisplayName || b.otherFriendCode));
@@ -101,13 +106,28 @@ export default function HabitationsScreen() {
           // Seul l'onglet Personnelles peut recevoir une creation : l'onglet
           // Partagees liste des amis, pas des habitations a soi.
           headerRight: () =>
-            tab === 'personal' ? (
+            tab === 'personal' && !isGuest ? (
               <HeaderAddButton onPress={openCreate} label={t('inventory.habitations.add')} />
             ) : null,
         }}
       />
       <View className="flex-1 bg-sand">
         <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+          {/* Un visiteur ne voit ni onglets ni creation : les deux onglets lui
+              seraient vides par construction (il ne possede rien et n’a aucun
+              ami). Il voit directement ce a quoi son code lui donne acces. */}
+          {isGuest ? (
+            isError ? (
+              <ErrorState onRetry={() => refetch()} />
+            ) : guestHabitations.length === 0 ? (
+              <EmptyState icon="home" title={t('guest.no_habitation')} />
+            ) : (
+              guestHabitations.map((habitation) => (
+                <GuestHabitationSection key={habitation.id} habitation={habitation} />
+              ))
+            )
+          ) : (
+            <>
           <SegmentedTabs
             options={[
               { value: 'personal', label: t('inventory.habitations.tab_personal') },
@@ -159,6 +179,8 @@ export default function HabitationsScreen() {
                 />
               ))}
             </EntityGrid>
+          )}
+            </>
           )}
         </ScrollView>
 
