@@ -430,6 +430,13 @@
       "apply": "Utiliser ce départ",
       "note": "Les pièces qui manquent seront créées dans ton habitation. Celles qui existent déjà sont réutilisées."
     },
-    "unassigned_room": "Pièce non associée"
+    "unassigned_room": "Pièce non associée",
+    "room_sheet": {
+      "storages_title": "Rangements",
+      "storages": "{{n}} rangements",
+      "objects": "{{n}} objets",
+      "empty": "Aucun rangement dans cette pièce pour l’instant.",
+      "open": "Ouvrir la pièce"
+    }
   }
 }

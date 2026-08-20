@@ -430,6 +430,13 @@
       "apply": "Use this starting point",
       "note": "Missing rooms will be created in your home. Existing ones are reused."
     },
-    "unassigned_room": "Unassigned room"
+    "unassigned_room": "Unassigned room",
+    "room_sheet": {
+      "storages_title": "Storages",
+      "storages": "{{n}} storages",
+      "objects": "{{n}} items",
+      "empty": "No storage in this room yet.",
+      "open": "Open the room"
+    }
   }
 }

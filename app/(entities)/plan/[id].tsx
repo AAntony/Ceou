@@ -24,6 +24,7 @@ import {
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
 import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanModeSwitch';
 import { PlanTemplatePicker } from '../../../src/features/plans/PlanTemplatePicker';
+import { PlanRoomSheet } from '../../../src/features/plans/PlanRoomSheet';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import type { PlanForme } from '../../../src/types/database';
 
@@ -54,6 +55,8 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
+  // Pièce dont la fiche est ouverte — mode Explorer uniquement.
+  const [roomSheetPieceId, setRoomSheetPieceId] = useState<string | null>(null);
   const canvasRef = useRef<PlanCanvasHandle>(null);
 
   // Le droit se résout sur l'HABITATION du plan, pas sur le plan lui-même :
@@ -202,13 +205,29 @@ export default function PlanScreen() {
             readOnly={!editing}
             onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
             onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
-            onSelect={(forme) => setSelectedFormeId(forme.id)}
+            onSelect={(forme) => {
+              setSelectedFormeId(forme.id);
+              // En lecture, toucher une pièce ouvre sa fiche : sans ça le tap
+              // ne faisait que la surligner, ce qui ne répond à aucune
+              // question. En édition il sélectionne seulement, pour ne pas
+              // ouvrir une feuille à chaque fois qu'on veut déplacer.
+              if (!editing && forme.piece_id) setRoomSheetPieceId(forme.piece_id);
+            }}
             onDeselect={() => setSelectedFormeId(null)}
             onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
             onPinTap={(pin) => setSheetPinId(pin.id)}
           />
         </View>
       </View>
+
+      <PlanRoomSheet
+        piece={(pieces ?? []).find((piece) => piece.id === roomSheetPieceId) ?? null}
+        objectCount={roomSheetPieceId ? (roomCounts?.[roomSheetPieceId] ?? null) : null}
+        onClose={() => {
+          setRoomSheetPieceId(null);
+          setSelectedFormeId(null);
+        }}
+      />
 
       <ShapeInspectorSheet
         forme={sheetForme}
