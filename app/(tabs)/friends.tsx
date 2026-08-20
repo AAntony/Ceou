@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useNavigation } from 'expo-router';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { EntityCard } from '../../src/components/EntityCard';
 import { EntityGrid } from '../../src/components/EntityGrid';
 import { ErrorState } from '../../src/components/ErrorState';
+import { HeaderAddButton } from '../../src/components/HeaderAddButton';
 import { Icon } from '../../src/components/Icon';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
@@ -19,6 +20,18 @@ export default function FriendsScreen() {
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendshipEntry | null>(null);
+
+  const navigation = useNavigation();
+  const openAddModal = useCallback(() => setAddModalOpen(true), []);
+  // Le bouton est posé sur l'en-tête natif déclaré par (tabs)/_layout.tsx.
+  // Il ne peut pas l'être depuis le layout, qui n'a pas accès à l'état de la
+  // modale ; useLayoutEffect plutôt que useEffect pour qu'il soit peint dans
+  // la même frame que l'écran, sans apparition différée.
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => <HeaderAddButton onPress={openAddModal} label={t('friends.add.entry')} />,
+    });
+  }, [navigation, openAddModal, t]);
 
   const incoming = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'incoming');
   const outgoing = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'outgoing');
@@ -47,15 +60,10 @@ export default function FriendsScreen() {
 
   return (
     <>
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-16">
-        <View className="mb-6">
-          <Text className="text-2xl font-bold text-ink">{t('friends.tab_title')}</Text>
-        </View>
-
-        <View className="mb-6">
-          <Button label={t('friends.add.entry')} onPress={() => setAddModalOpen(true)} />
-        </View>
-
+      {/* Mêmes retraits que app/(entities)/habitations/index.tsx : le titre
+          et le bouton d'ajout vivent maintenant dans l'en-tête natif, donc
+          plus de pt-16 pour compenser son absence. */}
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-28 pt-4">
         {incoming.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.requests.incoming_title')}</Text>
