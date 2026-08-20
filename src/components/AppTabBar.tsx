@@ -25,7 +25,6 @@ const HABITATION_PREFIXES = [
   '/objet/',
   '/plans/',
   '/plan/',
-  '/friend-habitations/',
 ];
 
 type TabItemProps = {

@@ -58,6 +58,25 @@ export default function HabitationsScreen() {
     .filter((f) => f.status === 'accepted')
     .sort((a, b) => (a.otherDisplayName || a.otherFriendCode).localeCompare(b.otherDisplayName || b.otherFriendCode));
 
+  // L'onglet "Partagees" liste des HABITATIONS, plus des amis.
+  //
+  // POURQUOI CE CHANGEMENT : il listait les amis acceptes, et on n'atteignait
+  // leurs habitations qu'en tapant sur chaque ami. Un acces obtenu par CODE
+  // D'INVITATION ne cree aucune amitie -- l'onglet restait donc
+  // desesperement vide pour quelqu'un entre par un code, alors meme que la
+  // RLS lui donnait bien acces a l'habitation (defaut remonte en test reel :
+  // les objets etaient visibles depuis l'accueil, mais l'habitation
+  // introuvable ici).
+  //
+  // Lister les habitations directement traite les DEUX chemins de la meme
+  // facon, et supprime au passage un niveau de navigation.
+  const friendNameByOwner = new Map(
+    acceptedFriends.map((f) => [f.otherUserId, f.otherDisplayName || f.otherFriendCode] as const),
+  );
+  const sharedHabitations = (habitations ?? [])
+    .filter((h) => h.user_id !== session?.user.id)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   const handleDelete = (id: string) => {
     confirmDelete(t, 'inventory.habitations.delete_confirm_title', 'inventory.habitations.delete_confirm_message', () =>
       deleteHabitation.mutate(id),
@@ -87,10 +106,6 @@ export default function HabitationsScreen() {
   };
 
   const isPersonalEmpty = !isLoading && myHabitations.length === 0;
-
-  const openFriendHabitations = (friendId: string, friendName: string) => {
-    router.push(`/friend-habitations/${friendId}?friendName=${encodeURIComponent(friendName)}`);
-  };
 
   return (
     <>
@@ -165,17 +180,30 @@ export default function HabitationsScreen() {
                 ))}
               </EntityGrid>
             )
-          ) : acceptedFriends.length === 0 ? (
-            <EmptyState icon="friends" title={t('friends.empty')} />
+          ) : isError ? (
+            <ErrorState onRetry={() => refetch()} />
+          ) : sharedHabitations.length === 0 ? (
+            <EmptyState icon="home" title={t('inventory.habitations.shared_empty')} />
           ) : (
             <EntityGrid>
-              {acceptedFriends.map((f) => (
+              {sharedHabitations.map((habitation) => (
                 <EntityCard
-                  key={f.id}
-                  icon="profile"
-                  imageUri={f.otherAvatarUrl}
-                  title={f.otherDisplayName || f.otherFriendCode}
-                  onPress={() => openFriendHabitations(f.otherUserId, f.otherDisplayName || f.otherFriendCode)}
+                  key={habitation.id}
+                  icon={getHabitationIcon(habitation.type)}
+                  title={habitation.name}
+                  // Le nom de l'hote quand c'est un ami (on l'a deja en
+                  // memoire), sinon le fait que l'acces vienne d'un code : la
+                  // profil d'un hote inconnu n'est pas lisible par la RLS, on
+                  // n'invente donc pas un nom qu'on ne peut pas obtenir.
+                  subtitle={friendNameByOwner.get(habitation.user_id) ?? t('inventory.habitations.shared_via_invite')}
+                  bgColor={HUE_CARD_BG_HEX.teal}
+                  badgeColor={HUE_BADGE_FILL.teal}
+                  onPress={() => router.push(`/habitation/${habitation.id}`)}
+                  isFavorite={favoriteIds.has(habitation.id)}
+                  onToggleFavorite={() =>
+                    toggleFavorite.mutate({ habitationId: habitation.id, isFavorite: favoriteIds.has(habitation.id) })
+                  }
+                  favoriteDisabled={isFavoritePending(habitation.id)}
                 />
               ))}
             </EntityGrid>

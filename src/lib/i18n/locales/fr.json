@@ -273,7 +273,9 @@
       "delete_confirm_message": "Toutes les pièces, emplacements et objets qu'elle contient seront supprimés.",
       "tab_pieces": "Pièces",
       "tab_emplacements": "Emplacements",
-      "tab_plans": "Plans"
+      "tab_plans": "Plans",
+      "shared_empty": "Aucune habitation ne t’a été partagée pour l’instant.",
+      "shared_via_invite": "Reçu par code d’invitation"
     },
     "habitationTypes": {
       "maison": "Maison",

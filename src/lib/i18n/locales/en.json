@@ -273,7 +273,9 @@
       "delete_confirm_message": "All the rooms, spots and items it contains will be deleted.",
       "tab_pieces": "Rooms",
       "tab_emplacements": "Spots",
-      "tab_plans": "Plans"
+      "tab_plans": "Plans",
+      "shared_empty": "No home has been shared with you yet.",
+      "shared_via_invite": "Received via invitation code"
     },
     "habitationTypes": {
       "maison": "House",
