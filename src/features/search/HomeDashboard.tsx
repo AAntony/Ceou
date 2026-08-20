@@ -128,20 +128,27 @@ function HomeHeader({
             </Pressable>
           ) : null}
 
-          {/* En pastille : l'icône nue offrait une cible d'environ 20 dp,
-              moins de la moitié du minimum recommandé, et ne se lisait pas
-              comme un bouton. */}
+          {/* En pastille cerclée de bleu : l'icône nue offrait une cible
+              d'environ 20 dp, moins de la moitié du minimum recommandé, et
+              ne se lisait pas comme un bouton. Le cercle reprend le motif
+              du bouton `outline` (border-2 border-coral + bg-coral-light),
+              déjà employé ailleurs pour une action secondaire qui doit se
+              reconnaître au premier coup d'œil.
+              La bordure est conservée à l'état "écoute" bien qu'invisible
+              sur le fond plein : en RN elle est tracée À L'INTÉRIEUR de la
+              boîte, donc la retirer ferait sauter la mise en page d'un
+              état à l'autre, pile au moment où l'utilisateur appuie. */}
           <Pressable
             onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityState={{ selected: voiceSearch.isListening }}
             accessibilityLabel={t('home.voice_search_listening')}
-            className={`ml-1 h-9 w-9 items-center justify-center rounded-full active:opacity-80 ${
-              voiceSearch.isListening ? 'bg-coral' : 'bg-sand-dark'
+            className={`ml-1 h-9 w-9 items-center justify-center rounded-full border-2 border-coral active:opacity-80 ${
+              voiceSearch.isListening ? 'bg-coral' : 'bg-coral-light'
             }`}
           >
-            <Icon name="microphone" size={18} color={voiceSearch.isListening ? '#FFFFFF' : '#6B6459'} />
+            <Icon name="microphone" size={18} color={voiceSearch.isListening ? '#FFFFFF' : '#1591EA'} />
           </Pressable>
         </View>
       </View>
