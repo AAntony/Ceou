@@ -71,6 +71,18 @@ module.exports = {
         },
       ],
       [
+        'expo-splash-screen',
+        {
+          // Aplat bleu SANS image, volontairement : c'est exactement la
+          // première image de l'animation (AnimatedSplash), qui commence sur
+          // un fond nu avant que la loupe n'entre. Le passage du splash
+          // système au nôtre devient donc invisible — y mettre le logo le
+          // ferait au contraire sauter au moment de la bascule.
+          backgroundColor: '#1591EA',
+          dark: { backgroundColor: '#1591EA' },
+        },
+      ],
+      [
         'expo-speech-recognition',
         {
           microphonePermission: 'Ceou a besoin du microphone pour rechercher un objet à la voix.',
