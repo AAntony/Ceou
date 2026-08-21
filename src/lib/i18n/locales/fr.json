@@ -251,6 +251,23 @@
       "label_optional": "Nom du code (facultatif)",
       "label_placeholder": "Locataires de juillet",
       "share_message_guest": "Je te partage un accès à mon logement sur Céoù. Ouvre ce lien : {{url}} (code : {{code}})"
+    },
+    "unfiled": "Sans catégorie",
+    "shared_count_zero": "Aucune habitation partagée",
+    "shared_count_one": "1 habitation partagée",
+    "shared_count_other": "{{count}} habitations partagées",
+    "categories": {
+      "new": "Nouvelle catégorie",
+      "create_title": "Nouvelle catégorie",
+      "edit_title": "Modifier la catégorie",
+      "name_label": "Nom de la catégorie",
+      "name_placeholder": "Famille, Coloc, Voisins...",
+      "delete": "Supprimer la catégorie",
+      "delete_confirm_title": "Supprimer cette catégorie ?",
+      "delete_confirm_message": "Les amis qu'elle contient ne sont pas retirés : ils repassent simplement dans « Sans catégorie ».",
+      "move_title": "Déplacer vers",
+      "move_none": "Sans catégorie",
+      "empty_hint": "Aucun ami dans cette catégorie pour le moment."
     }
   },
   "invites": {

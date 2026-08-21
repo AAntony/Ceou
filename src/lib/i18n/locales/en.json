@@ -251,6 +251,23 @@
       "label_optional": "Code name (optional)",
       "label_placeholder": "July tenants",
       "share_message_guest": "I am sharing access to my place on Ceou. Open this link: {{url}} (code: {{code}})"
+    },
+    "unfiled": "Uncategorised",
+    "shared_count_zero": "No shared home",
+    "shared_count_one": "1 shared home",
+    "shared_count_other": "{{count}} shared homes",
+    "categories": {
+      "new": "New category",
+      "create_title": "New category",
+      "edit_title": "Edit category",
+      "name_label": "Category name",
+      "name_placeholder": "Family, Flatmates, Neighbours...",
+      "delete": "Delete category",
+      "delete_confirm_title": "Delete this category?",
+      "delete_confirm_message": "The friends in it are not removed: they simply move back to \"Uncategorised\".",
+      "move_title": "Move to",
+      "move_none": "Uncategorised",
+      "empty_hint": "No friend in this category yet."
     }
   },
   "invites": {

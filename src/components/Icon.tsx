@@ -82,7 +82,8 @@ export type IconName =
   | 'share'
   | 'star'
   | 'starOutline'
-  | 'alert';
+  | 'alert'
+  | 'dots';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -167,6 +168,7 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   profile: 'account-circle-outline',
   validate: 'check',
   microphone: 'microphone',
+  dots: 'dots-horizontal',
   arrowDown: 'arrow-down-bold',
   scan: 'creation',
   included: 'check-circle',

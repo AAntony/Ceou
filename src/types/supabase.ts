@@ -173,6 +173,59 @@ export type Database = {
           },
         ]
       }
+      friend_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      friend_category_members: {
+        Row: {
+          category_id: string
+          created_at: string
+          friend_user_id: string
+          owner_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          friend_user_id: string
+          owner_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          friend_user_id?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_category_members_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "friend_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -752,6 +805,13 @@ export type Database = {
       emplacement_habitation: {
         Args: { p_emplacement_id: string }
         Returns: string
+      }
+      friend_shared_habitation_counts: {
+        Args: never
+        Returns: {
+          friend_user_id: string
+          habitation_count: number
+        }[]
       }
       generate_friend_code: { Args: never; Returns: string }
       generate_invite_code: { Args: never; Returns: string }

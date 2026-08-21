@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { EntityCard } from '../../components/EntityCard';
@@ -11,6 +11,7 @@ import type { HabitationPermission } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { getHabitationIcon } from '../inventory/constants';
 import { useHabitations } from '../inventory/queries';
+import { useFriendCategories, useFriendCategoryMembers, useMoveFriendToCategory } from './categories';
 import { PermissionPicker } from './PermissionPicker';
 import {
   type FriendshipEntry,
@@ -41,8 +42,13 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
   const upsertShare = useUpsertHabitationShare();
   const deleteShare = useDeleteHabitationShare();
   const removeFriend = useRemoveFriend();
+  const { data: categories } = useFriendCategories();
+  const { data: membership } = useFriendCategoryMembers();
+  const moveToCategory = useMoveFriendToCategory();
 
   if (!friend) return null;
+
+  const currentCategoryId = membership?.get(friend.otherUserId) ?? null;
 
   const myHabitations = (habitations ?? []).filter((h) => h.user_id === session?.user.id);
   const shareByHabitation = new Map((shares ?? []).map((s) => [s.habitationId, s]));
@@ -116,6 +122,48 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
             </EntityGrid>
           </View>
         ) : null}
+
+        {/* Le rangement d'abord : c'est le geste léger et fréquent, alors
+            que les droits d'accès en dessous sont la partie sérieuse. Les
+            catégories ne changent RIEN aux accès — les deux blocs sont
+            volontairement séparés pour qu'on ne les confonde pas. */}
+        <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.categories.move_title')}</Text>
+        <View className="mb-6 flex-row flex-wrap gap-2">
+          {(categories ?? []).map((category) => {
+            const selected = currentCategoryId === category.id;
+            return (
+              <Pressable
+                key={category.id}
+                onPress={() => moveToCategory.mutate({ friendUserId: friend.otherUserId, categoryId: category.id })}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                className={`rounded-full border px-4 py-2 active:opacity-70 ${
+                  selected ? 'border-2 border-[#1591EA] bg-[#E6F1FB]' : 'border-ink/10 bg-white'
+                }`}
+              >
+                <Text className={selected ? 'text-sm font-semibold text-[#0C447C]' : 'text-sm text-ink-soft'}>
+                  {category.name}
+                </Text>
+              </Pressable>
+            );
+          })}
+
+          {/* « Sans catégorie » est toujours proposé, y compris quand aucune
+              catégorie n'existe : c'est la seule façon de faire ressortir un
+              ami d'une catégorie. */}
+          <Pressable
+            onPress={() => moveToCategory.mutate({ friendUserId: friend.otherUserId, categoryId: null })}
+            accessibilityRole="button"
+            accessibilityState={{ selected: currentCategoryId === null }}
+            className={`rounded-full border px-4 py-2 active:opacity-70 ${
+              currentCategoryId === null ? 'border-2 border-[#1591EA] bg-[#E6F1FB]' : 'border-ink/10 bg-white'
+            }`}
+          >
+            <Text className={currentCategoryId === null ? 'text-sm font-semibold text-[#0C447C]' : 'text-sm text-ink-soft'}>
+              {t('friends.categories.move_none')}
+            </Text>
+          </Pressable>
+        </View>
 
         <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_habitations')}</Text>
         {myHabitations.length === 0 ? (

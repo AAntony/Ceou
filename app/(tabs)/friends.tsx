@@ -3,13 +3,20 @@ import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { EmptyState } from '../../src/components/EmptyState';
-import { EntityCard } from '../../src/components/EntityCard';
-import { EntityGrid } from '../../src/components/EntityGrid';
 import { ErrorState } from '../../src/components/ErrorState';
 import { HeaderAddButton } from '../../src/components/HeaderAddButton';
 import { Icon } from '../../src/components/Icon';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
+import {
+  buildFriendSections,
+  useFriendCategories,
+  useFriendCategoryMembers,
+  useFriendSharedHabitationCounts,
+  type FriendCategory,
+} from '../../src/features/sharing/categories';
+import { FriendCategorySheet } from '../../src/features/sharing/FriendCategorySheet';
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
+import { FriendRow } from '../../src/features/sharing/FriendRow';
 import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespondToFriendship } from '../../src/features/sharing/queries';
 
 export default function FriendsScreen() {
@@ -18,8 +25,16 @@ export default function FriendsScreen() {
   const respond = useRespondToFriendship();
   const cancelRequest = useCancelFriendRequest();
 
+  const { data: categories } = useFriendCategories();
+  const { data: membership } = useFriendCategoryMembers();
+  const { data: sharedCounts } = useFriendSharedHabitationCounts();
+
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<FriendshipEntry | null>(null);
+  // `undefined` = feuille fermee ; `null` = creation ; une categorie =
+  // modification. Un seul etat plutot que deux booleens, les trois cas
+  // s'excluent.
+  const [categorySheet, setCategorySheet] = useState<FriendCategory | null | undefined>(undefined);
 
   const navigation = useNavigation();
   const openAddModal = useCallback(() => setAddModalOpen(true), []);
@@ -35,12 +50,21 @@ export default function FriendsScreen() {
 
   const incoming = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'incoming');
   const outgoing = (friendships ?? []).filter((f) => f.status === 'pending' && f.direction === 'outgoing');
-  // Groupes retirés (Phase 9a) : plus de sections par groupe, une seule
-  // liste triée alphabétiquement — même liste réutilisée par l'onglet
-  // "Partagées" de l'écran Habitations (Phase 9c).
-  const accepted = (friendships ?? [])
-    .filter((f) => f.status === 'accepted')
-    .sort((a, b) => (a.otherDisplayName || a.otherFriendCode).localeCompare(b.otherDisplayName || b.otherFriendCode));
+  const accepted = (friendships ?? []).filter((f) => f.status === 'accepted');
+
+  // Les catégories ne sont QU'UN RANGEMENT : elles n'existent que dans cette
+  // liste, l'ami concerné ne les voit pas et elles ne changent rien à qui a
+  // accès à quoi. À ne pas confondre avec les Groupes retirés le 17/08, qui
+  // étaient eux une unité de partage traversant la RLS.
+  const sections = buildFriendSections(accepted, categories ?? [], membership ?? new Map());
+
+  // Le zéro est traité à part : le français range 0 avec le singulier, donc
+  // une pluralisation seule afficherait « 1 habitation partagée ».
+  const sharedLabel = (friendUserId: string) => {
+    if (!sharedCounts) return undefined;
+    const count = sharedCounts.get(friendUserId) ?? 0;
+    return count === 0 ? t('friends.shared_count_zero') : t('friends.shared_count', { count });
+  };
 
   if (isError) {
     return (
@@ -105,25 +129,63 @@ export default function FriendsScreen() {
           <EmptyState icon="friends" title={t('friends.empty')} />
         ) : null}
 
-        {accepted.length > 0 ? (
-          <View className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.list_title')}</Text>
-            <EntityGrid>
-              {accepted.map((f) => (
-                <EntityCard
+        {sections.map((section) => (
+          <View key={section.category?.id ?? 'unfiled'} className="mb-5">
+            <View className="mb-2 flex-row items-center gap-2">
+              <Text className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+                {section.category?.name ?? t('friends.unfiled')}
+              </Text>
+              <View className="rounded-full bg-ink/5 px-2 py-0.5">
+                <Text className="text-xs text-ink-soft">{section.friends.length}</Text>
+              </View>
+              <View className="flex-1" />
+              {/* Pas de menu sur « Sans catégorie » : ce n'est pas une
+                  catégorie mais l'absence de rangement — rien à renommer ni
+                  à supprimer. */}
+              {section.category ? (
+                <Pressable onPress={() => setCategorySheet(section.category)} hitSlop={10} accessibilityRole="button">
+                  <Icon name="dots" size={20} color="#A39C8F" />
+                </Pressable>
+              ) : null}
+            </View>
+
+            {/* Une catégorie vide reste affichée : elle vient d'être créée,
+                la faire disparaître ferait croire à un échec. */}
+            {section.friends.length === 0 ? (
+              <Text className="mb-1 text-xs text-ink-soft">{t('friends.categories.empty_hint')}</Text>
+            ) : (
+              section.friends.map((f) => (
+                <FriendRow
                   key={f.id}
-                  icon="profile"
-                  imageUri={f.otherAvatarUrl}
-                  title={f.otherDisplayName || f.otherFriendCode}
+                  id={f.otherUserId}
+                  name={f.otherDisplayName || f.otherFriendCode}
+                  subtitle={sharedLabel(f.otherUserId)}
+                  avatarUrl={f.otherAvatarUrl}
                   onPress={() => setSelectedFriend(f)}
                 />
-              ))}
-            </EntityGrid>
+              ))
+            )}
           </View>
+        ))}
+
+        {accepted.length > 0 || (categories ?? []).length > 0 ? (
+          <Pressable
+            onPress={() => setCategorySheet(null)}
+            accessibilityRole="button"
+            className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 py-3 active:opacity-70"
+          >
+            <Icon name="add" size={16} color="#1591EA" />
+            <Text className="text-sm text-[#1591EA]">{t('friends.categories.new')}</Text>
+          </Pressable>
         ) : null}
       </ScrollView>
 
       <AddFriendModal visible={addModalOpen} onClose={() => setAddModalOpen(false)} />
+      <FriendCategorySheet
+        visible={categorySheet !== undefined}
+        category={categorySheet ?? null}
+        onClose={() => setCategorySheet(undefined)}
+      />
       <FriendDetailSheet friend={selectedFriend} onClose={() => setSelectedFriend(null)} />
     </>
   );
