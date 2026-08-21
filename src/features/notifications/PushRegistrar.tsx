@@ -14,16 +14,16 @@ import { registerPushToken } from './push';
 // connues : une charge utile n'est pas une instruction de navigation.
 const ALLOWED_ROUTES = new Set(['/friends']);
 
+// Le web n'implémente pas la lecture de la dernière notification ouverte :
+// appeler le hook y lève une erreur qui remonte jusqu'à l'ErrorBoundary et
+// fait tomber toute l'application. Constante de module, donc la branche ne
+// change JAMAIS d'un rendu à l'autre — l'ordre des hooks reste stable.
+const CAN_READ_LAST_RESPONSE = Platform.OS !== 'web';
+
 export function PushRegistrar() {
   const { session } = useSession();
   const isAnonymous = useIsAnonymous();
   const userId = session?.user.id;
-
-  // Renvoie aussi la notification qui a DEMARRE l'app depuis un état fermé,
-  // pas seulement celles reçues app ouverte — c'est justement le cas le plus
-  // fréquent pour une demande d'ami.
-  const lastResponse = Notifications.useLastNotificationResponse();
-  const handledResponseId = useRef<string | null>(null);
 
   useEffect(() => {
     // Un visiteur (session anonyme) ne peut ni avoir d'amis ni en recevoir :
@@ -33,8 +33,18 @@ export function PushRegistrar() {
     registerPushToken(userId);
   }, [userId, isAnonymous]);
 
+  return CAN_READ_LAST_RESPONSE ? <NotificationRouter userId={userId} /> : null;
+}
+
+function NotificationRouter({ userId }: { userId: string | undefined }) {
+  // Renvoie aussi la notification qui a DEMARRE l'app depuis un état fermé,
+  // pas seulement celles reçues app ouverte — c'est justement le cas le plus
+  // fréquent pour une demande d'ami.
+  const lastResponse = Notifications.useLastNotificationResponse();
+  const handledResponseId = useRef<string | null>(null);
+
   useEffect(() => {
-    if (Platform.OS === 'web' || !lastResponse) return;
+    if (!lastResponse) return;
 
     // Sans cette garde, le même appui rejouerait la navigation à chaque
     // rendu : le hook retourne toujours la DERNIERE réponse, indéfiniment.
