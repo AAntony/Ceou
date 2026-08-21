@@ -248,6 +248,8 @@
       "permanent_note": "The code stays valid indefinitely and can be used by as many guests as you like. You can delete it any time from \"My invitation codes\".",
       "max_uses": "Uses",
       "duration_days": "Valid for (days)",
+      "remind_days": "Remind me (days before)",
+      "remind_hint": "A notification on this device before the code expires.",
       "label_optional": "Code name (optional)",
       "label_placeholder": "July tenants",
       "share_message_guest": "I am sharing access to my place on Ceou. Open this link: {{url}} (code: {{code}})"
@@ -292,7 +294,12 @@
     "delete_body_used": "{{used}} person(s) came in with this code. Deleting it cuts their access immediately. This cannot be undone.",
     "delete_body_unused": "This code has never been used. This cannot be undone.",
     "empty_title": "No codes yet",
-    "empty_subtitle": "Generate one from \"Share my code\" to give access to a home."
+    "empty_subtitle": "Generate one from \"Share my code\" to give access to a home.",
+    "reminder": {
+      "title": "An invite code expires soon",
+      "body_one": "\"{{name}}\" expires in {{count}} day.",
+      "body_other": "\"{{name}}\" expires in {{count}} days."
+    }
   },
   "inventory": {
     "habitations": {

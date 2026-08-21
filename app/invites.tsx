@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { BottomSheetModal } from '../src/components/BottomSheetModal';
@@ -9,8 +9,10 @@ import { ErrorState } from '../src/components/ErrorState';
 import { Icon } from '../src/components/Icon';
 import { QrCode } from '../src/components/QrCode';
 import { TextField } from '../src/components/TextField';
+import { syncInviteReminders } from '../src/features/notifications/inviteReminders';
 import { logClientError } from '../src/lib/errorLogging';
 import {
+  expiryInDays,
   formatInviteQrValue,
   useDeleteShareInvite,
   useMyShareInvites,
@@ -131,6 +133,13 @@ export default function InvitesScreen() {
   const updateInvite = useUpdateShareInvite();
   const deleteInvite = useDeleteShareInvite();
 
+  // Réconciliation à chaque chargement de la liste : c'est ici qu'on
+  // rattrape les codes renouvelés, épuisés ou supprimés, et les rappels
+  // perdus par une réinstallation.
+  useEffect(() => {
+    if (invites) syncInviteReminders(invites, t);
+  }, [invites, t]);
+
   const [qrEntry, setQrEntry] = useState<ShareInviteEntry | null>(null);
   const [renewEntry, setRenewEntry] = useState<ShareInviteEntry | null>(null);
   const [renewPermanent, setRenewPermanent] = useState(false);
@@ -154,9 +163,13 @@ export default function InvitesScreen() {
       await updateInvite.mutateAsync({
         inviteId: renewEntry.id,
         maxUses,
-        expiresAt: renewPermanent ? null : new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt: renewPermanent ? null : expiryInDays(days),
         resetUses: renewReset,
         label: renewEntry.label,
+        // Renouveler ne rouvre pas la question du préavis : on reconduit
+        // celui déjà choisi, et le rappel se recalcule tout seul depuis la
+        // nouvelle date d'expiration.
+        remindDaysBefore: renewEntry.remindDaysBefore,
       });
       setRenewEntry(null);
     } catch (error) {

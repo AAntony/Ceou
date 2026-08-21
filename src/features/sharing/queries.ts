@@ -413,6 +413,19 @@ export function useHabitationsSharedByFriend(friendUserId: string | undefined) {
 
 // === Invitations (Partager mon code / Inviter un invité) ================
 
+/**
+ * Date d'expiration à N jours d'ici, au format attendu par le serveur.
+ *
+ * Sorti des composants pour deux raisons : l'expression était dupliquée
+ * entre la création et le renouvellement d'un code, et la règle de pureté de
+ * React refuse un `Date.now()` écrit directement dans le corps d'un
+ * composant — à juste titre, une valeur qui change à chaque rendu n'a rien à
+ * y faire.
+ */
+export function expiryInDays(days: number): string {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+}
+
 export type ShareInviteOptions = {
   habitationIds: string[];
   permission: HabitationPermission;
@@ -422,6 +435,10 @@ export type ShareInviteOptions = {
   maxUses: number | null;
   expiresAt: string | null;
   label: string | null;
+  // Jours avant expiration où l'appareil du créateur programme un rappel
+  // local. Le serveur force 1 pour un code d'ami et null pour un code
+  // permanent, quoi qu'envoie le client.
+  remindDaysBefore: number | null;
 };
 
 export function useCreateShareInvite() {
@@ -441,6 +458,7 @@ export function useCreateShareInvite() {
         p_max_uses: input.maxUses as number,
         p_expires_at: input.expiresAt as string,
         p_label: input.label as string,
+        p_remind_days_before: input.remindDaysBefore as number,
       });
       if (error) throw error;
       return data as ShareInvite;
@@ -462,6 +480,7 @@ export type ShareInviteEntry = {
   maxUses: number | null;
   useCount: number;
   expiresAt: string | null;
+  remindDaysBefore: number | null;
   createdAt: string;
 };
 
@@ -476,6 +495,7 @@ type ShareInviteRow = {
   max_uses: number | null;
   use_count: number;
   expires_at: string | null;
+  remind_days_before: number | null;
   created_at: string;
 };
 
@@ -496,6 +516,7 @@ export function useMyShareInvites() {
         maxUses: row.max_uses,
         useCount: row.use_count,
         expiresAt: row.expires_at,
+        remindDaysBefore: row.remind_days_before,
         createdAt: row.created_at,
       }));
     },
@@ -511,6 +532,7 @@ export function useUpdateShareInvite() {
       expiresAt: string | null;
       resetUses: boolean;
       label: string | null;
+      remindDaysBefore: number | null;
     }): Promise<ShareInvite> => {
       const { data, error } = await supabase.rpc('update_share_invite', {
         p_invite_id: input.inviteId,
@@ -519,6 +541,7 @@ export function useUpdateShareInvite() {
         p_expires_at: input.expiresAt as string,
         p_reset_uses: input.resetUses,
         p_label: input.label as string,
+        p_remind_days_before: input.remindDaysBefore as number,
       });
       if (error) throw error;
       return data as ShareInvite;

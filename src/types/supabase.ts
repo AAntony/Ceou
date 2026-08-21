@@ -717,6 +717,7 @@ export type Database = {
           label: string | null
           max_uses: number | null
           permission: string
+          remind_days_before: number | null
           target_type: string
           use_count: number
         }
@@ -730,6 +731,7 @@ export type Database = {
           label?: string | null
           max_uses?: number | null
           permission: string
+          remind_days_before?: number | null
           target_type: string
           use_count?: number
         }
@@ -743,6 +745,7 @@ export type Database = {
           label?: string | null
           max_uses?: number | null
           permission?: string
+          remind_days_before?: number | null
           target_type?: string
           use_count?: number
         }
@@ -801,6 +804,7 @@ export type Database = {
           p_label?: string
           p_max_uses?: number
           p_permission: string
+          p_remind_days_before?: number
           p_target_type: string
         }
         Returns: {
@@ -813,6 +817,7 @@ export type Database = {
           label: string | null
           max_uses: number | null
           permission: string
+          remind_days_before: number | null
           target_type: string
           use_count: number
         }
@@ -909,6 +914,7 @@ export type Database = {
           label: string
           max_uses: number
           permission: string
+          remind_days_before: number
           target_type: string
           use_count: number
         }[]
@@ -972,6 +978,7 @@ export type Database = {
           p_invite_id: string
           p_label?: string
           p_max_uses: number
+          p_remind_days_before?: number
           p_reset_uses?: boolean
         }
         Returns: {
@@ -984,6 +991,7 @@ export type Database = {
           label: string | null
           max_uses: number | null
           permission: string
+          remind_days_before: number | null
           target_type: string
           use_count: number
         }

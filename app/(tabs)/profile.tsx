@@ -11,6 +11,7 @@ import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
+import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
 import { unregisterPushToken } from '../../src/features/notifications/push';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
@@ -176,6 +177,10 @@ export default function ProfileScreen() {
           // échouerait silencieusement une fois déconnecté — et le compte
           // continuerait de recevoir les notifications de ce téléphone.
           await unregisterPushToken();
+          // Les rappels sont programmés sur l'appareil : sans ce ménage,
+          // celui d'un code du compte précédent surgirait chez la personne
+          // suivante, en nommant une Habitation qui ne la concerne pas.
+          await cancelAllInviteReminders();
           await supabase.auth.signOut();
         }}
         label={t('profile.sign_out')}

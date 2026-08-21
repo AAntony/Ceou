@@ -248,6 +248,8 @@
       "permanent_note": "Le code reste valable indéfiniment et peut servir à autant de visiteurs que tu veux. Tu pourras le supprimer à tout moment depuis « Mes codes d’invitation ».",
       "max_uses": "Utilisations",
       "duration_days": "Valable (jours)",
+      "remind_days": "Me rappeler (jours avant)",
+      "remind_hint": "Une notification sur cet appareil avant que le code n’expire.",
       "label_optional": "Nom du code (facultatif)",
       "label_placeholder": "Locataires de juillet",
       "share_message_guest": "Je te partage un accès à mon logement sur Céoù. Ouvre ce lien : {{url}} (code : {{code}})"
@@ -292,7 +294,12 @@
     "delete_body_used": "{{used}} personne(s) sont entrées avec ce code. Les supprimer leur coupe l’accès immédiatement. Cette action est définitive.",
     "delete_body_unused": "Ce code n’a jamais été utilisé. Cette action est définitive.",
     "empty_title": "Aucun code pour l’instant",
-    "empty_subtitle": "Génère un code depuis « Partager mon code » pour donner accès à une habitation."
+    "empty_subtitle": "Génère un code depuis « Partager mon code » pour donner accès à une habitation.",
+    "reminder": {
+      "title": "Un code d’invitation expire bientôt",
+      "body_one": "« {{name}} » expire dans {{count}} jour.",
+      "body_other": "« {{name}} » expire dans {{count}} jours."
+    }
   },
   "inventory": {
     "habitations": {

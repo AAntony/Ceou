@@ -10,8 +10,9 @@ import { logClientError } from '../../lib/errorLogging';
 import type { HabitationPermission, ShareInvite } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { useHabitations } from '../inventory/queries';
+import { defaultReminderDays, scheduleInviteReminder } from '../notifications/inviteReminders';
 import { PermissionPicker } from './PermissionPicker';
-import { formatInviteQrValue, useCreateShareInvite } from './queries';
+import { expiryInDays, formatInviteQrValue, useCreateShareInvite } from './queries';
 
 type ShareInviteModalProps = {
   visible: boolean;
@@ -44,6 +45,11 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   const [guestMaxUses, setGuestMaxUses] = useState('1');
   const [guestDays, setGuestDays] = useState('7');
   const [guestLabel, setGuestLabel] = useState('');
+  // Le champ de rappel suit la durée tant que personne n'y a touché, et se
+  // fige dès la première frappe. Un simple booléen plutôt qu'un effet : la
+  // valeur affichée se calcule au rendu, il n'y a aucun état à synchroniser.
+  const [guestRemindDays, setGuestRemindDays] = useState('');
+  const [remindTouched, setRemindTouched] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -56,6 +62,8 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
       setGuestMaxUses('1');
       setGuestDays('7');
       setGuestLabel('');
+      setGuestRemindDays('');
+      setRemindTouched(false);
     }
   }, [visible]);
 
@@ -64,6 +72,8 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   // servent à ne pas lui envoyer d'emblée quelque chose d'absurde.
   const parsedMaxUses = Math.max(1, Math.min(999, parseInt(guestMaxUses, 10) || 1));
   const parsedDays = Math.max(1, Math.min(3650, parseInt(guestDays, 10) || 1));
+  const remindValue = remindTouched ? guestRemindDays : String(defaultReminderDays(parsedDays));
+  const parsedRemindDays = Math.max(1, Math.min(3650, parseInt(remindValue, 10) || 1));
 
   const myHabitations = (habitations ?? []).filter((h) => h.user_id === session?.user.id);
 
@@ -86,14 +96,30 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
         // serveur force ces valeurs de son côté, on lui envoie simplement des
         // valeurs cohérentes plutôt que celles du formulaire invité.
         maxUses: isGuest ? (guestPermanent ? null : parsedMaxUses) : 1,
-        expiresAt:
-          isGuest && guestPermanent
-            ? null
-            : new Date(Date.now() + (isGuest ? parsedDays : 7) * 24 * 60 * 60 * 1000).toISOString(),
+        expiresAt: isGuest && guestPermanent ? null : expiryInDays(isGuest ? parsedDays : 7),
         label: isGuest ? guestLabel.trim() || null : null,
+        // Un code d'ami dure toujours 7 jours sans réglage exposé : le
+        // serveur lui impose un rappel à la veille, on ne lui envoie rien.
+        remindDaysBefore: isGuest && !guestPermanent ? parsedRemindDays : null,
       });
       setResultInvite(invite);
       setStep('result');
+
+      // Posé ici et pas seulement dans l'écran « Mes codes » : rien n'oblige
+      // à passer par cet écran après avoir généré un code depuis le Profil.
+      scheduleInviteReminder(
+        {
+          id: invite.id,
+          code: invite.code,
+          label: invite.label,
+          habitationNames: myHabitations.filter((h) => selectedHabitationIds.includes(h.id)).map((h) => h.name),
+          maxUses: invite.max_uses,
+          useCount: invite.use_count,
+          expiresAt: invite.expires_at,
+          remindDaysBefore: invite.remind_days_before,
+        },
+        t,
+      );
     } catch (err) {
       logClientError(err, { source: 'share_invite', targetType, habitationCount: selectedHabitationIds.length });
       Alert.alert(t('common.error_generic'));
@@ -227,6 +253,26 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                     />
                   </View>
                 </View>
+              )}
+
+              {/* Le préavis vit avec le code, et pas dans un réglage global :
+                  il n'existe pas de bonne valeur unique entre un code de 2
+                  jours et un code d'un an. Pré-rempli proportionnellement
+                  pour que ceux que ça n'intéresse pas passent à travers. */}
+              {guestPermanent ? null : (
+                <>
+                  <TextField
+                    label={t('friends.share.remind_days')}
+                    value={remindValue}
+                    onChangeText={(value) => {
+                      setRemindTouched(true);
+                      setGuestRemindDays(value);
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={4}
+                  />
+                  <Text className="mb-3 -mt-2 text-xs leading-4 text-ink-soft">{t('friends.share.remind_hint')}</Text>
+                </>
               )}
 
               {/* Sert uniquement au propriétaire, dans l'écran de gestion :
