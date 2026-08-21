@@ -1,10 +1,19 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { EntityCard } from '../../components/EntityCard';
-import { getEmplacementIcon, getPieceIcon } from '../inventory/constants';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX, hueForKind } from './palette';
+import { Pressable, Text, View } from 'react-native';
+import { PLACEHOLDER_IMAGES, type EntityLevel } from '../inventory/placeholders';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
 const ROUTE_BY_KIND: Record<SearchKind, string> = {
+  objet: 'objet',
+  conteneur: 'conteneur',
+  emplacement: 'emplacement',
+  piece: 'piece',
+};
+
+// Les quatre types de résultat correspondent un pour un à un niveau de
+// l'inventaire, donc à une illustration par défaut déjà dessinée.
+const LEVEL_BY_KIND: Record<SearchKind, EntityLevel> = {
   objet: 'objet',
   conteneur: 'conteneur',
   emplacement: 'emplacement',
@@ -17,32 +26,50 @@ function locationLine(entry: SearchIndexEntry): string {
   return `${entry.parent_label} · ${entry.piece_name}`;
 }
 
-function iconForEntry(entry: SearchIndexEntry) {
-  if (entry.kind === 'emplacement') return getEmplacementIcon(entry.preset_key);
-  if (entry.kind === 'piece') return getPieceIcon(entry.preset_key);
-  return entry.kind;
-}
-
 type ResultCardProps = {
   entry: SearchIndexEntry;
 };
 
-// Même carte-grille que EntityCard (icône/photo + titre + sous-titre,
-// tuile 48%) — déléguée à EntityCard plutôt que dupliquée, ResultCard ne
-// porte plus que la logique propre aux résultats de recherche (icône/route/
-// libellé de localisation selon le type d'entrée).
+// Tuile de résultat de l'accueil.
+//
+// Ne délègue plus à EntityCard : la carte y était bâtie autour d'une
+// PASTILLE de 52 px (photo rognée en rond, ou icône à défaut) posée sur un
+// fond pastel. La photo y était donc l'élément le plus petit de la tuile,
+// alors que c'est elle qui permet de reconnaître un objet d'un coup d'œil —
+// tout l'intérêt d'avoir des photos.
+//
+// Ici l'image occupe toute la largeur de la tuile, au même ratio 4:3 que la
+// vignette des rangées d'Emplacement : un objet a la même tête partout dans
+// l'app, qu'on le croise en cherchant ou en naviguant.
+//
+// Aucune icône par-dessus l'image (demande explicite) : quand la photo
+// manque, c'est l'illustration du NIVEAU qui s'affiche, et elle distingue
+// déjà un objet d'une pièce ou d'une boîte.
 export function ResultCard({ entry }: ResultCardProps) {
-  const hue = hueForKind(entry.kind);
-
   return (
-    <EntityCard
-      icon={iconForEntry(entry)}
-      imageUri={entry.photo_url}
-      title={entry.name}
-      subtitle={locationLine(entry)}
-      bgColor={HUE_CARD_BG_HEX[hue]}
-      badgeColor={HUE_BADGE_FILL[hue]}
+    <Pressable
       onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
-    />
+      className="mb-3 w-[48%] overflow-hidden rounded-2xl bg-white active:opacity-70"
+    >
+      {/* `aspectRatio` plutôt qu'une hauteur fixe : la largeur d'une tuile
+          dépend de celle de l'écran, une hauteur en dur déformerait le
+          cadrage sur les petits comme sur les grands. */}
+      <View style={{ width: '100%', aspectRatio: 4 / 3 }} className="bg-sand">
+        <Image
+          source={entry.photo_url ? { uri: entry.photo_url } : PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+        />
+      </View>
+
+      <View className="px-3 py-2.5">
+        <Text numberOfLines={1} className="text-base font-semibold text-ink">
+          {entry.name}
+        </Text>
+        <Text numberOfLines={1} className="mt-0.5 text-xs text-ink-soft">
+          {locationLine(entry)}
+        </Text>
+      </View>
+    </Pressable>
   );
 }
