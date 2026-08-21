@@ -11,6 +11,7 @@ import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
+import { unregisterPushToken } from '../../src/features/notifications/push';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
 import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
@@ -169,7 +170,14 @@ export default function ProfileScreen() {
       />
 
       <TextLink
-        onPress={() => supabase.auth.signOut()}
+        onPress={async () => {
+          // Détache l'appareil AVANT de perdre la session : la suppression
+          // du jeton passe par la RLS (`user_id = auth.uid()`), elle
+          // échouerait silencieusement une fois déconnecté — et le compte
+          // continuerait de recevoir les notifications de ce téléphone.
+          await unregisterPushToken();
+          await supabase.auth.signOut();
+        }}
         label={t('profile.sign_out')}
         className="mt-6"
         textClassName="text-center text-sm font-semibold text-red-600"

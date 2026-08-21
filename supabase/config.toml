@@ -421,3 +421,11 @@ enabled = true
 # autre.
 [functions.delete-account]
 verify_jwt = true
+
+# send-push garde aussi la verification JWT ACTIVE (valeur par defaut,
+# rappelee ici parce que la fonction envoie une notification a quelqu'un
+# d'autre) : l'appelant ne designe jamais le destinataire, il fournit
+# l'identifiant d'une relation d'amitie dont il fait partie et le serveur en
+# deduit qui prevenir. Sans jeton verifie, ce garde-fou n'existerait plus.
+[functions.send-push]
+verify_jwt = true

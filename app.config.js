@@ -31,6 +31,12 @@ module.exports = {
     },
     android: {
       package: 'com.aantony.ceou',
+      // Identifiants Firebase de l'app Android — indispensables à FCM, donc
+      // aux notifications push. Le fichier EST versionné : il part de toute
+      // façon en clair dans chaque APK, il n'a rien d'un secret. La vraie
+      // clé sensible (compte de service FCM V1) est déposée chez EAS et
+      // n'existe nulle part dans ce dépôt.
+      googleServicesFile: './google-services.json',
       adaptiveIcon: {
         backgroundColor: '#1591EA',
         foregroundImage: './assets/android-icon-foreground.png',
@@ -51,6 +57,17 @@ module.exports = {
         'expo-camera',
         {
           cameraPermission: "Ceou a besoin de l'appareil photo pour scanner les codes-barres et photographier tes objets.",
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          // Android n'utilise QUE le canal alpha de cette image : la forme
+          // est repeinte en blanc par le système. D'où une silhouette (la
+          // loupe seule, sans le mot « Céoù » illisible à 24 dp) et non
+          // l'icône d'app, qui donnerait un carré blanc plein.
+          icon: './assets/notification-icon.png',
+          color: '#1591EA',
         },
       ],
       [

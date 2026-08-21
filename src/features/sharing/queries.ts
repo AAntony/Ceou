@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../auth/SessionProvider';
 import { deleteRow, selectMany } from '../../lib/supabase/crud';
 import { inviteWebUrl } from '../../lib/links';
+import { notifyFriendEvent } from '../notifications/push';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission, Habitation, HabitationPermission, LocationType, ShareInvite } from '../../types/database';
 
@@ -188,10 +189,16 @@ export function useSendFriendRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (friendCode: string) => {
-      const { error } = await supabase.rpc('send_friend_request', { p_friend_code: friendCode.trim().toUpperCase() });
+      const { data, error } = await supabase.rpc('send_friend_request', { p_friend_code: friendCode.trim().toUpperCase() });
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => invalidateFriendships(queryClient),
+    onSuccess: (friendshipId) => {
+      invalidateFriendships(queryClient);
+      // La demande est déjà enregistrée à ce stade ; la notification est un
+      // supplément « au mieux » qui ne conditionne rien (voir notifyFriendEvent).
+      if (friendshipId) notifyFriendEvent('friend_request', friendshipId);
+    },
   });
 }
 
@@ -203,7 +210,14 @@ export function useRedeemShareInvite() {
       if (error) throw error;
       return data as { type: 'guest'; granted: boolean } | { type: 'friend'; friendship_id: string };
     },
-    onSuccess: () => invalidateFriendships(queryClient),
+    onSuccess: (result) => {
+      invalidateFriendships(queryClient);
+      // Une invitation « ami » crée une demande EN ATTENTE côté créateur du
+      // code : c'est lui qu'il faut prévenir, exactement comme un ajout par
+      // code ami. Une invitation « invité », elle, s'applique immédiatement
+      // et n'attend l'accord de personne — rien à notifier.
+      if (result.type === 'friend') notifyFriendEvent('friend_request', result.friendship_id);
+    },
   });
 }
 
@@ -214,9 +228,13 @@ export function useRespondToFriendship() {
       const { error } = await supabase.rpc('respond_to_friendship', { p_friendship_id: input.friendshipId, p_accept: input.accept });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, input) => {
       invalidateFriendships(queryClient);
       queryClient.invalidateQueries({ queryKey: ['habitationShares'] });
+      // Seule l'acceptation est notifiée. Un refus ne l'est délibérément
+      // pas : personne n'a besoin d'une alerte pour apprendre ça, et la
+      // demande disparaît simplement de la liste de l'expéditeur.
+      if (input.accept) notifyFriendEvent('friend_accepted', input.friendshipId);
     },
   });
 }

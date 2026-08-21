@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "161444476642",
+    "project_id": "ceou-4ae28",
+    "storage_bucket": "ceou-4ae28.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161444476642:android:8354e637713878f1db90bb",
+        "android_client_info": {
+          "package_name": "com.aantony.ceou"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoac1v_cH6SvR62eLHq7xlxBdECtSM_Sw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
