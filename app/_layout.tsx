@@ -25,9 +25,16 @@ installNotificationHandler();
 // le JavaScript ne soit chargé). Sans ça, il disparaîtrait dès le premier
 // rendu et laisserait un éclair blanc avant notre animation. Il n'est retiré
 // qu'une fois notre propre fond bleu peint — voir onPainted plus bas.
-SplashScreen.preventAutoHideAsync().catch(() => {
-  // Déjà masqué, ou plateforme sans splash natif : rien à rattraper.
-});
+try {
+  SplashScreen.preventAutoHideAsync().catch(() => {
+    // Déjà masqué : rien à rattraper.
+  });
+} catch {
+  // Module natif absent. Cas réel et pas théorique : une mise à jour OTA
+  // peut atterrir sur un build antérieur à l'ajout d'expo-splash-screen. Il
+  // n'y a alors aucun splash natif à retenir — notre calque prend le relais
+  // tout seul, au prix d'un bref éclair blanc avant lui.
+}
 
 function DeepLinkHandler() {
   useAuthDeepLinks();
@@ -52,7 +59,11 @@ function AppShell() {
     // — on ne veut retirer le splash natif qu'une seule fois.
     if (nativeHidden.current) return;
     nativeHidden.current = true;
-    SplashScreen.hideAsync().catch(() => {});
+    try {
+      SplashScreen.hideAsync().catch(() => {});
+    } catch {
+      // Même raison que plus haut : rien à masquer sans le module natif.
+    }
   };
 
   return (
