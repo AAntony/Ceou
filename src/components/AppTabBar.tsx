@@ -12,6 +12,12 @@ const ACTIVE_COLOR = '#1591EA';
 const INACTIVE_COLOR = '#A39C8F';
 const AVATAR_SIZE = 24;
 
+// Hauteur de la rangée d'onglets, hors zone système. Exportée parce que
+// le bouton flottant de l'assistant doit se poser juste au-dessus : deux
+// valeurs séparées finiraient par diverger et le feraient chevaucher la
+// barre.
+export const APP_TAB_BAR_HEIGHT = 64;
+
 // Tout le parcours Habitation > Pièce > Emplacement > Conteneur > Objet, plus
 // les plans et les habitations partagées par un ami : on met en évidence la
 // SECTION où l'on se trouve, pas l'écran exact. Sans ça, aucun onglet ne
@@ -158,7 +164,7 @@ export function AppTabBar() {
       className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-white"
       style={{ paddingBottom: insets.bottom }}
     >
-      <View className="h-16 flex-row items-center px-1">
+      <View className="flex-row items-center px-1" style={{ height: APP_TAB_BAR_HEIGHT }}>
         {/* Le pin reprend le "o" du logo Céoù — clin d'œil au nom, et
             surtout la seule façon de ne pas mettre deux maisons côte à côte
             dans une app qui parle justement d'habitations. */}

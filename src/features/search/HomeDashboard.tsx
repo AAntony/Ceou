@@ -9,6 +9,7 @@ import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
+import { AssistantFab } from './AssistantFab';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
 import { normalizeForMatch } from '../../lib/text/match';
@@ -119,10 +120,11 @@ function HomeHeader({
           ne rend qu'une ombre grise), ce cerne fait l'effet sans lib
           supplémentaire ni rendu différent iOS/Android. */}
       <View className="mb-4 rounded-full bg-teal/15 p-[3px]">
-        {/* py-1.5 + pastille de 36 px : la hauteur de la barre est désormais
-            portée par le micro, pas par le rembourrage — sans ça la barre
-            passait de 44 à 60 px de haut. */}
-        <View className="flex-row items-center rounded-full border border-teal/30 bg-white py-1.5 pl-4 pr-1.5">
+        {/* Hauteur FIXE plutôt qu'un rembourrage : elle était jusqu'ici portée
+            par la pastille micro, partie dans le bouton flottant du bas
+            d'écran. Sans valeur explicite, la barre se serait rétractée en
+            perdant son seul élément haut. */}
+        <View className="h-12 flex-row items-center rounded-full border border-teal/30 bg-white pl-4 pr-2">
           <Icon name="search" size={20} color="#A39C8F" />
           <TextInput
             value={searchText}
@@ -136,8 +138,7 @@ function HomeHeader({
 
           {/* Seulement quand il y a du texte : toujours visible, ce bouton
               serait mort la moitié du temps et se lirait comme un "fermer la
-              recherche". Placé AVANT le micro — la croix agit sur le texte,
-              le micro est une action à part. */}
+              recherche". */}
           {searchText.length > 0 ? (
             <Pressable
               onPress={() => onSearchTextChange('')}
@@ -150,28 +151,6 @@ function HomeHeader({
             </Pressable>
           ) : null}
 
-          {/* En pastille cerclée de bleu : l'icône nue offrait une cible
-              d'environ 20 dp, moins de la moitié du minimum recommandé, et
-              ne se lisait pas comme un bouton. Le cercle reprend le motif
-              du bouton `outline` (border-2 border-coral + bg-coral-light),
-              déjà employé ailleurs pour une action secondaire qui doit se
-              reconnaître au premier coup d'œil.
-              La bordure est conservée à l'état "écoute" bien qu'invisible
-              sur le fond plein : en RN elle est tracée À L'INTÉRIEUR de la
-              boîte, donc la retirer ferait sauter la mise en page d'un
-              état à l'autre, pile au moment où l'utilisateur appuie. */}
-          <Pressable
-            onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityState={{ selected: voiceSearch.isListening }}
-            accessibilityLabel={t('home.voice_search_listening')}
-            className={`ml-1 h-9 w-9 items-center justify-center rounded-full border-2 border-coral active:opacity-80 ${
-              voiceSearch.isListening ? 'bg-coral' : 'bg-coral-light'
-            }`}
-          >
-            <Icon name="microphone" size={18} color={voiceSearch.isListening ? '#FFFFFF' : '#1591EA'} />
-          </Pressable>
         </View>
       </View>
 
@@ -311,6 +290,15 @@ export function HomeDashboard() {
       {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"
           n'existe plus, il appartient maintenant à cet écran. */}
       <AddObjetModal visible={addObjetOpen} onClose={() => setAddObjetOpen(false)} />
+
+      {/* Au-dessus de la barre d'onglets, dans la zone du pouce : la
+          pastille micro vivait dans le champ de recherche, tout en haut de
+          l'écran, là où l'utilisateur la trouvait trop discrète et où elle
+          demandait de changer de prise en main pour l'atteindre. */}
+      <AssistantFab
+        isListening={voiceSearch.isListening}
+        onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
+      />
 
       <AssistantSheet state={voiceSearch} onClose={voiceSearch.dismiss} />
     </View>
