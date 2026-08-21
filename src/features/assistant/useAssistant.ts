@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase/client';
 import { useSearchIndex } from '../search/queries';
 import { composeAnswer } from './answer';
 import { resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
-import { speak, stopSpeaking } from './speak';
+import { primeVoices, speak, stopSpeaking } from './speak';
 
 const LOCALE_BY_LANGUAGE: Record<string, string> = {
   fr: 'fr-FR',
@@ -27,14 +27,67 @@ const DIRECT_SEARCH_MAX_WORDS = 2;
 
 export type AssistantStatus = 'idle' | 'listening' | 'thinking' | 'answered' | 'error';
 
+/** Clé i18n du message d'erreur, sous `assistant.`. */
+export type AssistantErrorKey = 'error' | 'error_busy';
+
 export type AssistantState = {
   status: AssistantStatus;
   transcript: string;
   answer: string;
   result: AssistantResult | null;
+  errorKey: AssistantErrorKey;
 };
 
-const EMPTY: AssistantState = { status: 'idle', transcript: '', answer: '', result: null };
+const EMPTY: AssistantState = { status: 'idle', transcript: '', answer: '', result: null, errorKey: 'error' };
+
+type InvokeErrorContext = { status?: number; json?: () => Promise<unknown> };
+
+/**
+ * Délai à respecter si l'erreur est une limitation de débit, sinon `null`.
+ *
+ * `functions.invoke` enveloppe la réponse HTTP dans `error.context` : le
+ * corps JSON (donc `retryAfterSeconds`) n'est lisible que par là.
+ */
+async function rateLimitDelaySeconds(error: unknown): Promise<number | null> {
+  const context = (error as { context?: InvokeErrorContext } | null)?.context;
+  if (!context || context.status !== 429) return null;
+  try {
+    const body = (await context.json?.()) as { retryAfterSeconds?: number } | undefined;
+    const seconds = Number(body?.retryAfterSeconds);
+    return Number.isFinite(seconds) && seconds > 0 ? seconds : 3;
+  } catch {
+    return 3;
+  }
+}
+
+class RateLimitedError extends Error {}
+
+/**
+ * Interroge l'IA, avec UNE seule reprise en cas de limitation de débit.
+ *
+ * La limite serveur est de quelques secondes entre deux questions. Deux
+ * questions d'affilée sont un usage parfaitement normal (« et mes lunettes
+ * ? ») : attendre puis réessayer une fois est bien meilleur que d'afficher
+ * une erreur pour un délai que l'app connaît déjà.
+ */
+async function requestIntent(transcript: string): Promise<AssistantIntent> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { data, error } = await supabase.functions.invoke<{ intent: AssistantIntent }>('interpret-command', {
+      body: { transcript },
+    });
+
+    if (!error) {
+      if (!data?.intent) throw new Error('empty_intent');
+      return data.intent;
+    }
+
+    const delay = attempt === 0 ? await rateLimitDelaySeconds(error) : null;
+    if (delay === null) throw error;
+    await new Promise((resolve) => setTimeout(resolve, delay * 1000));
+  }
+
+  throw new RateLimitedError('rate_limited');
+}
 
 /**
  * Assistant vocal : micro -> texte -> intention -> résultats réels -> réponse.
@@ -52,8 +105,33 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
   const indexRef = useRef(index);
   indexRef.current = index;
 
+  // ⚠️ UNE SEULE QUESTION PAR APPUI SUR LE MICRO. Bug réel corrigé ici
+  // (retour utilisateur du 2026-08-21 : « plusieurs popups se superposent,
+  // comme si chaque mot déclenchait une popup », avec de nombreux « je n'ai
+  // pas pu traiter ta demande »). La reconnaissance émet PLUSIEURS
+  // événements `result` pour une même phrase — y compris avec
+  // `interimResults: false`, que tous les moteurs Android ne respectent pas.
+  // Chaque événement déclenchait un appel IA : la feuille se rouvrait à
+  // chaque mot, et l'appel suivant tombait mécaniquement sur la limite de
+  // débit de 3 s côté serveur, transformant une phrase parfaitement comprise
+  // en message d'erreur.
+  //
+  // On ne traite donc RIEN pendant l'écoute : on retient la dernière
+  // transcription reçue (la plus complète) et on ne l'envoie qu'une fois la
+  // reconnaissance terminée, une seule fois par session.
+
+  // Jeton de session : incrémenté à chaque nouvel appui sur le micro et à
+  // chaque fermeture. Une réponse qui arrive après coup est ignorée plutôt
+  // que de rouvrir la feuille que l'utilisateur vient de fermer.
+  const sessionRef = useRef(0);
+  const pendingRef = useRef('');
+  const handledRef = useRef(true);
+  const listeningRef = useRef(false);
+
   const handleTranscript = useCallback(
     async (transcript: string) => {
+      const session = sessionRef.current;
+      const isCurrent = () => sessionRef.current === session;
       const trimmed = transcript.trim();
       if (!trimmed) {
         setState(EMPTY);
@@ -66,43 +144,63 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
         return;
       }
 
-      setState({ status: 'thinking', transcript: trimmed, answer: '', result: null });
+      setState({ status: 'thinking', transcript: trimmed, answer: '', result: null, errorKey: 'error' });
 
       try {
-        const { data, error } = await supabase.functions.invoke<{ intent: AssistantIntent }>('interpret-command', {
-          body: { transcript: trimmed },
-        });
-        if (error) throw error;
-
-        const intent = data?.intent;
-        if (!intent) throw new Error('empty_intent');
-
+        const intent = await requestIntent(trimmed);
         const result = resolveIntent(intent, indexRef.current ?? []);
         const answer = composeAnswer(result, (key, options) => i18n.t(key, options ?? {}));
 
-        setState({ status: 'answered', transcript: trimmed, answer, result });
-        speak(answer, i18n.language);
+        if (!isCurrent()) return;
+        setState({ status: 'answered', transcript: trimmed, answer, result, errorKey: 'error' });
+        void speak(answer, i18n.language);
       } catch (error) {
-        logClientError(error, { source: 'assistant', transcriptLength: trimmed.length });
-        setState({ status: 'error', transcript: trimmed, answer: '', result: null });
+        const busy = error instanceof RateLimitedError;
+        // Une limitation de débit n'est pas une panne : inutile d'encombrer
+        // le journal d'erreurs avec un utilisateur qui parle vite.
+        if (!busy) logClientError(error, { source: 'assistant', transcriptLength: trimmed.length });
+        if (!isCurrent()) return;
+        setState({
+          status: 'error',
+          transcript: trimmed,
+          answer: '',
+          result: null,
+          errorKey: busy ? 'error_busy' : 'error',
+        });
       }
     },
     [onDirectSearch],
   );
 
+  /** Envoie la phrase retenue, au plus une fois par session d'écoute. */
+  const consumePending = useCallback(() => {
+    if (handledRef.current) return;
+    handledRef.current = true;
+    const transcript = pendingRef.current;
+    pendingRef.current = '';
+    void handleTranscript(transcript);
+  }, [handleTranscript]);
+
   useSpeechRecognitionEvent('result', (event) => {
-    const transcript = event.results[0]?.transcript;
-    if (transcript) void handleTranscript(transcript);
+    const transcript = event.results[0]?.transcript?.trim();
+    // On garde la dernière transcription non vide : sur les moteurs qui
+    // émettent des résultats partiels malgré tout, c'est la plus complète.
+    if (transcript) pendingRef.current = transcript;
+    // Filet de sécurité si `end` est déjà passé — l'ordre des deux
+    // événements n'est pas garanti d'un moteur à l'autre.
+    if (event.isFinal && !listeningRef.current) consumePending();
   });
 
   useSpeechRecognitionEvent('end', () => {
-    // Ne remet à zéro QUE si on écoutait encore : sans ce test, la fin de
-    // reconnaissance effacerait la réponse déjà calculée pour une phrase
-    // courte traitée dans la foulée.
-    setState((current) => (current.status === 'listening' ? EMPTY : current));
+    if (!listeningRef.current) return;
+    listeningRef.current = false;
+    consumePending();
   });
 
   useSpeechRecognitionEvent('error', (event) => {
+    listeningRef.current = false;
+    handledRef.current = true;
+    pendingRef.current = '';
     setState((current) => (current.status === 'listening' ? EMPTY : current));
     if (!SILENT_ERROR_CODES.has(event.error)) {
       Alert.alert(i18n.t('home.voice_search_error'));
@@ -116,7 +214,14 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       Alert.alert(i18n.t('home.voice_search_permission_message'));
       return;
     }
-    setState({ status: 'listening', transcript: '', answer: '', result: null });
+    // Pendant que l'utilisateur parle, on fait chauffer la liste des voix :
+    // l'énumération coûte un instant qui s'entendrait juste avant la réponse.
+    primeVoices(i18n.language);
+    sessionRef.current += 1;
+    pendingRef.current = '';
+    handledRef.current = false;
+    listeningRef.current = true;
+    setState({ status: 'listening', transcript: '', answer: '', result: null, errorKey: 'error' });
     ExpoSpeechRecognitionModule.start({
       lang: LOCALE_BY_LANGUAGE[i18n.language] ?? 'fr-FR',
       // Pas de résultats intermédiaires, contrairement à la recherche vocale :
@@ -131,6 +236,12 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
 
   const dismiss = useCallback(() => {
     stopSpeaking();
+    // Fermer la feuille annule aussi une phrase encore en vol : sans ça, une
+    // réponse arriverait par-dessus l'écran que l'utilisateur vient de
+    // quitter.
+    sessionRef.current += 1;
+    handledRef.current = true;
+    pendingRef.current = '';
     setState(EMPTY);
   }, []);
 

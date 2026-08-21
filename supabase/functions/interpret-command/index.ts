@@ -44,6 +44,9 @@ Actions possibles :
 Règles d'extraction :
 - object_query : le nom de l'objet, au plus près des mots de l'utilisateur, SANS les possessifs ni les articles. "mes clés de voiture" -> "clés de voiture".
 - room_query : le nom de la pièce, sans article ni possessif. "mon bureau" -> "bureau".
+- Mets TOUJOURS object_query et room_query au SINGULIER : "tous les verres" -> "verre", "mes clés" -> "clé". Les objets sont enregistrés au singulier dans l'inventaire.
+- Ignore les formules d'adresse : "indique-moi", "dis-moi", "peux-tu me dire", "est-ce que tu sais".
+- Si la phrase nomme À LA FOIS un objet et une pièce ("les verres dans la cuisine"), remplis les deux champs et classe en "locate".
 - Laisse une chaîne vide pour ce qui ne s'applique pas.
 - Une demande de DÉPLACEMENT ou de modification ("j'ai rangé X dans Y", "supprime X") doit être classée "unknown" : cette version ne sait que consulter.`;
 

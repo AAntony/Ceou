@@ -168,11 +168,13 @@
     "thinking": "Looking…",
     "replay": "Play again",
     "error": "I could not handle your request. Try again in a moment.",
+    "error_busy": "Too many questions at once. Ask me again in a few seconds.",
     "answer": {
       "unknown": "I can only search for now: ask me where an item is, or what a room contains.",
       "not_found": "I found nothing for \"{{query}}\".",
       "found_one": "{{name}} is in {{location}}.",
-      "found_many": "I found {{n}} results for \"{{query}}\".",
+      "found_many": "I found {{n}} results for \"{{query}}\", spread across {{places}} places.",
+      "found_many_here": "I found {{n}} results for \"{{query}}\", all in {{location}}.",
       "room_unknown": "I could not find a room called \"{{room}}\".",
       "room_empty": "There is no item recorded in {{room}}.",
       "room_list": "There are {{n}} items in {{room}}."

@@ -11,6 +11,7 @@ import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
+import { normalizeForMatch } from '../../lib/text/match';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
 // liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
@@ -19,8 +20,11 @@ import { useAssistant } from '../assistant/useAssistant';
 const MIN_SEARCH_WORD_LENGTH = 3;
 
 function searchTermsFor(query: string): string[] {
-  const words = query.split(/\s+/).filter((word) => word.length >= MIN_SEARCH_WORD_LENGTH);
-  return words.length > 0 ? words : query ? [query] : [];
+  const words = normalizeForMatch(query)
+    .split(' ')
+    .filter((word) => word.length >= MIN_SEARCH_WORD_LENGTH);
+  const fallback = normalizeForMatch(query);
+  return words.length > 0 ? words : fallback ? [fallback] : [];
 }
 
 // Reference stable : passer un litteral [] a `data` creerait un nouveau
@@ -242,7 +246,10 @@ export function HomeDashboard() {
     // (pas besoin que la phrase entière corresponde) — sinon "Un coussin"
     // ne retrouverait jamais l'objet "Coussin".
     list = trimmedSearch
-      ? list.filter((entry) => searchTerms.some((term) => entry.name.toLowerCase().includes(term)))
+      ? list.filter((entry) => {
+          const name = normalizeForMatch(entry.name);
+          return searchTerms.some((term) => name.includes(term));
+        })
       : list.filter((entry) => entry.kind === 'objet');
 
     if (selectedPiece) {

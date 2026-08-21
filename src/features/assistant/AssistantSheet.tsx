@@ -52,7 +52,7 @@ export function AssistantSheet({
 
       {state.status === 'error' ? (
         <View className="py-2">
-          <Text className="text-base leading-6 text-ink">{t('assistant.error')}</Text>
+          <Text className="text-base leading-6 text-ink">{t(`assistant.${state.errorKey}`)}</Text>
         </View>
       ) : null}
 
@@ -65,7 +65,7 @@ export function AssistantSheet({
                 qu'affiché et inerte. */}
             {isSpeechAvailable() ? (
               <Pressable
-                onPress={() => speak(state.answer, i18n.language)}
+                onPress={() => void speak(state.answer, i18n.language)}
                 accessibilityRole="button"
                 accessibilityLabel={t('assistant.replay')}
                 className="h-11 w-11 items-center justify-center rounded-full border border-ink/10 active:opacity-70"
