@@ -5,16 +5,26 @@ import { ScrollView, Text, View } from 'react-native';
 import { ColorPicker } from '../../components/ColorPicker';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityPhotoField } from '../../components/EntityPhotoField';
+import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
 import type { Piece } from '../../types/database';
+import { useSession } from '../auth/SessionProvider';
 import { canModify, useHabitationPermission } from '../sharing/queries';
 import { DEFAULT_PIECE_COLOR, PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
-import { useCreatePiece, useDeletePiece, usePieces, useUpdatePiece } from './queries';
+import { objetCountLabel } from './counts';
+import { resolveEntityPhotoUrl } from './entityPhoto';
+import {
+  nodeCountKey,
+  useCreatePiece,
+  useDeletePiece,
+  useHabitationNodeCounts,
+  usePieces,
+  useUpdatePiece,
+} from './queries';
 
 type PieceListProps = {
   habitationId: string;
@@ -23,7 +33,9 @@ type PieceListProps = {
 
 export function PieceList({ habitationId, addSignal }: PieceListProps) {
   const { t } = useTranslation();
+  const { session } = useSession();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const { data: permission } = useHabitationPermission(habitationId);
   const editable = canModify(permission);
   const createPiece = useCreatePiece(habitationId);
@@ -33,6 +45,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
   const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
   const [color, setColor] = useState<string | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
@@ -43,6 +56,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
     setEditingPiece(null);
     setPresetKey(null);
     setColor(null);
+    setPhotoUri(null);
     setName('');
     setModalOpen(true);
   };
@@ -51,6 +65,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
     setEditingPiece(piece);
     setPresetKey((piece.preset_key as PieceTypeKey) ?? null);
     setColor(piece.color);
+    setPhotoUri(piece.photo_url);
     setName(piece.name);
     setModalOpen(true);
   };
@@ -82,23 +97,23 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
         ) : isEmpty ? (
           <EmptyState icon="piece" title={t('inventory.pieces.empty')} />
         ) : (
-          <EntityGrid>
-            {pieces?.map((piece) => {
-              const pieceColor = piece.color ?? DEFAULT_PIECE_COLOR;
-              return (
-                <EntityCard
-                  key={piece.id}
-                  icon={getPieceIcon(piece.preset_key)}
-                  title={piece.name}
-                  bgColor={pieceColor}
-                  badgeColor={shade(pieceColor, 0.35)}
-                  onPress={() => router.push(`/piece/${piece.id}`)}
-                  onLongPress={editable ? () => handleDelete(piece.id) : undefined}
-                  onEdit={editable ? () => openEdit(piece) : undefined}
-                />
-              );
-            })}
-          </EntityGrid>
+          pieces?.map((piece) => (
+            <EntityRow
+              key={piece.id}
+              level="piece"
+              icon={getPieceIcon(piece.preset_key)}
+              title={piece.name}
+              subtitle={objetCountLabel(t, counts, nodeCountKey('piece', piece.id))}
+              photoUri={piece.photo_url}
+              // La couleur choisie pour la Pièce la suit jusqu'ici : c'est
+              // la même que sur le Plan, assombrie pour rester lisible sur
+              // le fond blanc de la rangée.
+              iconColor={shade(piece.color ?? DEFAULT_PIECE_COLOR, 0.45)}
+              onPress={() => router.push(`/piece/${piece.id}`)}
+              onLongPress={editable ? () => handleDelete(piece.id) : undefined}
+              onEdit={editable ? () => openEdit(piece) : undefined}
+            />
+          ))
         )}
       </ScrollView>
 
@@ -113,10 +128,28 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
         loading={createPiece.isPending || updatePiece.isPending}
         onClose={() => setModalOpen(false)}
         onSubmit={async (submittedName) => {
+          const userId = session!.user.id;
           if (editingPiece) {
-            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey, color });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'piece',
+              entityId: editingPiece.id,
+              userId,
+              chosen: photoUri,
+              current: editingPiece.photo_url,
+            });
+            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey, color, photoUrl });
           } else {
-            await createPiece.mutateAsync({ name: submittedName, presetKey, color });
+            // La ligne d'abord, la photo ensuite : le fichier est nommé
+            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
+            const piece = await createPiece.mutateAsync({ name: submittedName, presetKey, color });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'piece',
+              entityId: piece.id,
+              userId,
+              chosen: photoUri,
+              current: null,
+            });
+            if (photoUrl !== undefined) await updatePiece.mutateAsync({ id: piece.id, photoUrl });
           }
           setModalOpen(false);
         }}
@@ -129,6 +162,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
         />
         <Text className="mb-2 text-sm font-medium text-ink-soft">{t('inventory.pieces.color_label')}</Text>
         <ColorPicker selectedColor={color} onSelect={setColor} />
+        <EntityPhotoField level="piece" photoUri={photoUri} onChange={setPhotoUri} />
       </CreateEntityModal>
     </View>
   );

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
+import { EntityRow } from '../../components/EntityRow';
 import { usePlans } from '../plans/queries';
 import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Habitation } from '../../types/database';
@@ -26,16 +27,14 @@ export function GuestHabitationSection({ habitation }: { habitation: Habitation 
 
   return (
     <View className="mb-6">
-      <EntityGrid>
-        <EntityCard
-          icon={getHabitationIcon(habitation.type)}
-          title={habitation.name}
-          subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
-          bgColor={HUE_CARD_BG_HEX.teal}
-          badgeColor={HUE_BADGE_FILL.teal}
-          onPress={() => router.push(`/habitation/${habitation.id}`)}
-        />
-      </EntityGrid>
+      <EntityRow
+        level="habitation"
+        icon={getHabitationIcon(habitation.type)}
+        title={habitation.name}
+        subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
+        photoUri={habitation.photo_url}
+        onPress={() => router.push(`/habitation/${habitation.id}`)}
+      />
 
       {/* Les plans sont remontés au premier niveau plutôt que laissés derrière
           un onglet de l'écran Habitation : pour un visiteur qui cherche où se

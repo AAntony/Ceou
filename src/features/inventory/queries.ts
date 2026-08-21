@@ -10,8 +10,15 @@ import { isSingleSpaceHabitation } from './constants';
 // Toute mutation qui change un nom/une position dans la hiérarchie doit
 // aussi invalider le cache de recherche globale (search_index()) — sinon le
 // dashboard d'accueil resterait périmé après une modif faite ailleurs.
+// Tout ce qui derive de l'arborescence entiere : l'index de recherche ET
+// les compteurs d'objets des listes. Les trois se periment exactement aux
+// memes moments (creation, suppression ou deplacement d'un objet n'importe
+// ou), les invalider ensemble evite qu'une rangee annonce « 12 objets »
+// alors que l'accueil en montre 13.
 function invalidateSearchIndex(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
+  queryClient.invalidateQueries({ queryKey: ['habitationObjectCounts'] });
+  queryClient.invalidateQueries({ queryKey: ['habitationNodeCounts'] });
 }
 
 // === Habitations =====================================================
@@ -37,10 +44,16 @@ export function useCreateHabitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: { name: string; type: string; icon: string }): Promise<Habitation> => {
+    mutationFn: async (input: { name: string; type: string; icon: string; photoUrl?: string | null }): Promise<Habitation> => {
       const { data: habitation, error } = await supabase
         .from('habitations')
-        .insert({ user_id: session!.user.id, name: input.name, type: input.type, icon: input.icon })
+        .insert({
+          user_id: session!.user.id,
+          name: input.name,
+          type: input.type,
+          icon: input.icon,
+          photo_url: input.photoUrl ?? null,
+        })
         .select()
         .single();
       if (error) throw error;
@@ -64,10 +77,18 @@ export function useCreateHabitation() {
 export function useUpdateHabitation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; name: string; type: string; icon: string }) => {
+    mutationFn: async (input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => {
       const { error } = await supabase
         .from('habitations')
-        .update({ name: input.name, type: input.type, icon: input.icon })
+        // `photoUrl` absent = photo inchangée ; `null` explicite = photo
+        // retirée. Sans cette distinction, ouvrir la fiche pour renommer
+        // effacerait la photo au passage.
+        .update({
+          name: input.name,
+          type: input.type,
+          icon: input.icon,
+          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+        })
         .eq('id', input.id);
       if (error) throw error;
     },
@@ -173,10 +194,21 @@ export function usePiece(id: string) {
 export function useCreatePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; presetKey: string | null; color?: string | null }): Promise<Piece> => {
+    mutationFn: async (input: {
+      name: string;
+      presetKey: string | null;
+      color?: string | null;
+      photoUrl?: string | null;
+    }): Promise<Piece> => {
       const { data, error } = await supabase
         .from('pieces')
-        .insert({ habitation_id: habitationId, name: input.name, preset_key: input.presetKey, color: input.color ?? null })
+        .insert({
+          habitation_id: habitationId,
+          name: input.name,
+          preset_key: input.presetKey,
+          color: input.color ?? null,
+          photo_url: input.photoUrl ?? null,
+        })
         .select()
         .single();
       if (error) throw error;
@@ -192,13 +224,20 @@ export function useCreatePiece(habitationId: string) {
 export function useUpdatePiece(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; name?: string; presetKey?: string | null; color?: string | null }) => {
+    mutationFn: async (input: {
+      id: string;
+      name?: string;
+      presetKey?: string | null;
+      color?: string | null;
+      photoUrl?: string | null;
+    }) => {
       const { error } = await supabase
         .from('pieces')
         .update({
           ...(input.name !== undefined && { name: input.name }),
           ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
           ...(input.color !== undefined && { color: input.color }),
+          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
         })
         .eq('id', input.id);
       if (error) throw error;
@@ -258,10 +297,10 @@ export function useEmplacement(id: string) {
 export function useCreateEmplacement(pieceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; presetKey: string | null }): Promise<Emplacement> => {
+    mutationFn: async (input: { name: string; presetKey: string | null; photoUrl?: string | null }): Promise<Emplacement> => {
       const { data, error } = await supabase
         .from('emplacements')
-        .insert({ piece_id: pieceId, name: input.name, preset_key: input.presetKey })
+        .insert({ piece_id: pieceId, name: input.name, preset_key: input.presetKey, photo_url: input.photoUrl ?? null })
         .select()
         .single();
       if (error) throw error;
@@ -277,10 +316,14 @@ export function useCreateEmplacement(pieceId: string) {
 export function useUpdateEmplacement(pieceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; name: string; presetKey: string | null }) => {
+    mutationFn: async (input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => {
       const { error } = await supabase
         .from('emplacements')
-        .update({ name: input.name, preset_key: input.presetKey })
+        .update({
+          name: input.name,
+          preset_key: input.presetKey,
+          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+        })
         .eq('id', input.id);
       if (error) throw error;
     },
@@ -356,11 +399,13 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (name: string): Promise<Conteneur> => {
+    mutationFn: async (input: { name: string; presetKey: string | null; photoUrl?: string | null }): Promise<Conteneur> => {
       const { data, error } = await supabase
         .from('conteneurs')
         .insert({
-          name,
+          name: input.name,
+          preset_key: input.presetKey,
+          photo_url: input.photoUrl ?? null,
           parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
           parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
         })
@@ -376,8 +421,20 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
 export function useUpdateConteneur() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { id: string; name: string }) => {
-      const { error } = await supabase.from('conteneurs').update({ name: input.name }).eq('id', input.id);
+    mutationFn: async (input: {
+      id: string;
+      name: string;
+      presetKey?: string | null;
+      photoUrl?: string | null;
+    }) => {
+      const { error } = await supabase
+        .from('conteneurs')
+        .update({
+          name: input.name,
+          ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
+          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+        })
+        .eq('id', input.id);
       if (error) throw error;
     },
     onSuccess: () => invalidateContainerContents(queryClient),
@@ -566,6 +623,85 @@ export function useMoveObjet(objetId: string) {
       queryClient.invalidateQueries({ queryKey: ['objetHistory', objetId] });
       queryClient.invalidateQueries({ queryKey: ['objetLocationChain', objetId] });
       invalidateContainerContents(queryClient);
+    },
+  });
+}
+
+/**
+ * Nombre d'objets par Habitation, pour la liste des Habitations.
+ *
+ * Requete separee plutot qu'une colonne calculee sur `habitations` : le
+ * compte depend de toute l'arborescence en dessous, il changerait a chaque
+ * ajout d'objet n'importe ou et invaliderait la liste entiere.
+ */
+export function useHabitationObjectCounts() {
+  const { session } = useSession();
+  return useQuery({
+    queryKey: ['habitationObjectCounts', session?.user.id],
+    enabled: !!session,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase.rpc('habitation_object_counts');
+      if (error) throw error;
+      return new Map((data ?? []).map((row) => [row.habitation_id, Number(row.objet_count)]));
+    },
+  });
+}
+
+/** Cle de cache d'un noeud dans les compteurs d'une habitation. */
+export function nodeCountKey(kind: 'piece' | 'emplacement' | 'conteneur', id: string): string {
+  return `${kind}:${id}`;
+}
+
+/**
+ * Compteurs de TOUS les noeuds d'une habitation, en un seul appel.
+ *
+ * Volontairement a la maille de l'habitation et non de l'ecran : la
+ * navigation reste dans la meme habitation d'un bout a l'autre, donc le
+ * resultat est charge une fois puis resservi depuis le cache a chaque
+ * descente d'un niveau. Un hook par ecran aurait fait une requete par
+ * niveau traverse.
+ */
+export function useHabitationNodeCounts(habitationId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['habitationNodeCounts', habitationId],
+    enabled: !!habitationId,
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase.rpc('habitation_node_counts', { p_habitation_id: habitationId! });
+      if (error) throw error;
+      return new Map(
+        (data ?? []).map((row) => [
+          nodeCountKey(row.node_kind as 'piece' | 'emplacement' | 'conteneur', row.node_id),
+          Number(row.objet_count),
+        ]),
+      );
+    },
+  });
+}
+
+/**
+ * Habitation d'appartenance d'un noeud, pour brancher `useHabitationNodeCounts`
+ * depuis un ecran qui ne connait que son propre identifiant.
+ *
+ * `staleTime: Infinity` : un Emplacement ne change jamais d'habitation dans
+ * l'app (il n'existe aucun deplacement a ce niveau), la reponse est donc
+ * definitive pour la duree de la session.
+ */
+export function useHabitationIdForNode(kind: 'piece' | 'emplacement' | 'conteneur', id: string) {
+  return useQuery({
+    queryKey: ['habitationIdForNode', kind, id],
+    staleTime: Infinity,
+    queryFn: async (): Promise<string | null> => {
+      // Pont temporaire : `habitation_id_for_node` n'entre dans les types
+      // generes qu'une fois la migration 20260821160000 appliquee en
+      // distant. Le `gen types` qui suit le `db push` rend ce cast inutile
+      // — a retirer a ce moment-la.
+      const rpc = supabase.rpc as unknown as (
+        name: 'habitation_id_for_node',
+        args: { p_kind: string; p_id: string },
+      ) => Promise<{ data: string | null; error: Error | null }>;
+      const { data, error } = await rpc('habitation_id_for_node', { p_kind: kind, p_id: id });
+      if (error) throw error;
+      return data ?? null;
     },
   });
 }

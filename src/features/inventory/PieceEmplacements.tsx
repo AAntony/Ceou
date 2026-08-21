@@ -6,16 +6,26 @@ import { BottomActionBar } from '../../components/BottomActionBar';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityPhotoField } from '../../components/EntityPhotoField';
+import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Emplacement } from '../../types/database';
+import { useSession } from '../auth/SessionProvider';
 import { canModify, usePiecePermission } from '../sharing/queries';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
-import { useCreateEmplacement, useDeleteEmplacement, useEmplacements, useUpdateEmplacement } from './queries';
+import { objetCountLabel } from './counts';
+import { resolveEntityPhotoUrl } from './entityPhoto';
+import {
+  nodeCountKey,
+  useCreateEmplacement,
+  useDeleteEmplacement,
+  useEmplacements,
+  useHabitationIdForNode,
+  useHabitationNodeCounts,
+  useUpdateEmplacement,
+} from './queries';
 
 type PieceEmplacementsProps = {
   pieceId: string;
@@ -24,7 +34,12 @@ type PieceEmplacementsProps = {
 
 export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps) {
   const { t } = useTranslation();
+  const { session } = useSession();
   const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
+  // Les compteurs sont à la maille de l'habitation (un appel pour toute
+  // l'arborescence) ; cet écran ne connaît que sa pièce, d'où la résolution.
+  const { data: habitationId } = useHabitationIdForNode('piece', pieceId);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const { data: permission } = usePiecePermission(pieceId);
   const editable = canModify(permission);
   const createEmplacement = useCreateEmplacement(pieceId);
@@ -33,6 +48,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEmplacement, setEditingEmplacement] = useState<Emplacement | null>(null);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [name, setName] = useState('');
 
   const handleDelete = (id: string) => {
@@ -42,6 +58,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
   };
 
   const openCreate = () => {
+    setPhotoUri(null);
     setEditingEmplacement(null);
     setPresetKey(null);
     setName('');
@@ -51,6 +68,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
   const openEdit = (emplacement: Emplacement) => {
     setEditingEmplacement(emplacement);
     setPresetKey((emplacement.preset_key as EmplacementPresetKey) ?? null);
+    setPhotoUri(emplacement.photo_url);
     setName(emplacement.name);
     setModalOpen(true);
   };
@@ -82,20 +100,19 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
         ) : isEmpty ? (
           <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} />
         ) : (
-          <EntityGrid>
-            {emplacements?.map((emplacement) => (
-              <EntityCard
-                key={emplacement.id}
-                icon={getEmplacementIcon(emplacement.preset_key)}
-                title={emplacement.name}
-                bgColor={HUE_CARD_BG_HEX.mustard}
-                badgeColor={HUE_BADGE_FILL.mustard}
-                onPress={() => router.push(`/emplacement/${emplacement.id}`)}
-                onLongPress={editable ? () => handleDelete(emplacement.id) : undefined}
-                onEdit={editable ? () => openEdit(emplacement) : undefined}
-              />
-            ))}
-          </EntityGrid>
+          emplacements?.map((emplacement) => (
+            <EntityRow
+              key={emplacement.id}
+              level="emplacement"
+              icon={getEmplacementIcon(emplacement.preset_key)}
+              title={emplacement.name}
+              subtitle={objetCountLabel(t, counts, nodeCountKey('emplacement', emplacement.id))}
+              photoUri={emplacement.photo_url}
+              onPress={() => router.push(`/emplacement/${emplacement.id}`)}
+              onLongPress={editable ? () => handleDelete(emplacement.id) : undefined}
+              onEdit={editable ? () => openEdit(emplacement) : undefined}
+            />
+          ))
         )}
       </ScrollView>
 
@@ -118,10 +135,30 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
         loading={createEmplacement.isPending || updateEmplacement.isPending}
         onClose={() => setModalOpen(false)}
         onSubmit={async (submittedName) => {
+          const userId = session!.user.id;
           if (editingEmplacement) {
-            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name: submittedName, presetKey });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'emplacement',
+              entityId: editingEmplacement.id,
+              userId,
+              chosen: photoUri,
+              current: editingEmplacement.photo_url,
+            });
+            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name: submittedName, presetKey, photoUrl });
           } else {
-            await createEmplacement.mutateAsync({ name: submittedName, presetKey });
+            // La ligne d'abord, la photo ensuite : le fichier est nommé
+            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
+            const emplacement = await createEmplacement.mutateAsync({ name: submittedName, presetKey });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'emplacement',
+              entityId: emplacement.id,
+              userId,
+              chosen: photoUri,
+              current: null,
+            });
+            if (photoUrl !== undefined) {
+              await updateEmplacement.mutateAsync({ id: emplacement.id, name: submittedName, presetKey, photoUrl });
+            }
           }
           setModalOpen(false);
         }}
@@ -132,6 +169,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
           onSelect={(key) => handleSelectPreset(key as EmplacementPresetKey)}
           labelFor={(key) => t(`inventory.emplacementPresets.${key}`)}
         />
+        <EntityPhotoField level="emplacement" photoUri={photoUri} onChange={setPhotoUri} />
       </CreateEntityModal>
     </View>
   );

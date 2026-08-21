@@ -41,14 +41,17 @@ export type Database = {
     Tables: {
       ai_scan_rate_limit: {
         Row: {
+          kind: string
           last_request_at: string
           user_id: string
         }
         Insert: {
+          kind?: string
           last_request_at?: string
           user_id: string
         }
         Update: {
+          kind?: string
           last_request_at?: string
           user_id?: string
         }
@@ -97,6 +100,8 @@ export type Database = {
           name: string
           parent_conteneur_id: string | null
           parent_emplacement_id: string | null
+          photo_url: string | null
+          preset_key: string | null
         }
         Insert: {
           created_at?: string
@@ -104,6 +109,8 @@ export type Database = {
           name: string
           parent_conteneur_id?: string | null
           parent_emplacement_id?: string | null
+          photo_url?: string | null
+          preset_key?: string | null
         }
         Update: {
           created_at?: string
@@ -111,6 +118,8 @@ export type Database = {
           name?: string
           parent_conteneur_id?: string | null
           parent_emplacement_id?: string | null
+          photo_url?: string | null
+          preset_key?: string | null
         }
         Relationships: [
           {
@@ -134,6 +143,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          photo_url: string | null
           piece_id: string
           preset_key: string | null
         }
@@ -141,6 +151,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          photo_url?: string | null
           piece_id: string
           preset_key?: string | null
         }
@@ -148,6 +159,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          photo_url?: string | null
           piece_id?: string
           preset_key?: string | null
         }
@@ -266,6 +278,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          photo_url: string | null
           type: string
           user_id: string
         }
@@ -274,6 +287,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          photo_url?: string | null
           type: string
           user_id: string
         }
@@ -282,6 +296,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          photo_url?: string | null
           type?: string
           user_id?: string
         }
@@ -387,6 +402,7 @@ export type Database = {
           id: string
           is_default: boolean
           name: string
+          photo_url: string | null
           preset_key: string | null
         }
         Insert: {
@@ -396,6 +412,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name: string
+          photo_url?: string | null
           preset_key?: string | null
         }
         Update: {
@@ -405,6 +422,7 @@ export type Database = {
           id?: string
           is_default?: boolean
           name?: string
+          photo_url?: string | null
           preset_key?: string | null
         }
         Relationships: [
@@ -686,6 +704,10 @@ export type Database = {
         Args: { p_habitation_id: string; p_user_id: string }
         Returns: boolean
       }
+      check_and_touch_ai_rate_limit: {
+        Args: { p_cooldown_seconds: number; p_kind: string; p_user_id: string }
+        Returns: boolean
+      }
       check_and_touch_ai_scan_rate_limit: {
         Args: { p_cooldown_seconds: number; p_user_id: string }
         Returns: boolean
@@ -736,6 +758,21 @@ export type Database = {
       get_effective_habitation_permission: {
         Args: { p_habitation_id: string }
         Returns: string
+      }
+      habitation_node_counts: {
+        Args: { p_habitation_id: string }
+        Returns: {
+          node_id: string
+          node_kind: string
+          objet_count: number
+        }[]
+      }
+      habitation_object_counts: {
+        Args: never
+        Returns: {
+          habitation_id: string
+          objet_count: number
+        }[]
       }
       habitation_share_permission: {
         Args: { p_habitation_id: string; p_user_id: string }

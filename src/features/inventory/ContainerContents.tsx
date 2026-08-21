@@ -6,15 +6,28 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityPhotoField } from '../../components/EntityPhotoField';
+import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
+import { PresetPicker } from '../../components/PresetPicker';
 import { confirmDelete } from '../../lib/confirmDelete';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { Conteneur, LocationType } from '../../types/database';
+import { useSession } from '../auth/SessionProvider';
 import { canModify, useLocationPermission } from '../sharing/queries';
+import { CONTENEUR_PRESETS, getConteneurIcon, type ConteneurPresetKey } from './constants';
+import { objetCountLabel } from './counts';
 import { CreateObjetModal } from './CreateObjetModal';
-import { useContainerContents, useCreateConteneur, useDeleteConteneur, useDeleteObjet, useUpdateConteneur } from './queries';
+import { resolveEntityPhotoUrl } from './entityPhoto';
+import {
+  nodeCountKey,
+  useContainerContents,
+  useCreateConteneur,
+  useDeleteConteneur,
+  useDeleteObjet,
+  useHabitationIdForNode,
+  useHabitationNodeCounts,
+  useUpdateConteneur,
+} from './queries';
 
 type ContainerContentsProps = {
   parentType: LocationType;
@@ -24,7 +37,13 @@ type ContainerContentsProps = {
 
 export function ContainerContents({ parentType, parentId, addSignal }: ContainerContentsProps) {
   const { t } = useTranslation();
+  const { session } = useSession();
   const { conteneurs, objets, isLoading, isError, refetch } = useContainerContents(parentType, parentId);
+  // Compteurs à la maille de l'habitation : cet écran ne connaît que son
+  // parent immédiat, qui peut être un conteneur imbriqué à n'importe quelle
+  // profondeur — la résolution se fait donc côté SQL, en un appel.
+  const { data: habitationId } = useHabitationIdForNode(parentType, parentId);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const { data: permission } = useLocationPermission(parentType, parentId);
   const editable = canModify(permission);
   const createConteneur = useCreateConteneur(parentType, parentId);
@@ -34,12 +53,22 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
   const [conteneurModalOpen, setConteneurModalOpen] = useState(false);
   const [editingConteneur, setEditingConteneur] = useState<Conteneur | null>(null);
   const [conteneurName, setConteneurName] = useState('');
+  const [conteneurPresetKey, setConteneurPresetKey] = useState<ConteneurPresetKey | null>(null);
+  const [conteneurPhotoUri, setConteneurPhotoUri] = useState<string | null>(null);
   const [objetModalOpen, setObjetModalOpen] = useState(false);
 
   const handleDeleteConteneur = (id: string) => {
     confirmDelete(t, 'inventory.conteneurs.delete_confirm_title', 'inventory.conteneurs.delete_confirm_message', () =>
       deleteConteneur.mutate(id),
     );
+  };
+
+  const openEditConteneur = (conteneur: Conteneur) => {
+    setEditingConteneur(conteneur);
+    setConteneurName(conteneur.name);
+    setConteneurPresetKey((conteneur.preset_key as ConteneurPresetKey) ?? null);
+    setConteneurPhotoUri(conteneur.photo_url);
+    setConteneurModalOpen(true);
   };
 
   const handleDeleteObjet = (id: string) => {
@@ -65,40 +94,36 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
         ) : isEmpty ? (
           <EmptyState icon="conteneur" title={t('inventory.container.empty')} />
         ) : (
-          <EntityGrid>
+          <>
             {conteneurs.map((conteneur) => (
-              <EntityCard
+              <EntityRow
                 key={conteneur.id}
-                icon="conteneur"
+                level="conteneur"
+                icon={getConteneurIcon(conteneur.preset_key)}
                 title={conteneur.name}
-                bgColor={HUE_CARD_BG_HEX.lavender}
-                badgeColor={HUE_BADGE_FILL.lavender}
+                subtitle={objetCountLabel(t, counts, nodeCountKey('conteneur', conteneur.id))}
+                photoUri={conteneur.photo_url}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
                 onLongPress={editable ? () => handleDeleteConteneur(conteneur.id) : undefined}
-                onEdit={
-                  editable
-                    ? () => {
-                        setEditingConteneur(conteneur);
-                        setConteneurName(conteneur.name);
-                        setConteneurModalOpen(true);
-                      }
-                    : undefined
-                }
+                onEdit={editable ? () => openEditConteneur(conteneur) : undefined}
               />
             ))}
+            {/* Les Objets ferment la liste : un Conteneur se descend, un
+                Objet est une feuille — les mélanger ferait perdre la
+                distinction que la hiérarchie entière sert à établir. */}
             {objets.map((objet) => (
-              <EntityCard
+              <EntityRow
                 key={objet.id}
+                level="objet"
                 icon="objet"
-                imageUri={objet.photo_url}
                 title={objet.name}
-                bgColor={HUE_CARD_BG_HEX.coral}
-                badgeColor={HUE_BADGE_FILL.coral}
+                photoUri={objet.photo_url}
+                iconColor="#D85A30"
                 onPress={() => router.push(`/objet/${objet.id}`)}
                 onLongPress={editable ? () => handleDeleteObjet(objet.id) : undefined}
               />
             ))}
-          </EntityGrid>
+          </>
         )}
       </ScrollView>
 
@@ -124,6 +149,8 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
             setChoiceOpen(false);
             setEditingConteneur(null);
             setConteneurName('');
+            setConteneurPresetKey(null);
+            setConteneurPhotoUri(null);
             setConteneurModalOpen(true);
           }}
         />
@@ -140,14 +167,55 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
         loading={createConteneur.isPending || updateConteneur.isPending}
         onClose={() => setConteneurModalOpen(false)}
         onSubmit={async (submittedName) => {
+          const userId = session!.user.id;
           if (editingConteneur) {
-            await updateConteneur.mutateAsync({ id: editingConteneur.id, name: submittedName });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'conteneur',
+              entityId: editingConteneur.id,
+              userId,
+              chosen: conteneurPhotoUri,
+              current: editingConteneur.photo_url,
+            });
+            await updateConteneur.mutateAsync({
+              id: editingConteneur.id,
+              name: submittedName,
+              presetKey: conteneurPresetKey,
+              photoUrl,
+            });
           } else {
-            await createConteneur.mutateAsync(submittedName);
+            // La ligne d'abord, la photo ensuite : le fichier est nommé
+            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
+            const conteneur = await createConteneur.mutateAsync({
+              name: submittedName,
+              presetKey: conteneurPresetKey,
+            });
+            const photoUrl = await resolveEntityPhotoUrl({
+              level: 'conteneur',
+              entityId: conteneur.id,
+              userId,
+              chosen: conteneurPhotoUri,
+              current: null,
+            });
+            if (photoUrl !== undefined) {
+              await updateConteneur.mutateAsync({ id: conteneur.id, name: submittedName, photoUrl });
+            }
           }
           setConteneurModalOpen(false);
         }}
-      />
+      >
+        <PresetPicker
+          presets={CONTENEUR_PRESETS}
+          selectedKey={conteneurPresetKey}
+          onSelect={(key) => {
+            setConteneurPresetKey(key as ConteneurPresetKey);
+            // Préremplissage du nom depuis la catégorie, comme aux autres
+            // niveaux — mais jamais par-dessus un nom déjà personnalisé.
+            if (!editingConteneur) setConteneurName(t(`inventory.conteneurPresets.${key}`));
+          }}
+          labelFor={(key) => t(`inventory.conteneurPresets.${key}`)}
+        />
+        <EntityPhotoField level="conteneur" photoUri={conteneurPhotoUri} onChange={setConteneurPhotoUri} />
+      </CreateEntityModal>
 
       <CreateObjetModal
         visible={objetModalOpen}

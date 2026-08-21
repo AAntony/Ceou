@@ -378,7 +378,7 @@ function ContainerStep({
         loading={createConteneur.isPending}
         onClose={() => setModalOpen(false)}
         onSubmit={async (submittedName) => {
-          const conteneur = await createConteneur.mutateAsync(submittedName);
+          const conteneur = await createConteneur.mutateAsync({ name: submittedName, presetKey: null });
           setModalOpen(false);
           onCreatedConteneur(conteneur);
         }}

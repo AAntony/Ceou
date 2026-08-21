@@ -427,7 +427,16 @@
       "consent_body": "This photo will be sent to Google's Gemini API to automatically detect the objects it contains. It is only used to answer this one-off request.",
       "consent_accept": "Accept and continue",
       "rate_limited": "You already scanned a photo less than {{seconds}} seconds ago — try again in a moment."
-    }
+    },
+    "photo": {
+      "label": "Photo (optional)",
+      "choose": "Choose a photo",
+      "take": "Take a photo",
+      "remove": "Remove photo"
+    },
+    "objet_count_zero": "No items",
+    "objet_count_one": "1 item",
+    "objet_count_other": "{{count}} items"
   },
   "plans": {
     "header_button": "Plan",

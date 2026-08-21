@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
 import { EmptyState } from '../../../src/components/EmptyState';
-import { EntityCard } from '../../../src/components/EntityCard';
-import { EntityGrid } from '../../../src/components/EntityGrid';
+import { EntityPhotoField } from '../../../src/components/EntityPhotoField';
+import { EntityRow } from '../../../src/components/EntityRow';
 import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
@@ -13,15 +13,17 @@ import { PresetPicker } from '../../../src/components/PresetPicker';
 import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { GuestHabitationSection } from '../../../src/features/inventory/GuestHabitationSection';
+import { objetCountLabel } from '../../../src/features/inventory/counts';
+import { resolveEntityPhotoUrl } from '../../../src/features/inventory/entityPhoto';
 import {
   useCreateHabitation,
   useDeleteHabitation,
   useHabitationFavorites,
+  useHabitationObjectCounts,
   useHabitations,
   useToggleHabitationFavorite,
   useUpdateHabitation,
 } from '../../../src/features/inventory/queries';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../../../src/features/search/palette';
 import { useFriendships } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
 import type { Habitation } from '../../../src/types/database';
@@ -44,6 +46,8 @@ export default function HabitationsScreen() {
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
   const [type, setType] = useState<HabitationTypeKey>('maison');
   const [name, setName] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const { data: objetCounts } = useHabitationObjectCounts();
 
   const favoriteIds = new Set((favorites ?? []).map((f) => f.habitation_id));
   // Ciblé sur l'Habitation réellement en cours de bascule (et pas sur
@@ -86,6 +90,7 @@ export default function HabitationsScreen() {
   const openCreate = () => {
     setEditingHabitation(null);
     setType('maison');
+    setPhotoUri(null);
     setName(t('inventory.habitationTypes.maison'));
     setModalOpen(true);
   };
@@ -93,6 +98,7 @@ export default function HabitationsScreen() {
   const openEdit = (habitation: Habitation) => {
     setEditingHabitation(habitation);
     setType(habitation.type as HabitationTypeKey);
+    setPhotoUri(habitation.photo_url);
     setName(habitation.name);
     setModalOpen(true);
   };
@@ -104,6 +110,9 @@ export default function HabitationsScreen() {
     setType(key);
     if (!editingHabitation) setName(t(`inventory.habitationTypes.${key}`));
   };
+
+  const rowSubtitle = (lead: string, habitationId: string) =>
+    [lead, objetCountLabel(t, objetCounts, habitationId)].filter(Boolean).join(' · ');
 
   const isPersonalEmpty = !isLoading && myHabitations.length === 0;
 
@@ -161,43 +170,43 @@ export default function HabitationsScreen() {
             ) : isPersonalEmpty ? (
               <EmptyState icon="home" title={t('inventory.habitations.empty')} />
             ) : (
-              <EntityGrid>
-                {myHabitations.map((habitation) => (
-                  <EntityCard
-                    key={habitation.id}
-                    icon={getHabitationIcon(habitation.type)}
-                    title={habitation.name}
-                    subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
-                    bgColor={HUE_CARD_BG_HEX.teal}
-                    badgeColor={HUE_BADGE_FILL.teal}
-                    onPress={() => router.push(`/habitation/${habitation.id}`)}
-                    onLongPress={() => handleDelete(habitation.id)}
-                    onEdit={() => openEdit(habitation)}
-                    isFavorite={favoriteIds.has(habitation.id)}
-                    onToggleFavorite={() => toggleFavorite.mutate({ habitationId: habitation.id, isFavorite: favoriteIds.has(habitation.id) })}
-                    favoriteDisabled={isFavoritePending(habitation.id)}
-                  />
-                ))}
-              </EntityGrid>
+              myHabitations.map((habitation) => (
+                <EntityRow
+                  key={habitation.id}
+                  level="habitation"
+                  icon={getHabitationIcon(habitation.type)}
+                  title={habitation.name}
+                  subtitle={rowSubtitle(t(`inventory.habitationTypes.${habitation.type}`), habitation.id)}
+                  photoUri={habitation.photo_url}
+                  onPress={() => router.push(`/habitation/${habitation.id}`)}
+                  onLongPress={() => handleDelete(habitation.id)}
+                  onEdit={() => openEdit(habitation)}
+                  isFavorite={favoriteIds.has(habitation.id)}
+                  onToggleFavorite={() => toggleFavorite.mutate({ habitationId: habitation.id, isFavorite: favoriteIds.has(habitation.id) })}
+                  favoriteDisabled={isFavoritePending(habitation.id)}
+                />
+              ))
             )
           ) : isError ? (
             <ErrorState onRetry={() => refetch()} />
           ) : sharedHabitations.length === 0 ? (
             <EmptyState icon="home" title={t('inventory.habitations.shared_empty')} />
           ) : (
-            <EntityGrid>
-              {sharedHabitations.map((habitation) => (
-                <EntityCard
+            sharedHabitations.map((habitation) => (
+                <EntityRow
                   key={habitation.id}
+                  level="habitation"
                   icon={getHabitationIcon(habitation.type)}
                   title={habitation.name}
+                  photoUri={habitation.photo_url}
                   // Le nom de l'hote quand c'est un ami (on l'a deja en
                   // memoire), sinon le fait que l'acces vienne d'un code : la
                   // profil d'un hote inconnu n'est pas lisible par la RLS, on
                   // n'invente donc pas un nom qu'on ne peut pas obtenir.
-                  subtitle={friendNameByOwner.get(habitation.user_id) ?? t('inventory.habitations.shared_via_invite')}
-                  bgColor={HUE_CARD_BG_HEX.teal}
-                  badgeColor={HUE_BADGE_FILL.teal}
+                  subtitle={rowSubtitle(
+                    friendNameByOwner.get(habitation.user_id) ?? t('inventory.habitations.shared_via_invite'),
+                    habitation.id,
+                  )}
                   onPress={() => router.push(`/habitation/${habitation.id}`)}
                   isFavorite={favoriteIds.has(habitation.id)}
                   onToggleFavorite={() =>
@@ -205,8 +214,7 @@ export default function HabitationsScreen() {
                   }
                   favoriteDisabled={isFavoritePending(habitation.id)}
                 />
-              ))}
-            </EntityGrid>
+            ))
           )}
             </>
           )}
@@ -224,10 +232,42 @@ export default function HabitationsScreen() {
           onClose={() => setModalOpen(false)}
           onSubmit={async (submittedName) => {
             const definition = HABITATION_TYPES.find((h) => h.key === type)!;
+            const userId = session!.user.id;
             if (editingHabitation) {
-              await updateHabitation.mutateAsync({ id: editingHabitation.id, name: submittedName, type, icon: definition.icon });
+              const photoUrl = await resolveEntityPhotoUrl({
+                level: 'habitation',
+                entityId: editingHabitation.id,
+                userId,
+                chosen: photoUri,
+                current: editingHabitation.photo_url,
+              });
+              await updateHabitation.mutateAsync({
+                id: editingHabitation.id,
+                name: submittedName,
+                type,
+                icon: definition.icon,
+                photoUrl,
+              });
             } else {
-              await createHabitation.mutateAsync({ name: submittedName, type, icon: definition.icon });
+              // La ligne d'abord, la photo ensuite : le fichier est nommé
+              // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
+              const habitation = await createHabitation.mutateAsync({ name: submittedName, type, icon: definition.icon });
+              const photoUrl = await resolveEntityPhotoUrl({
+                level: 'habitation',
+                entityId: habitation.id,
+                userId,
+                chosen: photoUri,
+                current: null,
+              });
+              if (photoUrl !== undefined) {
+                await updateHabitation.mutateAsync({
+                  id: habitation.id,
+                  name: submittedName,
+                  type,
+                  icon: definition.icon,
+                  photoUrl,
+                });
+              }
             }
             setModalOpen(false);
           }}
@@ -238,6 +278,7 @@ export default function HabitationsScreen() {
             onSelect={(key) => handleSelectType(key as HabitationTypeKey)}
             labelFor={(key) => t(`inventory.habitationTypes.${key}`)}
           />
+          <EntityPhotoField level="habitation" photoUri={photoUri} onChange={setPhotoUri} />
         </CreateEntityModal>
       </View>
     </>
