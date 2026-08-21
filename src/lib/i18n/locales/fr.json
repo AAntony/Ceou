@@ -164,6 +164,20 @@
     "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie.",
     "add_objet": "Ajouter un objet"
   },
+  "assistant": {
+    "thinking": "Je cherche…",
+    "replay": "Réécouter",
+    "error": "Je n'ai pas pu traiter ta demande. Réessaie dans un instant.",
+    "answer": {
+      "unknown": "Je ne sais faire que de la recherche pour l'instant : demande-moi où se trouve un objet, ou ce que contient une pièce.",
+      "not_found": "Je n'ai rien trouvé pour « {{query}} ».",
+      "found_one": "{{name}} se trouve dans {{location}}.",
+      "found_many": "J'ai trouvé {{n}} résultats pour « {{query}} ».",
+      "room_unknown": "Je n'ai pas trouvé de pièce appelée « {{room}} ».",
+      "room_empty": "Il n'y a aucun objet enregistré dans {{room}}.",
+      "room_list": "Il y a {{n}} objets dans {{room}}."
+    }
+  },
   "friends": {
     "tab_title": "Amis",
     "empty": "Aucun ami pour l'instant — ajoute-en un pour commencer à partager tes Habitations.",

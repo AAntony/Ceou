@@ -9,7 +9,8 @@ import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
-import { useVoiceSearch } from './useVoiceSearch';
+import { AssistantSheet } from '../assistant/AssistantSheet';
+import { useAssistant } from '../assistant/useAssistant';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
 // liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
@@ -42,7 +43,7 @@ type HomeHeaderProps = {
   isGuest: boolean;
   searchText: string;
   onSearchTextChange: (text: string) => void;
-  voiceSearch: ReturnType<typeof useVoiceSearch>;
+  voiceSearch: ReturnType<typeof useAssistant>;
   onAddObjet: () => void;
   pieceOptions: string[];
   selectedPiece: string | null;
@@ -214,7 +215,12 @@ export function HomeDashboard() {
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
   const [addObjetOpen, setAddObjetOpen] = useState(false);
-  const voiceSearch = useVoiceSearch(setSearchText);
+  // Le micro devient l ASSISTANT et non plus une simple dictee : taper la
+  // phrase entendue dans le champ de recherche echouait des qu on posait une
+  // vraie question (« ou sont mes cles ? » etait cherche mot pour mot). Les
+  // dictees courtes restent une recherche texte, sans appel IA (voir
+  // DIRECT_SEARCH_MAX_WORDS).
+  const voiceSearch = useAssistant(setSearchText);
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -298,6 +304,8 @@ export function HomeDashboard() {
       {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"
           n'existe plus, il appartient maintenant à cet écran. */}
       <AddObjetModal visible={addObjetOpen} onClose={() => setAddObjetOpen(false)} />
+
+      <AssistantSheet state={voiceSearch} onClose={voiceSearch.dismiss} />
     </View>
   );
 }
