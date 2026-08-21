@@ -759,6 +759,10 @@ export type Database = {
         Args: { p_habitation_id: string }
         Returns: string
       }
+      habitation_id_for_node: {
+        Args: { p_id: string; p_kind: string }
+        Returns: string
+      }
       habitation_node_counts: {
         Args: { p_habitation_id: string }
         Returns: {

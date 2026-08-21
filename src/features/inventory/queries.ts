@@ -691,15 +691,7 @@ export function useHabitationIdForNode(kind: 'piece' | 'emplacement' | 'conteneu
     queryKey: ['habitationIdForNode', kind, id],
     staleTime: Infinity,
     queryFn: async (): Promise<string | null> => {
-      // Pont temporaire : `habitation_id_for_node` n'entre dans les types
-      // generes qu'une fois la migration 20260821160000 appliquee en
-      // distant. Le `gen types` qui suit le `db push` rend ce cast inutile
-      // — a retirer a ce moment-la.
-      const rpc = supabase.rpc as unknown as (
-        name: 'habitation_id_for_node',
-        args: { p_kind: string; p_id: string },
-      ) => Promise<{ data: string | null; error: Error | null }>;
-      const { data, error } = await rpc('habitation_id_for_node', { p_kind: kind, p_id: id });
+      const { data, error } = await supabase.rpc('habitation_id_for_node', { p_kind: kind, p_id: id });
       if (error) throw error;
       return data ?? null;
     },
