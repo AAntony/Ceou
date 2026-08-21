@@ -23,13 +23,26 @@ import { Icon } from '../../components/Icon';
 //   partagé l'attention sans jamais paraître importants. Il n'en reste
 //   qu'un, et il est impossible à manquer.
 //
+// Le libellé dit le nom de l'app parce que « Céoù » EST la question que
+// le bouton pose — « c'est où ? ». Le clin d'œil ne coûte rien à la
+// clarté : « Demande à Céoù » se comprend sans connaître la marque.
+//
 // Volontairement au-dessus de la barre d'onglets et non dedans : le "+"
 // central de la barre avait déjà été retiré pour cause d'ambiguïté (voir
 // AppTabBar), et un cinquième onglet aurait rétréci les quatre autres.
 
 const ACCENT = '#1591EA';
 const BUTTON_HEIGHT = 56;
-const ICON_SIZE = 24;
+const ICON_SIZE = 22;
+
+// Le libellé (« Demande à Céoù ») est long pour un bouton flottant : ces
+// trois valeurs sont resserrées d'un cran par rapport à un libellé d'un
+// seul mot, pour que la pastille garde l'air de flotter au-dessus de la
+// grille au lieu de barrer l'écran. La cible reste bien au-dessus des
+// 44 px recommandés, portée par la hauteur.
+const PADDING_HORIZONTAL = 18;
+const LABEL_SIZE = 15;
+const GAP = 8;
 const GAP_ABOVE_TAB_BAR = 16;
 
 /** Anneau qui s'écarte en boucle pendant l'écoute. */
@@ -101,8 +114,8 @@ export function AssistantFab({ isListening, onPress }: { isListening: boolean; o
           height: BUTTON_HEIGHT,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 10,
-          paddingHorizontal: 22,
+          gap: GAP,
+          paddingHorizontal: PADDING_HORIZONTAL,
           borderRadius: BUTTON_HEIGHT / 2,
           backgroundColor: ACCENT,
           // Ombre portée : c'est ce qui décolle le bouton de la grille de
@@ -116,7 +129,7 @@ export function AssistantFab({ isListening, onPress }: { isListening: boolean; o
         }}
       >
         <Icon name="microphone" size={ICON_SIZE} color="#FFFFFF" />
-        <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: LABEL_SIZE, fontWeight: '600' }}>
           {isListening ? t('home.voice_search_listening') : t('home.assistant_cta')}
         </Text>
       </Pressable>
