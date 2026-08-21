@@ -78,16 +78,25 @@ export const EMPLACEMENT_PRESETS: EmplacementPresetDefinition[] = [
 export const getEmplacementIcon = iconLookup(EMPLACEMENT_PRESETS);
 
 export type PieceTypeKey =
-  | 'chambre'
   | 'sejour'
+  | 'salle_a_manger'
   | 'cuisine'
+  | 'chambre'
   | 'salle_de_bain'
+  | 'toilette'
   | 'bureau'
   | 'dressing'
   | 'buanderie'
-  | 'cave'
-  | 'garage'
   | 'entree'
+  | 'couloir'
+  | 'cave'
+  | 'cellier'
+  | 'grenier'
+  | 'garage'
+  | 'atelier'
+  | 'debarras'
+  | 'balcon'
+  | 'jardin'
   | 'autre';
 
 export type PieceTypeDefinition = {
@@ -98,17 +107,48 @@ export type PieceTypeDefinition = {
 // Suggestions communes à la plupart des habitations — pas de contrainte
 // stricte, "Autre" + le champ Nom restent toujours modifiables librement.
 export const PIECE_TYPES: PieceTypeDefinition[] = [
-  { key: 'chambre', icon: 'chambre' },
   { key: 'sejour', icon: 'sejour' },
+  { key: 'salle_a_manger', icon: 'salle_a_manger' },
   { key: 'cuisine', icon: 'cuisine' },
+  { key: 'chambre', icon: 'chambre' },
   { key: 'salle_de_bain', icon: 'salle_de_bain' },
+  { key: 'toilette', icon: 'toilette' },
   { key: 'bureau', icon: 'bureau' },
   { key: 'dressing', icon: 'dressing' },
   { key: 'buanderie', icon: 'buanderie' },
-  { key: 'cave', icon: 'cave' },
-  { key: 'garage', icon: 'garage' },
   { key: 'entree', icon: 'entree' },
+  { key: 'couloir', icon: 'couloir' },
+  { key: 'cave', icon: 'cave' },
+  { key: 'cellier', icon: 'cellier' },
+  { key: 'grenier', icon: 'grenier' },
+  { key: 'garage', icon: 'garage' },
+  { key: 'atelier', icon: 'atelier' },
+  { key: 'debarras', icon: 'debarras' },
+  { key: 'balcon', icon: 'balcon' },
+  { key: 'jardin', icon: 'jardin' },
   { key: 'autre', icon: 'autre' },
 ];
 
 export const getPieceIcon = iconLookup(PIECE_TYPES);
+
+export type ConteneurPresetKey = 'boite' | 'bac' | 'panier' | 'malle' | 'valise' | 'sac' | 'autre';
+
+export type ConteneurPresetDefinition = {
+  key: ConteneurPresetKey;
+  icon: IconName;
+};
+
+// Volontairement court. Un Conteneur est un contenant physique banal ; sept
+// entrées couvrent ce qu'on croise vraiment dans un logement, et une liste
+// plus longue rendrait le choix plus lent que la saisie du nom.
+export const CONTENEUR_PRESETS: ConteneurPresetDefinition[] = [
+  { key: 'boite', icon: 'boite' },
+  { key: 'bac', icon: 'bac' },
+  { key: 'panier', icon: 'panier' },
+  { key: 'malle', icon: 'malle' },
+  { key: 'valise', icon: 'valise' },
+  { key: 'sac', icon: 'sac' },
+  { key: 'autre', icon: 'autre' },
+];
+
+export const getConteneurIcon = iconLookup(CONTENEUR_PRESETS);

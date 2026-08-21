@@ -31,6 +31,21 @@ export type IconName =
   | 'salle_de_bain'
   | 'buanderie'
   | 'entree'
+  | 'salle_a_manger'
+  | 'toilette'
+  | 'couloir'
+  | 'grenier'
+  | 'atelier'
+  | 'debarras'
+  | 'balcon'
+  | 'jardin'
+  // Conteneur presets
+  | 'boite'
+  | 'bac'
+  | 'panier'
+  | 'malle'
+  | 'valise'
+  | 'sac'
   // Plan shapes
   | 'rectangle'
   | 'circle'
@@ -96,6 +111,30 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   salle_de_bain: 'shower',
   buanderie: 'washing-machine',
   entree: 'door',
+  salle_a_manger: 'silverware-fork-knife',
+  toilette: 'toilet',
+  // Ni 'door' (Entrée) ni 'door-open' (icône générique d'une Pièce) :
+  // les trois se ressemblent à 24 px, la porte coulissante est la seule
+  // variante réellement distincte à l'œil. Un couloir, c'est de toute
+  // façon une enfilade de portes.
+  couloir: 'door-sliding',
+  grenier: 'home-roof',
+  atelier: 'toolbox',
+  // Variante contour de l'icône générique 'conteneur' ('archive') : même
+  // idée de cartons empilés, mais distinguable côte à côte.
+  debarras: 'archive-outline',
+  balcon: 'balcony',
+  jardin: 'tree',
+
+  boite: 'package-variant-closed',
+  bac: 'tray-full',
+  panier: 'basket-outline',
+  // Même glyphe que le Coffre d'un Emplacement : les deux ne peuvent
+  // jamais apparaître dans le même sélecteur, et aucune autre icône du
+  // jeu ne dit « malle » aussi clairement.
+  malle: 'treasure-chest',
+  valise: 'briefcase-outline',
+  sac: 'bag-personal',
 
   rectangle: 'vector-rectangle',
   circle: 'vector-circle',

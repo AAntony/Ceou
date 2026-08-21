@@ -317,16 +317,25 @@
       "delete_confirm_message": "Tous les emplacements et objets qu'elle contient seront supprimés."
     },
     "pieceTypes": {
-      "chambre": "Chambre",
-      "sejour": "Séjour",
+      "sejour": "Salon",
+      "salle_a_manger": "Salle à manger",
       "cuisine": "Cuisine",
+      "chambre": "Chambre",
       "salle_de_bain": "Salle de bain",
+      "toilette": "Toilettes",
       "bureau": "Bureau",
       "dressing": "Dressing",
       "buanderie": "Buanderie",
-      "cave": "Cave",
-      "garage": "Garage",
       "entree": "Entrée",
+      "couloir": "Couloir",
+      "cave": "Cave",
+      "cellier": "Cellier",
+      "grenier": "Grenier",
+      "garage": "Garage",
+      "atelier": "Atelier",
+      "debarras": "Débarras",
+      "balcon": "Balcon",
+      "jardin": "Jardin",
       "autre": "Autre"
     },
     "emplacements": {
@@ -350,6 +359,15 @@
       "tiroir": "Tiroir",
       "coffre": "Coffre",
       "boite_a_gants": "Boîte à gants",
+      "autre": "Autre"
+    },
+    "conteneurPresets": {
+      "boite": "Boîte",
+      "bac": "Bac",
+      "panier": "Panier",
+      "malle": "Malle",
+      "valise": "Valise",
+      "sac": "Sac",
       "autre": "Autre"
     },
     "container": {

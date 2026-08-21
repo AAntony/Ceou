@@ -317,16 +317,25 @@
       "delete_confirm_message": "All the spots and items it contains will be deleted."
     },
     "pieceTypes": {
-      "chambre": "Bedroom",
       "sejour": "Living room",
+      "salle_a_manger": "Dining room",
       "cuisine": "Kitchen",
+      "chambre": "Bedroom",
       "salle_de_bain": "Bathroom",
+      "toilette": "Toilet",
       "bureau": "Office",
-      "dressing": "Closet",
+      "dressing": "Walk-in closet",
       "buanderie": "Laundry room",
+      "entree": "Entrance",
+      "couloir": "Hallway",
       "cave": "Cellar",
+      "cellier": "Pantry",
+      "grenier": "Attic",
       "garage": "Garage",
-      "entree": "Entryway",
+      "atelier": "Workshop",
+      "debarras": "Storage room",
+      "balcon": "Balcony",
+      "jardin": "Garden",
       "autre": "Other"
     },
     "emplacements": {
@@ -350,6 +359,15 @@
       "tiroir": "Drawer",
       "coffre": "Trunk",
       "boite_a_gants": "Glove box",
+      "autre": "Other"
+    },
+    "conteneurPresets": {
+      "boite": "Box",
+      "bac": "Bin",
+      "panier": "Basket",
+      "malle": "Trunk",
+      "valise": "Suitcase",
+      "sac": "Bag",
       "autre": "Other"
     },
     "container": {
