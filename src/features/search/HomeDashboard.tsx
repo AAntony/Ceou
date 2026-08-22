@@ -234,7 +234,21 @@ export function HomeDashboard() {
     if (selectedPiece) {
       list = list.filter((entry) => entry.piece_name.trim().toLowerCase() === selectedPiece.toLowerCase());
     }
-    return list;
+
+    // Ordre alphabétique, et pas celui que renvoie search_index() : cette
+    // fonction assemble quatre requêtes par UNION, son ordre n'est donc ni
+    // défini ni stable d'un chargement à l'autre. Sur une grille qu'on
+    // parcourt des yeux pour retrouver un objet, un ordre imprévisible est
+    // ce qui coûte le plus cher.
+    //
+    // `sensitivity: 'base'` range « École » avec « ecole » plutôt que de
+    // remonter toutes les majuscules et les accents en tête ; `numeric`
+    // place « Boîte 2 » avant « Boîte 10 », ce que l'ordre texte inverse.
+    //
+    // Copie avant tri : `list` vient d'un filtre donc c'est déjà un nouveau
+    // tableau, mais trier en place ce qui pourrait un jour être le tableau
+    // du cache le corromprait sans bruit.
+    return [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }));
   }, [entries, trimmedSearch, searchTerms, selectedPiece]);
 
   const isGuest = useIsAnonymous();
