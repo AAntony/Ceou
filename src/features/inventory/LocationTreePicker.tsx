@@ -4,17 +4,19 @@ import { Pressable, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Piece } from '../../types/database';
+import { shade } from '../plans/constants';
 import {
+  DEFAULT_PIECE_COLOR,
   EMPLACEMENT_PRESETS,
   HABITATION_TYPES,
   PIECE_TYPES,
+  getConteneurIcon,
   getEmplacementIcon,
   getHabitationIcon,
   getPieceIcon,
@@ -23,13 +25,18 @@ import {
   type HabitationTypeKey,
   type PieceTypeKey,
 } from './constants';
+import { objetCountLabel } from './counts';
 import {
+  nodeCountKey,
   useContainerContents,
   useCreateConteneur,
   useCreateEmplacement,
   useCreateHabitation,
   useCreatePiece,
   useEmplacements,
+  useHabitationIdForNode,
+  useHabitationNodeCounts,
+  useHabitationObjectCounts,
   useHabitations,
   usePieces,
 } from './queries';
@@ -54,6 +61,17 @@ type LocationTreePickerProps = {
 // réutilisée à la fois pour déplacer un objet (MoveObjetModal) et pour
 // choisir la destination d'un nouvel objet (AddObjetModal) — même
 // arborescence, seule l'action finale change.
+//
+// Les rangées sont RIGOUREUSEMENT celles des écrans de navigation (EntityRow
+// : vignette, icône, nom, nombre d'objets). Ce n'est pas de la cosmétique :
+// on demande ici à quelqu'un de reconnaître un endroit de chez lui, et il
+// vient de le voir sous une autre forme deux écrans plus tôt. Le nombre
+// d'objets, en particulier, est souvent ce qui permet de distinguer deux
+// placards portant le même nom.
+//
+// Ce que ces rangées n'ont PAS, volontairement : ni crayon, ni suppression
+// par appui long, ni étoile de favori. On choisit une destination, on
+// n'administre pas son inventaire.
 //
 // Règle d'ergonomie : à AUCUN niveau l'utilisateur ne doit se retrouver
 // devant une liste vide sans issue. Chaque étape propose donc une création
@@ -138,6 +156,7 @@ function AddInlineCard({ label, onPress }: { label: string; onPress: () => void 
 function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => void }) {
   const { t } = useTranslation();
   const { data: habitations, isLoading, isError, refetch } = useHabitations();
+  const { data: objetCounts } = useHabitationObjectCounts();
   const createHabitation = useCreateHabitation();
   const [modalOpen, setModalOpen] = useState(false);
   const [type, setType] = useState<HabitationTypeKey>('maison');
@@ -153,11 +172,19 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
     <>
       {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="home" title={t('home.onboarding_hint')} /> : null}
-      <EntityGrid>
-        {habitations?.map((habitation) => (
-          <EntityCard key={habitation.id} icon={getHabitationIcon(habitation.type)} title={habitation.name} onPress={() => onSelect(habitation)} />
-        ))}
-      </EntityGrid>
+      {habitations?.map((habitation) => (
+        <EntityRow
+          key={habitation.id}
+          level="habitation"
+          icon={getHabitationIcon(habitation.type)}
+          title={habitation.name}
+          subtitle={[t(`inventory.habitationTypes.${habitation.type}`), objetCountLabel(t, objetCounts, habitation.id)]
+            .filter(Boolean)
+            .join(' · ')}
+          photoUri={habitation.photo_url}
+          onPress={() => onSelect(habitation)}
+        />
+      ))}
       <AddInlineCard
         label={t('inventory.habitations.add')}
         onPress={() => {
@@ -198,6 +225,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
 function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect: (piece: Piece) => void }) {
   const { t } = useTranslation();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const createPiece = useCreatePiece(habitationId);
   const [modalOpen, setModalOpen] = useState(false);
   const [presetKey, setPresetKey] = useState<PieceTypeKey | null>(null);
@@ -213,11 +241,18 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
     <>
       {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="piece" title={t('inventory.pieces.empty')} /> : null}
-      <EntityGrid>
-        {pieces?.map((piece) => (
-          <EntityCard key={piece.id} icon={getPieceIcon(piece.preset_key)} title={piece.name} onPress={() => onSelect(piece)} />
-        ))}
-      </EntityGrid>
+      {pieces?.map((piece) => (
+        <EntityRow
+          key={piece.id}
+          level="piece"
+          icon={getPieceIcon(piece.preset_key)}
+          title={piece.name}
+          subtitle={objetCountLabel(t, counts, nodeCountKey('piece', piece.id))}
+          photoUri={piece.photo_url}
+          iconColor={shade(piece.color ?? DEFAULT_PIECE_COLOR, 0.45)}
+          onPress={() => onSelect(piece)}
+        />
+      ))}
       <AddInlineCard
         label={t('inventory.pieces.add')}
         onPress={() => {
@@ -265,6 +300,10 @@ function EmplacementsStep({
 }) {
   const { t } = useTranslation();
   const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
+  // Les compteurs sont indexés PAR HABITATION : il faut donc remonter du
+  // pieceId à son habitation, exactement comme le fait l'écran Pièce.
+  const { data: habitationId } = useHabitationIdForNode('piece', pieceId);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const createEmplacement = useCreateEmplacement(pieceId);
   const [modalOpen, setModalOpen] = useState(false);
   const [presetKey, setPresetKey] = useState<EmplacementPresetKey | null>(null);
@@ -280,16 +319,17 @@ function EmplacementsStep({
     <>
       {isError ? <ErrorState onRetry={() => refetch()} /> : null}
       {isEmpty ? <EmptyState icon="etagere" title={t('inventory.emplacements.empty')} /> : null}
-      <EntityGrid>
-        {emplacements?.map((emplacement) => (
-          <EntityCard
-            key={emplacement.id}
-            icon={getEmplacementIcon(emplacement.preset_key)}
-            title={emplacement.name}
-            onPress={() => onSelect(emplacement)}
-          />
-        ))}
-      </EntityGrid>
+      {emplacements?.map((emplacement) => (
+        <EntityRow
+          key={emplacement.id}
+          level="emplacement"
+          icon={getEmplacementIcon(emplacement.preset_key)}
+          title={emplacement.name}
+          subtitle={objetCountLabel(t, counts, nodeCountKey('emplacement', emplacement.id))}
+          photoUri={emplacement.photo_url}
+          onPress={() => onSelect(emplacement)}
+        />
+      ))}
       <AddInlineCard
         label={t('inventory.emplacements.add')}
         onPress={() => {
@@ -345,6 +385,8 @@ function ContainerStep({
 }) {
   const { t } = useTranslation();
   const { conteneurs } = useContainerContents(type, id);
+  const { data: habitationId } = useHabitationIdForNode(type, id);
+  const { data: counts } = useHabitationNodeCounts(habitationId);
   const createConteneur = useCreateConteneur(type, id);
   const [modalOpen, setModalOpen] = useState(false);
   const [name, setName] = useState('');
@@ -354,11 +396,17 @@ function ContainerStep({
       <View className="mb-4">
         <Button label={confirmLabel} onPress={onChooseHere} loading={loading} />
       </View>
-      <EntityGrid>
-        {conteneurs.map((conteneur) => (
-          <EntityCard key={conteneur.id} icon="conteneur" title={conteneur.name} onPress={() => onSelectConteneur(conteneur)} />
-        ))}
-      </EntityGrid>
+      {conteneurs.map((conteneur) => (
+        <EntityRow
+          key={conteneur.id}
+          level="conteneur"
+          icon={getConteneurIcon(conteneur.preset_key)}
+          title={conteneur.name}
+          subtitle={objetCountLabel(t, counts, nodeCountKey('conteneur', conteneur.id))}
+          photoUri={conteneur.photo_url}
+          onPress={() => onSelectConteneur(conteneur)}
+        />
+      ))}
       <AddInlineCard
         label={t('inventory.container.add_conteneur')}
         onPress={() => {
