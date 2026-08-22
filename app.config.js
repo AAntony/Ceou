@@ -73,13 +73,21 @@ module.exports = {
       [
         'expo-splash-screen',
         {
-          // Aplat bleu SANS image, volontairement : c'est exactement la
-          // première image de l'animation (AnimatedSplash), qui commence sur
-          // un fond nu avant que la loupe n'entre. Le passage du splash
-          // système au nôtre devient donc invisible — y mettre le logo le
-          // ferait au contraire sauter au moment de la bascule.
+          // Aplat bleu NU, volontairement : c'est exactement la première
+          // image de l'animation (AnimatedSplash), qui démarre sur un fond
+          // vide avant que la loupe n'entre. Le passage du splash système au
+          // nôtre est donc invisible — y mettre le logo le ferait au
+          // contraire sauter au moment de la bascule.
+          //
+          // L'image est une PNG 96x96 ENTIEREMENT TRANSPARENTE, et ce n'est
+          // pas une coquetterie : omettre `image` produit un thème Android
+          // qui référence quand même @drawable/splashscreen_logo, jamais
+          // généré — le build échoue alors sur « resource not found ». Une
+          // image invisible satisfait la référence sans rien afficher.
+          image: './assets/splash-transparent.png',
+          imageWidth: 96,
           backgroundColor: '#1591EA',
-          dark: { backgroundColor: '#1591EA' },
+          dark: { image: './assets/splash-transparent.png', backgroundColor: '#1591EA' },
         },
       ],
       [

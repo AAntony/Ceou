@@ -47,3 +47,7 @@ yarn-error.*
 # Maquette assemblee (design/) : embarque l'editeur entier, ~2,3 Mo, et se
 # regenere a partir des .dc.html + canvas.json qui, eux, sont versionnes.
 design/plan-ceou-refonte.html
+
+# Cles de signature Android exportees depuis EAS (mot de passe en clair).
+# Ne doit JAMAIS etre versionne. Le *.jks au-dessus couvre deja le magasin.
+credentials.json
