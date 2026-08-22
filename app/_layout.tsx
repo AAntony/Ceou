@@ -1,8 +1,9 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { focusManager, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
 import { AppTabBar } from '../src/components/AppTabBar';
@@ -53,6 +54,22 @@ function AppShell() {
   const { isLoading } = useSession();
   const [splashDone, setSplashDone] = useState(false);
   const nativeHidden = useRef(false);
+
+  // BRANCHEMENT INDISPENSABLE SUR MOBILE. TanStack Query sait rafraîchir ses
+  // données « au retour du focus », mais cette notion est celle d'une FENÊTRE
+  // de navigateur : sur un téléphone, rien ne la déclenche jamais. Sans ce
+  // pont vers AppState, une donnée modifiée par quelqu'un d'autre pendant que
+  // l'app était en arrière-plan restait celle du dernier chargement jusqu'à
+  // ce que l'application soit réellement tuée — d'où une demande d'ami ou un
+  // retrait d'ami qui n'apparaissaient qu'après avoir fermé puis rouvert.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (status) => {
+      // Le web a déjà son propre détecteur de focus ; le doubler ferait se
+      // contredire les deux.
+      if (Platform.OS !== 'web') focusManager.setFocused(status === 'active');
+    });
+    return () => subscription.remove();
+  }, []);
 
   const hideNativeSplash = () => {
     // onLayout se déclenche à chaque changement de taille (rotation, clavier)

@@ -1,4 +1,4 @@
-import { useNavigation } from 'expo-router';
+import { useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
@@ -22,6 +22,17 @@ import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespon
 export default function FriendsScreen() {
   const { t } = useTranslation();
   const { data: friendships, isLoading, isError, refetch } = useFriendships();
+
+  // L'onglet reste MONTÉ quand on le quitte : sans ce rappel, revenir dessus
+  // ne redemande rien et on relit l'état d'il y a une heure. C'est l'écran de
+  // l'app dont le contenu dépend le plus de ce que font les autres — une
+  // demande reçue, un ami qui vous retire — donc celui où une liste périmée
+  // se remarque le plus.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
   const respond = useRespondToFriendship();
   const cancelRequest = useCancelFriendRequest();
 

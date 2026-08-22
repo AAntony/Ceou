@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
@@ -37,6 +38,7 @@ export function PushRegistrar() {
 }
 
 function NotificationRouter({ userId }: { userId: string | undefined }) {
+  const queryClient = useQueryClient();
   // Renvoie aussi la notification qui a DEMARRE l'app depuis un état fermé,
   // pas seulement celles reçues app ouverte — c'est justement le cas le plus
   // fréquent pour une demande d'ami.
@@ -56,9 +58,19 @@ function NotificationRouter({ userId }: { userId: string | undefined }) {
     // renvoyée vers l'écran de connexion par la garde de session.
     if (!userId) return;
 
+    // Recharger AVANT de naviguer, sinon l'écran s'ouvre sur le cache : la
+    // demande d'ami qui vient d'être annoncée par la notification n'y figure
+    // pas encore, et l'utilisateur arrive sur une liste qui dément ce qu'il
+    // vient de lire. Le retour au premier plan suffit dans la plupart des
+    // cas, mais pas quand l'app était DÉJÀ ouverte au moment de l'appui.
+    queryClient.invalidateQueries({ queryKey: ['friendships'] });
+    queryClient.invalidateQueries({ queryKey: ['habitationShares'] });
+
     const url = lastResponse.notification.request.content.data?.url;
     if (typeof url === 'string' && ALLOWED_ROUTES.has(url)) router.push(url);
-  }, [lastResponse, userId]);
+    // `queryClient` est une référence stable, mais le lister évite qu'une
+    // relecture future prenne son absence pour un oubli.
+  }, [lastResponse, userId, queryClient]);
 
   return null;
 }
