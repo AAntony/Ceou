@@ -44,6 +44,10 @@ const CONTENT_PADDING = { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 
 // son propre conteneur de rangee. Les cartes restent en w-[48%].
 const COLUMN_WRAPPER = { justifyContent: 'space-between' as const };
 
+// Utilise A LA FOIS par la FlatList et par la conversion indice d'objet ->
+// indice de rangee ci-dessous. Deux valeurs separees, c'etait le bug.
+const NUM_COLUMNS = 2;
+
 // En dessous, la liste tient en deux ou trois glissements de pouce : une
 // barre alphabetique n'y ferait qu'occuper le bord de l'ecran. Et il faut au
 // moins trois initiales differentes, sinon sauter d'une lettre a l'autre ne
@@ -301,12 +305,19 @@ export function HomeDashboard() {
 
   const jumpToLetter = useCallback(
     (letter: string) => {
-      const index = filtered.findIndex((entry) => initialOf(entry.name) === letter);
-      if (index < 0) return;
+      const itemIndex = filtered.findIndex((entry) => initialOf(entry.name) === letter);
+      if (itemIndex < 0) return;
+      // CONVERSION OBLIGATOIRE. Avec numColumns > 1, FlatList ne compte plus
+      // des objets mais des RANGEES (Math.ceil(data.length / numColumns),
+      // voir _getItemCount dans son code) — et scrollToIndex transmet
+      // l'indice tel quel, sans le convertir. Lui passer un indice d'objet
+      // depassait le maximum des qu'on visait la seconde moitie de la liste,
+      // et l'exception qui en resultait tuait l'application.
+      const rowIndex = Math.floor(itemIndex / NUM_COLUMNS);
       // viewPosition 0 amene la rangee en HAUT de la zone visible : la
       // premiere carte de la lettre doit etre celle qu'on voit, pas celle
       // qui affleure en bas de l'ecran.
-      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0 });
+      listRef.current?.scrollToIndex({ index: rowIndex, animated: true, viewPosition: 0 });
     },
     [filtered],
   );
@@ -324,7 +335,7 @@ export function HomeDashboard() {
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
-        numColumns={2}
+        numColumns={NUM_COLUMNS}
         columnWrapperStyle={COLUMN_WRAPPER}
         contentContainerStyle={CONTENT_PADDING}
         initialNumToRender={10}
