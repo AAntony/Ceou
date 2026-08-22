@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
@@ -7,12 +7,13 @@ import { Icon } from '../../components/Icon';
 import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
+import { AlphabetIndex } from './AlphabetIndex';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
 import { AssistantFab } from './AssistantFab';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
-import { normalizeForMatch } from '../../lib/text/match';
+import { normalize, normalizeForMatch } from '../../lib/text/match';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
 // liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
@@ -42,6 +43,27 @@ const CONTENT_PADDING = { paddingHorizontal: 24, paddingTop: 64, paddingBottom: 
 // Reproduit le `justify-between` de EntityGrid, que numColumns remplace par
 // son propre conteneur de rangee. Les cartes restent en w-[48%].
 const COLUMN_WRAPPER = { justifyContent: 'space-between' as const };
+
+// En dessous, la liste tient en deux ou trois glissements de pouce : une
+// barre alphabetique n'y ferait qu'occuper le bord de l'ecran. Et il faut au
+// moins trois initiales differentes, sinon sauter d'une lettre a l'autre ne
+// deplace presque rien.
+const ALPHABET_MIN_ITEMS = 20;
+const ALPHABET_MIN_LETTERS = 3;
+
+/**
+ * Initiale de classement d'un nom : majuscule sans accent, ou « # » pour
+ * tout ce qui ne commence pas par une lettre.
+ *
+ * Passe par normalize() — celui du tri et de la recherche — pour que « École »
+ * tombe sous E et non sous une lettre accentuee qui n'existerait nulle part
+ * dans la barre.
+ */
+function initialOf(name: string): string {
+  const first = normalize(name).charAt(0);
+  if (!first) return '#';
+  return first >= 'a' && first <= 'z' ? first.toUpperCase() : '#';
+}
 
 type HomeHeaderProps = {
   greeting: string;
@@ -262,6 +284,33 @@ export function HomeDashboard() {
     [],
   );
 
+  const listRef = useRef<FlatList<SearchIndexEntry>>(null);
+
+  // Les initiales dans l'ordre ou elles apparaissent : la liste etant deja
+  // triee, elles en sortent triees aussi, sans second tri a faire.
+  const letters = useMemo(() => {
+    const seen: string[] = [];
+    for (const entry of filtered) {
+      const initial = initialOf(entry.name);
+      if (seen[seen.length - 1] !== initial && !seen.includes(initial)) seen.push(initial);
+    }
+    return seen;
+  }, [filtered]);
+
+  const showAlphabet = filtered.length >= ALPHABET_MIN_ITEMS && letters.length >= ALPHABET_MIN_LETTERS;
+
+  const jumpToLetter = useCallback(
+    (letter: string) => {
+      const index = filtered.findIndex((entry) => initialOf(entry.name) === letter);
+      if (index < 0) return;
+      // viewPosition 0 amene la rangee en HAUT de la zone visible : la
+      // premiere carte de la lettre doit etre celle qu'on voit, pas celle
+      // qui affleure en bas de l'ecran.
+      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0 });
+    },
+    [filtered],
+  );
+
   return (
     <View className="flex-1 bg-sand">
       {/* Virtualisé (lot 4) : c'est la SEULE liste non bornée de l'app — elle
@@ -271,6 +320,7 @@ export function HomeDashboard() {
           qu'elle ne rapporte). Avant, chaque objet était monté d'emblée :
           ~7 vues natives et une requête d'image par carte. */}
       <FlatList
+        ref={listRef}
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
@@ -279,6 +329,18 @@ export function HomeDashboard() {
         contentContainerStyle={CONTENT_PADDING}
         initialNumToRender={10}
         windowSize={5}
+        // Sauter loin dans une liste virtualisee vise une rangee qui n'est
+        // pas encore montee, et scrollToIndex echoue alors. On s'approche
+        // d'abord avec la hauteur moyenne que la liste a elle-meme mesuree,
+        // puis on refait le saut une fois la zone rendue. Pas de
+        // getItemLayout : il faudrait figer la hauteur des cartes, donc les
+        // empecher de suivre la taille de police du systeme.
+        onScrollToIndexFailed={(info) => {
+          listRef.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: false });
+          setTimeout(() => {
+            listRef.current?.scrollToIndex({ index: info.index, animated: false, viewPosition: 0 });
+          }, 80);
+        }}
         ListHeaderComponent={
           <HomeHeader
             greeting={greeting}
@@ -300,6 +362,8 @@ export function HomeDashboard() {
           ) : null
         }
       />
+
+      {showAlphabet ? <AlphabetIndex letters={letters} onSelect={jumpToLetter} /> : null}
 
       {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"
           n'existe plus, il appartient maintenant à cet écran. */}
