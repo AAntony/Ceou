@@ -9,6 +9,7 @@ import { EntityRow } from '../../../src/components/EntityRow';
 import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
+import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
@@ -31,6 +32,7 @@ import type { Habitation } from '../../../src/types/database';
 type Tab = 'personal' | 'shared';
 
 export default function HabitationsScreen() {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: habitations, isLoading, isError, refetch } = useHabitations();
@@ -136,7 +138,7 @@ export default function HabitationsScreen() {
         }}
       />
       <View className="flex-1 bg-sand">
-        <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+        <ScrollView contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
           {/* Un visiteur ne voit ni onglets ni creation : les deux onglets lui
               seraient vides par construction (il ne possede rien et n’a aucun
               ami). Il voit directement ce a quoi son code lui donne acces. */}

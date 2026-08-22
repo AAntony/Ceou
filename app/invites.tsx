@@ -9,6 +9,7 @@ import { ErrorState } from '../src/components/ErrorState';
 import { Icon } from '../src/components/Icon';
 import { QrCode } from '../src/components/QrCode';
 import { TextField } from '../src/components/TextField';
+import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { syncInviteReminders } from '../src/features/notifications/inviteReminders';
 import { logClientError } from '../src/lib/errorLogging';
 import {
@@ -128,6 +129,7 @@ function InviteCard({
 }
 
 export default function InvitesScreen() {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { data: invites, isLoading, isError, refetch } = useMyShareInvites();
   const updateInvite = useUpdateShareInvite();
@@ -235,7 +237,7 @@ export default function InvitesScreen() {
           <EmptyState icon="qrcode" title={t('invites.empty_title')} subtitle={t('invites.empty_subtitle')} />
         </View>
       ) : (
-        <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-5 pb-32 pt-5">
+        <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-5 pb-32 pt-5" refreshControl={refreshControl}>
           <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('invites.intro')}</Text>
           {(invites ?? []).map((entry) => (
             <InviteCard

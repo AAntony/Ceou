@@ -16,8 +16,10 @@ import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
+import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 
 export default function ObjetScreen() {
+  const refreshControl = usePullToRefresh();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { session } = useSession();
@@ -90,7 +92,7 @@ export default function ObjetScreen() {
   return (
     <>
       <Stack.Screen options={{ title: objet.name }} />
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6">
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6" refreshControl={refreshControl}>
         <View className="mb-6 self-center">
           <Pressable
             onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : editable ? handleChangePhoto() : undefined)}

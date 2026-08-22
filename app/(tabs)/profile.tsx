@@ -9,6 +9,7 @@ import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
+import { usePullToRefresh } from '../../src/components/usePullToRefresh';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
@@ -21,6 +22,7 @@ import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../src/lib/i18n'
 import { supabase } from '../../src/lib/supabase/client';
 
 export default function ProfileScreen() {
+  const refreshControl = usePullToRefresh();
   const { t, i18n } = useTranslation();
   const { session } = useSession();
   const isGuest = useIsAnonymous();
@@ -82,7 +84,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40">
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40" refreshControl={refreshControl}>
       <Pressable onPress={handleAvatarPress} className="mb-8 items-center">
         <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-sand-dark">
           {avatarUploading ? (

@@ -10,6 +10,7 @@ import { EntityPhotoField } from '../../components/EntityPhotoField';
 import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
+import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Emplacement } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
@@ -33,6 +34,7 @@ type PieceEmplacementsProps = {
 };
 
 export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps) {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
@@ -94,7 +96,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (

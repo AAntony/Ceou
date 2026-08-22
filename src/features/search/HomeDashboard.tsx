@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
+import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { Icon } from '../../components/Icon';
 import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
@@ -195,6 +196,7 @@ function HomeHeader({
 }
 
 export function HomeDashboard() {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { data: profile } = useProfile();
   const { data: entries, isLoading, isError, refetch } = useSearchIndex();
@@ -292,6 +294,7 @@ export function HomeDashboard() {
           qu'elle ne rapporte). Avant, chaque objet était monté d'emblée :
           ~7 vues natives et une requête d'image par carte. */}
       <FlatList
+        refreshControl={refreshControl}
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}

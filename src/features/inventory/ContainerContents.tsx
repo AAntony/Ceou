@@ -10,6 +10,7 @@ import { EntityPhotoField } from '../../components/EntityPhotoField';
 import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
+import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Conteneur, LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
@@ -36,6 +37,7 @@ type ContainerContentsProps = {
 };
 
 export function ContainerContents({ parentType, parentId, addSignal }: ContainerContentsProps) {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { session } = useSession();
   const { conteneurs, objets, isLoading, isError, refetch } = useContainerContents(parentType, parentId);
@@ -88,7 +90,7 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (

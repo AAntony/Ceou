@@ -6,6 +6,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { ErrorState } from '../../src/components/ErrorState';
 import { HeaderAddButton } from '../../src/components/HeaderAddButton';
 import { Icon } from '../../src/components/Icon';
+import { usePullToRefresh } from '../../src/components/usePullToRefresh';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
 import {
   buildFriendSections,
@@ -20,6 +21,7 @@ import { FriendRow } from '../../src/features/sharing/FriendRow';
 import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespondToFriendship } from '../../src/features/sharing/queries';
 
 export default function FriendsScreen() {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { data: friendships, isLoading, isError, refetch } = useFriendships();
 
@@ -98,7 +100,7 @@ export default function FriendsScreen() {
       {/* Mêmes retraits que app/(entities)/habitations/index.tsx : le titre
           et le bouton d'ajout vivent maintenant dans l'en-tête natif, donc
           plus de pt-16 pour compenser son absence. */}
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
         {incoming.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.requests.incoming_title')}</Text>

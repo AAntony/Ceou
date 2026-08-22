@@ -9,6 +9,7 @@ import { EntityPhotoField } from '../../components/EntityPhotoField';
 import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
+import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { shade } from '../plans/constants';
 import type { Piece } from '../../types/database';
@@ -32,6 +33,7 @@ type PieceListProps = {
 };
 
 export function PieceList({ habitationId, addSignal }: PieceListProps) {
+  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
@@ -91,7 +93,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
 
   return (
     <View className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="px-6 pb-28 pt-4">
+      <ScrollView contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
         {isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : isEmpty ? (
