@@ -111,6 +111,12 @@
       "own_invite": "C’est ton propre code.",
       "friend_code": "Ce code est une invitation entre amis : il demande un compte. Crée-en un pour l’utiliser."
     },
+    "access_lost": {
+      "expired_title": "Ton accès a expiré",
+      "expired_message": "Le code d’invitation que tu as utilisé a expiré le {{date}}. Demande un nouveau code à ton hôte pour retrouver l’accès.",
+      "revoked_title": "Ton accès a été retiré",
+      "revoked_message": "Ton hôte a supprimé le code d’invitation qui te donnait accès. Demande-lui un nouveau code si tu dois encore consulter son inventaire."
+    },
     "no_habitation": "Rien ne t’a encore été partagé. Demande un nouveau code à ton hôte si celui que tu as utilisé a expiré.",
     "leave": "Quitter le mode invité",
     "pitch": {
@@ -484,7 +490,6 @@
     "pins": {
       "remove": "Retirer du plan"
     },
-    "section_label": "Plans",
     "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule.",
     "mode_explore": "Explorer",
     "mode_edit": "Modifier",

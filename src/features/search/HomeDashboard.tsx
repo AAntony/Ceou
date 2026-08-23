@@ -5,6 +5,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { Icon } from '../../components/Icon';
+import { GuestBanner } from '../auth/GuestBanner';
 import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
 import { useProfile } from '../profile/useProfile';
@@ -108,17 +109,7 @@ function HomeHeader({
         )}
       </View>
 
-      {/* Bandeau visiteur : dit ce qu'on peut faire, sans promettre autre
-          chose. Un visiteur n'a AUCUNE donnee a lui dans l'app (la RLS lui
-          refuse toute ecriture), donc pas de "cree un compte pour ne rien
-          perdre" ici -- il n'a rien a perdre, et lui dire le contraire
-          serait faux. */}
-      {isGuest ? (
-        <View className="mb-6 flex-row items-center gap-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3">
-          <Icon name="profile" size={18} color="#2EC4B6" />
-          <Text className="flex-1 text-xs leading-4 text-ink-soft">{t('guest.banner')}</Text>
-        </View>
-      ) : null}
+      {isGuest ? <GuestBanner /> : null}
 
       {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
           colorée façon maquette n'est pas fiable sur Android (elevation

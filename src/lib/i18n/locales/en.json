@@ -111,6 +111,12 @@
       "own_invite": "This is your own code.",
       "friend_code": "This code is a friend invitation: it requires an account. Create one to use it."
     },
+    "access_lost": {
+      "expired_title": "Your access has expired",
+      "expired_message": "The invitation code you used expired on {{date}}. Ask your host for a new code to get access back.",
+      "revoked_title": "Your access was removed",
+      "revoked_message": "Your host deleted the invitation code that gave you access. Ask them for a new one if you still need to browse."
+    },
     "no_habitation": "Nothing has been shared with you yet. Ask your host for a new code if the one you used has expired.",
     "leave": "Leave guest mode",
     "pitch": {
@@ -484,7 +490,6 @@
     "pins": {
       "remove": "Remove from plan"
     },
-    "section_label": "Plans",
     "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only.",
     "mode_explore": "Explore",
     "mode_edit": "Edit",

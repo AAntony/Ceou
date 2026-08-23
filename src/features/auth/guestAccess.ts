@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase/client';
 
 // Entrée d'un visiteur par code d'invitation.
@@ -61,4 +62,35 @@ export async function redeemInviteAsGuest(code: string): Promise<GuestEntryResul
     if (createdAnonymousSession) await supabase.auth.signOut({ scope: 'local' });
     throw error;
   }
+}
+
+export type GuestAccessStatus = {
+  /**
+   * - `active`   : au moins un code encore valable.
+   * - `expired`  : tous les codes utilisés ont dépassé leur date.
+   * - `revoked`  : plus aucune trace d'utilisation — l'hôte a supprimé le code.
+   * - `none`     : pas un visiteur (compte normal n'ayant jamais utilisé de code).
+   */
+  status: 'active' | 'expired' | 'revoked' | 'none';
+  /** Date à laquelle l'accès s'est éteint, quand `status` vaut `expired`. */
+  expiresAt: string | null;
+};
+
+/**
+ * Pourquoi le visiteur ne voit plus rien.
+ *
+ * À n'appeler que pour une session anonyme (`enabled`) : pour tout le monde
+ * d'autre la réponse est toujours `none`, autant ne pas faire l'aller-retour.
+ */
+export function useGuestAccessStatus(enabled: boolean) {
+  return useQuery({
+    queryKey: ['guestAccessStatus'],
+    enabled,
+    queryFn: async (): Promise<GuestAccessStatus> => {
+      const { data, error } = await supabase.rpc('my_guest_access_status');
+      if (error) throw error;
+      const row = data as { status: GuestAccessStatus['status']; expires_at: string | null };
+      return { status: row.status, expiresAt: row.expires_at };
+    },
+  });
 }

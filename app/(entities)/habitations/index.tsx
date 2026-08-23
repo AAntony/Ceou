@@ -11,9 +11,9 @@ import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 import { PresetPicker } from '../../../src/components/PresetPicker';
+import { GuestAccessLostCard, useGuestAccessLost } from '../../../src/features/auth/GuestBanner';
 import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
-import { GuestHabitationSection } from '../../../src/features/inventory/GuestHabitationSection';
 import { objetCountLabel } from '../../../src/features/inventory/counts';
 import { resolveEntityPhotoUrl } from '../../../src/features/inventory/entityPhoto';
 import {
@@ -43,6 +43,7 @@ export default function HabitationsScreen() {
   const updateHabitation = useUpdateHabitation();
   const deleteHabitation = useDeleteHabitation();
   const isGuest = useIsAnonymous();
+  const { lost: guestAccessLost } = useGuestAccessLost();
   const [tab, setTab] = useState<Tab>('personal');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
@@ -145,11 +146,26 @@ export default function HabitationsScreen() {
           {isGuest ? (
             isError ? (
               <ErrorState onRetry={() => refetch()} />
+            ) : guestAccessLost ? (
+              // Avant l'etat vide : "rien ne t'a ete partage" est faux quand
+              // quelque chose l'avait ete et vient de s'eteindre.
+              <GuestAccessLostCard />
             ) : guestHabitations.length === 0 ? (
               <EmptyState icon="home" title={t('guest.no_habitation')} />
             ) : (
+              // Les plans ne sont plus remontes ici : l'ecran d'une
+              // Habitation a son propre onglet Plans, les afficher aussi a ce
+              // niveau donnait deux chemins vers la meme chose.
               guestHabitations.map((habitation) => (
-                <GuestHabitationSection key={habitation.id} habitation={habitation} />
+                <EntityRow
+                  key={habitation.id}
+                  level="habitation"
+                  icon={getHabitationIcon(habitation.type)}
+                  title={habitation.name}
+                  subtitle={t(`inventory.habitationTypes.${habitation.type}`)}
+                  photoUri={habitation.photo_url}
+                  onPress={() => router.push(`/habitation/${habitation.id}`)}
+                />
               ))
             )
           ) : (
