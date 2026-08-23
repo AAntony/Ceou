@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import type { ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { useThemeColors } from '../lib/theme';
@@ -18,8 +19,9 @@ import { Icon, type IconName } from './Icon';
 //   un endroit est vraiment renseigné ou seulement déclaré — impossible à
 //   loger dans une tuile déjà occupée par le nom.
 //
-// EntityCard n'est PAS supprimée : les amis (des personnes) et les plans
-// restent en grille, où le portrait carré a du sens.
+// EntityCard n'est PAS supprimée : les amis (des personnes) restent en
+// grille, où le portrait carré a du sens. Les Plans, eux, sont passés en
+// rangée le 23/08 avec une vignette de leur propre tracé.
 
 const THUMB_WIDTH = 84;
 // 4:3, le ratio des illustrations par défaut. Un carré les recadrerait.
@@ -36,6 +38,11 @@ const ACCENT = '#1591EA';
 type EntityRowProps = {
   /** Détermine l'illustration affichée à défaut de photo. */
   level: EntityLevel;
+  /**
+   * Vignette dessinée à la place de l'illustration. Sert aux Plans, qui ont
+   * mieux qu'un croquis générique à montrer : leur propre tracé.
+   */
+  thumbnail?: ReactNode;
   icon: IconName;
   title: string;
   subtitle?: string;
@@ -51,6 +58,7 @@ type EntityRowProps = {
 
 export function EntityRow({
   level,
+  thumbnail,
   icon,
   title,
   subtitle,
@@ -75,11 +83,13 @@ export function EntityRow({
         style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT }}
         className="overflow-hidden rounded-xl bg-sand"
       >
-        <Image
-          source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-        />
+        {thumbnail ?? (
+          <Image
+            source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+          />
+        )}
 
         {/* L'étoile est posée SUR la vignette et non dans la rangée : à
             droite, elle aurait été le troisième bouton d'affilée après le

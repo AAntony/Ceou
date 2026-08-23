@@ -499,6 +499,9 @@
     "pins": {
       "remove": "Remove from plan"
     },
+    "rooms_count_zero": "Empty plan",
+    "rooms_count_one": "1 room drawn",
+    "rooms_count_other": "{{count}} rooms drawn",
     "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only.",
     "mode_explore": "Explore",
     "mode_edit": "Edit",

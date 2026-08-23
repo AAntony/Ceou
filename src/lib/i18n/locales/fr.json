@@ -499,6 +499,9 @@
     "pins": {
       "remove": "Retirer du plan"
     },
+    "rooms_count_zero": "Plan vide",
+    "rooms_count_one": "1 pièce dessinée",
+    "rooms_count_other": "{{count}} pièces dessinées",
     "canvas_hint_readonly": "Pince pour zoomer, glisse à deux doigts pour te déplacer. Consultation seule.",
     "mode_explore": "Explorer",
     "mode_edit": "Modifier",

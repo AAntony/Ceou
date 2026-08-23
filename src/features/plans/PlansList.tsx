@@ -4,22 +4,72 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityRow } from '../../components/EntityRow';
 import { ErrorState } from '../../components/ErrorState';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { canModify, useHabitationPermission } from '../sharing/queries';
-import type { Plan } from '../../types/database';
-import { useCreatePlan, useDeletePlan, usePlans, useUpdatePlan } from './queries';
+import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
+import { usePieces } from '../inventory/queries';
+import { roomColorForForme } from './constants';
+import { PlanThumbnail } from './PlanThumbnail';
+import { useCreatePlan, useDeletePlan, usePlanFormes, usePlans, useUpdatePlan } from './queries';
+import type { Plan, PlanForme } from '../../types/database';
 
 type PlansListProps = {
   habitationId: string;
   addSignal?: number;
 };
 
+// Une rangée par plan, et donc un composant par rangée : chaque plan a besoin
+// de SES formes pour se dessiner, et un hook ne s'appelle pas dans une
+// boucle. Même raison qu'ailleurs dans l'app — un plan par habitation, deux
+// ou trois au plus, la requête supplémentaire est sans conséquence.
+function PlanRow({
+  plan,
+  pieceColors,
+  editable,
+  onOpen,
+  onEdit,
+  onDelete,
+}: {
+  plan: Plan;
+  pieceColors: Map<string, string>;
+  editable: boolean;
+  onOpen: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+  const { data: formes } = usePlanFormes(plan.id);
+  const rooms = formes ?? [];
+
+  // Exactement la règle du canevas : couleur de la Pièce associée, sinon une
+  // teinte tirée de l'identifiant de la forme. Une vignette qui ne
+  // ressemblerait pas au plan qu'elle annonce ne servirait à rien.
+  const colorForForme = (forme: PlanForme) =>
+    forme.piece_id ? (pieceColors.get(forme.piece_id) ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
+
+  return (
+    <EntityRow
+      level="habitation"
+      thumbnail={<PlanThumbnail formes={rooms} colorForForme={colorForForme} width={84} height={63} />}
+      icon="plan"
+      title={plan.name}
+      subtitle={rooms.length === 0 ? t('plans.rooms_count_zero') : t('plans.rooms_count', { count: rooms.length })}
+      onPress={onOpen}
+      onEdit={editable ? onEdit : undefined}
+      onLongPress={editable ? onDelete : undefined}
+    />
+  );
+}
+
 export function PlansList({ habitationId, addSignal }: PlansListProps) {
   const { t } = useTranslation();
   const { data: plans, isLoading, isError, refetch } = usePlans(habitationId);
+  // Une seule lecture des Pièces pour toutes les rangées : leur couleur est
+  // la même information pour tout le monde, inutile de la redemander plan
+  // par plan.
+  const { data: pieces } = usePieces(habitationId);
   const createPlan = useCreatePlan(habitationId);
   const updatePlan = useUpdatePlan(habitationId);
   const deletePlan = useDeletePlan(habitationId);
@@ -50,6 +100,8 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
     if (addSignal) openCreate();
   }, [addSignal]);
 
+  const pieceColors = new Map((pieces ?? []).map((piece) => [piece.id, piece.color ?? DEFAULT_PIECE_COLOR] as const));
+
   const isEmpty = !isLoading && (plans?.length ?? 0) === 0;
 
   return (
@@ -60,26 +112,21 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
         ) : isEmpty ? (
           <EmptyState icon="plan" title={t('plans.empty')} />
         ) : (
-          <EntityGrid>
-            {plans?.map((plan) => (
-              <EntityCard
-                key={plan.id}
-                icon="plan"
-                title={plan.name}
-                onPress={() => router.push(`/plan/${plan.id}`)}
-                onLongPress={editable ? () => handleDelete(plan.id) : undefined}
-                onEdit={
-                  editable
-                    ? () => {
-                        setEditingPlan(plan);
-                        setName(plan.name);
-                        setModalOpen(true);
-                      }
-                    : undefined
-                }
-              />
-            ))}
-          </EntityGrid>
+          plans?.map((plan) => (
+            <PlanRow
+              key={plan.id}
+              plan={plan}
+              pieceColors={pieceColors}
+              editable={editable}
+              onOpen={() => router.push(`/plan/${plan.id}`)}
+              onEdit={() => {
+                setEditingPlan(plan);
+                setName(plan.name);
+                setModalOpen(true);
+              }}
+              onDelete={() => handleDelete(plan.id)}
+            />
+          ))
         )}
       </ScrollView>
 
