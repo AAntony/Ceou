@@ -16,7 +16,6 @@ import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
 import {
   DOOR_JAMB_WIDTH,
-  HIGHLIGHT_GREEN_BORDER,
   MAX_ZOOM,
   MIN_ZOOM,
   roomColorForForme,
@@ -28,6 +27,7 @@ import {
 } from './constants';
 import { DoorLayer } from './DoorLayer';
 import { PlanPinLayer } from './PlanPinLayer';
+import type { PinSize } from './pinSize';
 import { doorJambs, doorSpan, wallSegments, wallWidth } from './walls';
 import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
@@ -119,6 +119,10 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
+  /** Taille d'affichage des puces (S/M/XL), choisie au-dessus du plan. */
+  pinSize: PinSize;
+  selectedPinId: string | null;
+  onPinSelect: (pinId: string | null) => void;
   /** Pose armée depuis la barre d'édition : les murs deviennent des cibles. */
   doorPlacing: boolean;
   selectedDoorId: string | null;
@@ -165,6 +169,9 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDeselect,
     onPinDragEnd,
     onPinTap,
+    pinSize,
+    selectedPinId,
+    onPinSelect,
     doorPlacing,
     selectedDoorId,
     onDoorCreate,
@@ -413,17 +420,67 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       return x >= g.x && x <= g.x + g.width && y >= g.y && y <= g.y + g.height;
     });
 
-  // Déplacer la vue à un seul doigt n'est possible que lorsqu'aucune pièce
-  // n'est sélectionnée (sinon le doigt sert à la déplacer elle-même —
-  // exclusion mutuelle garantie par cette même condition côté ShapeBody, donc
-  // jamais les deux actifs en même temps). Avec quelque chose de sélectionné,
-  // le pincement à deux doigts (ci-dessus, qui gère aussi le glissé) reste
-  // disponible pour naviguer sans désélectionner.
+  // Déplacer la vue à UN SEUL DOIGT, y compris pendant qu'une pièce est
+  // sélectionnée — tant que le geste part d'ailleurs que de cette pièce.
+  //
+  // Ce geste était purement et simplement coupé dès qu'une pièce était
+  // sélectionnée : il fallait alors deux doigts pour se déplacer, ou
+  // désélectionner d'abord. Ce qu'il faut vraiment exclure, ce n'est pas
+  // « une pièce est sélectionnée », c'est « ce doigt-là sert déjà à la
+  // déplacer ». On regarde donc D'OÙ part le geste.
+  //
+  // La zone réservée déborde de la pièce de HANDLE_TOUCH_SIZE / 2 : les
+  // poignées de redimensionnement sont centrées sur ses coins et ses bords,
+  // donc la moitié de leur cible tombe dehors. Sans cette marge, un
+  // redimensionnement amorcé un poil en dehors déplaçait aussi le plan.
+  // L'activation est MANUELLE, et c'est délibéré. Laisser ce geste s'activer
+  // tout seul le mettrait en concurrence, pour le même doigt, avec ceux de la
+  // pièce sélectionnée (déplacement, poignées, puces, portes) — et le
+  // vainqueur dépendrait alors d'une règle de priorité de la bibliothèque, pas
+  // d'une décision prise ici. On le fait donc échouer d'emblée quand le doigt
+  // se pose sur la pièce sélectionnée : ses gestes à elle restent seuls en
+  // lice, exactement comme lorsque ce geste-ci était purement désactivé.
+  const panStart = useRef({ x: 0, y: 0 });
+  const PAN_THRESHOLD = 10;
+
+  const startsOnSelectedRoom = (contentX: number, contentY: number) => {
+    if (!selectedFormeId) return false;
+    const geo = geoById[selectedFormeId];
+    if (!geo) return false;
+    // La zone réservée déborde de la pièce d'une demi-poignée : les poignées
+    // de redimensionnement sont centrées sur ses coins et ses bords, donc la
+    // moitié de leur cible tombe dehors.
+    const margin = HANDLE_TOUCH_SIZE / 2;
+    return (
+      contentX >= geo.x - margin &&
+      contentX <= geo.x + geo.width + margin &&
+      contentY >= geo.y - margin &&
+      contentY <= geo.y + geo.height + margin
+    );
+  };
+
   const backgroundPan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .enabled(selectedFormeId === null)
+    .manualActivation(true)
     .runOnJS(true)
+    .onTouchesDown((event, manager) => {
+      const touch = event.allTouches[0];
+      if (!touch) return;
+      panStart.current = { x: touch.absoluteX, y: touch.absoluteY };
+      const point = viewportToContent(touch.x, touch.y);
+      if (startsOnSelectedRoom(point.x, point.y)) manager.fail();
+    })
+    .onTouchesMove((event, manager) => {
+      const touch = event.allTouches[0];
+      if (!touch) return;
+      // Le seuil que `Gesture.Pan` applique d'ordinaire tout seul, refait à la
+      // main puisque l'activation l'est aussi : sans lui, le moindre tremblement
+      // volerait le tap qui sert à désélectionner.
+      const dx = touch.absoluteX - panStart.current.x;
+      const dy = touch.absoluteY - panStart.current.y;
+      if (dx * dx + dy * dy > PAN_THRESHOLD * PAN_THRESHOLD) manager.activate();
+    })
     .onStart(() => {
       zoomOrigin.current = zoom;
     })
@@ -515,7 +572,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           label: info?.name ?? "",
           count: forme.piece_id ? (roomCounts?.[forme.piece_id] ?? null) : null,
           selected: forme.id === selectedFormeId,
-          highlighted: forme.id === highlightFormeId,
           // Le mur n'est plus un rectangle mais une suite de segments : les
           // portes de cette pièce y sont des trous, et chaque segment sait
           // s'il ferme le logement (épais) ou sépare deux pièces (fin).
@@ -523,7 +579,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           jambs: doorJambs(geoById[forme.id], roomDoors, neighbours),
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorSpansByForme],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, doorSpansByForme],
   );
 
   const selectedDoorGeometry = useMemo(() => {
@@ -702,10 +758,13 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 </>
               ) : null}
 
-              {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
-                  murs pour ne jamais être coupées par la voisine. */}
+              {/* Passe 3 — la pièce SÉLECTIONNÉE, au-dessus de tous les murs
+                  pour ne jamais être coupée par la voisine.
+                  « Voir sur le plan » ne dessine plus rien ici : le cadre
+                  vert autour de la pièce doublait la puce mise en avant, pour
+                  une seule et même réponse. */}
               {roomVisuals.map((room) =>
-                room.selected || room.highlighted
+                room.selected
                   ? // Les MÊMES segments que le mur, pas un rectangle plein :
                     // sinon le liseré reboucherait les ouvertures de la pièce
                     // en cours d'édition, seule pièce où l'on a justement
@@ -717,7 +776,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                         key={`state-${room.id}-${index}`}
                         p1={vec(wall.x1, wall.y1)}
                         p2={vec(wall.x2, wall.y2)}
-                        color={room.selected ? ACCENT : HIGHLIGHT_GREEN_BORDER}
+                        color={ACCENT}
                         style="stroke"
                         strokeWidth={wallWidth(wall.interior) + 1.5}
                       />
@@ -816,6 +875,9 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               selectedFormeId={selectedFormeId}
               highlightedEmplacementId={highlightEmplacementId}
               scale={zoom.scale}
+              size={pinSize}
+              selectedPinId={selectedPinId}
+              onSelectPin={onPinSelect}
               readOnly={readOnly}
               onDragEnd={onPinDragEnd}
               onTap={onPinTap}

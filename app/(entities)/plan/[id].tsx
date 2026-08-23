@@ -29,6 +29,8 @@ import {
 } from '../../../src/features/plans/queries';
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
 import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanModeSwitch';
+import { PlanPinSizeSwitch } from '../../../src/features/plans/PlanPinSizeSwitch';
+import { usePinSize } from '../../../src/features/plans/pinSize';
 import { PlanTemplatePicker } from '../../../src/features/plans/PlanTemplatePicker';
 import { PlanRoomSheet } from '../../../src/features/plans/PlanRoomSheet';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
@@ -67,6 +69,10 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
+  // La puce désignée vit ici et non dans la couche des puces : c'est elle qui
+  // fait apparaître le sélecteur de taille S/M/XL au-dessus du plan.
+  const [selectedPinId, setSelectedPinId] = useState<string | null>(null);
+  const { size: pinSize, setSize: setPinSize } = usePinSize();
   // La pose de portes est un MODE arme, pas un geste cache : tant qu'il dure,
   // les murs sont des cibles et rien d'autre ne repond sur le plan.
   const [doorPlacing, setDoorPlacing] = useState(false);
@@ -179,6 +185,7 @@ export default function PlanScreen() {
               onSelect={(forme) => {
                 setSelectedFormeId(forme.id);
                 setSelectedDoorId(null);
+                setSelectedPinId(null);
                 // En lecture, toucher une pièce ouvre sa fiche : sans ça le tap
                 // ne faisait que la surligner, ce qui ne répond à aucune
                 // question. En édition il sélectionne seulement, pour ne pas
@@ -188,9 +195,13 @@ export default function PlanScreen() {
               onDeselect={() => {
                 setSelectedFormeId(null);
                 setSelectedDoorId(null);
+                setSelectedPinId(null);
               }}
               onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
               onPinTap={(pin) => setSheetPinId(pin.id)}
+              pinSize={pinSize}
+              selectedPinId={selectedPinId}
+              onPinSelect={setSelectedPinId}
               doors={doors ?? []}
               doorPlacing={doorPlacing}
               selectedDoorId={selectedDoorId}
@@ -202,7 +213,7 @@ export default function PlanScreen() {
             {/* Un visiteur ou un ami en Consultation ne voit pas la bascule :
                 lui proposer Modifier serait une promesse que la RLS refuserait. */}
             {canManage ? (
-              <View pointerEvents="box-none" className="absolute left-3 right-3 top-3">
+              <View pointerEvents="box-none" className="absolute left-3 right-3 top-3 gap-2">
                 <PlanModeSwitch
                   mode={mode}
                   onChange={(next) => {
@@ -213,10 +224,14 @@ export default function PlanScreen() {
                     if (next === 'explore') {
                       setSelectedFormeId(null);
                       setSelectedDoorId(null);
+                      setSelectedPinId(null);
                       setDoorPlacing(false);
                     }
                   }}
                 />
+                {/* Juste en dessous de la bascule, et seulement une fois une
+                    puce désignée : c'est à ce moment-là qu'on juge sa taille. */}
+                {editing && selectedPinId ? <PlanPinSizeSwitch size={pinSize} onChange={setPinSize} /> : null}
               </View>
             ) : null}
 
@@ -224,13 +239,7 @@ export default function PlanScreen() {
                 seules les cartes elles-mêmes captent le doigt, le reste
                 traverse jusqu'au plan. */}
             <View pointerEvents="box-none" className="absolute bottom-3 left-3 right-3 gap-2">
-              {hintOpen ? (
-                <View className="rounded-2xl border border-ink/10 bg-surface/95 px-4 py-3">
-                  <Text className="text-xs leading-5 text-ink-soft">
-                    {t(editing ? 'plans.canvas_hint' : 'plans.canvas_hint_readonly')}
-                  </Text>
-                </View>
-              ) : null}
+              {hintOpen ? <HintCard editing={editing} onClose={() => setHintOpen(false)} /> : null}
 
               <View pointerEvents="box-none" className="flex-row justify-end gap-2">
                 <RoundButton
@@ -399,6 +408,58 @@ export default function PlanScreen() {
         }}
       />
     </>
+  );
+}
+
+// Le rappel des gestes, derrière le « ? ».
+//
+// C'était un paragraphe de cinq lignes en petit gris, qui énumérait les
+// gestes à la file et qu'on ne relisait jamais. Une ligne par geste, chacune
+// annoncée par son icône : on y cherche une réponse précise (« comment on
+// pose une porte ? »), on ne le lit pas d'un bout à l'autre.
+const HINT_EDIT: { icon: IconName; key: string }[] = [
+  { icon: 'piece', key: 'plans.hint.edit_select' },
+  { icon: 'move', key: 'plans.hint.edit_move' },
+  { icon: 'pencil', key: 'plans.hint.edit_sheet' },
+  { icon: 'porte', key: 'plans.hint.edit_door' },
+  { icon: 'location', key: 'plans.hint.edit_pin' },
+  { icon: 'recenter', key: 'plans.hint.navigate' },
+];
+
+const HINT_READ: { icon: IconName; key: string }[] = [
+  { icon: 'piece', key: 'plans.hint.read_room' },
+  { icon: 'location', key: 'plans.hint.read_pin' },
+  { icon: 'recenter', key: 'plans.hint.navigate' },
+];
+
+function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void }) {
+  const colors = useThemeColors();
+  const { t } = useTranslation();
+  const rows = editing ? HINT_EDIT : HINT_READ;
+
+  return (
+    <View className="rounded-2xl border border-ink/10 bg-surface/95 px-4 pb-3 pt-3">
+      <View className="mb-2 flex-row items-center">
+        <Text className="flex-1 text-sm font-semibold text-ink">{t('plans.hint.title')}</Text>
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
+          hitSlop={8}
+          className="active:opacity-60"
+        >
+          <Icon name="close" size={18} color={colors.inkFaint} />
+        </Pressable>
+      </View>
+      {rows.map((row) => (
+        <View key={row.key} className="mb-1.5 flex-row gap-2.5">
+          <View className="mt-0.5 w-4 items-center">
+            <Icon name={row.icon} size={14} color={colors.accentDark} />
+          </View>
+          <Text className="flex-1 text-xs leading-[17px] text-ink-soft">{t(row.key)}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 

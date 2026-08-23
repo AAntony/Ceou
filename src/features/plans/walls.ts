@@ -1,4 +1,4 @@
-import { DOOR_JAMB_LENGTH, DOOR_WIDTH, WALL_WIDTH, WALL_WIDTH_INNER } from './constants';
+import { DOOR_JAMB_LENGTH, DOOR_MIN_GAP, DOOR_WIDTH, WALL_WIDTH, WALL_WIDTH_INNER } from './constants';
 import type { DoorEdge, ShapeGeometry } from './types';
 
 // Le trait de mur d'une pièce, PERCÉ de ses portes et HIÉRARCHISÉ.
@@ -72,6 +72,62 @@ export function clampDoorPosition(position: number, wallLength: number): number 
 
 export function doorCenter(geo: ShapeGeometry, edge: DoorEdge, position: number): { x: number; y: number } {
   return pointAlong(geo, edge, position * edgeLength(geo, edge));
+}
+
+/**
+ * La position libre la plus proche de celle visée, ou `null` si ce mur ne
+ * peut plus accueillir d'ouverture.
+ *
+ * Rien n'empêchait jusqu'ici de poser une porte SUR une autre : les deux
+ * ouvertures fusionnaient en un seul trou, et la seconde porte devenait
+ * impossible à désigner puisqu'elle occupait le même point que la première.
+ * Une porte cherche donc désormais la place libre la plus proche de l'endroit
+ * visé, au lieu d'accepter n'importe quel point.
+ *
+ * Les portes de la pièce VOISINE comptent aussi : sur un mur mitoyen, les
+ * deux pièces tracent le même trait, et deux ouvertures posées face à face
+ * n'en feraient qu'une, deux fois plus large.
+ */
+export function freeDoorPosition(
+  geo: ShapeGeometry,
+  edge: DoorEdge,
+  desired: number,
+  ownDoors: DoorSpan[],
+  neighbours: NeighbourRoom[] = [],
+): number | null {
+  const length = edgeLength(geo, edge);
+  const half = DOOR_WIDTH / 2;
+  if (length < DOOR_WIDTH) return null;
+
+  // Deux centres doivent rester séparés d'au moins une ouverture entière plus
+  // un morceau de mur : sans cette marge, deux portes accolées se lisent
+  // comme une seule baie.
+  const keepOut = DOOR_WIDTH + DOOR_MIN_GAP;
+  const occupiedCenters = [
+    ...ownDoors.map((door) => door.position * length),
+    ...facingDoorGaps(geo, edge, neighbours).map((gap) => (gap.start + gap.end) / 2),
+  ];
+  const blocked = mergeIntervals(occupiedCenters.map((center) => ({ start: center - keepOut, end: center + keepOut })));
+
+  // Ce qui reste ouvert entre [half, length - half] une fois les zones
+  // interdites retirées.
+  const allowed: Interval[] = [];
+  let cursor = half;
+  for (const zone of blocked) {
+    if (zone.start > cursor) allowed.push({ start: cursor, end: Math.min(zone.start, length - half) });
+    cursor = Math.max(cursor, zone.end);
+  }
+  if (cursor < length - half) allowed.push({ start: cursor, end: length - half });
+
+  const target = desired * length;
+  let best: number | null = null;
+  for (const span of allowed) {
+    if (span.end < span.start) continue;
+    const candidate = Math.min(Math.max(target, span.start), span.end);
+    if (best === null || Math.abs(candidate - target) < Math.abs(best - target)) best = candidate;
+  }
+
+  return best === null ? null : best / length;
 }
 
 /**

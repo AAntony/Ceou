@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { PlanDoor } from '../../types/database';
 import { clamp } from './snap';
 import type { DoorEdge, ShapeGeometry } from './types';
-import { clampDoorPosition, doorCenter } from './walls';
+import { clampDoorPosition, doorCenter, freeDoorPosition, type DoorSpan, type NeighbourRoom } from './walls';
 
 // La couche TACTILE des portes. Le dessin, lui, est dans le canevas : une
 // porte EST l'interruption du mur (voir walls.ts).
@@ -99,6 +99,25 @@ export function DoorLayer({
     });
   }, [doors]);
 
+  // Les portes de chaque pièce, dans la forme qu'attend le calcul des murs.
+  // Servent ici à empêcher deux ouvertures de se poser l'une sur l'autre :
+  // rien ne l'interdisait, et les deux fusionnaient alors en un seul trou dont
+  // la seconde porte devenait impossible à désigner.
+  const spansByForme = useMemo(() => {
+    const map: Record<string, DoorSpan[]> = {};
+    for (const door of doors) {
+      (map[door.forme_id] ??= []).push({ edge: door.edge as DoorEdge, position: door.position });
+    }
+    return map;
+  }, [doors]);
+
+  // Les voisines comptent : sur un mur mitoyen, les deux pièces tracent le
+  // même trait, et deux portes posées face à face n'en feraient qu'une.
+  const neighboursOf = (formeId: string): NeighbourRoom[] =>
+    Object.entries(formeGeo)
+      .filter(([id]) => id !== formeId)
+      .map(([id, geo]) => ({ geo, doors: spansByForme[id] ?? [] }));
+
   return (
     <>
       {placing && !readOnly
@@ -109,6 +128,7 @@ export function DoorLayer({
                 edge={edge}
                 geo={geo}
                 thickness={stripThickness(geo)}
+                place={(raw) => freeDoorPosition(geo, edge, raw, spansByForme[formeId] ?? [], neighboursOf(formeId))}
                 onCreate={(position) => onCreate(formeId, edge, position)}
                 onPreview={(position) => onPreview(position === null ? null : { formeId, edge, position })}
               />
@@ -130,6 +150,19 @@ export function DoorLayer({
                 geo={geo}
                 live={live}
                 scale={scale}
+                place={(edge, raw) =>
+                  freeDoorPosition(
+                    geo,
+                    edge,
+                    raw,
+                    // Sans s'exclure elle-même, une porte se bloquerait sur
+                    // sa propre place dès le premier millimètre de glissé.
+                    (spansByForme[door.forme_id] ?? []).filter(
+                      (span) => !(span.edge === (door.edge as DoorEdge) && span.position === door.position),
+                    ),
+                    neighboursOf(door.forme_id),
+                  )
+                }
                 interactive={!readOnly}
                 selected={door.id === selectedDoorId}
                 onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
@@ -155,12 +188,15 @@ function WallStrip({
   edge,
   geo,
   thickness,
+  place,
   onCreate,
   onPreview,
 }: {
   edge: DoorEdge;
   geo: ShapeGeometry;
   thickness: number;
+  /** La place libre la plus proche, ou `null` si ce mur est complet. */
+  place: (raw: number) => number | null;
   onCreate: (position: number) => void;
   onPreview: (position: number | null) => void;
 }) {
@@ -169,23 +205,34 @@ function WallStrip({
 
   // `event.x/y` est relatif à CETTE vue, donc directement la distance
   // parcourue le long du mur — pas besoin de repasser par le repère de la
-  // feuille.
-  const positionAt = (x: number, y: number) => clampDoorPosition(clamp((horizontal ? x : y) / length, 0, 1), length);
+  // feuille. La position visée glisse ensuite vers la place libre la plus
+  // proche : l'aperçu montre donc où la porte tombera VRAIMENT, y compris
+  // quand le doigt vise une ouverture déjà occupée.
+  const positionAt = (x: number, y: number) =>
+    place(clampDoorPosition(clamp((horizontal ? x : y) / length, 0, 1), length));
+
+  // Un mur plein n'accepte plus rien : ni aperçu, ni pose. Rien ne se passe,
+  // plutôt qu'une porte qui se poserait sur une autre.
+  const preview = (x: number, y: number) => onPreview(positionAt(x, y));
+  const create = (x: number, y: number) => {
+    const position = positionAt(x, y);
+    if (position !== null) onCreate(position);
+  };
 
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
     .minDistance(0)
     .runOnJS(true)
-    .onBegin((event) => onPreview(positionAt(event.x, event.y)))
-    .onUpdate((event) => onPreview(positionAt(event.x, event.y)))
-    .onEnd((event) => onCreate(positionAt(event.x, event.y)))
+    .onBegin((event) => preview(event.x, event.y))
+    .onUpdate((event) => preview(event.x, event.y))
+    .onEnd((event) => create(event.x, event.y))
     .onFinalize(() => onPreview(null));
 
   const tap = Gesture.Tap()
     .runOnJS(true)
-    .onBegin((event) => onPreview(positionAt(event.x, event.y)))
-    .onEnd((event) => onCreate(positionAt(event.x, event.y)))
+    .onBegin((event) => preview(event.x, event.y))
+    .onEnd((event) => create(event.x, event.y))
     .onFinalize(() => onPreview(null));
 
   return (
@@ -210,6 +257,7 @@ function DoorTarget({
   scale,
   interactive,
   selected,
+  place,
   onMove,
   onRelease,
   onSelect,
@@ -219,11 +267,15 @@ function DoorTarget({
   scale: number;
   interactive: boolean;
   selected: boolean;
+  place: (edge: DoorEdge, raw: number) => number | null;
   onMove: (next: EdgePosition) => void;
   onRelease: (next: EdgePosition) => void;
   onSelect: () => void;
 }) {
   const dragOrigin = useRef(live);
+  // Dernière position VALIDE : quand le doigt emmène la porte sur une place
+  // déjà prise, elle s'arrête là plutôt que de sauter par-dessus sa voisine.
+  const lastValid = useRef(live);
   const center = doorCenter(geo, live.edge, live.position);
 
   // translationX/Y est un delta ÉCRAN, avant zoom : le diviser par `scale`
@@ -231,7 +283,11 @@ function DoorTarget({
   // raisonnement que ShapeBody et PlanPinLayer).
   const resolve = (translationX: number, translationY: number): EdgePosition => {
     const origin = doorCenter(geo, dragOrigin.current.edge, dragOrigin.current.position);
-    return nearestEdge(origin.x + translationX / scale, origin.y + translationY / scale, geo);
+    const target = nearestEdge(origin.x + translationX / scale, origin.y + translationY / scale, geo);
+    const free = place(target.edge, target.position);
+    if (free === null) return lastValid.current;
+    lastValid.current = { edge: target.edge, position: free };
+    return lastValid.current;
   };
 
   // Le glissé n'est ouvert qu'une fois la porte SÉLECTIONNÉE — un pouce qui
@@ -244,6 +300,7 @@ function DoorTarget({
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = live;
+      lastValid.current = live;
     })
     .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
     .onEnd((event) => onRelease(resolve(event.translationX, event.translationY)));

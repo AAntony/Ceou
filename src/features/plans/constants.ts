@@ -76,16 +76,20 @@ export const DOOR_JAMB_WIDTH = 1.8;
 // rien de plus sur l'endroit ou l'on passe.
 export const DOOR_WIDTH = 44;
 
+// Le morceau de mur minimum entre deux ouvertures d'un meme mur. En dessous,
+// les deux portes se lisent comme une seule baie -- et rien n'empechait
+// jusqu'ici de les poser exactement au meme endroit (voir freeDoorPosition).
+export const DOOR_MIN_GAP = 10;
+
 // La couleur de la piece passe en TEINTE plutot qu'en aplat : c'est la
 // structure (les murs) qui porte le contraste, la couleur ne sert plus qu'a
 // distinguer les pieces entre elles.
 export const ROOM_FILL_OPACITY = 0.5;
 
-// Surlignage "Voir sur le plan" côté pièce : contour vert plus épais,
-// suffisamment saturé pour rester lisible sur n'importe quelle couleur de
-// sol pastel. La pastille d'Emplacement correspondante utilise son propre
-// rouge (contour + petite flèche, voir PlanPinLayer.tsx) plutôt que du vert.
-export const HIGHLIGHT_GREEN_BORDER = '#4CAF50';
+// « Voir sur le plan » n'entoure plus la PIÈCE d'un cadre vert. Deux
+// signaux pour une seule réponse — un cadre autour de la pièce ET une puce
+// mise en avant — et le vert n'appartenait à aucune palette de l'app. Seule
+// la puce de l'Emplacement se met en avant désormais (voir PlanPinLayer).
 
 // Palette pastel — volontairement distincte de celle des résultats de
 // recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :

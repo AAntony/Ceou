@@ -488,13 +488,26 @@
     "name_label": "Name",
     "delete_confirm_title": "Delete this plan?",
     "delete_confirm_message": "All the shapes it contains will be deleted.",
-    "canvas_hint": "Tap a room to select it. Drag it to move it, pull the blue dots to resize it, the pencil opens its details. Pinch to zoom, drag to pan the plan.",
+    "hint": {
+      "title": "How it works",
+      "edit_select": "Tap a room to select it. Tap next to it to let it go.",
+      "edit_move": "Drag the selected room to move it, the blue dots to resize it: it snaps to its neighbours on its own.",
+      "edit_sheet": "The pencil opens its details: name, colour, deletion.",
+      "edit_door": "Tap \"Door\", then a wall. Keep your finger down and slide: the opening is drawn as a dotted line before it is placed.",
+      "edit_pin": "One tap picks a chip, a drag places it, a double tap removes it from the plan. S / M / XL changes its size.",
+      "navigate": "Pinch to zoom, drag with one finger to pan. The fit button brings the whole plan back on screen.",
+      "read_room": "Tap a room to see what it holds.",
+      "read_pin": "Each chip is a storage spot in the room."
+    },
     "recenter": "Fit to view",
     "help": "Help",
+    "pin_size": {
+      "label": "Chip size"
+    },
     "add_room": "Room",
     "unplaced_title": "Spots to place in this room",
     "shape": {
-      "title": "Shape",
+      "title": "Room",
       "piece_label": "Linked room",
       "no_piece": "None",
       "color_label": "Color"
@@ -510,7 +523,6 @@
     "rooms_count_zero": "Empty plan",
     "rooms_count_one": "1 room drawn",
     "rooms_count_other": "{{count}} rooms drawn",
-    "canvas_hint_readonly": "Pinch to zoom, drag with two fingers to move around. View only.",
     "mode_explore": "Explore",
     "mode_edit": "Edit",
     "templates": {
