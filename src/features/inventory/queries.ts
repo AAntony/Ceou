@@ -579,6 +579,10 @@ export type ObjetLocationNode = {
   id: string;
   name: string;
   preset_key: string | null;
+  // Vrai uniquement pour la pièce fantôme d'une habitation mono-espace
+  // (Garage, Cave...), que le fil d'ariane écarte de l'affichage — la fiche
+  // objet, elle, garde ce maillon pour le lien vers le plan.
+  is_default: boolean;
 };
 
 export function useObjetLocationChain(objetId: string) {
