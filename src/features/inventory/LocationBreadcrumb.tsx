@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from '../../components/Icon';
 import { getEmplacementIcon, getPieceIcon } from './constants';
+import { useThemeColors } from '../../lib/theme';
 import { useObjetLocationChain, type ObjetLocationNode } from './queries';
 
 function iconForNode(node: ObjetLocationNode): IconName {
@@ -36,6 +37,7 @@ type LocationBreadcrumbProps = {
 export function LocationBreadcrumb({ objetId }: LocationBreadcrumbProps) {
   const { t } = useTranslation();
   const { data: chain } = useObjetLocationChain(objetId);
+  const colors = useThemeColors();
 
   // La pièce par défaut d'une habitation mono-espace (Garage, Cave...) porte
   // le nom de l'habitation et n'est montrée nulle part ailleurs : elle
@@ -46,14 +48,14 @@ export function LocationBreadcrumb({ objetId }: LocationBreadcrumbProps) {
   if (nodes.length === 0) return null;
 
   return (
-    <View className="mb-6 rounded-2xl border border-ink/10 bg-white px-4 py-3">
+    <View className="mb-6 rounded-2xl border border-ink/10 bg-surface px-4 py-3">
       <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
         {t('inventory.objet.location_title')}
       </Text>
       <View className="flex-row flex-wrap items-center">
         {nodes.map((node, index) => (
           <View key={`${node.kind}-${node.id}`} className="mb-1.5 flex-row items-center">
-            {index > 0 ? <Icon name="chevron" size={14} color="#D9D2C4" /> : null}
+            {index > 0 ? <Icon name="chevron" size={14} color={colors.inkFaint} /> : null}
             <Pressable
               // `dismissTo` plutôt que `push` : ces écrans sont presque
               // toujours DÉJÀ dans la pile (on est descendu par eux), donc on

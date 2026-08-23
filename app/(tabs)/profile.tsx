@@ -9,6 +9,7 @@ import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
+import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { usePullToRefresh } from '../../src/components/usePullToRefresh';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
@@ -20,9 +21,11 @@ import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
 import { ShareInviteModal } from '../../src/features/sharing/ShareInviteModal';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../src/lib/i18n';
 import { supabase } from '../../src/lib/supabase/client';
+import { useThemeColors } from '../../src/lib/theme';
 
 export default function ProfileScreen() {
   const refreshControl = usePullToRefresh();
+  const colors = useThemeColors();
   const { t, i18n } = useTranslation();
   const { session } = useSession();
   const isGuest = useIsAnonymous();
@@ -123,13 +126,17 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      <View className="mt-8">
+        <ThemeToggle />
+      </View>
+
       <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
       <Pressable
         onPress={() => setMyCodeOpen((current) => !current)}
         className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-sand-dark px-4 py-3"
       >
         <Text className="text-base font-bold tracking-widest text-ink">{profile?.friend_code}</Text>
-        <Icon name={myCodeOpen ? 'excluded' : 'qrcode'} size={20} color="#6B6459" />
+        <Icon name={myCodeOpen ? 'excluded' : 'qrcode'} size={20} color={colors.inkSoft} />
       </Pressable>
       {myCodeOpen && profile ? (
         <View className="mt-3 items-center">
@@ -149,7 +156,7 @@ export default function ProfileScreen() {
       <TextLink
         href="/invites"
         label={t('invites.entry')}
-        className="mt-3 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        className="mt-3 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
         textClassName="text-sm font-semibold text-ink"
       />
 
@@ -159,7 +166,7 @@ export default function ProfileScreen() {
       <TextLink
         href="/account"
         label={t('account.entry')}
-        className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        className="mt-8 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
         textClassName="text-sm font-semibold text-ink"
       />
 
@@ -168,7 +175,7 @@ export default function ProfileScreen() {
       <TextLink
         href="/privacy-policy"
         label={t('profile.privacy_policy')}
-        className="mt-3 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+        className="mt-3 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
         textClassName="text-sm font-medium text-ink-soft underline"
       />
 

@@ -15,6 +15,7 @@ import { AssistantFab } from './AssistantFab';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
 import { normalizeForMatch } from '../../lib/text/match';
+import { useThemeColors } from '../../lib/theme';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
 // liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
@@ -81,6 +82,7 @@ function HomeHeader({
   onSelectPiece,
 }: HomeHeaderProps) {
   const { t } = useTranslation();
+  const colors = useThemeColors();
 
   return (
     <>
@@ -120,13 +122,13 @@ function HomeHeader({
             par la pastille micro, partie dans le bouton flottant du bas
             d'écran. Sans valeur explicite, la barre se serait rétractée en
             perdant son seul élément haut. */}
-        <View className="h-12 flex-row items-center rounded-full border border-teal/30 bg-white pl-4 pr-2">
-          <Icon name="search" size={20} color="#A39C8F" />
+        <View className="h-12 flex-row items-center rounded-full border border-teal/30 bg-surface pl-4 pr-2">
+          <Icon name="search" size={20} color={colors.inkFaint} />
           <TextInput
             value={searchText}
             onChangeText={onSearchTextChange}
             placeholder={voiceSearch.isListening ? t('home.voice_search_listening') : t('home.search_placeholder')}
-            placeholderTextColor="#A39C8F"
+            placeholderTextColor={colors.inkFaint}
             autoCapitalize="none"
             autoCorrect={false}
             className="ml-2 flex-1 text-base text-ink"
@@ -143,7 +145,7 @@ function HomeHeader({
               accessibilityLabel={t('common.clear')}
               className="ml-1 h-9 w-9 items-center justify-center rounded-full active:opacity-60"
             >
-              <Icon name="close" size={18} color="#A39C8F" />
+              <Icon name="close" size={18} color={colors.inkFaint} />
             </Pressable>
           ) : null}
 
@@ -154,12 +156,12 @@ function HomeHeader({
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1" contentContainerClassName="px-1">
           <Pressable
             onPress={() => onSelectPiece(null)}
-            android_ripple={{ color: 'rgba(45,42,38,0.08)', borderless: false }}
+            android_ripple={{ color: colors.ripple, borderless: false }}
             className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
-              selectedPiece === null ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
+              selectedPiece === null ? 'border-teal bg-teal-light' : 'border-ink/10 bg-surface'
             }`}
           >
-            <Icon name="home" size={14} color={selectedPiece === null ? '#219488' : '#6B6459'} />
+            <Icon name="home" size={14} color={selectedPiece === null ? colors.tealDark : colors.inkSoft} />
             <Text className={selectedPiece === null ? 'font-semibold text-teal-dark' : 'text-ink-soft'}>
               {t('home.chip_all')}
             </Text>
@@ -170,12 +172,12 @@ function HomeHeader({
               <Pressable
                 key={pieceName}
                 onPress={() => onSelectPiece(selected ? null : pieceName)}
-                android_ripple={{ color: 'rgba(45,42,38,0.08)', borderless: false }}
+                android_ripple={{ color: colors.ripple, borderless: false }}
                 className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
-                  selected ? 'border-teal bg-teal-light' : 'border-ink/10 bg-white'
+                  selected ? 'border-teal bg-teal-light' : 'border-ink/10 bg-surface'
                 }`}
               >
-                <Icon name="piece" size={14} color={selected ? '#219488' : '#6B6459'} />
+                <Icon name="piece" size={14} color={selected ? colors.tealDark : colors.inkSoft} />
                 <Text className={selected ? 'font-semibold text-teal-dark' : 'text-ink-soft'}>{pieceName}</Text>
               </Pressable>
             );

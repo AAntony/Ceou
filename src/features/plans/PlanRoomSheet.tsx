@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon';
 import { getEmplacementIcon, getPieceIcon } from '../inventory/constants';
 import { useEmplacements } from '../inventory/queries';
 import type { Piece } from '../../types/database';
+import { useThemeColors } from '../../lib/theme';
 
 // Fiche d'une pièce, ouverte au tap depuis le mode Explorer.
 //
@@ -28,6 +29,7 @@ export function PlanRoomSheet({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const { data: emplacements } = useEmplacements(piece?.id ?? '');
 
   const list = emplacements ?? [];
@@ -36,7 +38,7 @@ export function PlanRoomSheet({
     <BottomSheetModal
       visible={piece !== null}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-5 pb-4 pt-5"
+      sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-5"
       sheetStyle={{ maxHeight: '80%' }}
     >
       {piece ? (
@@ -76,11 +78,11 @@ export function PlanRoomSheet({
                     }}
                     className="flex-row items-center gap-3 border-b border-ink/5 py-3 active:opacity-70"
                   >
-                    <Icon name={getEmplacementIcon(emplacement.preset_key)} size={20} color="#6B6459" />
+                    <Icon name={getEmplacementIcon(emplacement.preset_key)} size={20} color={colors.inkSoft} />
                     <Text className="flex-1 text-base text-ink" numberOfLines={1}>
                       {emplacement.name}
                     </Text>
-                    <Icon name="chevron" size={18} color="#A39C8F" />
+                    <Icon name="chevron" size={18} color={colors.inkFaint} />
                   </Pressable>
                 ))}
               </ScrollView>

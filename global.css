@@ -1,3 +1,83 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* LES COULEURS DE L'APP, ET LEUR VERSION SOMBRE.
+ *
+ * Les jetons sont déclarés ici plutôt que directement dans
+ * tailwind.config.js pour une raison précise : ce sont les MÊMES noms de
+ * classes qui servent dans les deux thèmes. `bg-sand`, `text-ink`,
+ * `border-ink/10` continuent de s'écrire tels quels partout dans l'app, et
+ * c'est leur VALEUR qui change quand le thème bascule.
+ *
+ * L'alternative aurait été d'ajouter `dark:...` à côté de chacune des ~350
+ * classes de couleur du projet. Outre le diff, ça reporte la charge sur
+ * chaque composant écrit ensuite : un `dark:` oublié ne se voit qu'en
+ * basculant le thème sur le bon écran. Ici, un composant écrit sans y penser
+ * est correct dans les deux thèmes.
+ *
+ * Triplets RVB sans `rgb()` : c'est ce qui permet à Tailwind de composer
+ * l'opacité (`border-ink/10`) par-dessus la variable.
+ *
+ * `.dark:root` est la forme reconnue par NativeWind avec `darkMode: 'class'`
+ * (cf. isRootDarkVariableSelector dans react-native-css-interop) ; les
+ * valeurs sombres manquantes retombent automatiquement sur les claires.
+ */
+:root {
+  --color-sand: 255 251 248;
+  --color-sand-dark: 245 238 230;
+  /* Le blanc des cartes. Nommé « surface » et non « white » parce qu'en
+     sombre il ne l'est plus — un `bg-white` qui rend du gris foncé serait
+     un piège pour la prochaine personne qui lit le code. */
+  --color-surface: 255 255 255;
+
+  --color-ink: 45 42 38;
+  --color-ink-soft: 107 100 89;
+  /* Traits et séparations les plus discrets (anciens #A39C8F / #D9D2C4). */
+  --color-ink-faint: 163 156 143;
+
+  --color-coral: 21 145 234;
+  --color-coral-dark: 11 94 158;
+  --color-coral-light: 216 232 243;
+
+  --color-teal: 46 196 182;
+  --color-teal-dark: 33 148 136;
+  --color-teal-light: 219 247 244;
+
+  --color-mustard: 255 200 87;
+  --color-mustard-dark: 224 169 60;
+  --color-mustard-light: 255 243 218;
+
+  --color-sky: 91 155 224;
+  --color-sky-dark: 63 123 192;
+  --color-sky-light: 220 235 251;
+}
+
+.dark:root {
+  /* Fonds légèrement CHAUDS et non gris neutres : le thème clair est un
+     sable, sa version nocturne doit rester la même pièce éteinte, pas une
+     autre app. */
+  --color-sand: 25 23 20;
+  --color-sand-dark: 38 35 31;
+  --color-surface: 32 30 26;
+
+  --color-ink: 244 240 233;
+  --color-ink-soft: 168 160 148;
+  --color-ink-faint: 122 115 105;
+
+  /* Les teintes VIVES ne bougent pas : un bouton corail reste corail, c'est
+     l'identité. Seules basculent les déclinaisons `light` (fonds de pastille)
+     et `dark` (texte posé sur ces fonds) — sinon un fond pâle éclairerait
+     l'écran comme une lampe, et son texte foncé y deviendrait illisible. */
+  --color-coral-light: 18 50 77;
+  --color-coral-dark: 143 203 247;
+
+  --color-teal-light: 18 58 53;
+  --color-teal-dark: 111 221 209;
+
+  --color-mustard-light: 58 47 22;
+  --color-mustard-dark: 240 194 102;
+
+  --color-sky-light: 22 40 61;
+  --color-sky-dark: 156 196 240;
+}

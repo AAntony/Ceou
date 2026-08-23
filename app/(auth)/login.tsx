@@ -59,7 +59,7 @@ export default function LoginScreen() {
         <TextLink
           href="/guest-invite"
           label={t('guest.entry')}
-          className="mt-8 items-center rounded-2xl border border-ink/10 bg-white px-4 py-3"
+          className="mt-8 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
           textClassName="text-center text-sm font-semibold text-ink"
         />
 

@@ -6,9 +6,6 @@ import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanForme, PlanPin } from '../../types/database';
 import {
-  ARTBOARD_BACKGROUND,
-  ARTBOARD_BORDER,
-  CANVAS_BACKGROUND,
   HIGHLIGHT_GREEN_BORDER,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -22,6 +19,7 @@ import {
 import { PlanPinLayer } from './PlanPinLayer';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
+import { useThemeColors } from '../../lib/theme';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
@@ -141,6 +139,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   },
   ref,
 ) {
+  const colors = useThemeColors();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
@@ -461,7 +460,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
 
   return (
     <View
-      style={{ flex: 1, overflow: 'hidden', backgroundColor: CANVAS_BACKGROUND }}
+      style={{ flex: 1, overflow: 'hidden', backgroundColor: colors.sandDark }}
       className="rounded-2xl"
       onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
@@ -497,8 +496,8 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               {/* La feuille elle-même, bien visible (fond clair + bord net)
                   sur le fond plus sombre de la zone déplaçable — pour qu'on
                   voie enfin où s'arrête la zone utile. */}
-              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BACKGROUND} style="fill" />
-              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={ARTBOARD_BORDER} style="stroke" strokeWidth={2} />
+              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={colors.surface} style="fill" />
+              <Rect x={0} y={0} width={WORLD_WIDTH} height={WORLD_HEIGHT} color={colors.inkFaint} style="stroke" strokeWidth={2} />
               {/* TROIS PASSES, et c'est le changement structurant du rendu.
                   Avant, chaque pièce dessinait son fond PUIS son contour, l'une
                   après l'autre : le fond d'une pièce dessinée plus tard passait

@@ -12,6 +12,7 @@ import { TextField } from '../src/components/TextField';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { syncInviteReminders } from '../src/features/notifications/inviteReminders';
 import { logClientError } from '../src/lib/errorLogging';
+import { useThemeColors } from '../src/lib/theme';
 import {
   expiryInDays,
   formatInviteQrValue,
@@ -48,6 +49,7 @@ function InviteCard({
   onDelete: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const colors = useThemeColors();
   const expired = isExpired(entry);
   const exhausted = isExhausted(entry);
   // Épuisé n'est PAS mort : les visiteurs déjà entrés gardent leur accès,
@@ -56,7 +58,7 @@ function InviteCard({
   const dead = expired;
 
   return (
-    <View className={`mb-3 rounded-2xl border bg-white p-4 ${dead ? 'border-ink/10 opacity-60' : 'border-ink/10'}`}>
+    <View className={`mb-3 rounded-2xl border bg-surface p-4 ${dead ? 'border-ink/10 opacity-60' : 'border-ink/10'}`}>
       <View className="mb-2 flex-row items-start justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-base font-bold text-ink">
@@ -104,7 +106,7 @@ function InviteCard({
           onPress={onShowQr}
           className="flex-row items-center gap-1.5 rounded-full border border-ink/10 px-3 py-2 active:opacity-70"
         >
-          <Icon name="qrcode" size={16} color="#6B6459" />
+          <Icon name="qrcode" size={16} color={colors.inkSoft} />
           <Text className="text-xs font-medium text-ink-soft">{t('invites.show_qr')}</Text>
         </Pressable>
         {entry.targetType === 'guest' ? (
@@ -112,7 +114,7 @@ function InviteCard({
             onPress={onRenew}
             className="flex-row items-center gap-1.5 rounded-full border border-ink/10 px-3 py-2 active:opacity-70"
           >
-            <Icon name="history" size={16} color="#6B6459" />
+            <Icon name="history" size={16} color={colors.inkSoft} />
             <Text className="text-xs font-medium text-ink-soft">{t('invites.renew')}</Text>
           </Pressable>
         ) : null}
@@ -129,6 +131,7 @@ function InviteCard({
 }
 
 export default function InvitesScreen() {
+  const colors = useThemeColors();
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   const { data: invites, isLoading, isError, refetch } = useMyShareInvites();
@@ -256,7 +259,7 @@ export default function InvitesScreen() {
       <BottomSheetModal
         visible={qrEntry !== null}
         onClose={() => setQrEntry(null)}
-        sheetClassName="rounded-t-3xl bg-white px-6 pb-4 pt-6"
+        sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
       >
         {qrEntry ? (
           <View className="items-center">
@@ -274,7 +277,7 @@ export default function InvitesScreen() {
       <BottomSheetModal
         visible={renewEntry !== null}
         onClose={() => setRenewEntry(null)}
-        sheetClassName="rounded-t-3xl bg-white px-6 pb-4 pt-6"
+        sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
       >
         <Text className="mb-1 text-xl font-bold text-ink">{t('invites.renew_title')}</Text>
         <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('invites.renew_body')}</Text>
@@ -322,7 +325,7 @@ export default function InvitesScreen() {
         )}
 
         <Pressable onPress={() => setRenewReset((v) => !v)} className="mb-4 flex-row items-center gap-2 py-1">
-          <Icon name={renewReset ? 'included' : 'excluded'} size={20} color={renewReset ? '#4CAF50' : '#A39C8F'} />
+          <Icon name={renewReset ? 'included' : 'excluded'} size={20} color={renewReset ? '#4CAF50' : colors.inkFaint} />
           <Text className="flex-1 text-sm text-ink-soft">{t('invites.reset_uses')}</Text>
         </Pressable>
 

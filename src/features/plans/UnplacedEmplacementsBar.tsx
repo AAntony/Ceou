@@ -4,6 +4,7 @@ import { IconBadge } from '../../components/IconBadge';
 import { getEmplacementIcon } from '../inventory/constants';
 import { useEmplacements } from '../inventory/queries';
 import type { PlanPin } from '../../types/database';
+import { useThemeColors } from '../../lib/theme';
 
 type UnplacedEmplacementsBarProps = {
   pieceId: string;
@@ -20,6 +21,7 @@ type UnplacedEmplacementsBarProps = {
 // défile s'il y a plus d'Emplacements que de place visible, plutôt que de
 // repousser le plan vers le bas à chaque fois qu'elle s'agrandirait.
 export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmplacementsBarProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const { data: emplacements } = useEmplacements(pieceId);
 
@@ -36,9 +38,9 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
           <Pressable
             key={e.id}
             onPress={() => onPlace(e.id)}
-            className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-white px-3 py-1.5 active:opacity-70"
+            className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-surface px-3 py-1.5 active:opacity-70"
           >
-            <IconBadge icon={getEmplacementIcon(e.preset_key)} fill="#F3EFE9" size={26} />
+            <IconBadge icon={getEmplacementIcon(e.preset_key)} fill={colors.sandDark} size={26} />
             <Text numberOfLines={1} className="text-sm font-medium text-ink">
               {e.name}
             </Text>

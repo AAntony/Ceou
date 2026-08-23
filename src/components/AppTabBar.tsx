@@ -6,10 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsAnonymous } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/profile/useProfile';
 import { useFriendships } from '../features/sharing/queries';
+import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
 const ACTIVE_COLOR = '#1591EA';
-const INACTIVE_COLOR = '#A39C8F';
 const AVATAR_SIZE = 24;
 
 // Hauteur de la rangée d'onglets, hors zone système. Exportée parce que
@@ -43,7 +43,8 @@ type TabItemProps = {
 };
 
 function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }: TabItemProps) {
-  const color = active ? ACTIVE_COLOR : INACTIVE_COLOR;
+  const colors = useThemeColors();
+  const color = active ? ACTIVE_COLOR : colors.inkFaint;
 
   return (
     <Pressable
@@ -161,7 +162,7 @@ export function AppTabBar() {
        fond de l'app. Le rembourrage bas garde les libellés au-dessus de
        cette zone système. */
     <View
-      className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-white"
+      className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-surface"
       style={{ paddingBottom: insets.bottom }}
     >
       <View className="flex-row items-center px-1" style={{ height: APP_TAB_BAR_HEIGHT }}>

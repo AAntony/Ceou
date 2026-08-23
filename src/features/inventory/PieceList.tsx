@@ -11,10 +11,10 @@ import { ErrorState } from '../../components/ErrorState';
 import { PresetPicker } from '../../components/PresetPicker';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
-import { shade } from '../plans/constants';
 import type { Piece } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { canModify, useHabitationPermission } from '../sharing/queries';
+import { useEntityTints } from '../../lib/theme';
 import { DEFAULT_PIECE_COLOR, PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { objetCountLabel } from './counts';
 import { resolveEntityPhotoUrl } from './entityPhoto';
@@ -40,6 +40,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
   const { data: counts } = useHabitationNodeCounts(habitationId);
   const { data: permission } = useHabitationPermission(habitationId);
   const editable = canModify(permission);
+  const { iconTint } = useEntityTints();
   const createPiece = useCreatePiece(habitationId);
   const updatePiece = useUpdatePiece(habitationId);
   const deletePiece = useDeletePiece(habitationId);
@@ -110,7 +111,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
               // La couleur choisie pour la Pièce la suit jusqu'ici : c'est
               // la même que sur le Plan, assombrie pour rester lisible sur
               // le fond blanc de la rangée.
-              iconColor={shade(piece.color ?? DEFAULT_PIECE_COLOR, 0.45)}
+              iconColor={iconTint(piece.color ?? DEFAULT_PIECE_COLOR)}
               onPress={() => router.push(`/piece/${piece.id}`)}
               onLongPress={editable ? () => handleDelete(piece.id) : undefined}
               onEdit={editable ? () => openEdit(piece) : undefined}

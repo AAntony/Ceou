@@ -78,7 +78,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
     <BottomSheetModal
       visible={!!friend}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-6 pt-6"
+      sheetClassName="rounded-t-3xl bg-surface px-6 pt-6"
       sheetStyle={{ maxHeight: '80%' }}
     >
       <Text className="mb-1 text-xl font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
@@ -138,10 +138,10 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
                 className={`rounded-full border px-4 py-2 active:opacity-70 ${
-                  selected ? 'border-2 border-[#1591EA] bg-[#E6F1FB]' : 'border-ink/10 bg-white'
+                  selected ? 'border-2 border-coral bg-coral-light' : 'border-ink/10 bg-surface'
                 }`}
               >
-                <Text className={selected ? 'text-sm font-semibold text-[#0C447C]' : 'text-sm text-ink-soft'}>
+                <Text className={selected ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>
                   {category.name}
                 </Text>
               </Pressable>
@@ -156,10 +156,10 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
             accessibilityRole="button"
             accessibilityState={{ selected: currentCategoryId === null }}
             className={`rounded-full border px-4 py-2 active:opacity-70 ${
-              currentCategoryId === null ? 'border-2 border-[#1591EA] bg-[#E6F1FB]' : 'border-ink/10 bg-white'
+              currentCategoryId === null ? 'border-2 border-coral bg-coral-light' : 'border-ink/10 bg-surface'
             }`}
           >
-            <Text className={currentCategoryId === null ? 'text-sm font-semibold text-[#0C447C]' : 'text-sm text-ink-soft'}>
+            <Text className={currentCategoryId === null ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>
               {t('friends.categories.move_none')}
             </Text>
           </Pressable>

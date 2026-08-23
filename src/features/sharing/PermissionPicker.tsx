@@ -26,7 +26,7 @@ export function PermissionPicker({ value, onChange }: PermissionPickerProps) {
           <Pressable
             key={opt.labelKey}
             onPress={() => onChange(opt.value)}
-            className={`rounded-full border px-3 py-1.5 ${active ? 'border-coral bg-coral' : 'border-ink/10 bg-white'}`}
+            className={`rounded-full border px-3 py-1.5 ${active ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'}`}
           >
             <Text className={`text-xs font-medium ${active ? 'text-white' : 'text-ink-soft'}`}>{t(opt.labelKey)}</Text>
           </Pressable>

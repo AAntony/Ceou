@@ -4,6 +4,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { logClientError } from '../lib/errorLogging';
 import { pickImage, takePhoto } from '../lib/images/pickAndUploadImage';
+import { useThemeColors } from '../lib/theme';
 import { Icon } from './Icon';
 
 // Choix de photo, commun aux quatre niveaux de l'inventaire.
@@ -31,6 +32,7 @@ type EntityPhotoFieldProps = {
 };
 
 export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoFieldProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
 
   const choose = async (source: 'library' | 'camera') => {
@@ -93,7 +95,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
               accessibilityRole="button"
               className="flex-row items-center gap-2 px-3 py-1.5 active:opacity-70"
             >
-              <Icon name="close" size={16} color="#A39C8F" />
+              <Icon name="close" size={16} color={colors.inkFaint} />
               <Text className="flex-1 text-sm text-ink-soft" numberOfLines={1}>
                 {t('inventory.photo.remove')}
               </Text>

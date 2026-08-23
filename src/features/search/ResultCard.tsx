@@ -49,7 +49,7 @@ export function ResultCard({ entry }: ResultCardProps) {
   return (
     <Pressable
       onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
-      className="mb-3 w-[48%] overflow-hidden rounded-2xl bg-white active:opacity-70"
+      className="mb-3 w-[48%] overflow-hidden rounded-2xl bg-surface active:opacity-70"
     >
       {/* `aspectRatio` plutôt qu'une hauteur fixe : la largeur d'une tuile
           dépend de celle de l'écran, une hauteur en dur déformerait le

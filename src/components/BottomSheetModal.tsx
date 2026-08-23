@@ -9,7 +9,7 @@ type BottomSheetModalProps = PropsWithChildren<{
   sheetStyle?: StyleProp<ViewStyle>;
 }>;
 
-const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-white';
+const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 
 // Squelette commun à TOUTE feuille de bas d'écran de l'app (fiche de forme
 // du Plan, création/édition d'entité, formulaire Objet...) : fond

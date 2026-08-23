@@ -154,6 +154,11 @@
       "change": "Change photo"
     },
     "saved": "Profile saved",
+    "theme": {
+      "title": "Appearance",
+      "dark_label": "Dark mode",
+      "follow_system": "Follow the phone setting"
+    },
     "version_label": "Version",
     "privacy_policy": "Privacy Policy"
   },

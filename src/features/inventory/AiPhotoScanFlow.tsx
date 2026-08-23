@@ -13,6 +13,7 @@ import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useProfile, useSetAiPhotoConsent } from '../profile/useProfile';
 import { useCreateObjetsBulk } from './queries';
+import { useThemeColors } from '../../lib/theme';
 
 export type CollectedScanItem = { name: string; localPhotoUri: string };
 
@@ -44,6 +45,7 @@ type Step = 'capture' | 'analyzing' | 'review';
 // (parentType/parentId/active/onDone/onCancel) : les deux sont interchangeables
 // dans CreateObjetModal/AddObjetModal selon le mode choisi par l'utilisateur.
 export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel, onCollected }: AiPhotoScanFlowProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const createObjetsBulk = useCreateObjetsBulk();
@@ -170,7 +172,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   if (step === 'capture') {
     return (
       <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: insets.bottom + 24 }}>
-        <Icon name="scan" size={48} color="#0B5E9E" />
+        <Icon name="scan" size={48} color={colors.accentDark} />
         <Text className="mb-1 mt-4 text-center text-lg font-bold text-ink">{t('inventory.aiScan.capture_title')}</Text>
         <Text className="mb-6 text-center text-sm text-ink-soft">{t('inventory.aiScan.capture_hint')}</Text>
         <View className="w-full gap-3">
@@ -179,7 +181,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
           <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
         </View>
 
-        <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-white px-6 pb-8 pt-6">
+        <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6">
           <Text className="mb-3 text-lg font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
           <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
           <TextLink
@@ -204,7 +206,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   if (step === 'analyzing') {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <ActivityIndicator size="large" color="#0B5E9E" />
+        <ActivityIndicator size="large" color={colors.accentDark} />
         <Text className="mt-4 text-center text-sm text-ink-soft">{t('inventory.aiScan.analyzing')}</Text>
       </View>
     );
@@ -221,16 +223,16 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
               value={item.label}
               onChangeText={(text) => updateLabel(item.key, text)}
               editable={item.selected}
-              className="flex-1 rounded-xl border border-ink/10 bg-white px-3 py-2.5 text-base text-ink"
+              className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-base text-ink"
             />
             <Pressable onPress={() => toggleSelected(item.key)} hitSlop={8}>
-              <Icon name={item.selected ? 'included' : 'excluded'} size={26} color={item.selected ? '#4CAF50' : '#A39C8F'} />
+              <Icon name={item.selected ? 'included' : 'excluded'} size={26} color={item.selected ? '#4CAF50' : colors.inkFaint} />
             </Pressable>
           </View>
         ))}
       </ScrollView>
       <View
-        className="absolute bottom-0 left-0 right-0 flex-row gap-3 border-t border-ink/10 bg-white px-6 pt-3"
+        className="absolute bottom-0 left-0 right-0 flex-row gap-3 border-t border-ink/10 bg-surface px-6 pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
         <View className="flex-1">

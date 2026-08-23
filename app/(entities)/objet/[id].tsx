@@ -16,10 +16,12 @@ import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
 import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
+import { useThemeColors } from '../../../src/lib/theme';
 import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 
 export default function ObjetScreen() {
   const refreshControl = usePullToRefresh();
+  const colors = useThemeColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { session } = useSession();
@@ -110,10 +112,10 @@ export default function ObjetScreen() {
             <Pressable
               onPress={handleChangePhoto}
               hitSlop={8}
-              className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-white"
+              className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface"
               style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }}
             >
-              {photoUploading ? <ActivityIndicator size="small" /> : <Icon name="pencil" size={16} color="#2D2A26" />}
+              {photoUploading ? <ActivityIndicator size="small" /> : <Icon name="pencil" size={16} color={colors.ink} />}
             </Pressable>
           ) : null}
         </View>

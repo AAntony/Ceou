@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
+import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
 // Rangée de liste pleine largeur — vignette, icône, nom, compteur, chevron.
@@ -23,6 +24,13 @@ import { Icon, type IconName } from './Icon';
 const THUMB_WIDTH = 84;
 // 4:3, le ratio des illustrations par défaut. Un carré les recadrerait.
 const THUMB_HEIGHT = 63;
+// Les pastilles crayon/etoile sont posees sur un fond BLANC fixe (elles se
+// superposent a une photo ou a une carte coloree, ou un fond translucide
+// clair reste la seule valeur lisible dans les deux themes). Leur icone doit
+// donc rester sombre elle aussi : prise dans le theme, elle s'eclaircissait
+// en mode sombre et disparaissait sur la pastille.
+const ON_LIGHT_PILL = '#6B6459';
+
 const ACCENT = '#1591EA';
 
 type EntityRowProps = {
@@ -55,11 +63,13 @@ export function EntityRow({
   onToggleFavorite,
   favoriteDisabled,
 }: EntityRowProps) {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      className="mb-2.5 flex-row items-center rounded-2xl bg-white p-2.5 active:opacity-70"
+      className="mb-2.5 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
       <View
         style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT }}
@@ -82,7 +92,7 @@ export function EntityRow({
             hitSlop={8}
             className={`absolute left-1 top-1 rounded-full bg-white/85 p-1 ${favoriteDisabled ? 'opacity-50' : ''}`}
           >
-            <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? '#FFC857' : '#A39C8F'} />
+            <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />
           </Pressable>
         ) : null}
       </View>
@@ -104,11 +114,11 @@ export function EntityRow({
 
       {onEdit ? (
         <Pressable onPress={onEdit} hitSlop={10} className="ml-1 p-1.5 active:opacity-60">
-          <Icon name="pencil" size={18} color="#A39C8F" />
+          <Icon name="pencil" size={18} color={colors.inkFaint} />
         </Pressable>
       ) : null}
 
-      <Icon name="chevron" size={22} color="#C4BDB1" />
+      <Icon name="chevron" size={22} color={colors.inkFaint} />
     </Pressable>
   );
 }

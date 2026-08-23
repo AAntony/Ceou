@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { useThemeColors } from '../../lib/theme';
 
 // Rangée d'ami.
 //
@@ -44,12 +45,13 @@ type FriendRowProps = {
 };
 
 export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowProps) {
+  const colors = useThemeColors();
   const color = avatarColor(id);
 
   return (
     <Pressable
       onPress={onPress}
-      className="mb-2 flex-row items-center rounded-2xl bg-white p-2.5 active:opacity-70"
+      className="mb-2 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
       <View
         style={{ width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2, backgroundColor: color }}
@@ -76,7 +78,7 @@ export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowP
         ) : null}
       </View>
 
-      <Icon name="chevron" size={22} color="#C4BDB1" />
+      <Icon name="chevron" size={22} color={colors.inkFaint} />
     </Pressable>
   );
 }

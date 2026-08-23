@@ -15,6 +15,7 @@ import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
 import { queryClient } from '../src/lib/queryClient';
+import { ThemeProvider } from '../src/lib/theme';
 import '../global.css';
 
 installGlobalErrorHandler();
@@ -106,9 +107,13 @@ export default function RootLayout() {
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <QueryClientProvider client={queryClient}>
-          <SessionProvider>
-            <AppShell />
-          </SessionProvider>
+          {/* Au-dessus de tout ce qui peint : le theme choisi doit etre
+              applique avant le premier rendu colore, pas apres. */}
+          <ThemeProvider>
+            <SessionProvider>
+              <AppShell />
+            </SessionProvider>
+          </ThemeProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>

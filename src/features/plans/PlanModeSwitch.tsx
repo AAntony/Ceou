@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { useThemeColors } from '../../lib/theme';
 
 export type PlanMode = 'explore' | 'edit';
 
@@ -42,6 +43,8 @@ function Option({
   label: string;
   onPress: () => void;
 }) {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       onPress={onPress}
@@ -51,7 +54,7 @@ function Option({
         active ? 'border-2 border-coral bg-coral-light py-[9px]' : 'border border-ink/10 py-2.5'
       }`}
     >
-      <Icon name={icon} size={16} color={active ? '#0B5E9E' : '#6B6459'} />
+      <Icon name={icon} size={16} color={active ? colors.accentDark : colors.inkSoft} />
       <Text className={active ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>{label}</Text>
     </Pressable>
   );

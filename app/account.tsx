@@ -19,7 +19,7 @@ import { supabase } from '../src/lib/supabase/client';
 
 function Section({ title, children }: PropsWithChildren<{ title: string }>) {
   return (
-    <View className="mb-6 rounded-2xl border border-ink/10 bg-white p-5">
+    <View className="mb-6 rounded-2xl border border-ink/10 bg-surface p-5">
       <Text className="mb-4 text-base font-bold text-ink">{title}</Text>
       {children}
     </View>
@@ -228,7 +228,7 @@ export default function AccountScreen() {
               cartes : cette section détruit des données de façon
               irréversible, elle ne doit pas se lire comme un réglage de
               plus qu'on parcourt distraitement. */}
-          <View className="rounded-2xl border border-red-500/40 bg-white p-5">
+          <View className="rounded-2xl border border-red-500/40 bg-surface p-5">
             <Text className="mb-2 text-base font-bold text-ink">{t('account.delete.title')}</Text>
             <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('account.delete.description')}</Text>
             <Button label={t('account.delete.entry')} variant="danger" onPress={() => setDeleteOpen(true)} />
@@ -246,7 +246,7 @@ export default function AccountScreen() {
           setDeletePassword('');
           setDeleteError(null);
         }}
-        sheetClassName="rounded-t-3xl bg-white px-5 pb-4 pt-6"
+        sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-6"
       >
         <Text className="mb-2 text-xl font-bold text-ink">{t('account.delete.confirm_title')}</Text>
         <Text className="mb-5 text-sm leading-5 text-ink-soft">{t('account.delete.confirm_body')}</Text>

@@ -1,5 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
+import { useEntityTints, useThemeColors } from '../lib/theme';
 import { IconBadge } from './IconBadge';
 
 type EntityCardProps = {
@@ -25,6 +26,13 @@ type EntityCardProps = {
 // une (ex. LocationTreePicker, PlansList — listés à part, hors du périmètre
 // de la refonte en grille demandée) plutôt que de leur imposer une couleur
 // à changer.
+// Les pastilles crayon/etoile sont posees sur un fond BLANC fixe (elles se
+// superposent a une photo ou a une carte coloree, ou un fond translucide
+// clair reste la seule valeur lisible dans les deux themes). Leur icone doit
+// donc rester sombre elle aussi : prise dans le theme, elle s'eclaircissait
+// en mode sombre et disparaissait sur la pastille.
+const ON_LIGHT_PILL = '#6B6459';
+
 const DEFAULT_BG = '#DBF7F4';
 const DEFAULT_BADGE = '#2EC4B6';
 
@@ -46,16 +54,19 @@ export function EntityCard({
   onToggleFavorite,
   favoriteDisabled,
 }: EntityCardProps) {
+  const colors = useThemeColors();
+  const { surfaceTint } = useEntityTints();
+
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      style={{ backgroundColor: bgColor }}
+      style={{ backgroundColor: surfaceTint(bgColor) }}
       className="mb-3 w-[48%] rounded-2xl p-4 active:opacity-70"
     >
       {onEdit ? (
         <Pressable onPress={onEdit} hitSlop={8} className="absolute right-2 top-2 z-10 rounded-full bg-white/70 p-1.5">
-          <Icon name="pencil" size={14} color="#6B6459" />
+          <Icon name="pencil" size={14} color={ON_LIGHT_PILL} />
         </Pressable>
       ) : null}
       {onToggleFavorite ? (
@@ -65,7 +76,7 @@ export function EntityCard({
           hitSlop={8}
           className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/70 p-1.5 ${favoriteDisabled ? 'opacity-50' : ''}`}
         >
-          <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? '#FFC857' : '#A39C8F'} />
+          <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />
         </Pressable>
       ) : null}
       <View className="mb-3">

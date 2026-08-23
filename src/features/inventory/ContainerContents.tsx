@@ -132,7 +132,7 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
       <BottomSheetModal
         visible={choiceOpen && editable}
         onClose={() => setChoiceOpen(false)}
-        sheetClassName="rounded-t-3xl bg-white px-6 pb-4 pt-6"
+        sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
       >
         <Text className="mb-4 text-xl font-bold text-ink">{t('inventory.container.add_choice_title')}</Text>
         <View className="mb-3">

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { Button } from './Button';
 import { Icon } from './Icon';
+import { useThemeColors } from '../lib/theme';
 
 type ErrorStateProps = {
   // Typiquement le `refetch` du hook React Query en échec. Omis quand
@@ -22,12 +23,13 @@ type ErrorStateProps = {
 // ressemblent structurellement, la couleur est ce qui dit au premier coup
 // d'œil "problème" et non "rien à afficher".
 export function ErrorState({ onRetry, title }: ErrorStateProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
 
   return (
     <View className="flex-1 items-center justify-center px-6 py-16">
       <View className="mb-3 h-16 w-16 items-center justify-center rounded-full bg-coral-light">
-        <Icon name="alert" size={30} color="#0B5E9E" />
+        <Icon name="alert" size={30} color={colors.accentDark} />
       </View>
       <Text className="mb-1 text-center text-base font-medium text-ink">{title ?? t('common.error_load_title')}</Text>
       <Text className="mb-4 text-center text-sm text-ink-soft">{t('common.error_load_hint')}</Text>

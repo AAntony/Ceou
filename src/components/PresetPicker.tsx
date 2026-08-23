@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
 type Preset = { key: string; icon: IconName };
@@ -11,6 +12,7 @@ type PresetPickerProps<T extends Preset> = {
 };
 
 export function PresetPicker<T extends Preset>({ presets, selectedKey, onSelect, labelFor }: PresetPickerProps<T>) {
+  const colors = useThemeColors();
   return (
     <View className="mb-4 flex-row flex-wrap gap-2">
       {presets.map((preset) => {
@@ -19,12 +21,12 @@ export function PresetPicker<T extends Preset>({ presets, selectedKey, onSelect,
           <Pressable
             key={preset.key}
             onPress={() => onSelect(preset.key)}
-            android_ripple={{ color: 'rgba(45,42,38,0.08)', borderless: false }}
+            android_ripple={{ color: colors.ripple, borderless: false }}
             className={`flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-3 py-2 ${
-              selected ? 'border-coral bg-coral' : 'border-ink/10 bg-white'
+              selected ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'
             }`}
           >
-            <Icon name={preset.icon} size={16} color={selected ? '#fff' : '#6B6459'} />
+            <Icon name={preset.icon} size={16} color={selected ? '#fff' : colors.inkSoft} />
             <Text className={selected ? 'font-semibold text-white' : 'text-ink-soft'}>{labelFor(preset.key)}</Text>
           </Pressable>
         );

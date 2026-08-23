@@ -28,12 +28,12 @@ export const WORLD_HEIGHT = 1200;
 export const MIN_ZOOM = 0.5;
 export const MAX_ZOOM = 3;
 
-// Fond de la zone déplaçable (en dehors de la feuille), volontairement plus
-// sombre/saturé que la feuille elle-même pour qu'on distingue au premier
-// coup d'œil "dans la zone utile" de "en dehors".
-export const CANVAS_BACKGROUND = '#F5EEE6';
-export const ARTBOARD_BACKGROUND = '#FFFFFF';
-export const ARTBOARD_BORDER = '#E4DCCF';
+// La feuille et la zone qui l'entoure suivent maintenant le thème
+// (colors.surface / colors.sandDark dans PlanCanvas) : une feuille blanche
+// éclatante au milieu d'une app en sombre se voit de l'autre bout de la
+// pièce. Le principe ne change pas — le pourtour reste plus soutenu que la
+// feuille, pour distinguer d'un coup d'œil « dans la zone utile » de
+// « en dehors ».
 
 // === Murs =================================================================
 // Le defaut le plus visible de l'ancien rendu : une piece etait un aplat
@@ -97,14 +97,7 @@ export function roomColorForForme(formeId: string): string {
   return ROOM_COLOR_PALETTE[hash % ROOM_COLOR_PALETTE.length];
 }
 
-// Assombrit une couleur hex #RRGGBB d'un facteur 0..1 (0 = inchangée, 1 =
-// noir) — dérive la couleur de contour depuis la couleur de sol plutôt que
-// de maintenir une deuxième valeur à la main.
-export function shade(hex: string, factor: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const darken = (channel: number) => Math.round(channel * (1 - factor));
-  const toHex = (channel: number) => channel.toString(16).padStart(2, '0');
-  return `#${toHex(darken(r))}${toHex(darken(g))}${toHex(darken(b))}`;
-}
+// Dérive la couleur de contour depuis la couleur de sol plutôt que de
+// maintenir une deuxième valeur à la main. Réexportée depuis lib/color.ts,
+// où elle sert aussi à l'adaptation des pastels au thème sombre.
+export { shade } from '../../lib/color';

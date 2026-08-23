@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Icon, type IconName } from '../../components/Icon';
 import { TextLink } from '../../components/TextLink';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import { supabase } from '../../lib/supabase/client';
 
 // Écran Profil d'un VISITEUR (session anonyme).
@@ -38,7 +39,7 @@ export function GuestProfile() {
         <Text className="mt-2 text-center text-base leading-6 text-ink-soft">{t('guest.pitch.tagline')}</Text>
       </View>
 
-      <View className="mt-8 rounded-2xl border border-ink/10 bg-white p-5">
+      <View className="mt-8 rounded-2xl border border-ink/10 bg-surface p-5">
         {SELLING_POINTS.map((point, index) => (
           <View key={point.key} className={`flex-row items-start gap-3 ${index > 0 ? 'mt-4' : ''}`}>
             <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-full bg-coral-light">
@@ -58,6 +59,10 @@ export function GuestProfile() {
           dire ici évite au visiteur de croire qu'il devra redemander le code
           à son hôte. */}
       <Text className="mt-3 text-center text-xs leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
+
+      <View className="mt-10">
+        <ThemeToggle />
+      </View>
 
       <TextLink
         href="/privacy-policy"

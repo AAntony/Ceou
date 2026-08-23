@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../src/features/auth/SessionProvider';
+import { useThemeColors } from '../../src/lib/theme';
 
 // Les écrans (entities) — Habitations, Pièce, Emplacement — utilisent
 // l'en-tête NATIF d'un Stack, qui reprend l'actionBarSize d'Android : 56 dp.
@@ -24,6 +25,7 @@ export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
 
   if (isLoading) return <View className="flex-1 bg-sand" />;
   if (!session) return <Redirect href="/(auth)/login" />;
@@ -55,9 +57,9 @@ export default function TabsLayout() {
         options={{
           headerShown: true,
           title: t('friends.tab_title'),
-          headerStyle: { backgroundColor: '#FFFBF8', height: NATIVE_STACK_HEADER_HEIGHT + insets.top },
-          headerTintColor: '#1591EA',
-          headerTitleStyle: { color: '#2D2A26' },
+          headerStyle: { backgroundColor: colors.sand, height: NATIVE_STACK_HEADER_HEIGHT + insets.top },
+          headerTintColor: colors.accent,
+          headerTitleStyle: { color: colors.ink },
         }}
       />
       <Tabs.Screen name="profile" />

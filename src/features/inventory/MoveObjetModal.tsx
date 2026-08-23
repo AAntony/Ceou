@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import type { LocationType } from '../../types/database';
 import { LocationTreePicker } from './LocationTreePicker';
 import { useMoveObjet } from './queries';
+import { useThemeColors } from '../../lib/theme';
 
 type MoveObjetModalProps = {
   visible: boolean;
@@ -12,6 +13,7 @@ type MoveObjetModalProps = {
 };
 
 export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const moveObjet = useMoveObjet(objetId);
 
@@ -27,7 +29,7 @@ export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProp
           <View style={{ width: 22 }} />
           <Text className="text-lg font-bold text-ink">{t('inventory.objet.move_title')}</Text>
           <Pressable onPress={onClose} hitSlop={8}>
-            <Icon name="close" size={22} color="#2D2A26" />
+            <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>
 

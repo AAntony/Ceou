@@ -27,7 +27,7 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white pt-6"
+      sheetClassName="rounded-t-3xl bg-surface pt-6"
       // Mode scan : hauteur DÉFINIE, parce qu'AiPhotoScanFlow s'appuie dessus
       // (états centrés en `flex-1`, barre d'actions en `absolute bottom-0`)
       // — il lui faut un cadre stable à remplir.

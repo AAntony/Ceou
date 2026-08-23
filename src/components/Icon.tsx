@@ -1,4 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useThemeColors } from '../lib/theme';
 
 // Emoji-as-icon rendering isn't reliable across Android OEMs/versions (showed
 // as tofu boxes on a real Samsung device) — a bundled vector icon font always
@@ -188,6 +189,9 @@ type IconProps = {
   color?: string;
 };
 
-export function Icon({ name, size = 22, color = '#2D2A26' }: IconProps) {
-  return <MaterialCommunityIcons name={GLYPHS[name]} size={size} color={color} />;
+export function Icon({ name, size = 22, color }: IconProps) {
+  // Sans couleur imposee, une icone suit l'encre du theme courant : c'est ce
+  // qui evite d'avoir a repasser sur chaque appel qui n'en precise pas.
+  const colors = useThemeColors();
+  return <MaterialCommunityIcons name={GLYPHS[name]} size={size} color={color ?? colors.ink} />;
 }

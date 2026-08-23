@@ -10,6 +10,7 @@ import { AiPhotoScanFlow, type CollectedScanItem } from './AiPhotoScanFlow';
 import { LocationTreePicker } from './LocationTreePicker';
 import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
 import { useCreateObjet, useCreateObjetsBulk, useSetObjetPhoto } from './queries';
+import { useThemeColors } from '../../lib/theme';
 
 type AddObjetModalProps = {
   visible: boolean;
@@ -27,6 +28,7 @@ type AddObjetModalProps = {
 type Step = 'choice' | 'manual' | 'scan' | 'destination';
 
 export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const { session } = useSession();
   const createObjet = useCreateObjet();
@@ -109,14 +111,14 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
         <View className="mb-2 flex-row items-center justify-between px-6">
           {step !== 'choice' ? (
             <Pressable onPress={handleBack} hitSlop={8}>
-              <Icon name="back" size={22} color="#2D2A26" />
+              <Icon name="back" size={22} color={colors.ink} />
             </Pressable>
           ) : (
             <View style={{ width: 22 }} />
           )}
           <Text className="text-lg font-bold text-ink">{title}</Text>
           <Pressable onPress={onClose} hitSlop={8}>
-            <Icon name="close" size={22} color="#2D2A26" />
+            <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>
 
@@ -164,6 +166,7 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
 }
 
 function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () => void; onChooseScan: () => void }) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   return (
     <View className="flex-1 justify-center gap-4 px-6 pb-16">
@@ -171,7 +174,7 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         onPress={onChooseScan}
         className="items-center gap-2 rounded-2xl border-2 border-coral bg-coral-light px-6 py-6 active:opacity-70"
       >
-        <Icon name="scan" size={32} color="#0B5E9E" />
+        <Icon name="scan" size={32} color={colors.accentDark} />
         <Text className="text-base font-bold text-coral-dark">{t('inventory.aiScan.entry_title')}</Text>
         <Text className="text-center text-sm text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
       </Pressable>
@@ -179,7 +182,7 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         onPress={onChooseManual}
         className="items-center gap-2 rounded-2xl border border-ink/10 bg-sand-dark px-6 py-6 active:opacity-70"
       >
-        <Icon name="objet" size={32} color="#2D2A26" />
+        <Icon name="objet" size={32} color={colors.ink} />
         <Text className="text-base font-bold text-ink">{t('inventory.container.add_objet')}</Text>
       </Pressable>
     </View>

@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { logClientError } from '../../lib/errorLogging';
 import { useApplyPlanTemplate } from './queries';
 import { PLAN_TEMPLATES, TEMPLATE_BLOCK, templateRoomsForWorld, type PlanTemplate } from './templates';
+import { useThemeColors } from '../../lib/theme';
 
 // État vide d'un plan : on propose des logements types au lieu d'une feuille
 // blanche.
@@ -20,6 +21,7 @@ const PREVIEW_HEIGHT = Math.round((PREVIEW_WIDTH * TEMPLATE_BLOCK.height) / TEMP
 // (voir IconBadge). Chaque pièce est une View bordée — la même technique que
 // le canvas lui-même, à l'échelle près.
 function TemplatePreview({ template, active }: { template: PlanTemplate; active: boolean }) {
+  const colors = useThemeColors();
   const scale = PREVIEW_WIDTH / TEMPLATE_BLOCK.width;
 
   return (
@@ -37,7 +39,7 @@ function TemplatePreview({ template, active }: { template: PlanTemplate; active:
             width: room.width * scale,
             height: room.height * scale,
             borderWidth: 1.5,
-            borderColor: active ? '#0B5E9E' : '#2D2A26',
+            borderColor: active ? colors.accentDark : colors.ink,
           }}
         />
       ))}
@@ -76,7 +78,7 @@ export function PlanTemplatePicker({ planId }: { planId: string }) {
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
               className={`mb-3 rounded-2xl p-3 active:opacity-80 ${
-                active ? 'border-2 border-coral bg-coral-light' : 'border border-ink/10 bg-white'
+                active ? 'border-2 border-coral bg-coral-light' : 'border border-ink/10 bg-surface'
               }`}
               style={{ width: '48%' }}
             >

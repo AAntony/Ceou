@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { IconBadge } from '../../components/IconBadge';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
+import { useThemeColors } from '../../lib/theme';
 
 type PlanPinSheetProps = {
   pin: PlanPin | null;
@@ -17,17 +18,18 @@ type PlanPinSheetProps = {
 // qu'une seule décision possible — la retirer du plan. Le déplacement se
 // fait directement au glisser sur le plan, pas ici.
 export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
 
   return (
     <BottomSheetModal
       visible={!!pin && !!display}
       onClose={onClose}
-      sheetClassName="items-center rounded-t-3xl bg-white px-6 pb-10 pt-6"
+      sheetClassName="items-center rounded-t-3xl bg-surface px-6 pb-10 pt-6"
     >
       {display ? (
         <>
-          <IconBadge icon={display.icon} fill="#F3EFE9" size={56} />
+          <IconBadge icon={display.icon} fill={colors.sandDark} size={56} />
           <Text className="mb-4 mt-3 text-xl font-bold text-ink">{display.name}</Text>
         </>
       ) : null}

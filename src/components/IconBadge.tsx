@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { View } from 'react-native';
+import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
 type IconBadgeProps = {
@@ -17,7 +18,9 @@ type IconBadgeProps = {
 // sur l'appareil de test — l'utiliser planterait l'app (IllegalViewOperation
 // Exception: Can't find ViewManager) tant qu'un nouveau build EAS n'a pas
 // été fait, ce qui n'est pas demandé pour l'instant.
-export function IconBadge({ icon, fill, size = 56, photoUri, iconColor = '#2D2A26', borderColor, borderWidth = 0 }: IconBadgeProps) {
+export function IconBadge({ icon, fill, size = 56, photoUri, iconColor, borderColor, borderWidth = 0 }: IconBadgeProps) {
+  const colors = useThemeColors();
+
   return (
     <View
       className="items-center justify-center"
@@ -34,7 +37,7 @@ export function IconBadge({ icon, fill, size = 56, photoUri, iconColor = '#2D2A2
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={{ width: size, height: size }} />
       ) : (
-        <Icon name={icon} size={size * 0.42} color={iconColor} />
+        <Icon name={icon} size={size * 0.42} color={iconColor ?? colors.ink} />
       )}
     </View>
   );

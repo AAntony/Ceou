@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon';
 import { locationLabel } from './resolve';
 import { isSpeechAvailable, speak } from './speak';
 import type { AssistantState } from './useAssistant';
+import { useThemeColors } from '../../lib/theme';
 
 // Réponse de l'assistant vocal.
 //
@@ -22,6 +23,7 @@ export function AssistantSheet({
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
+  const colors = useThemeColors();
 
   const visible = state.status === 'thinking' || state.status === 'answered' || state.status === 'error';
   const entries = state.result?.entries ?? [];
@@ -30,7 +32,7 @@ export function AssistantSheet({
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-5 pb-4 pt-5"
+      sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-5"
       sheetStyle={{ maxHeight: '85%' }}
     >
       {/* Ce que l'app a compris, affiché tel quel : c'est la seule façon pour
@@ -38,7 +40,7 @@ export function AssistantSheet({
           dictée a pu entendre autre chose que ce qu'il a dit. */}
       {state.transcript ? (
         <View className="mb-4 flex-row items-start gap-2">
-          <Icon name="microphone" size={16} color="#A39C8F" />
+          <Icon name="microphone" size={16} color={colors.inkFaint} />
           <Text className="flex-1 text-sm italic leading-5 text-ink-soft">« {state.transcript} »</Text>
         </View>
       ) : null}
@@ -97,7 +99,7 @@ export function AssistantSheet({
                       {locationLabel(entry)}
                     </Text>
                   </View>
-                  <Icon name="chevron" size={18} color="#A39C8F" />
+                  <Icon name="chevron" size={18} color={colors.inkFaint} />
                 </Pressable>
               ))}
             </ScrollView>

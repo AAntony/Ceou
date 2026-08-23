@@ -19,9 +19,11 @@ import { FriendCategorySheet } from '../../src/features/sharing/FriendCategorySh
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
 import { FriendRow } from '../../src/features/sharing/FriendRow';
 import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespondToFriendship } from '../../src/features/sharing/queries';
+import { useThemeColors } from '../../src/lib/theme';
 
 export default function FriendsScreen() {
   const refreshControl = usePullToRefresh();
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const { data: friendships, isLoading, isError, refetch } = useFriendships();
 
@@ -114,7 +116,7 @@ export default function FriendsScreen() {
                     <Icon name="included" size={24} color="#4CAF50" />
                   </Pressable>
                   <Pressable onPress={() => respond.mutate({ friendshipId: f.id, accept: false })} hitSlop={8}>
-                    <Icon name="close" size={24} color="#A39C8F" />
+                    <Icon name="close" size={24} color={colors.inkFaint} />
                   </Pressable>
                 </View>
               </View>
@@ -157,7 +159,7 @@ export default function FriendsScreen() {
                   à supprimer. */}
               {section.category ? (
                 <Pressable onPress={() => setCategorySheet(section.category)} hitSlop={10} accessibilityRole="button">
-                  <Icon name="dots" size={20} color="#A39C8F" />
+                  <Icon name="dots" size={20} color={colors.inkFaint} />
                 </Pressable>
               ) : null}
             </View>
@@ -187,8 +189,8 @@ export default function FriendsScreen() {
             accessibilityRole="button"
             className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 py-3 active:opacity-70"
           >
-            <Icon name="add" size={16} color="#1591EA" />
-            <Text className="text-sm text-[#1591EA]">{t('friends.categories.new')}</Text>
+            <Icon name="add" size={16} color={colors.accent} />
+            <Text className="text-sm text-coral">{t('friends.categories.new')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

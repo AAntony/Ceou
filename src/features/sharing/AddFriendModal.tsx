@@ -81,7 +81,7 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
 
   return (
     <>
-      <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-white px-6 pb-8 pt-6">
+      <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6">
         <Text className="mb-4 text-xl font-bold text-ink">{t('friends.add.title')}</Text>
         <TextField label={t('friends.add.code_label')} value={code} onChangeText={setCode} autoCapitalize="characters" autoFocus />
         <View className="mb-4 mt-2">

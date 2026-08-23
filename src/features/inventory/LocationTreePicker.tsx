@@ -10,7 +10,6 @@ import { Icon } from '../../components/Icon';
 import { PresetPicker } from '../../components/PresetPicker';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, LocationType, Piece } from '../../types/database';
-import { shade } from '../plans/constants';
 import {
   DEFAULT_PIECE_COLOR,
   EMPLACEMENT_PRESETS,
@@ -40,6 +39,7 @@ import {
   useHabitations,
   usePieces,
 } from './queries';
+import { useEntityTints, useThemeColors } from '../../lib/theme';
 
 type Step =
   | { level: 'habitations' }
@@ -82,6 +82,7 @@ type LocationTreePickerProps = {
 // emplacement/conteneur tout juste créé est forcément vide, l'étape de
 // confirmation intermédiaire n'apporterait rien.
 export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: LocationTreePickerProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const [stack, setStack] = useState<Step[]>([{ level: 'habitations' }]);
 
@@ -106,7 +107,7 @@ export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: 
     <View>
       {stack.length > 1 ? (
         <Pressable onPress={pop} hitSlop={8} className="mb-3 flex-row items-center gap-1 self-start">
-          <Icon name="back" size={16} color="#6B6459" />
+          <Icon name="back" size={16} color={colors.inkSoft} />
           <Text className="text-sm font-medium text-ink-soft">{t('common.back')}</Text>
         </Pressable>
       ) : null}
@@ -142,12 +143,14 @@ export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: 
 // reconnaisse immédiatement comme une action différente de "choisir un
 // élément existant", même noyée au milieu d'une longue liste.
 function AddInlineCard({ label, onPress }: { label: string; onPress: () => void }) {
+  const colors = useThemeColors();
+
   return (
     <Pressable
       onPress={onPress}
       className="mb-2 flex-row items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-coral bg-coral-light px-4 py-3 active:opacity-70"
     >
-      <Icon name="add" size={18} color="#0B5E9E" />
+      <Icon name="add" size={18} color={colors.accentDark} />
       <Text className="text-base font-semibold text-coral-dark">{label}</Text>
     </Pressable>
   );
@@ -223,6 +226,7 @@ function HabitationsStep({ onSelect }: { onSelect: (habitation: Habitation) => v
 }
 
 function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect: (piece: Piece) => void }) {
+  const { iconTint } = useEntityTints();
   const { t } = useTranslation();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
   const { data: counts } = useHabitationNodeCounts(habitationId);
@@ -249,7 +253,7 @@ function PiecesStep({ habitationId, onSelect }: { habitationId: string; onSelect
           title={piece.name}
           subtitle={objetCountLabel(t, counts, nodeCountKey('piece', piece.id))}
           photoUri={piece.photo_url}
-          iconColor={shade(piece.color ?? DEFAULT_PIECE_COLOR, 0.45)}
+          iconColor={iconTint(piece.color ?? DEFAULT_PIECE_COLOR)}
           onPress={() => onSelect(piece)}
         />
       ))}

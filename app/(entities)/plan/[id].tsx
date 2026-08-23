@@ -26,9 +26,11 @@ import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanM
 import { PlanTemplatePicker } from '../../../src/features/plans/PlanTemplatePicker';
 import { PlanRoomSheet } from '../../../src/features/plans/PlanRoomSheet';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
+import { useThemeColors } from '../../../src/lib/theme';
 import type { PlanForme } from '../../../src/types/database';
 
 export default function PlanScreen() {
+  const colors = useThemeColors();
   const { id, highlightFormeId, highlightEmplacementId } = useLocalSearchParams<{
     id: string;
     highlightFormeId?: string;
@@ -174,7 +176,7 @@ export default function PlanScreen() {
             qui ouvrait la fiche : une cible large et visible plutôt qu'un
             geste que rien n'annonçait. */}
         {editing && selectedForme ? (
-          <View className="mx-6 mb-2 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-white px-4 py-3">
+          <View className="mx-6 mb-2 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3">
             <Text className="flex-1 text-base font-semibold text-ink" numberOfLines={1}>
               {selectedForme.piece_id
                 ? (pieces ?? []).find((piece) => piece.id === selectedForme.piece_id)?.name ?? t('plans.unassigned_room')
@@ -186,7 +188,7 @@ export default function PlanScreen() {
               accessibilityLabel={t('common.edit')}
               className="h-11 w-11 items-center justify-center rounded-full border border-ink/10 active:opacity-70"
             >
-              <Icon name="pencil" size={18} color="#6B6459" />
+              <Icon name="pencil" size={18} color={colors.inkSoft} />
             </Pressable>
           </View>
         ) : null}

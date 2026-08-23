@@ -23,7 +23,12 @@ module.exports = {
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
-    userInterfaceStyle: 'light',
+    // 'automatic' et non 'light' depuis l'ajout du theme sombre : c'est ce
+    // qui autorise l'app a suivre le reglage du telephone. Cote Android la
+    // valeur n'a d'effet qu'avec expo-system-ui (exigence documentee), donc
+    // seulement a partir du prochain build natif ; l'interrupteur du Profil,
+    // lui, passe par Appearance.setColorScheme et fonctionne des l'OTA.
+    userInterfaceStyle: 'automatic',
     scheme: 'ceou',
     ios: {
       supportsTablet: true,

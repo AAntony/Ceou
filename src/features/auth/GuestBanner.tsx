@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import { supabase } from '../../lib/supabase/client';
 import { useGuestAccessStatus } from './guestAccess';
 import { useIsAnonymous } from './SessionProvider';
+import { useThemeColors } from '../../lib/theme';
 
 /**
  * Vrai quand la personne est un visiteur dont le code ne donne plus rien.
@@ -32,6 +33,7 @@ export function useGuestAccessLost() {
  */
 export function GuestAccessLostCard() {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const { expired, expiresAt } = useGuestAccessLost();
 
   const message = expired
@@ -43,7 +45,7 @@ export function GuestAccessLostCard() {
   return (
     <View className="mb-6 rounded-2xl border border-coral/40 bg-coral-light px-4 py-3">
       <View className="flex-row items-center gap-2">
-        <Icon name="alert" size={18} color="#E2571F" />
+        <Icon name="alert" size={18} color={colors.danger} />
         <Text className="flex-1 text-sm font-semibold text-ink">
           {expired ? t('guest.access_lost.expired_title') : t('guest.access_lost.revoked_title')}
         </Text>

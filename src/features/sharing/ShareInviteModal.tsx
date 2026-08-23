@@ -13,6 +13,7 @@ import { useHabitations } from '../inventory/queries';
 import { defaultReminderDays, scheduleInviteReminder } from '../notifications/inviteReminders';
 import { PermissionPicker } from './PermissionPicker';
 import { expiryInDays, formatInviteQrValue, useCreateShareInvite } from './queries';
+import { useThemeColors } from '../../lib/theme';
 
 type ShareInviteModalProps = {
   visible: boolean;
@@ -27,6 +28,7 @@ type TargetType = 'friend' | 'guest';
 // share_invites/create_share_invite), pas négociée après coup par le
 // destinataire.
 export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
+  const colors = useThemeColors();
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: habitations } = useHabitations();
@@ -149,7 +151,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-6 pt-6"
+      sheetClassName="rounded-t-3xl bg-surface px-6 pt-6"
       sheetStyle={{ maxHeight: '85%' }}
     >
       {step === 'configure' ? (
@@ -195,7 +197,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   className="mb-2 flex-row items-center justify-between rounded-xl border border-ink/10 px-4 py-2.5"
                 >
                   <Text className="text-sm text-ink">{h.name}</Text>
-                  <Icon name={selected ? 'included' : 'excluded'} size={20} color={selected ? '#4CAF50' : '#A39C8F'} />
+                  <Icon name={selected ? 'included' : 'excluded'} size={20} color={selected ? '#4CAF50' : colors.inkFaint} />
                 </Pressable>
               );
             })

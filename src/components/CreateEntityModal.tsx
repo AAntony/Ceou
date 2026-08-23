@@ -55,7 +55,7 @@ export function CreateEntityModal({
     <BottomSheetModal
       visible={visible}
       onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-white px-6 pb-6 pt-6"
+      sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6"
     >
       <ScrollView keyboardShouldPersistTaps="handled">
         <Text className="mb-4 text-xl font-bold text-ink">{title}</Text>

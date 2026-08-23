@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
+import { useThemeColors } from '../lib/theme';
 
 type ButtonProps = PressableProps & {
   label: string;
@@ -17,6 +18,7 @@ type ButtonProps = PressableProps & {
 // (Annuler, etc.) où un vrai bouton serait trop appuyé, ne pas migrer ces
 // usages vers `outline` sans raison.
 export function Button({ label, loading, variant = 'primary', disabled, ...pressableProps }: ButtonProps) {
+  const colors = useThemeColors();
   const isPrimary = variant === 'primary';
   const isOutline = variant === 'outline';
   const isDanger = variant === 'danger';
@@ -40,7 +42,7 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
         className={`items-center justify-center rounded-xl border-2 border-coral bg-coral-light py-3.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
         {...pressableProps}
       >
-        {loading ? <ActivityIndicator color="#0B5E9E" /> : <Text className="text-base font-semibold text-coral-dark">{label}</Text>}
+        {loading ? <ActivityIndicator color={colors.accentDark} /> : <Text className="text-base font-semibold text-coral-dark">{label}</Text>}
       </Pressable>
     );
   }
@@ -54,7 +56,7 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
       {...pressableProps}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? '#fff' : '#2D2A26'} />
+        <ActivityIndicator color={isPrimary ? '#fff' : colors.ink} />
       ) : (
         <Text className={`text-base font-semibold ${isPrimary ? 'text-white' : 'text-ink'}`}>{label}</Text>
       )}
