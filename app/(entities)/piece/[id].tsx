@@ -6,11 +6,13 @@ import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { PieceEmplacements } from '../../../src/features/inventory/PieceEmplacements';
 import { usePiece } from '../../../src/features/inventory/queries';
+import { canModify, usePiecePermission } from '../../../src/features/sharing/queries';
 
 export default function PieceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { data: piece, isLoading, isError, refetch } = usePiece(id);
+  const { data: permission } = usePiecePermission(id);
   const [addSignal, setAddSignal] = useState(0);
 
 
@@ -35,9 +37,10 @@ export default function PieceScreen() {
       <Stack.Screen
         options={{
           title: piece.name,
-          headerRight: () => (
-            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('inventory.emplacements.add')} />
-          ),
+          headerRight: () =>
+            canModify(permission) ? (
+              <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('inventory.emplacements.add')} />
+            ) : null,
         }}
       />
       <PieceEmplacements pieceId={piece.id} addSignal={addSignal} />

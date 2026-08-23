@@ -8,6 +8,7 @@ import { EntityCard } from '../../components/EntityCard';
 import { EntityGrid } from '../../components/EntityGrid';
 import { ErrorState } from '../../components/ErrorState';
 import { confirmDelete } from '../../lib/confirmDelete';
+import { canModify, useHabitationPermission } from '../sharing/queries';
 import type { Plan } from '../../types/database';
 import { useCreatePlan, useDeletePlan, usePlans, useUpdatePlan } from './queries';
 
@@ -22,6 +23,10 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
   const createPlan = useCreatePlan(habitationId);
   const updatePlan = useUpdatePlan(habitationId);
   const deletePlan = useDeletePlan(habitationId);
+  // Un plan se renomme et se supprime comme le reste de l'inventaire : les
+  // gestes qui ecrivent suivent le meme droit que partout ailleurs.
+  const { data: permission } = useHabitationPermission(habitationId);
+  const editable = canModify(permission);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [name, setName] = useState('');
@@ -62,12 +67,16 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
                 icon="plan"
                 title={plan.name}
                 onPress={() => router.push(`/plan/${plan.id}`)}
-                onLongPress={() => handleDelete(plan.id)}
-                onEdit={() => {
-                  setEditingPlan(plan);
-                  setName(plan.name);
-                  setModalOpen(true);
-                }}
+                onLongPress={editable ? () => handleDelete(plan.id) : undefined}
+                onEdit={
+                  editable
+                    ? () => {
+                        setEditingPlan(plan);
+                        setName(plan.name);
+                        setModalOpen(true);
+                      }
+                    : undefined
+                }
               />
             ))}
           </EntityGrid>

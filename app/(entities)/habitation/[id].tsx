@@ -10,6 +10,7 @@ import { PieceEmplacements } from '../../../src/features/inventory/PieceEmplacem
 import { PieceList } from '../../../src/features/inventory/PieceList';
 import { useHabitation, usePieces } from '../../../src/features/inventory/queries';
 import { PlansList } from '../../../src/features/plans/PlansList';
+import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 
 type Tab = 'contenu' | 'plans';
 
@@ -30,6 +31,7 @@ export default function HabitationScreen() {
   const { data: habitation, isLoading, isError, refetch } = useHabitation(id);
   const singleSpace = habitation ? isSingleSpaceHabitation(habitation.type) : false;
   const { data: pieces } = usePieces(id);
+  const { data: permission } = useHabitationPermission(id);
   const [tab, setTab] = useState<Tab>('contenu');
   const [addSignal, setAddSignal] = useState(0);
 
@@ -65,7 +67,15 @@ export default function HabitationScreen() {
       <Stack.Screen
         options={{
           title: habitation.name,
-          headerRight: () => <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={addLabel} />,
+          // Sans ce garde-fou, une Habitation consultee en lecture seule
+          // (invite, ou ami en Consultation) affichait un "+" qui ouvrait un
+          // formulaire dont l'enregistrement etait de toute facon refuse par
+          // la RLS. Le droit se lit ici, pas le statut d'invite : c'est le
+          // meme defaut pour les deux.
+          headerRight: () =>
+            canModify(permission) ? (
+              <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={addLabel} />
+            ) : null,
         }}
       />
       <View className="flex-1 bg-sand">

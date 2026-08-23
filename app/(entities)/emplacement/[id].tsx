@@ -6,11 +6,13 @@ import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { ContainerContents } from '../../../src/features/inventory/ContainerContents';
 import { useEmplacement } from '../../../src/features/inventory/queries';
+import { canModify, useLocationPermission } from '../../../src/features/sharing/queries';
 
 export default function EmplacementScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
   const { data: emplacement, isLoading, isError, refetch } = useEmplacement(id);
+  const { data: permission } = useLocationPermission('emplacement', id);
   const [addSignal, setAddSignal] = useState(0);
 
 
@@ -35,9 +37,10 @@ export default function EmplacementScreen() {
       <Stack.Screen
         options={{
           title: emplacement.name,
-          headerRight: () => (
-            <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('common.add')} />
-          ),
+          headerRight: () =>
+            canModify(permission) ? (
+              <HeaderAddButton onPress={() => setAddSignal((n) => n + 1)} label={t('common.add')} />
+            ) : null,
         }}
       />
       <ContainerContents parentType="emplacement" parentId={emplacement.id} addSignal={addSignal} />
