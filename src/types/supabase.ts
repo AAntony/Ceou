@@ -927,10 +927,7 @@ export type Database = {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
       }
-      my_guest_access_status: {
-        Args: never
-        Returns: Json
-      }
+      my_guest_access_status: { Args: never; Returns: Json }
       objet_location_chain: {
         Args: { p_objet_id: string }
         Returns: {
