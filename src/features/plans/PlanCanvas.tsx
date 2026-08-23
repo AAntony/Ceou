@@ -1,10 +1,10 @@
-import { Canvas, matchFont, Rect, Text as SkiaText, type SkFont } from '@shopify/react-native-skia';
+import { Canvas, Line, matchFont, Rect, Text as SkiaText, vec, type SkFont } from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
-import type { PlanForme, PlanPin } from '../../types/database';
+import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
 import {
   HIGHLIGHT_GREEN_BORDER,
   MAX_ZOOM,
@@ -16,7 +16,10 @@ import {
   WORLD_HEIGHT,
   WORLD_WIDTH,
 } from './constants';
+import { DoorLayer } from './DoorLayer';
 import { PlanPinLayer } from './PlanPinLayer';
+import { wallSegments } from './walls';
+import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
 import { useThemeColors } from '../../lib/theme';
@@ -90,6 +93,7 @@ type PlanCanvasProps = {
   pieceInfo: Record<string, { name: string; color: string | null }>;
   pins: PlanPin[];
   pinDisplay: Record<string, { name: string; icon: IconName }>;
+  doors: PlanDoor[];
   highlightFormeId?: string | null;
   highlightEmplacementId?: string | null;
   selectedFormeId: string | null;
@@ -99,6 +103,10 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
+  /** Appui sur un mur de la pièce sélectionnée : une ouverture y est percée. */
+  onDoorCreate: (formeId: string, edge: DoorEdge, position: number) => void;
+  onDoorDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
+  onDoorTap: (door: PlanDoor) => void;
   /** Nombre d'objets par Pièce — une pièce qui n'annonce pas son contenu ne
    *  répond pas à la question que le plan est censé aider à résoudre. */
   roomCounts?: Record<string, number>;
@@ -125,6 +133,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     pieceInfo,
     pins,
     pinDisplay,
+    doors,
     highlightFormeId,
     highlightEmplacementId,
     selectedFormeId,
@@ -134,6 +143,9 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDeselect,
     onPinDragEnd,
     onPinTap,
+    onDoorCreate,
+    onDoorDragEnd,
+    onDoorTap,
     roomCounts,
     readOnly = false,
   },
@@ -441,6 +453,12 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // — c est un attribut de la Piece, pas du Plan). Une forme non associee n a
   // pas de Piece dont heriter : elle garde son repli par hash pour rester
   // visuellement distincte de ses voisines.
+  const doorsByForme = useMemo(() => {
+    const map: Record<string, PlanDoor[]> = {};
+    for (const door of doors) (map[door.forme_id] ??= []).push(door);
+    return map;
+  }, [doors]);
+
   const roomVisuals = useMemo(
     () =>
       sortedFormes.map((forme) => {
@@ -453,9 +471,17 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           count: forme.piece_id ? (roomCounts?.[forme.piece_id] ?? null) : null,
           selected: forme.id === selectedFormeId,
           highlighted: forme.id === highlightFormeId,
+          // Le mur n'est plus un rectangle mais une suite de segments : les
+          // portes de cette pièce y sont des trous.
+          walls: wallSegments(
+            geoById[forme.id],
+            // La colonne est un `text` contraint par un CHECK a quatre
+            // valeurs : le type genere, lui, ne connait que `string`.
+            (doorsByForme[forme.id] ?? []).map((door) => ({ edge: door.edge as DoorEdge, position: door.position })),
+          ),
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorsByForme],
   );
 
   return (
@@ -522,19 +548,21 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 />
               ))}
 
-              {/* Passe 2 — les murs */}
-              {roomVisuals.map((room) => (
-                <Rect
-                  key={`wall-${room.id}`}
-                  x={room.geo.x}
-                  y={room.geo.y}
-                  width={room.geo.width}
-                  height={room.geo.height}
-                  color={WALL_COLOR}
-                  style="stroke"
-                  strokeWidth={WALL_WIDTH}
-                />
-              ))}
+              {/* Passe 2 — les murs, percés de leurs portes. Une suite de
+                  segments et non plus un rectangle : c'est l'interruption du
+                  trait qui FAIT la porte. */}
+              {roomVisuals.map((room) =>
+                room.walls.map((wall, index) => (
+                  <Line
+                    key={`wall-${room.id}-${index}`}
+                    p1={vec(wall.x1, wall.y1)}
+                    p2={vec(wall.x2, wall.y2)}
+                    color={WALL_COLOR}
+                    style="stroke"
+                    strokeWidth={WALL_WIDTH}
+                  />
+                )),
+              )}
 
               {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
                   murs pour ne jamais être coupées par la voisine. */}
@@ -601,6 +629,21 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   />
                 ))
               : null}
+
+            {/* Après ShapeBody (appuyer sur un mur perce une porte plutôt
+                que de resélectionner la pièce) mais AVANT les poignées de
+                redimensionnement, qui gardent la priorité aux coins et au
+                milieu de chaque mur. */}
+            <DoorLayer
+              doors={doors}
+              formeGeo={geoById}
+              selectedFormeId={selectedFormeId}
+              scale={zoom.scale}
+              readOnly={readOnly}
+              onCreate={onDoorCreate}
+              onDragEnd={onDoorDragEnd}
+              onTap={onDoorTap}
+            />
 
             <PlanPinLayer
               pins={pins}

@@ -49,6 +49,11 @@ export const MAX_ZOOM = 3;
 export const WALL_COLOR = '#2D2A26';
 export const WALL_WIDTH = 4;
 
+// Largeur d'une ouverture, en unites de la feuille (une piece courante fait
+// 120 a 260 de large). Fixe pour toutes les portes : la regler ne dirait
+// rien de plus sur l'endroit ou l'on passe.
+export const DOOR_WIDTH = 44;
+
 // La couleur de la piece passe en TEINTE plutot qu'en aplat : c'est la
 // structure (les murs) qui porte le contraste, la couleur ne sert plus qu'a
 // distinguer les pieces entre elles.

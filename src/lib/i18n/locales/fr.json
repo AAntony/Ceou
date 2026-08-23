@@ -487,7 +487,7 @@
     "name_label": "Nom",
     "delete_confirm_title": "Supprimer ce plan ?",
     "delete_confirm_message": "Toutes les formes qu'il contient seront supprimées.",
-    "canvas_hint": "Appuie sur une pièce pour la sélectionner : glisse la pièce pour la déplacer, les points pour la redimensionner. Double-appuie pour l'associer à une pièce. Pince pour zoomer, glisse pour te déplacer sur le plan. Double-appuie sur une zone vide pour tout recentrer.",
+    "canvas_hint": "Appuie sur une pièce pour la sélectionner : glisse la pièce pour la déplacer, les points pour la redimensionner. Double-appuie pour l'associer à une pièce. Pince pour zoomer, glisse pour te déplacer sur le plan. Double-appuie sur une zone vide pour tout recentrer. Appuie sur un mur de la pièce sélectionnée pour y percer une porte.",
     "add_room": "Ajouter une pièce",
     "unplaced_title": "Emplacements à placer dans cette pièce",
     "shape": {
@@ -495,6 +495,10 @@
       "piece_label": "Pièce associée",
       "no_piece": "Aucune",
       "color_label": "Couleur"
+    },
+    "doors": {
+      "delete_confirm_title": "Retirer cette porte ?",
+      "delete_confirm_message": "Le mur sera refermé à cet endroit."
     },
     "pins": {
       "remove": "Retirer du plan"

@@ -542,6 +542,48 @@ export type Database = {
           },
         ]
       }
+      plan_doors: {
+        Row: {
+          created_at: string
+          edge: string
+          forme_id: string
+          id: string
+          plan_id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          edge?: string
+          forme_id: string
+          id?: string
+          plan_id: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          edge?: string
+          forme_id?: string
+          id?: string
+          plan_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_doors_forme_id_fkey"
+            columns: ["forme_id"]
+            isOneToOne: false
+            referencedRelation: "plan_formes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_doors_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_pins: {
         Row: {
           created_at: string

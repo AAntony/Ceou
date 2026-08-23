@@ -487,7 +487,7 @@
     "name_label": "Name",
     "delete_confirm_title": "Delete this plan?",
     "delete_confirm_message": "All the shapes it contains will be deleted.",
-    "canvas_hint": "Tap a room to select it: drag the room to move it, the dots to resize it. Double-tap to link it to a room. Pinch to zoom, drag to pan the plan. Double-tap an empty spot to fit the whole plan back in view.",
+    "canvas_hint": "Tap a room to select it: drag the room to move it, the dots to resize it. Double-tap to link it to a room. Pinch to zoom, drag to pan the plan. Double-tap an empty spot to fit the whole plan back in view. Tap a wall of the selected room to open a door in it.",
     "add_room": "Add a room",
     "unplaced_title": "Spots to place in this room",
     "shape": {
@@ -495,6 +495,10 @@
       "piece_label": "Linked room",
       "no_piece": "None",
       "color_label": "Color"
+    },
+    "doors": {
+      "delete_confirm_title": "Remove this door?",
+      "delete_confirm_message": "The wall will close back at that spot."
     },
     "pins": {
       "remove": "Remove from plan"

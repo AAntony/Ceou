@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import { clampPositionToWorld } from './snap';
-import type { Plan, PlanForme, PlanPin } from '../../types/database';
+import type { Plan, PlanDoor, PlanForme, PlanPin } from '../../types/database';
+import type { DoorEdge } from './types';
 import { DEFAULT_SHAPE_SIZE, WORLD_HEIGHT, WORLD_WIDTH, type PlanShapeType } from './constants';
 
 export function usePlans(habitationId: string) {
@@ -258,5 +259,54 @@ export function useApplyPlanTemplate(planId: string) {
       queryClient.invalidateQueries({ queryKey: ['pieces'] });
       queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
     },
+  });
+}
+
+// === Portes ===============================================================
+// Une porte est une interruption du mur, pas un objet posé dessus (cf. la
+// migration 20260823170000). Les hooks sont calqués sur ceux des pastilles :
+// même cycle de vie, même clé par plan.
+
+export function usePlanDoors(planId: string) {
+  return useQuery({
+    queryKey: ['planDoors', planId],
+    queryFn: () => selectMany<PlanDoor>('plan_doors', { column: 'plan_id', value: planId }),
+  });
+}
+
+export function useCreatePlanDoor(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { formeId: string; edge: DoorEdge; position: number }): Promise<PlanDoor> => {
+      const { data, error } = await supabase
+        .from('plan_doors')
+        .insert({ plan_id: planId, forme_id: input.formeId, edge: input.edge, position: input.position })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
+  });
+}
+
+export function useUpdatePlanDoor(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { id: string; edge: DoorEdge; position: number }) => {
+      const { error } = await supabase.from('plan_doors').update({ edge: input.edge, position: input.position }).eq('id', input.id);
+      if (error) throw error;
+    },
+    // Glisser une porte le long de son mur ne change rien hors de ce plan.
+    meta: { skipGlobalRefresh: true },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
+  });
+}
+
+export function useDeletePlanDoor(planId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteRow('plan_doors', id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planDoors', planId] }),
   });
 }

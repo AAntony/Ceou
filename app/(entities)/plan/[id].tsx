@@ -17,7 +17,11 @@ import {
   usePlan,
   usePlanFormes,
   usePieceObjectCounts,
+  useCreatePlanDoor,
+  useDeletePlanDoor,
+  usePlanDoors,
   usePlanPins,
+  useUpdatePlanDoor,
   useUpdatePlanForme,
   useUpdatePlanPin,
 } from '../../../src/features/plans/queries';
@@ -28,6 +32,7 @@ import { PlanRoomSheet } from '../../../src/features/plans/PlanRoomSheet';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { useThemeColors } from '../../../src/lib/theme';
 import type { PlanForme } from '../../../src/types/database';
+import { confirmDelete } from '../../../src/lib/confirmDelete';
 
 export default function PlanScreen() {
   const colors = useThemeColors();
@@ -41,6 +46,7 @@ export default function PlanScreen() {
   const { data: formes } = usePlanFormes(id);
   const { data: pieces } = usePieces(plan?.habitation_id ?? '');
   const { data: pins } = usePlanPins(id);
+  const { data: doors } = usePlanDoors(id);
   const { data: roomCounts } = usePieceObjectCounts(plan?.habitation_id ?? undefined);
   const createForme = useCreatePlanForme(id);
   const updateForme = useUpdatePlanForme(id);
@@ -48,6 +54,9 @@ export default function PlanScreen() {
   const createPin = useCreatePlanPin(id);
   const updatePin = useUpdatePlanPin(id);
   const deletePin = useDeletePlanPin(id);
+  const createDoor = useCreatePlanDoor(id);
+  const updateDoor = useUpdatePlanDoor(id);
+  const deleteDoor = useDeletePlanDoor(id);
   const updatePiece = useUpdatePiece(plan?.habitation_id ?? '');
 
   // sheetForme pilote la fiche (choix de pièce / suppression) ; selectedFormeId
@@ -218,6 +227,16 @@ export default function PlanScreen() {
             onDeselect={() => setSelectedFormeId(null)}
             onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
             onPinTap={(pin) => setSheetPinId(pin.id)}
+            doors={doors ?? []}
+            onDoorCreate={(formeId, edge, position) => createDoor.mutate({ formeId, edge, position })}
+            onDoorDragEnd={(doorId, edge, position) => updateDoor.mutate({ id: doorId, edge, position })}
+            // Appuyer sur une porte la retire, après confirmation : elle n'a
+            // aucun réglage, donc rien d'autre à proposer dans une fiche.
+            onDoorTap={(door) =>
+              confirmDelete(t, 'plans.doors.delete_confirm_title', 'plans.doors.delete_confirm_message', () =>
+                deleteDoor.mutate(door.id),
+              )
+            }
           />
         </View>
       </View>
