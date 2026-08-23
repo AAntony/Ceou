@@ -173,10 +173,19 @@ export function usePlanPins(planId: string) {
 export function useCreatePlanPin(planId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { formeId: string; emplacementId: string }): Promise<PlanPin> => {
+    // relX/relY viennent de l'appelant (nextPinSlot) : sans ça toutes les
+    // puces d'une même pièce atterrissaient au même point, empilées les unes
+    // sur les autres et sur le nom de la pièce.
+    mutationFn: async (input: { formeId: string; emplacementId: string; relX: number; relY: number }): Promise<PlanPin> => {
       const { data, error } = await supabase
         .from('plan_pins')
-        .insert({ plan_id: planId, forme_id: input.formeId, emplacement_id: input.emplacementId, rel_x: 0.5, rel_y: 0.5 })
+        .insert({
+          plan_id: planId,
+          forme_id: input.formeId,
+          emplacement_id: input.emplacementId,
+          rel_x: input.relX,
+          rel_y: input.relY,
+        })
         .select()
         .single();
       if (error) throw error;
