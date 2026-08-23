@@ -53,7 +53,12 @@ export function useFriendCategoryMembers() {
   });
 }
 
-/** Nombre d'habitations partagées avec chaque ami, dans les deux sens. */
+/**
+ * Nombre d'habitations que J'AI ouvertes à chaque ami — pas ce qu'il m'a
+ * ouvert en retour. La phrase se lit sous SON nom, donc elle doit parler de
+ * ce que j'ai exposé ; ce qu'il me partage se consulte dans sa fiche
+ * (« Partagé avec moi ») et dans l'onglet Partagées des Habitations.
+ */
 export function useFriendSharedHabitationCounts() {
   const { session } = useSession();
   return useQuery({

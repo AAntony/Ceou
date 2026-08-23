@@ -72,7 +72,7 @@ export default function FriendsScreen() {
   const sections = buildFriendSections(accepted, categories ?? [], membership ?? new Map());
 
   // Le zéro est traité à part : le français range 0 avec le singulier, donc
-  // une pluralisation seule afficherait « 1 habitation partagée ».
+  // une pluralisation seule afficherait « Vous partagez 1 habitation ».
   const sharedLabel = (friendUserId: string) => {
     if (!sharedCounts) return undefined;
     const count = sharedCounts.get(friendUserId) ?? 0;

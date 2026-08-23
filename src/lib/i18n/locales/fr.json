@@ -255,9 +255,9 @@
       "share_message_guest": "Je te partage un accès à mon logement sur Céoù. Ouvre ce lien : {{url}} (code : {{code}})"
     },
     "unfiled": "Sans catégorie",
-    "shared_count_zero": "Aucune habitation partagée",
-    "shared_count_one": "1 habitation partagée",
-    "shared_count_other": "{{count}} habitations partagées",
+    "shared_count_zero": "Vous ne partagez aucune habitation",
+    "shared_count_one": "Vous partagez 1 habitation",
+    "shared_count_other": "Vous partagez {{count}} habitations",
     "categories": {
       "new": "Nouvelle catégorie",
       "create_title": "Nouvelle catégorie",

@@ -255,9 +255,9 @@
       "share_message_guest": "I am sharing access to my place on Ceou. Open this link: {{url}} (code: {{code}})"
     },
     "unfiled": "Uncategorised",
-    "shared_count_zero": "No shared home",
-    "shared_count_one": "1 shared home",
-    "shared_count_other": "{{count}} shared homes",
+    "shared_count_zero": "You share no home",
+    "shared_count_one": "You share 1 home",
+    "shared_count_other": "You share {{count}} homes",
     "categories": {
       "new": "New category",
       "create_title": "New category",
