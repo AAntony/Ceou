@@ -931,6 +931,7 @@ export type Database = {
         Args: { p_objet_id: string }
         Returns: {
           id: string
+          is_default: boolean
           kind: string
           name: string
           preset_key: string
