@@ -100,6 +100,8 @@
     "description": "Saisis le code que ton hôte t’a transmis. Pas besoin de créer de compte : tu accèdes directement à ce qu’il a partagé.",
     "code_label": "Code",
     "submit": "Entrer",
+    "or": "ou",
+    "scan": "Scanner un QR",
     "joining": "Ouverture de l’accès…",
     "no_account_note": "Tu entres en consultation seule : tu peux tout parcourir, mais rien modifier ni ajouter.",
     "back_to_login": "J’ai déjà un compte",
@@ -109,7 +111,8 @@
       "expired": "Ce code a expiré. Demande-en un nouveau à ton hôte.",
       "exhausted": "Ce code a atteint son nombre maximum d’utilisations.",
       "own_invite": "C’est ton propre code.",
-      "friend_code": "Ce code est une invitation entre amis : il demande un compte. Crée-en un pour l’utiliser."
+      "friend_code": "Ce code est une invitation entre amis : il demande un compte. Crée-en un pour l’utiliser.",
+      "invalid_qr": "Ce QR ne correspond à aucune invitation Céoù."
     },
     "access_lost": {
       "expired_title": "Ton accès a expiré",
@@ -213,6 +216,7 @@
       "error_own_invite": "Tu ne peux pas utiliser ta propre invitation.",
       "error_invite_exhausted": "Ce code a atteint son nombre maximum d’utilisations."
     },
+    "scan_permission_message": "Autorise l’accès à l’appareil photo pour scanner un QR code.",
     "scan_hint": "Vise le QR code",
     "requests": {
       "incoming_title": "Demandes reçues",

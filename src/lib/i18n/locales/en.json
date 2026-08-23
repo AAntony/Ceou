@@ -100,6 +100,8 @@
     "description": "Enter the code your host gave you. No account needed: you go straight to what they shared.",
     "code_label": "Code",
     "submit": "Enter",
+    "or": "or",
+    "scan": "Scan a QR code",
     "joining": "Opening access…",
     "no_account_note": "You enter in view-only mode: you can browse everything, but change nothing.",
     "back_to_login": "I already have an account",
@@ -109,7 +111,8 @@
       "expired": "This code has expired. Ask your host for a new one.",
       "exhausted": "This code has reached its maximum number of uses.",
       "own_invite": "This is your own code.",
-      "friend_code": "This code is a friend invitation: it requires an account. Create one to use it."
+      "friend_code": "This code is a friend invitation: it requires an account. Create one to use it.",
+      "invalid_qr": "This QR does not match any Ceou invitation."
     },
     "access_lost": {
       "expired_title": "Your access has expired",
@@ -213,6 +216,7 @@
       "error_own_invite": "You can't use your own invite.",
       "error_invite_exhausted": "This code has reached its maximum number of uses."
     },
+    "scan_permission_message": "Allow camera access to scan a QR code.",
     "scan_hint": "Point at the QR code",
     "requests": {
       "incoming_title": "Received requests",

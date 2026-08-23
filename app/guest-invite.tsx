@@ -6,6 +6,8 @@ import { Button } from '../src/components/Button';
 import { TextField } from '../src/components/TextField';
 import { TextLink } from '../src/components/TextLink';
 import { redeemInviteAsGuest } from '../src/features/auth/guestAccess';
+import { parseScannedCode } from '../src/features/sharing/queries';
+import { QrScanner } from '../src/features/sharing/QrScanner';
 import { rpcErrorCode } from '../src/features/sharing/rpcError';
 
 // Entrée d'un visiteur par code d'invitation.
@@ -33,6 +35,7 @@ export default function GuestInviteScreen() {
   const [code, setCode] = useState(params.code ?? '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
 
   // Une tentative automatique et une seule : sans ce garde, un échec
   // relancerait l'essai à chaque rendu, en boucle.
@@ -62,6 +65,22 @@ export default function GuestInviteScreen() {
     },
     [t],
   );
+
+  // Le QR d'une invitation encode une URL web (voir formatInviteQrValue) :
+  // l'appareil photo natif de quelqu'un qui n'a pas encore l'app doit
+  // pouvoir en faire quelque chose. Le scanner integre lit la meme valeur,
+  // parseScannedCode se charge des trois formes possibles.
+  const handleScanned = (raw: string) => {
+    setScannerVisible(false);
+    const parsed = parseScannedCode(raw);
+    // Un code AMI scanne ici ne mene nulle part : il demande un compte, et
+    // c'est justement ce que cet ecran permet d'eviter. Le dire plutot que
+    // de laisser le serveur refuser avec un message plus obscur.
+    if (parsed.type === 'friend') return setError(t('guest.errors.friend_code'));
+    if (parsed.type !== 'invite') return setError(t('guest.errors.invalid_qr'));
+    setCode(parsed.code);
+    void enter(parsed.code);
+  };
 
   useEffect(() => {
     if (autoAttempted.current || !params.code) return;
@@ -104,6 +123,14 @@ export default function GuestInviteScreen() {
 
           <Button label={t('guest.submit')} onPress={() => enter(code)} loading={loading} disabled={!code.trim()} />
 
+          <View className="my-4 flex-row items-center gap-3">
+            <View className="h-px flex-1 bg-ink/10" />
+            <Text className="text-xs text-ink-soft">{t('guest.or')}</Text>
+            <View className="h-px flex-1 bg-ink/10" />
+          </View>
+
+          <Button label={t('guest.scan')} variant="ghost" onPress={() => setScannerVisible(true)} />
+
           <Text className="mt-6 text-center text-xs leading-4 text-ink-soft">{t('guest.no_account_note')}</Text>
 
           <TextLink
@@ -114,6 +141,7 @@ export default function GuestInviteScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+      <QrScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScanned={handleScanned} />
     </>
   );
 }

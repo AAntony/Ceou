@@ -35,7 +35,7 @@ export function QrScanner({ visible, onClose, onScanned }: QrScannerProps) {
       <View className="flex-1 bg-black">
         {!permission ? null : !permission.granted ? (
           <View className="flex-1 items-center justify-center px-8">
-            <Text className="mb-4 text-center text-base text-white">{t('inventory.objet.scan_permission_message')}</Text>
+            <Text className="mb-4 text-center text-base text-white">{t('friends.scan_permission_message')}</Text>
             <Button label={t('inventory.objet.scan_permission_grant')} onPress={requestPermission} />
             <TextLink onPress={onClose} label={t('common.cancel')} className="mt-4 items-center px-4" textClassName="text-white" />
           </View>
