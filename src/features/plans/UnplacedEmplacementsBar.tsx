@@ -12,14 +12,14 @@ type UnplacedEmplacementsBarProps = {
   onPlace: (emplacementId: string) => void;
 };
 
-// Bloc dans le flux normal de l'écran (au-dessus du plan, sous le rappel des
-// gestes — voir plan/[id].tsx), plus une superposition flottante sur le plan
-// comme dans les versions précédentes : ne mange plus d'espace de
-// visualisation du plan lui-même, et la pleine largeur d'écran laisse enfin
-// la place pour le nom de chaque Emplacement, pas seulement son icône.
-// Rangée horizontale (pas une grille) : une seule ligne compacte, qui
-// défile s'il y a plus d'Emplacements que de place visible, plutôt que de
-// repousser le plan vers le bas à chaque fois qu'elle s'agrandirait.
+// Carte flottante posée sur le plan, juste au-dessus de la barre d'outils,
+// et non plus un bloc dans le flux de l'écran : elle apparaît/disparaît selon
+// la pièce sélectionnée, et dans le flux ce va-et-vient faisait sauter le
+// plan vers le bas à chaque sélection. Sur le plan, elle ne coûte plus aucune
+// hauteur.
+//
+// Rangée horizontale (pas une grille) : une seule ligne compacte, qui défile
+// s'il y a plus d'Emplacements que de place visible.
 export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmplacementsBarProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
@@ -31,14 +31,14 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
   if (unplaced.length === 0) return null;
 
   return (
-    <View className="px-6 pb-3">
-      <Text className="mb-2 text-xs font-medium text-ink-soft">{t('plans.unplaced_title')}</Text>
+    <View className="rounded-2xl border border-ink/10 bg-surface/95 px-3 py-2">
+      <Text className="mb-1.5 text-xs font-medium text-ink-soft">{t('plans.unplaced_title')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
         {unplaced.map((e) => (
           <Pressable
             key={e.id}
             onPress={() => onPlace(e.id)}
-            className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-surface px-3 py-1.5 active:opacity-70"
+            className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-sand px-3 py-1.5 active:opacity-70"
           >
             <IconBadge icon={getEmplacementIcon(e.preset_key)} fill={colors.sandDark} size={26} />
             <Text numberOfLines={1} className="text-sm font-medium text-ink">

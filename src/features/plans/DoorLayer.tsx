@@ -49,6 +49,9 @@ type DoorLayerProps = {
   scale: number;
   readOnly?: boolean;
   onCreate: (formeId: string, edge: DoorEdge, position: number) => void;
+  /** Où tomberait l'ouverture si le doigt se levait maintenant — `null` dès
+   *  qu'il quitte le mur. Le dessin, lui, est dans le canevas Skia. */
+  onPreview: (preview: { formeId: string; edge: DoorEdge; position: number } | null) => void;
   onSelect: (door: PlanDoor) => void;
   onDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
 };
@@ -78,6 +81,7 @@ export function DoorLayer({
   scale,
   readOnly,
   onCreate,
+  onPreview,
   onSelect,
   onDragEnd,
 }: DoorLayerProps) {
@@ -106,6 +110,7 @@ export function DoorLayer({
                 geo={geo}
                 thickness={stripThickness(geo)}
                 onCreate={(position) => onCreate(formeId, edge, position)}
+                onPreview={(position) => onPreview(position === null ? null : { formeId, edge, position })}
               />
             )),
           )
@@ -137,17 +142,27 @@ export function DoorLayer({
   );
 }
 
-/** Bande posée sur un mur pendant la pose : y appuyer perce une ouverture. */
+/**
+ * Bande posée sur un mur pendant la pose : y appuyer perce une ouverture.
+ *
+ * Le doigt est suivi tant qu'il reste posé (Pan à distance nulle) et
+ * l'ouverture est annoncée en pointillé sous lui avant d'être créée au
+ * relâché — on ne pose plus à l'aveugle. Le tap reste en second recours
+ * (Exclusive) pour l'appui parfaitement immobile, qui n'active pas toujours
+ * un Pan ; l'un OU l'autre aboutit, jamais les deux.
+ */
 function WallStrip({
   edge,
   geo,
   thickness,
   onCreate,
+  onPreview,
 }: {
   edge: DoorEdge;
   geo: ShapeGeometry;
   thickness: number;
   onCreate: (position: number) => void;
+  onPreview: (position: number | null) => void;
 }) {
   const horizontal = edge === 'n' || edge === 's';
   const length = horizontal ? geo.width : geo.height;
@@ -155,15 +170,26 @@ function WallStrip({
   // `event.x/y` est relatif à CETTE vue, donc directement la distance
   // parcourue le long du mur — pas besoin de repasser par le repère de la
   // feuille.
+  const positionAt = (x: number, y: number) => clampDoorPosition(clamp((horizontal ? x : y) / length, 0, 1), length);
+
+  const pan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
+    .minDistance(0)
+    .runOnJS(true)
+    .onBegin((event) => onPreview(positionAt(event.x, event.y)))
+    .onUpdate((event) => onPreview(positionAt(event.x, event.y)))
+    .onEnd((event) => onCreate(positionAt(event.x, event.y)))
+    .onFinalize(() => onPreview(null));
+
   const tap = Gesture.Tap()
     .runOnJS(true)
-    .onEnd((event) => {
-      const along = horizontal ? event.x : event.y;
-      onCreate(clampDoorPosition(clamp(along / length, 0, 1), length));
-    });
+    .onBegin((event) => onPreview(positionAt(event.x, event.y)))
+    .onEnd((event) => onCreate(positionAt(event.x, event.y)))
+    .onFinalize(() => onPreview(null));
 
   return (
-    <GestureDetector gesture={tap}>
+    <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
       <View
         style={{
           position: 'absolute',

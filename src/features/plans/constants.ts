@@ -47,7 +47,29 @@ export const MAX_ZOOM = 3;
 // pieces accolees posent leur trait exactement au meme endroit : les deux se
 // superposent et se lisent comme un mur unique.
 export const WALL_COLOR = '#2D2A26';
-export const WALL_WIDTH = 4;
+
+// DEUX epaisseurs, et c'est la convention des plans d'architecte : le mur qui
+// ferme le logement est porteur, on le trace epais ; une cloison entre deux
+// pieces est fine. Le contour du logement se detache alors d'un coup d'oeil et
+// les refends passent au second plan -- exactement ce qu'un plan doit donner a
+// lire en premier.
+//
+// Le classement n'est PAS saisi par l'utilisateur, il se DEDUIT : un pan de mur
+// qui longe le mur d'une voisine est une cloison, tout le reste ferme le
+// logement (voir wallSegments dans walls.ts).
+export const WALL_WIDTH = 5;
+export const WALL_WIDTH_INNER = 2;
+
+// Le tableau d'une porte : les deux petits traits perpendiculaires aux
+// extremites de l'ouverture. Sans eux, un trou dans une cloison fine ne se lit
+// plus comme une porte mais comme un mur mal ferme -- c'est ce qui rend
+// l'ouverture lisible maintenant que les cloisons ne font plus que 2.
+//
+// C'est le DEBORD de part et d'autre des faces du mur : la longueur totale du
+// trait suit donc l'epaisseur du mur perce, sans quoi le meme tableau
+// paraitrait demesure sur une cloison et timide sur une facade.
+export const DOOR_JAMB_LENGTH = 2.5;
+export const DOOR_JAMB_WIDTH = 1.8;
 
 // Largeur d'une ouverture, en unites de la feuille (une piece courante fait
 // 120 a 260 de large). Fixe pour toutes les portes : la regler ne dirait

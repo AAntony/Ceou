@@ -1,4 +1,13 @@
-import { Canvas, Line, matchFont, Rect, Text as SkiaText, vec, type SkFont } from '@shopify/react-native-skia';
+import {
+  Canvas,
+  DashPathEffect,
+  Line,
+  matchFont,
+  Rect,
+  Text as SkiaText,
+  vec,
+  type SkFont,
+} from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -6,6 +15,7 @@ import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
 import {
+  DOOR_JAMB_WIDTH,
   HIGHLIGHT_GREEN_BORDER,
   MAX_ZOOM,
   MIN_ZOOM,
@@ -18,13 +28,19 @@ import {
 } from './constants';
 import { DoorLayer } from './DoorLayer';
 import { PlanPinLayer } from './PlanPinLayer';
-import { doorSpan, wallSegments } from './walls';
+import { doorJambs, doorSpan, wallSegments, wallWidth } from './walls';
 import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
 import { useThemeColors } from '../../lib/theme';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+
+// Le bleu d'action de l'app. Constante ici plutôt que via le thème : ces
+// traits se posent sur la feuille du plan, qui garde le même fond clair dans
+// les deux thèmes — une couleur qui s'adapterait au thème perdrait justement
+// son contraste sur cette feuille.
+const ACCENT = '#1591EA';
 
 function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
   const cx = geo.x + geo.width / 2;
@@ -127,6 +143,10 @@ type PlanCanvasProps = {
 // chaque frame juste pour ce besoin ponctuel.
 export type PlanCanvasHandle = {
   getViewportCenter: () => { x: number; y: number };
+  /** « Tout revoir » : cadre toutes les pièces posées. Le double-appui sur
+   *  une zone vide fait la même chose, mais rien ne l'annonce — d'où le
+   *  bouton flottant de l'écran, qui appelle ceci. */
+  recenter: () => void;
 };
 
 export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function PlanCanvas(
@@ -169,6 +189,10 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // c'est ce viewport, pas la taille de la feuille elle-même, qui borne le
   // zoom/pan (voir clampZoomState/minScale plus bas).
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
+  // Aperçu de l'ouverture pendant la pose, tant que le doigt est posé sur un
+  // mur. Sans lui, on appuyait à l'aveugle et on découvrait où la porte était
+  // tombée après coup — le reproche exact du dernier test.
+  const [doorPreview, setDoorPreview] = useState<{ formeId: string; edge: DoorEdge; position: number } | null>(null);
   const initializedRef = useRef(false);
   const centeredHighlightRef = useRef<string | null>(null);
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
@@ -380,6 +404,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
 
   useImperativeHandle(ref, () => ({
     getViewportCenter: () => viewportToContent(viewportSize.width / 2, viewportSize.height / 2),
+    recenter: () => fitToRooms(),
   }));
 
   const isInsideAnyRoom = (x: number, y: number) =>
@@ -463,10 +488,26 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     return map;
   }, [doors]);
 
+  // La colonne `edge` est un `text` contraint par un CHECK a quatre valeurs :
+  // le type genere, lui, ne connait que `string`.
+  const doorSpansByForme = useMemo(() => {
+    const map: Record<string, { edge: DoorEdge; position: number }[]> = {};
+    for (const [formeId, list] of Object.entries(doorsByForme)) {
+      map[formeId] = list.map((door) => ({ edge: door.edge as DoorEdge, position: door.position }));
+    }
+    return map;
+  }, [doorsByForme]);
+
   const roomVisuals = useMemo(
     () =>
       sortedFormes.map((forme) => {
         const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
+        const roomDoors = doorSpansByForme[forme.id] ?? [];
+        // Les voisines disent deux choses : quels pans de mur sont mitoyens
+        // (donc fins), et où le mur commun est déjà percé par elles.
+        const neighbours = sortedFormes
+          .filter((other) => other.id !== forme.id)
+          .map((other) => ({ geo: geoById[other.id], doors: doorSpansByForme[other.id] ?? [] }));
         return {
           id: forme.id,
           geo: geoById[forme.id],
@@ -476,16 +517,13 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           selected: forme.id === selectedFormeId,
           highlighted: forme.id === highlightFormeId,
           // Le mur n'est plus un rectangle mais une suite de segments : les
-          // portes de cette pièce y sont des trous.
-          walls: wallSegments(
-            geoById[forme.id],
-            // La colonne est un `text` contraint par un CHECK a quatre
-            // valeurs : le type genere, lui, ne connait que `string`.
-            (doorsByForme[forme.id] ?? []).map((door) => ({ edge: door.edge as DoorEdge, position: door.position })),
-          ),
+          // portes de cette pièce y sont des trous, et chaque segment sait
+          // s'il ferme le logement (épais) ou sépare deux pièces (fin).
+          walls: wallSegments(geoById[forme.id], roomDoors, neighbours),
+          jambs: doorJambs(geoById[forme.id], roomDoors, neighbours),
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorsByForme],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorSpansByForme],
   );
 
   const selectedDoorGeometry = useMemo(() => {
@@ -495,6 +533,20 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     if (!geo) return null;
     return doorSpan(geo, door.edge as DoorEdge, door.position);
   }, [doors, selectedDoorId, geoById]);
+
+  const previewGeometry = useMemo(() => {
+    if (!doorPlacing || !doorPreview) return null;
+    const geo = geoById[doorPreview.formeId];
+    if (!geo) return null;
+    const span = doorSpan(geo, doorPreview.edge, doorPreview.position);
+    const neighbours = formes
+      .filter((forme) => forme.id !== doorPreview.formeId)
+      .map((forme) => ({ geo: geoById[forme.id], doors: doorSpansByForme[forme.id] ?? [] }));
+    return {
+      span,
+      jambs: doorJambs(geo, [{ edge: doorPreview.edge, position: doorPreview.position }], neighbours),
+    };
+  }, [doorPlacing, doorPreview, geoById, formes, doorSpansByForme]);
 
   return (
     <View
@@ -560,9 +612,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 />
               ))}
 
-              {/* Passe 2 — les murs, percés de leurs portes. Une suite de
-                  segments et non plus un rectangle : c'est l'interruption du
-                  trait qui FAIT la porte. */}
+              {/* Passe 2 — les murs, percés de leurs portes et hiérarchisés.
+                  Une suite de segments et non plus un rectangle : c'est
+                  l'interruption du trait qui FAIT la porte, et c'est le
+                  découpage qui permet à un même mur d'être épais là où il
+                  ferme le logement et fin là où il longe une voisine. */}
               {roomVisuals.map((room) =>
                 room.walls.map((wall, index) => (
                   <Line
@@ -571,12 +625,29 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     p2={vec(wall.x2, wall.y2)}
                     color={WALL_COLOR}
                     style="stroke"
-                    strokeWidth={WALL_WIDTH}
+                    strokeWidth={wallWidth(wall.interior)}
                   />
                 )),
               )}
 
-              {/* Passe 2 bis — les cibles de pose. Sans elles, la pose se
+              {/* Passe 2 ter — les tableaux des portes. Deux traits
+                  perpendiculaires aux extrémités de chaque ouverture : sur
+                  une cloison de 2 unités, un simple trou se lirait comme un
+                  mur mal fermé plutôt que comme un passage. */}
+              {roomVisuals.map((room) =>
+                room.jambs.map((jamb, index) => (
+                  <Line
+                    key={`jamb-${room.id}-${index}`}
+                    p1={vec(jamb.x1, jamb.y1)}
+                    p2={vec(jamb.x2, jamb.y2)}
+                    color={WALL_COLOR}
+                    style="stroke"
+                    strokeWidth={DOOR_JAMB_WIDTH}
+                  />
+                )),
+              )}
+
+              {/* Passe 2 quater — les cibles de pose. Sans elles, la pose se
                   faisait sur des zones invisibles : rien n'annonçait qu'un
                   mur était touchable, ce que le test a immédiatement
                   reproché. Elles n'existent que le temps de la pose. */}
@@ -587,7 +658,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                         key={`target-${room.id}-${index}`}
                         p1={vec(wall.x1, wall.y1)}
                         p2={vec(wall.x2, wall.y2)}
-                        color="#1591EA"
+                        color={ACCENT}
                         opacity={0.35}
                         style="stroke"
                         strokeWidth={16}
@@ -596,6 +667,41 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   )
                 : null}
 
+              {/* Passe 2 quinquies — l'aperçu sous le doigt. Le trait blanc
+                  efface le mur à l'endroit visé, le pointillé montre
+                  l'ouverture telle qu'elle sera : on voit la porte AVANT de
+                  lâcher, au lieu de la découvrir après. */}
+              {previewGeometry ? (
+                <>
+                  <Line
+                    p1={vec(previewGeometry.span.x1, previewGeometry.span.y1)}
+                    p2={vec(previewGeometry.span.x2, previewGeometry.span.y2)}
+                    color={colors.surface}
+                    style="stroke"
+                    strokeWidth={WALL_WIDTH + 2}
+                  />
+                  {previewGeometry.jambs.map((jamb, index) => (
+                    <Line
+                      key={`preview-jamb-${index}`}
+                      p1={vec(jamb.x1, jamb.y1)}
+                      p2={vec(jamb.x2, jamb.y2)}
+                      color={ACCENT}
+                      style="stroke"
+                      strokeWidth={2}
+                    />
+                  ))}
+                  <Line
+                    p1={vec(previewGeometry.span.x1, previewGeometry.span.y1)}
+                    p2={vec(previewGeometry.span.x2, previewGeometry.span.y2)}
+                    color={ACCENT}
+                    style="stroke"
+                    strokeWidth={3}
+                  >
+                    <DashPathEffect intervals={[7, 5]} />
+                  </Line>
+                </>
+              ) : null}
+
               {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
                   murs pour ne jamais être coupées par la voisine. */}
               {roomVisuals.map((room) =>
@@ -603,15 +709,17 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   ? // Les MÊMES segments que le mur, pas un rectangle plein :
                     // sinon le liseré reboucherait les ouvertures de la pièce
                     // en cours d'édition, seule pièce où l'on a justement
-                    // besoin de les voir.
+                    // besoin de les voir. L'épaisseur suit celle du segment
+                    // souligné, sans quoi le liseré d'une cloison fine
+                    // ressemblerait à une façade.
                     room.walls.map((wall, index) => (
                       <Line
                         key={`state-${room.id}-${index}`}
                         p1={vec(wall.x1, wall.y1)}
                         p2={vec(wall.x2, wall.y2)}
-                        color={room.selected ? '#1591EA' : HIGHLIGHT_GREEN_BORDER}
+                        color={room.selected ? ACCENT : HIGHLIGHT_GREEN_BORDER}
                         style="stroke"
-                        strokeWidth={WALL_WIDTH + 1}
+                        strokeWidth={wallWidth(wall.interior) + 1.5}
                       />
                     ))
                   : null,
@@ -625,7 +733,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 <Line
                   p1={vec(selectedDoorGeometry.x1, selectedDoorGeometry.y1)}
                   p2={vec(selectedDoorGeometry.x2, selectedDoorGeometry.y2)}
-                  color="#1591EA"
+                  color={ACCENT}
                   style="stroke"
                   strokeWidth={WALL_WIDTH + 2}
                 />
@@ -679,6 +787,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               scale={zoom.scale}
               readOnly={readOnly}
               onCreate={onDoorCreate}
+              onPreview={setDoorPreview}
               onSelect={onDoorSelect}
               onDragEnd={onDoorDragEnd}
             />

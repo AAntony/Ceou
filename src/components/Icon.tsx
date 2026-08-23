@@ -85,6 +85,8 @@ export type IconName =
   | 'starOutline'
   | 'alert'
   | 'porte'
+  | 'recenter'
+  | 'help'
   | 'dots';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -186,6 +188,12 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   // distincte : une porte entre deux pieces n'est pas une entree, et
   // changer l'icone de l'une ne doit pas changer celle de l'autre.
   porte: 'door',
+  // « Tout revoir » sur le plan : le cadre de recadrage, pas une loupe — il
+  // ne s'agit pas de zoomer mais de faire tenir l'ensemble dans l'écran.
+  recenter: 'fit-to-screen-outline',
+  // Même glyphe que le type d'habitation 'autre', clé distincte : l'un est
+  // un contenu inconnu, l'autre une aide contextuelle.
+  help: 'help-circle-outline',
 };
 
 type IconProps = {

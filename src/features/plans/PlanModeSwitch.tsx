@@ -5,13 +5,17 @@ import { useThemeColors } from '../../lib/theme';
 
 export type PlanMode = 'explore' | 'edit';
 
-// Bascule Explorer / Modifier.
+// Bascule Explorer / Modifier, FLOTTANTE au-dessus du plan.
 //
-// Reprend le motif des pastilles segmentées déjà utilisé ailleurs dans l'app
-// (sélecteur « Un ami / Un invité » de ShareInviteModal, onglets
-// Personnelles/Partagées) plutôt qu'un nouveau composant : c'est le même
-// modèle d'interaction — deux vues interchangeables — et l'utilisateur l'a
-// déjà rencontré.
+// Elle vivait dans le flux de l'écran, au-dessus du canevas : elle mangeait
+// donc une bande de hauteur en permanence, et le plan démarrait à mi-écran.
+// Posée sur le plan, elle ne coûte plus rien — c'est le même principe que les
+// barres flottantes de Material 3 Expressive, et le plan récupère la place.
+//
+// Forme de pastille segmentée conservée (sélecteur « Un ami / Un invité »,
+// onglets Personnelles/Partagées) : même modèle d'interaction, déjà rencontré
+// par l'utilisateur, simplement compacté et posé sur un fond opaque pour
+// rester lisible par-dessus les pièces.
 //
 // Affichée UNIQUEMENT à qui peut modifier : proposer « Modifier » à un
 // visiteur ou à un ami en Consultation serait une promesse que la RLS
@@ -20,7 +24,7 @@ export function PlanModeSwitch({ mode, onChange }: { mode: PlanMode; onChange: (
   const { t } = useTranslation();
 
   return (
-    <View className="mb-3 flex-row gap-2">
+    <View className="flex-row gap-1 self-center rounded-full border border-ink/10 bg-surface/95 p-1">
       <Option
         active={mode === 'explore'}
         icon="search"
@@ -50,12 +54,12 @@ function Option({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-xl px-4 active:opacity-80 ${
-        active ? 'border-2 border-coral bg-coral-light py-[9px]' : 'border border-ink/10 py-2.5'
+      className={`flex-row items-center justify-center gap-1.5 rounded-full px-4 py-2 active:opacity-80 ${
+        active ? 'bg-coral' : ''
       }`}
     >
-      <Icon name={icon} size={16} color={active ? colors.accentDark : colors.inkSoft} />
-      <Text className={active ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>{label}</Text>
+      <Icon name={icon} size={16} color={active ? '#fff' : colors.inkSoft} />
+      <Text className={active ? 'text-sm font-semibold text-white' : 'text-sm text-ink-soft'}>{label}</Text>
     </Pressable>
   );
 }
