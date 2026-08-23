@@ -567,18 +567,22 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
                   murs pour ne jamais être coupées par la voisine. */}
               {roomVisuals.map((room) =>
-                room.selected || room.highlighted ? (
-                  <Rect
-                    key={`state-${room.id}`}
-                    x={room.geo.x}
-                    y={room.geo.y}
-                    width={room.geo.width}
-                    height={room.geo.height}
-                    color={room.selected ? '#1591EA' : HIGHLIGHT_GREEN_BORDER}
-                    style="stroke"
-                    strokeWidth={WALL_WIDTH + 1}
-                  />
-                ) : null,
+                room.selected || room.highlighted
+                  ? // Les MÊMES segments que le mur, pas un rectangle plein :
+                    // sinon le liseré reboucherait les ouvertures de la pièce
+                    // en cours d'édition, seule pièce où l'on a justement
+                    // besoin de les voir.
+                    room.walls.map((wall, index) => (
+                      <Line
+                        key={`state-${room.id}-${index}`}
+                        p1={vec(wall.x1, wall.y1)}
+                        p2={vec(wall.x2, wall.y2)}
+                        color={room.selected ? '#1591EA' : HIGHLIGHT_GREEN_BORDER}
+                        style="stroke"
+                        strokeWidth={WALL_WIDTH + 1}
+                      />
+                    ))
+                  : null,
               )}
 
               {/* Passe 4 — les libellés, toujours au-dessus */}
@@ -613,6 +617,21 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               );
             })}
 
+            {/* Après ShapeBody (appuyer sur un mur perce une porte plutôt
+                que de resélectionner la pièce) mais AVANT les poignées de
+                redimensionnement, qui gardent la priorité aux coins et au
+                milieu de chaque mur. */}
+            <DoorLayer
+              doors={doors}
+              formeGeo={geoById}
+              selectedFormeId={selectedFormeId}
+              scale={zoom.scale}
+              readOnly={readOnly}
+              onCreate={onDoorCreate}
+              onDragEnd={onDoorDragEnd}
+              onTap={onDoorTap}
+            />
+
             {/* Poignées de redimensionnement : pas rendues du tout en
                 consultation, plutôt que rendues et inertes — une poignée
                 visible qui ne répond pas se lit comme un bug. */}
@@ -629,21 +648,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   />
                 ))
               : null}
-
-            {/* Après ShapeBody (appuyer sur un mur perce une porte plutôt
-                que de resélectionner la pièce) mais AVANT les poignées de
-                redimensionnement, qui gardent la priorité aux coins et au
-                milieu de chaque mur. */}
-            <DoorLayer
-              doors={doors}
-              formeGeo={geoById}
-              selectedFormeId={selectedFormeId}
-              scale={zoom.scale}
-              readOnly={readOnly}
-              onCreate={onDoorCreate}
-              onDragEnd={onDoorDragEnd}
-              onTap={onDoorTap}
-            />
 
             <PlanPinLayer
               pins={pins}

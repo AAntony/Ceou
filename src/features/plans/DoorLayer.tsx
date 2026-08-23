@@ -22,7 +22,18 @@ import { clampDoorPosition, doorCenter } from './walls';
 // En unités de la feuille (comme tout ce qui est posé sur le plan) : la
 // bande grandit donc avec le zoom, ce qui est le comportement attendu — on
 // zoome justement pour viser plus facilement.
-const STRIP_THICKNESS = 26;
+//
+// ELLE PREND LE PAS SUR LE DÉPLACEMENT DE LA PIÈCE là où elle est posée :
+// un glissé qui commence sur la bande ne descend pas jusqu'au corps de la
+// pièce en dessous. D'où le plafond à un quart du plus petit côté — sur une
+// petite pièce, deux bandes en vis-à-vis mangeraient sinon tout l'intérieur
+// et il n'y aurait plus par où l'attraper.
+const STRIP_THICKNESS = 22;
+
+function stripThickness(geo: ShapeGeometry): number {
+  return Math.min(STRIP_THICKNESS, Math.min(geo.width, geo.height) / 4);
+}
+
 const DOOR_TARGET = 30;
 
 type EdgePosition = { edge: DoorEdge; position: number };
@@ -84,6 +95,7 @@ export function DoorLayer({ doors, formeGeo, selectedFormeId, scale, readOnly, o
               key={`strip-${edge}`}
               edge={edge}
               geo={selectedGeo}
+              thickness={stripThickness(selectedGeo)}
               onCreate={(position) => onCreate(selectedFormeId!, edge, position)}
             />
           ))
@@ -111,7 +123,17 @@ export function DoorLayer({ doors, formeGeo, selectedFormeId, scale, readOnly, o
 }
 
 /** Bande invisible posée sur un mur : y appuyer perce une ouverture. */
-function WallStrip({ edge, geo, onCreate }: { edge: DoorEdge; geo: ShapeGeometry; onCreate: (position: number) => void }) {
+function WallStrip({
+  edge,
+  geo,
+  thickness,
+  onCreate,
+}: {
+  edge: DoorEdge;
+  geo: ShapeGeometry;
+  thickness: number;
+  onCreate: (position: number) => void;
+}) {
   const horizontal = edge === 'n' || edge === 's';
   const length = horizontal ? geo.width : geo.height;
 
@@ -130,10 +152,10 @@ function WallStrip({ edge, geo, onCreate }: { edge: DoorEdge; geo: ShapeGeometry
       <View
         style={{
           position: 'absolute',
-          left: horizontal ? geo.x : (edge === 'w' ? geo.x : geo.x + geo.width) - STRIP_THICKNESS / 2,
-          top: horizontal ? (edge === 'n' ? geo.y : geo.y + geo.height) - STRIP_THICKNESS / 2 : geo.y,
-          width: horizontal ? geo.width : STRIP_THICKNESS,
-          height: horizontal ? STRIP_THICKNESS : geo.height,
+          left: horizontal ? geo.x : (edge === 'w' ? geo.x : geo.x + geo.width) - thickness / 2,
+          top: horizontal ? (edge === 'n' ? geo.y : geo.y + geo.height) - thickness / 2 : geo.y,
+          width: horizontal ? geo.width : thickness,
+          height: horizontal ? thickness : geo.height,
         }}
       />
     </GestureDetector>
