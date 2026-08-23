@@ -1,4 +1,3 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,11 +7,10 @@ import { TextField } from '../../components/TextField';
 import { lookupBarcode } from '../../lib/barcode/lookupBarcode';
 import { logClientError } from '../../lib/errorLogging';
 import { pickImage, uploadImage } from '../../lib/images/pickAndUploadImage';
-import { supabase } from '../../lib/supabase/client';
 import type { LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { BarcodeScanner } from './BarcodeScanner';
-import { useCreateObjet } from './queries';
+import { useCreateObjet, useSetObjetPhoto } from './queries';
 
 export type CollectedObjet = { name: string; description: string | null; localPhotoUri: string | null; barcode: string | null };
 
@@ -42,8 +40,8 @@ type ObjetFormBodyProps = {
 export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, onCollected }: ObjetFormBodyProps) {
   const { t } = useTranslation();
   const { session } = useSession();
-  const queryClient = useQueryClient();
   const createObjet = useCreateObjet();
+  const setObjetPhoto = useSetObjetPhoto();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
@@ -112,15 +110,13 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           bucket: 'objets',
           path: `${session.user.id}/${objetId}.jpg`,
         });
-        const { error } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objetId);
-        if (error) throw error;
+        await setObjetPhoto.mutateAsync({ objetId, photoUrl });
       } catch (err) {
         logClientError(err, { source: 'objet_form', step: 'photo_upload', objetId });
         Alert.alert(t('inventory.objet.saved_without_photo'));
       }
     }
 
-    queryClient.invalidateQueries({ queryKey: ['containerContents'] });
     onDone();
   };
 

@@ -566,6 +566,21 @@ export function useUpdateObjet(id: string) {
   });
 }
 
+// La photo d'un objet qu'on vient de créer : elle est téléversée APRÈS la
+// création (il faut l'id de l'objet pour nommer le fichier), donc après
+// l'invalidation déclenchée par cette création. Sans une écriture qui passe
+// elle aussi par une mutation, l'objet resterait affiché sans sa photo
+// jusqu'au prochain chargement — cf. la règle de src/lib/queryClient.ts, qui
+// ne voit que les mutations.
+export function useSetObjetPhoto() {
+  return useMutation({
+    mutationFn: async (input: { objetId: string; photoUrl: string }) => {
+      const { error } = await supabase.from('objets').update({ photo_url: input.photoUrl }).eq('id', input.objetId);
+      if (error) throw error;
+    },
+  });
+}
+
 export function useDeleteObjet() {
   const queryClient = useQueryClient();
   return useMutation({

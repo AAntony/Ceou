@@ -118,12 +118,16 @@ export function useUpdatePlanForme(planId: string) {
         .eq('id', id);
       if (error) throw error;
     },
+    // Exemptée du rafraîchissement global (cf. src/lib/queryClient.ts) : un
+    // arrangement de plan émet une mutation par forme relâchée, et une
+    // géométrie ne change rien ailleurs dans l'app.
+    meta: { skipGlobalRefresh: true },
     onSuccess: (_data, input) => {
       queryClient.invalidateQueries({ queryKey: ['planFormes', planId] });
-      // pieceId change affects whether the objet page's "Voir sur le plan"
-      // link exists at all — bust broadly rather than tracking which piece
-      // lost/gained the association (both the old and new one could change).
-      if (input.pieceId !== undefined) queryClient.invalidateQueries({ queryKey: ['pieceLocationOnPlan'] });
+      // Associer une pièce à une forme, en revanche, se voit ailleurs (le
+      // lien « Voir sur le plan » d'une fiche objet apparaît ou disparaît) :
+      // ce cas-là repasse par la règle générale.
+      if (input.pieceId !== undefined) queryClient.invalidateQueries();
     },
   });
 }
@@ -188,6 +192,9 @@ export function useUpdatePlanPin(planId: string) {
       const { error } = await supabase.from('plan_pins').update({ rel_x: input.relX, rel_y: input.relY }).eq('id', input.id);
       if (error) throw error;
     },
+    // Même raison que useUpdatePlanForme : une pastille qu'on déplace dans sa
+    // pièce n'a de sens que sur ce plan.
+    meta: { skipGlobalRefresh: true },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['planPins', planId] }),
   });
 }

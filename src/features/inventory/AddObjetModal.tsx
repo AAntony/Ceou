@@ -4,13 +4,12 @@ import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { logClientError } from '../../lib/errorLogging';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
-import { supabase } from '../../lib/supabase/client';
 import type { LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { AiPhotoScanFlow, type CollectedScanItem } from './AiPhotoScanFlow';
 import { LocationTreePicker } from './LocationTreePicker';
 import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
-import { useCreateObjet, useCreateObjetsBulk } from './queries';
+import { useCreateObjet, useCreateObjetsBulk, useSetObjetPhoto } from './queries';
 
 type AddObjetModalProps = {
   visible: boolean;
@@ -32,6 +31,7 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
   const { session } = useSession();
   const createObjet = useCreateObjet();
   const createObjetsBulk = useCreateObjetsBulk();
+  const setObjetPhoto = useSetObjetPhoto();
   const [step, setStep] = useState<Step>('choice');
   const [pendingManual, setPendingManual] = useState<CollectedObjet | null>(null);
   const [pendingScan, setPendingScan] = useState<CollectedScanItem[] | null>(null);
@@ -73,8 +73,7 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
               bucket: 'objets',
               path: `${session.user.id}/${objet.id}.jpg`,
             });
-            const { error } = await supabase.from('objets').update({ photo_url: photoUrl }).eq('id', objet.id);
-            if (error) throw error;
+            await setObjetPhoto.mutateAsync({ objetId: objet.id, photoUrl });
           } catch (err) {
             logClientError(err, { source: 'add_objet_modal', step: 'photo_upload', objetId: objet.id });
             Alert.alert(t('inventory.objet.saved_without_photo'));
