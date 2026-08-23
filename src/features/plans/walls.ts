@@ -46,6 +46,19 @@ export function doorCenter(geo: ShapeGeometry, edge: DoorEdge, position: number)
   return pointAlong(geo, edge, position * edgeLength(geo, edge));
 }
 
+/**
+ * Les deux extrémités de l'ouverture d'une porte, dans le repère de la
+ * feuille — de quoi la surligner quand elle est sélectionnée, sans
+ * recalculer la découpe des murs.
+ */
+export function doorSpan(geo: ShapeGeometry, edge: DoorEdge, position: number): Segment {
+  const length = edgeLength(geo, edge);
+  const center = position * length;
+  const start = pointAlong(geo, edge, Math.max(0, center - DOOR_WIDTH / 2));
+  const end = pointAlong(geo, edge, Math.min(length, center + DOOR_WIDTH / 2));
+  return { x1: start.x, y1: start.y, x2: end.x, y2: end.y };
+}
+
 export function wallSegments(geo: ShapeGeometry, doors: DoorSpan[]): Segment[] {
   const segments: Segment[] = [];
 

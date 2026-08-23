@@ -32,7 +32,6 @@ import { PlanRoomSheet } from '../../../src/features/plans/PlanRoomSheet';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { useThemeColors } from '../../../src/lib/theme';
 import type { PlanForme } from '../../../src/types/database';
-import { confirmDelete } from '../../../src/lib/confirmDelete';
 
 export default function PlanScreen() {
   const colors = useThemeColors();
@@ -66,9 +65,14 @@ export default function PlanScreen() {
   const [sheetForme, setSheetForme] = useState<PlanForme | null>(null);
   const [selectedFormeId, setSelectedFormeId] = useState<string | null>(null);
   const [sheetPinId, setSheetPinId] = useState<string | null>(null);
+  // La pose de portes est un MODE arme, pas un geste cache : tant qu'il dure,
+  // les murs sont des cibles et rien d'autre ne repond sur le plan.
+  const [doorPlacing, setDoorPlacing] = useState(false);
+  const [selectedDoorId, setSelectedDoorId] = useState<string | null>(null);
   // Pièce dont la fiche est ouverte — mode Explorer uniquement.
   const [roomSheetPieceId, setRoomSheetPieceId] = useState<string | null>(null);
   const canvasRef = useRef<PlanCanvasHandle>(null);
+  const selectedDoor = (doors ?? []).find((door) => door.id === selectedDoorId) ?? null;
 
   // Le droit se résout sur l'HABITATION du plan, pas sur le plan lui-même :
   // c'est l'habitation qui porte les partages (voir habitation_share_permission).
@@ -155,18 +159,55 @@ export default function PlanScreen() {
                 // Quitter l’édition relâche la sélection : garder une pièce
                 // sélectionnée en lecture laisserait un contour bleu sans
                 // aucune action possible derrière.
-                if (next === 'explore') setSelectedFormeId(null);
+                if (next === 'explore') {
+                  setSelectedFormeId(null);
+                  setSelectedDoorId(null);
+                  setDoorPlacing(false);
+                }
               }}
             />
           ) : null}
-          {editing ? (
-            <Pressable
-              onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
-              className="mb-4 flex-row items-center justify-center gap-2 self-start rounded-full bg-coral px-4 py-3 active:opacity-80"
-            >
-              <Icon name="add" size={18} color="#fff" />
-              <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
-            </Pressable>
+          {/* Pendant la pose, la barre d'outils cède la place à la consigne
+              et à sa sortie : un mode armé doit dire qu'il est armé, et
+              comment en sortir. */}
+          {editing && doorPlacing ? (
+            <View className="mb-4 flex-row items-center gap-3 rounded-2xl border border-coral/40 bg-coral-light px-4 py-3">
+              <Icon name="porte" size={20} color={colors.accentDark} />
+              <Text className="flex-1 text-sm text-ink">{t('plans.doors.placing_hint')}</Text>
+              <Pressable
+                onPress={() => setDoorPlacing(false)}
+                accessibilityRole="button"
+                className="rounded-full bg-coral px-4 py-2 active:opacity-80"
+              >
+                <Text className="text-sm font-semibold text-white">{t('common.done')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {editing && !doorPlacing ? (
+            <View className="mb-4 flex-row items-center gap-2">
+              <Pressable
+                onPress={() => createForme.mutate({ shapeType: 'rectangle', center: canvasRef.current?.getViewportCenter() })}
+                className="flex-row items-center justify-center gap-2 rounded-full bg-coral px-4 py-3 active:opacity-80"
+              >
+                <Icon name="add" size={18} color="#fff" />
+                <Text className="font-semibold text-white">{t('plans.add_room')}</Text>
+              </Pressable>
+              {/* Poser une porte n'a de sens qu'une fois une pièce dessinée. */}
+              {(formes ?? []).length > 0 ? (
+                <Pressable
+                  onPress={() => {
+                    setDoorPlacing(true);
+                    setSelectedDoorId(null);
+                    setSelectedFormeId(null);
+                  }}
+                  className="flex-row items-center justify-center gap-2 rounded-full border border-coral bg-coral-light px-4 py-3 active:opacity-80"
+                >
+                  <Icon name="porte" size={18} color={colors.accentDark} />
+                  <Text className="font-semibold text-coral-dark">{t('plans.doors.add')}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
           {/* Le rappel des gestes décrit l'ÉDITION : l'afficher en
               consultation promettrait des actions qui ne répondent pas. */}
@@ -179,6 +220,35 @@ export default function PlanScreen() {
             pins={pins ?? []}
             onPlace={(emplacementId) => createPin.mutate({ formeId: selectedForme.id, emplacementId })}
           />
+        ) : null}
+
+        {/* Barre d'action de la porte sélectionnée. Une suppression posée
+            sur un bouton ÉTIQUETÉ, et non sur l'appui qui sert à désigner :
+            c'est le pattern des éditeurs tactiles, et l'inverse de ce que
+            faisait la première version. Pas de confirmation — reposer une
+            porte coûte un appui. */}
+        {editing && selectedDoor ? (
+          <View className="mx-6 mb-2 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3">
+            <Icon name="porte" size={20} color={colors.accentDark} />
+            <Text className="flex-1 text-base font-semibold text-ink">{t('plans.doors.title')}</Text>
+            <Pressable
+              onPress={() => {
+                deleteDoor.mutate(selectedDoor.id);
+                setSelectedDoorId(null);
+              }}
+              accessibilityRole="button"
+              className="rounded-full border border-red-500/40 px-4 py-2 active:opacity-70"
+            >
+              <Text className="text-sm font-semibold text-red-600">{t('common.delete')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSelectedDoorId(null)}
+              accessibilityRole="button"
+              className="rounded-full border border-ink/10 px-4 py-2 active:opacity-70"
+            >
+              <Text className="text-sm font-semibold text-ink">{t('common.done')}</Text>
+            </Pressable>
+          </View>
         ) : null}
 
         {/* Barre d'action de la pièce sélectionnée. Remplace le double-tap
@@ -218,25 +288,25 @@ export default function PlanScreen() {
             onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
             onSelect={(forme) => {
               setSelectedFormeId(forme.id);
+              setSelectedDoorId(null);
               // En lecture, toucher une pièce ouvre sa fiche : sans ça le tap
               // ne faisait que la surligner, ce qui ne répond à aucune
               // question. En édition il sélectionne seulement, pour ne pas
               // ouvrir une feuille à chaque fois qu'on veut déplacer.
               if (!editing && forme.piece_id) setRoomSheetPieceId(forme.piece_id);
             }}
-            onDeselect={() => setSelectedFormeId(null)}
+            onDeselect={() => {
+              setSelectedFormeId(null);
+              setSelectedDoorId(null);
+            }}
             onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
             onPinTap={(pin) => setSheetPinId(pin.id)}
             doors={doors ?? []}
+            doorPlacing={doorPlacing}
+            selectedDoorId={selectedDoorId}
             onDoorCreate={(formeId, edge, position) => createDoor.mutate({ formeId, edge, position })}
+            onDoorSelect={(door) => setSelectedDoorId(door.id)}
             onDoorDragEnd={(doorId, edge, position) => updateDoor.mutate({ id: doorId, edge, position })}
-            // Appuyer sur une porte la retire, après confirmation : elle n'a
-            // aucun réglage, donc rien d'autre à proposer dans une fiche.
-            onDoorTap={(door) =>
-              confirmDelete(t, 'plans.doors.delete_confirm_title', 'plans.doors.delete_confirm_message', () =>
-                deleteDoor.mutate(door.id),
-              )
-            }
           />
         </View>
       </View>

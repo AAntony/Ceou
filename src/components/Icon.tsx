@@ -84,6 +84,7 @@ export type IconName =
   | 'star'
   | 'starOutline'
   | 'alert'
+  | 'porte'
   | 'dots';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -181,6 +182,10 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   star: 'star',
   starOutline: 'star-outline',
   alert: 'alert-circle-outline',
+  // La porte d'un plan. Meme glyphe que le type de piece 'entree', cle
+  // distincte : une porte entre deux pieces n'est pas une entree, et
+  // changer l'icone de l'une ne doit pas changer celle de l'autre.
+  porte: 'door',
 };
 
 type IconProps = {

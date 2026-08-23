@@ -18,7 +18,7 @@ import {
 } from './constants';
 import { DoorLayer } from './DoorLayer';
 import { PlanPinLayer } from './PlanPinLayer';
-import { wallSegments } from './walls';
+import { doorSpan, wallSegments } from './walls';
 import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
@@ -103,10 +103,12 @@ type PlanCanvasProps = {
   onDeselect: () => void;
   onPinDragEnd: (pinId: string, relX: number, relY: number) => void;
   onPinTap: (pin: PlanPin) => void;
-  /** Appui sur un mur de la pièce sélectionnée : une ouverture y est percée. */
+  /** Pose armée depuis la barre d'édition : les murs deviennent des cibles. */
+  doorPlacing: boolean;
+  selectedDoorId: string | null;
   onDoorCreate: (formeId: string, edge: DoorEdge, position: number) => void;
+  onDoorSelect: (door: PlanDoor) => void;
   onDoorDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
-  onDoorTap: (door: PlanDoor) => void;
   /** Nombre d'objets par Pièce — une pièce qui n'annonce pas son contenu ne
    *  répond pas à la question que le plan est censé aider à résoudre. */
   roomCounts?: Record<string, number>;
@@ -143,9 +145,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     onDeselect,
     onPinDragEnd,
     onPinTap,
+    doorPlacing,
+    selectedDoorId,
     onDoorCreate,
+    onDoorSelect,
     onDoorDragEnd,
-    onDoorTap,
     roomCounts,
     readOnly = false,
   },
@@ -484,6 +488,14 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorsByForme],
   );
 
+  const selectedDoorGeometry = useMemo(() => {
+    const door = doors.find((candidate) => candidate.id === selectedDoorId);
+    if (!door) return null;
+    const geo = geoById[door.forme_id];
+    if (!geo) return null;
+    return doorSpan(geo, door.edge as DoorEdge, door.position);
+  }, [doors, selectedDoorId, geoById]);
+
   return (
     <View
       style={{ flex: 1, overflow: 'hidden', backgroundColor: colors.sandDark }}
@@ -564,6 +576,26 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 )),
               )}
 
+              {/* Passe 2 bis — les cibles de pose. Sans elles, la pose se
+                  faisait sur des zones invisibles : rien n'annonçait qu'un
+                  mur était touchable, ce que le test a immédiatement
+                  reproché. Elles n'existent que le temps de la pose. */}
+              {doorPlacing
+                ? roomVisuals.flatMap((room) =>
+                    room.walls.map((wall, index) => (
+                      <Line
+                        key={`target-${room.id}-${index}`}
+                        p1={vec(wall.x1, wall.y1)}
+                        p2={vec(wall.x2, wall.y2)}
+                        color="#1591EA"
+                        opacity={0.35}
+                        style="stroke"
+                        strokeWidth={16}
+                      />
+                    )),
+                  )
+                : null}
+
               {/* Passe 3 — sélection et mise en évidence, au-dessus de tous les
                   murs pour ne jamais être coupées par la voisine. */}
               {roomVisuals.map((room) =>
@@ -585,6 +617,20 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   : null,
               )}
 
+              {/* Passe 3 bis — la porte sélectionnée. L'ouverture est un
+                  VIDE : sans ce trait, rien ne distingue la porte qu'on
+                  vient de désigner de ses voisines, et la barre d'action du
+                  bas parlerait d'un objet invisible. */}
+              {selectedDoorGeometry ? (
+                <Line
+                  p1={vec(selectedDoorGeometry.x1, selectedDoorGeometry.y1)}
+                  p2={vec(selectedDoorGeometry.x2, selectedDoorGeometry.y2)}
+                  color="#1591EA"
+                  style="stroke"
+                  strokeWidth={WALL_WIDTH + 2}
+                />
+              ) : null}
+
               {/* Passe 4 — les libellés, toujours au-dessus */}
               {roomVisuals.map((room) => (
                 <RoomLabel
@@ -598,7 +644,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               ))}
             </Canvas>
 
-            {formes.map((forme) => {
+            {/* Pendant la pose d'une porte, le corps des pièces et les
+                poignées disparaissent : un seul type de cible à l'écran,
+                donc aucun geste à départager. C'est ce qui manquait à la
+                première version. */}
+            {doorPlacing ? null : formes.map((forme) => {
               const geo = geoById[forme.id];
               const isSelected = forme.id === selectedFormeId;
               const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
@@ -624,18 +674,19 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
             <DoorLayer
               doors={doors}
               formeGeo={geoById}
-              selectedFormeId={selectedFormeId}
+              placing={doorPlacing}
+              selectedDoorId={selectedDoorId}
               scale={zoom.scale}
               readOnly={readOnly}
               onCreate={onDoorCreate}
+              onSelect={onDoorSelect}
               onDragEnd={onDoorDragEnd}
-              onTap={onDoorTap}
             />
 
             {/* Poignées de redimensionnement : pas rendues du tout en
                 consultation, plutôt que rendues et inertes — une poignée
                 visible qui ne répond pas se lit comme un bug. */}
-            {selectedForme && !readOnly
+            {selectedForme && !readOnly && !doorPlacing
               ? HANDLES.map((handle) => (
                   <HandleDot
                     key={handle}

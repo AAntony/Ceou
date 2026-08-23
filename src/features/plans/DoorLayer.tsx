@@ -7,46 +7,50 @@ import type { DoorEdge, ShapeGeometry } from './types';
 import { clampDoorPosition, doorCenter } from './walls';
 
 // La couche TACTILE des portes. Le dessin, lui, est dans le canevas : une
-// porte EST l'interruption du mur (voir walls.ts), il n'y a donc rien à
-// afficher ici. Ne restent que des zones invisibles :
+// porte EST l'interruption du mur (voir walls.ts).
 //
-// - une bande le long de chaque mur de la pièce sélectionnée, où appuyer
-//   perce une ouverture à l'endroit touché ;
-// - une cible par porte existante, pour la faire glisser ou la retirer.
+// DEUXIÈME VERSION, après un test qui a conclu « pas du tout pratique ni
+// intuitif ». La première posait des bandes invisibles en permanence sur les
+// murs de la pièce sélectionnée : rien n'annonçait qu'on pouvait appuyer là,
+// et ces bandes volaient les gestes de déplacement et de redimensionnement.
 //
-// Cette séparation dessin/toucher est ce qui permet à la porte de rester
-// discrète : la version précédente était une pastille visible parce qu'il
-// fallait bien quelque chose à toucher. Ici la cible est invisible, et
-// l'ouverture qu'elle commande suffit à la localiser.
+// Ce que font les éditeurs de plan qui marchent (magicplan, Planner 5D,
+// Floorplanner) : la pose est un MODE qu'on arme explicitement, avec des
+// cibles visibles, et l'objet posé se SÉLECTIONNE avant toute action —
+// jamais une suppression sur le geste principal.
+//
+// D'où deux régimes ici, jamais actifs en même temps :
+//
+// - pose armée : une bande par mur de CHAQUE pièce, et rien d'autre ne
+//   répond (le canevas retire le corps des pièces et les poignées). Aucun
+//   conflit possible, c'est la leçon de la première version.
+// - mode normal : plus aucune bande. Seules les portes déjà posées ont une
+//   cible, pour être sélectionnées puis glissées le long des murs.
 
-// En unités de la feuille (comme tout ce qui est posé sur le plan) : la
-// bande grandit donc avec le zoom, ce qui est le comportement attendu — on
-// zoome justement pour viser plus facilement.
-//
-// ELLE PREND LE PAS SUR LE DÉPLACEMENT DE LA PIÈCE là où elle est posée :
-// un glissé qui commence sur la bande ne descend pas jusqu'au corps de la
-// pièce en dessous. D'où le plafond à un quart du plus petit côté — sur une
-// petite pièce, deux bandes en vis-à-vis mangeraient sinon tout l'intérieur
-// et il n'y aurait plus par où l'attraper.
+// En unités de la feuille : la bande grandit avec le zoom, ce qui est le
+// comportement attendu — on zoome justement pour viser plus facilement.
 const STRIP_THICKNESS = 22;
+const DOOR_TARGET = 30;
 
 function stripThickness(geo: ShapeGeometry): number {
+  // Plafonnée au quart du plus petit côté : sur une petite pièce, deux
+  // bandes en vis-à-vis couvriraient toute la surface.
   return Math.min(STRIP_THICKNESS, Math.min(geo.width, geo.height) / 4);
 }
-
-const DOOR_TARGET = 30;
 
 type EdgePosition = { edge: DoorEdge; position: number };
 
 type DoorLayerProps = {
   doors: PlanDoor[];
   formeGeo: Record<string, ShapeGeometry>;
-  selectedFormeId: string | null;
+  /** Pose armée : les murs deviennent des cibles, le reste se tait. */
+  placing: boolean;
+  selectedDoorId: string | null;
   scale: number;
   readOnly?: boolean;
   onCreate: (formeId: string, edge: DoorEdge, position: number) => void;
+  onSelect: (door: PlanDoor) => void;
   onDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
-  onTap: (door: PlanDoor) => void;
 };
 
 /**
@@ -66,7 +70,17 @@ function nearestEdge(px: number, py: number, geo: ShapeGeometry): EdgePosition {
   return { edge: nearest.edge, position: clampDoorPosition(clamp(nearest.position, 0, 1), length) };
 }
 
-export function DoorLayer({ doors, formeGeo, selectedFormeId, scale, readOnly, onCreate, onDragEnd, onTap }: DoorLayerProps) {
+export function DoorLayer({
+  doors,
+  formeGeo,
+  placing,
+  selectedDoorId,
+  scale,
+  readOnly,
+  onCreate,
+  onSelect,
+  onDragEnd,
+}: DoorLayerProps) {
   // Position en cours de glissé, locale : la base ne connaît la nouvelle
   // place de la porte qu'au relâché, comme pour les pièces et les pastilles.
   const [positions, setPositions] = useState<Record<string, EdgePosition>>({});
@@ -81,48 +95,49 @@ export function DoorLayer({ doors, formeGeo, selectedFormeId, scale, readOnly, o
     });
   }, [doors]);
 
-  const editable = !readOnly && !!selectedFormeId;
-  const selectedGeo = selectedFormeId ? formeGeo[selectedFormeId] : undefined;
-
   return (
     <>
-      {/* Les bandes d'abord : les cibles des portes existantes sont rendues
-          après, donc au-dessus — appuyer sur une porte la saisit, ça n'en
-          perce pas une deuxième juste à côté. */}
-      {editable && selectedGeo
-        ? (['n', 's', 'w', 'e'] as DoorEdge[]).map((edge) => (
-            <WallStrip
-              key={`strip-${edge}`}
-              edge={edge}
-              geo={selectedGeo}
-              thickness={stripThickness(selectedGeo)}
-              onCreate={(position) => onCreate(selectedFormeId!, edge, position)}
-            />
-          ))
+      {placing && !readOnly
+        ? Object.entries(formeGeo).flatMap(([formeId, geo]) =>
+            (['n', 's', 'w', 'e'] as DoorEdge[]).map((edge) => (
+              <WallStrip
+                key={`strip-${formeId}-${edge}`}
+                edge={edge}
+                geo={geo}
+                thickness={stripThickness(geo)}
+                onCreate={(position) => onCreate(formeId, edge, position)}
+              />
+            )),
+          )
         : null}
 
-      {doors.map((door) => {
-        const geo = formeGeo[door.forme_id];
-        if (!geo) return null;
-        const live = positions[door.id] ?? { edge: door.edge as DoorEdge, position: door.position };
-        return (
-          <DoorTarget
-            key={door.id}
-            geo={geo}
-            live={live}
-            scale={scale}
-            interactive={!readOnly && door.forme_id === selectedFormeId}
-            onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
-            onRelease={(next) => onDragEnd(door.id, next.edge, next.position)}
-            onTap={() => onTap(door)}
-          />
-        );
-      })}
+      {/* Pendant la pose, les portes déjà là ne répondent plus : on est en
+          train d'en ajouter, pas d'en déplacer. */}
+      {placing
+        ? null
+        : doors.map((door) => {
+            const geo = formeGeo[door.forme_id];
+            if (!geo) return null;
+            const live = positions[door.id] ?? { edge: door.edge as DoorEdge, position: door.position };
+            return (
+              <DoorTarget
+                key={door.id}
+                geo={geo}
+                live={live}
+                scale={scale}
+                interactive={!readOnly}
+                selected={door.id === selectedDoorId}
+                onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
+                onRelease={(next) => onDragEnd(door.id, next.edge, next.position)}
+                onSelect={() => onSelect(door)}
+              />
+            );
+          })}
     </>
   );
 }
 
-/** Bande invisible posée sur un mur : y appuyer perce une ouverture. */
+/** Bande posée sur un mur pendant la pose : y appuyer perce une ouverture. */
 function WallStrip({
   edge,
   geo,
@@ -162,23 +177,25 @@ function WallStrip({
   );
 }
 
-/** Cible invisible d'une porte existante : glisser pour la déplacer, appuyer pour la retirer. */
+/** Cible d'une porte posée : appuyer la sélectionne, glisser la déplace. */
 function DoorTarget({
   geo,
   live,
   scale,
   interactive,
+  selected,
   onMove,
   onRelease,
-  onTap,
+  onSelect,
 }: {
   geo: ShapeGeometry;
   live: EdgePosition;
   scale: number;
   interactive: boolean;
+  selected: boolean;
   onMove: (next: EdgePosition) => void;
   onRelease: (next: EdgePosition) => void;
-  onTap: () => void;
+  onSelect: () => void;
 }) {
   const dragOrigin = useRef(live);
   const center = doorCenter(geo, live.edge, live.position);
@@ -191,10 +208,13 @@ function DoorTarget({
     return nearestEdge(origin.x + translationX / scale, origin.y + translationY / scale, geo);
   };
 
+  // Le glissé n'est ouvert qu'une fois la porte SÉLECTIONNÉE — un pouce qui
+  // ripe en voulant simplement la désigner ne doit pas la déplacer. Même
+  // règle que pour les pièces.
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .enabled(interactive)
+    .enabled(interactive && selected)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = live;
@@ -202,7 +222,7 @@ function DoorTarget({
     .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
     .onEnd((event) => onRelease(resolve(event.translationX, event.translationY)));
 
-  const tap = Gesture.Tap().enabled(interactive).runOnJS(true).onEnd(() => onTap());
+  const tap = Gesture.Tap().enabled(interactive).runOnJS(true).onEnd(() => onSelect());
 
   return (
     <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
