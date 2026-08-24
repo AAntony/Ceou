@@ -3,10 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
-import { EntityCard } from '../../components/EntityCard';
-import { EntityGrid } from '../../components/EntityGrid';
+import { EntityRow } from '../../components/EntityRow';
 import { confirmDelete } from '../../lib/confirmDelete';
-import { HUE_BADGE_FILL, HUE_CARD_BG_HEX } from '../search/palette';
 import type { HabitationPermission } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { getHabitationIcon } from '../inventory/constants';
@@ -107,19 +105,21 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
         {sharedByFriend && sharedByFriend.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>
-            <EntityGrid>
-              {sharedByFriend.map((h) => (
-                <EntityCard
-                  key={h.id}
-                  icon={getHabitationIcon(h.type)}
-                  title={h.name}
-                  subtitle={t(`inventory.habitationTypes.${h.type}`)}
-                  bgColor={HUE_CARD_BG_HEX.teal}
-                  badgeColor={HUE_BADGE_FILL.teal}
-                  onPress={() => handleOpenSharedHabitation(h.id)}
-                />
-              ))}
-            </EntityGrid>
+            {/* Les MÊMES rangées que la page Habitations, et non plus les
+                tuiles en grille d'avant : une Habitation doit avoir la même
+                tête partout dans l'app, qu'on la croise chez soi ou dans la
+                fiche de l'ami qui l'a partagée. */}
+            {sharedByFriend.map((h) => (
+              <EntityRow
+                key={h.id}
+                level="habitation"
+                icon={getHabitationIcon(h.type)}
+                title={h.name}
+                subtitle={t(`inventory.habitationTypes.${h.type}`)}
+                photoUri={h.photo_url}
+                onPress={() => handleOpenSharedHabitation(h.id)}
+              />
+            ))}
           </View>
         ) : null}
 
