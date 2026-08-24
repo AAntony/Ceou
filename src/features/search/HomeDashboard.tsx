@@ -45,9 +45,15 @@ const NO_ENTRIES: SearchIndexEntry[] = [];
 const HEADER_PADDING = { paddingHorizontal: 24, paddingTop: 64 };
 const CONTENT_PADDING = { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 160 };
 
-// Reproduit le `justify-between` de EntityGrid, que numColumns remplace par
-// son propre conteneur de rangee. Les cartes restent en w-[48%].
-const COLUMN_WRAPPER = { justifyContent: 'space-between' as const };
+// TROIS COLONNES, et un ecart FIXE plutot qu'un `justify-between`.
+//
+// A deux colonnes, `space-between` suffisait : une rangee incomplete n'a
+// qu'une carte, qui reste a gauche. A trois, une rangee de deux cartes se
+// serait retrouvee collee aux deux bords avec un trou au milieu. L'ecart est
+// donc pose explicitement et les cartes gardent leur largeur (w-[31.5%],
+// voir ResultCard) : une rangee incomplete se remplit de gauche a droite,
+// comme les autres.
+const COLUMN_WRAPPER = { gap: 9 };
 
 type HomeHeaderProps = {
   greeting: string;
@@ -291,10 +297,12 @@ export function HomeDashboard() {
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
-        numColumns={2}
+        numColumns={3}
         columnWrapperStyle={COLUMN_WRAPPER}
         contentContainerStyle={CONTENT_PADDING}
-        initialNumToRender={10}
+        // Une rangee de trois : il en faut plus qu'avant pour remplir le
+        // premier ecran sans laisser un blanc au premier rendu.
+        initialNumToRender={15}
         windowSize={5}
         ListEmptyComponent={
           isError ? (
