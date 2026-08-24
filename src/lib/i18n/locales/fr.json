@@ -187,7 +187,7 @@
     "error": "Je n'ai pas pu traiter ta demande. Réessaie dans un instant.",
     "error_busy": "Trop de questions coup sur coup. Redemande-moi dans quelques secondes.",
     "answer": {
-      "unknown": "Je sais chercher un objet et le ranger : demande-moi où se trouve quelque chose, ce que contient une pièce, ou dis-moi où tu viens de ranger un objet.",
+      "unknown": "Je n'ai pas compris.",
       "not_found": "Je n'ai rien trouvé pour « {{query}} ».",
       "found_one": "{{name}} se trouve dans {{location}}.",
       "found_many": "J'ai trouvé {{n}} résultats pour « {{query}} », répartis dans {{places}} endroits.",

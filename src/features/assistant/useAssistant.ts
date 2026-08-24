@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
-import { normalizeForMatch } from '../../lib/text/match';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission } from '../../types/database';
 import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
@@ -12,6 +11,7 @@ import { useSearchIndex, type SearchIndexEntry } from '../search/queries';
 import { canModify } from '../sharing/queries';
 import { composeAnswer, composeMoveFailure } from './answer';
 import { isAlreadyThere, resolveMove, type MoveDestination } from './move';
+import { parseMove, splitClosing } from './phrase';
 import { locationSentence, normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
 
@@ -43,9 +43,18 @@ const SILENT_ERROR_CODES = new Set(['no-speech', 'aborted', 'speech-timeout']);
 const SHORT_QUERY_MAX_WORDS = 2;
 
 // Silence après lequel on considère qu'une phrase est terminée, quand le
-// moteur ne le dit pas lui-même. Assez long pour laisser respirer au milieu
-// d'une phrase, assez court pour ne pas faire attendre entre deux objets.
-const PHRASE_PAUSE = 900;
+// moteur ne le dit pas lui-même. Chaque centaine de millisecondes ici se
+// ressent directement comme de la lenteur, puisqu'elle s'ajoute au délai que
+// le moteur s'accorde déjà avant de rendre son verdict.
+const PHRASE_PAUSE = 600;
+
+// Ce que le moteur Android s'accorde AVANT de considérer qu'on a fini de
+// parler. Ses valeurs par défaut sont taillées pour la dictée d'un texte
+// long, pas pour un ordre de six mots enchaîné à un autre.
+const ANDROID_SILENCE = {
+  EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 900,
+  EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 700,
+};
 
 // Le moteur s'arrête de lui-même après chaque silence : on le relance, et
 // c'est ce qui donne l'impression d'un micro qui reste ouvert. Au bout de
@@ -59,31 +68,6 @@ const RESTART_DELAY = 120;
 // l'utilisateur. Passé ce délai, répéter la même phrase est un acte
 // volontaire et doit être exécuté.
 const REPEAT_GUARD = 2500;
-
-// Ce qui clôt une session. Comparaison EXACTE sur la phrase entière, jamais
-// sur un mot contenu : « merci de ranger mes clés dans le tiroir » est un
-// ordre, pas un au revoir.
-const CLOSING_PHRASES = new Set([
-  'merci',
-  'merci ceou',
-  'merci beaucoup',
-  'merci bien',
-  'c est bon',
-  'termine',
-  'fini',
-  'j ai fini',
-  'stop',
-  'au revoir',
-  'thank you',
-  'thanks',
-  'that s all',
-  'done',
-  'stop it',
-]);
-
-function isClosingPhrase(transcript: string): boolean {
-  return CLOSING_PHRASES.has(normalizeForMatch(transcript));
-}
 
 // La permission ne se redemande qu'une fois. C'est le principal responsable
 // du micro qui s'ouvrait en retard : un aller-retour natif attendu à chaque
@@ -274,6 +258,8 @@ export function useAssistant() {
   const queueRef = useRef<string[]>([]);
   const busyRef = useRef(false);
   const silentRestartsRef = useRef(0);
+  /** Droits déjà vérifiés pendant cette session : un aller-retour par logement, pas par objet. */
+  const permissionsRef = useRef(new Map<string, boolean>());
 
   // La permission est relue AU MONTAGE, pas au premier appui : c'est
   // justement l'appui qui doit être instantané. Sans ça, la toute première
@@ -318,6 +304,7 @@ export function useAssistant() {
       // phrase tronquée.
       interimResults: false,
       continuous: true,
+      androidIntentOptions: ANDROID_SILENCE,
     });
   }, []);
 
@@ -391,7 +378,15 @@ export function useAssistant() {
         // mais après coup et avec un message que personne ne comprend.
         const homes = [...new Set([objet.habitation_id, destination.habitationId])];
         for (const home of homes) {
-          if (!(await canModifyHabitation(home))) {
+          // Mis en cache pour la session : le droit sur un logement ne change
+          // pas entre deux objets rangés, et l'aller-retour se payait jusqu'ici
+          // sur CHAQUE rangement.
+          let allowed = permissionsRef.current.get(home);
+          if (allowed === undefined) {
+            allowed = await canModifyHabitation(home);
+            permissionsRef.current.set(home, allowed);
+          }
+          if (!allowed) {
             settle(tr('assistant.move.denied'));
             return;
           }
@@ -430,87 +425,134 @@ export function useAssistant() {
     [ensureListening, queryClient, settleState],
   );
 
-  const handleTranscript = useCallback(
-    async (transcript: string) => {
-      const session = sessionRef.current;
-      const isCurrent = () => sessionRef.current === session;
-      const trimmed = transcript.trim();
-      if (!trimmed) return;
+  /** Répond, et se remet aussitôt à écouter. */
+  const respond = useCallback(
+    (transcript: string, answer: string, result: AssistantResult | null = null) => {
+      settleState({ status: 'listening', transcript, answer, result });
+      void speak(answer, i18n.language);
+      ensureListening();
+    },
+    [ensureListening, settleState],
+  );
 
-      const respond = (answer: string, result: AssistantResult | null = null) => {
-        if (!isCurrent()) return;
-        settleState({ status: 'listening', transcript: trimmed, answer, result });
-        void speak(answer, i18n.language);
-        ensureListening();
+  /** Résout un rangement et l'exécute, ou pose la seule question qui manque. */
+  const runMove = useCallback(
+    async (intent: AssistantIntent, transcript: string, session: number) => {
+      const resolution = resolveMove(intent, indexRef.current ?? []);
+      if (sessionRef.current !== session) return;
+
+      // Un rangement impossible se dit comme une réponse ordinaire : c'est un
+      // renseignement, pas une panne, et la session continue.
+      if (resolution.status !== 'ready') {
+        respond(transcript, composeMoveFailure(resolution, tr));
+        return;
+      }
+
+      const draft: MoveDraft = {
+        objets: resolution.objets,
+        destinations: resolution.destinations,
+        objetId: resolution.objets.length === 1 ? resolution.objets[0].id : null,
+        destinationId: resolution.destinations.length === 1 ? resolution.destinations[0].id : null,
       };
 
-      // « Merci » clôt la session. Testé AVANT tout le reste : c'est la seule
-      // phrase qui ne coûte pas un appel réseau, et la seule qui doive
-      // fonctionner même quand tout le reste échoue.
-      if (isClosingPhrase(trimmed)) {
-        const count = stateRef.current.entries.length;
-        endSession(count > 0 ? tr('assistant.session.closing', { count }) : tr('assistant.session.closing_empty'));
+      if (resolution.confident) {
+        await applyMove(draft, transcript, session);
         return;
       }
 
-      // Une dictée très courte est un nom d'objet : on y répond localement,
-      // sans appel à l'IA, exactement comme le ferait la barre de recherche.
-      if (trimmed.split(/\s+/).length <= SHORT_QUERY_MAX_WORDS) {
-        const local = resolveIntent(
-          { action: 'locate', object_query: trimmed, room_query: '', destination_query: '', scope: 'one' },
+      // On ne peut pas répondre à une question en parlant : le micro se tait
+      // le temps du choix, et reprend après.
+      pauseListening();
+      settleState({ status: 'choosing', transcript, move: draft });
+      void speak(movePrompt(draft), i18n.language);
+    },
+    [applyMove, pauseListening, respond, settleState],
+  );
+
+  const handlePhrase = useCallback(
+    async (text: string, session: number) => {
+      // 1. ANALYSE LOCALE D'ABORD. « J'ai rangé X dans Y » se découpe très
+      //    bien ici, sans les deux secondes d'un aller-retour réseau — et
+      //    c'est la tournure de très loin la plus fréquente. Le modèle reste
+      //    pour tout ce qui n'entre pas dans le moule.
+      const local = parseMove(text);
+      if (local) {
+        await runMove(
+          {
+            action: 'move',
+            object_query: local.object_query,
+            room_query: '',
+            destination_query: local.destination_query,
+            scope: local.scope,
+          },
+          text,
+          session,
+        );
+        return;
+      }
+
+      // 2. Une dictée très courte est un nom d'objet : on y répond localement,
+      //    sans appel à l'IA, exactement comme le ferait la barre de recherche.
+      if (text.split(/s+/).length <= SHORT_QUERY_MAX_WORDS) {
+        const found = resolveIntent(
+          { action: 'locate', object_query: text, room_query: '', destination_query: '', scope: 'one' },
           indexRef.current ?? [],
         );
-        respond(composeAnswer(local, tr), local);
+        respond(text, composeAnswer(found, tr), found);
         return;
       }
 
-      settleState({ status: 'thinking', transcript: trimmed });
-
+      // 3. Tout le reste passe par le modèle.
+      settleState({ status: 'thinking', transcript: text });
       try {
-        const intent = await requestIntent(trimmed);
+        const intent = await requestIntent(text);
+        if (sessionRef.current !== session) return;
 
         if (intent.action === 'move') {
-          const resolution = resolveMove(intent, indexRef.current ?? []);
-          if (!isCurrent()) return;
-
-          // Un rangement impossible se dit comme une réponse ordinaire : c'est
-          // un renseignement, pas une panne, et la session continue.
-          if (resolution.status !== 'ready') {
-            respond(composeMoveFailure(resolution, tr));
-            return;
-          }
-
-          const draft: MoveDraft = {
-            objets: resolution.objets,
-            destinations: resolution.destinations,
-            objetId: resolution.objets.length === 1 ? resolution.objets[0].id : null,
-            destinationId: resolution.destinations.length === 1 ? resolution.destinations[0].id : null,
-          };
-
-          if (resolution.confident) {
-            await applyMove(draft, trimmed, session);
-            return;
-          }
-
-          // On ne peut pas répondre à une question en parlant : le micro se
-          // tait le temps du choix, et reprend après.
-          pauseListening();
-          settleState({ status: 'choosing', transcript: trimmed, move: draft });
-          void speak(movePrompt(draft), i18n.language);
+          await runMove(intent, text, session);
           return;
         }
 
         const result = resolveIntent(intent, indexRef.current ?? []);
-        respond(composeAnswer(result, tr), result);
+        respond(text, composeAnswer(result, tr), result);
       } catch (error) {
         const busy = error instanceof RateLimitedError;
         // Une limitation de débit n'est pas une panne : inutile d'encombrer
         // le journal d'erreurs avec un utilisateur qui parle vite.
-        if (!busy) logClientError(error, { source: 'assistant', transcriptLength: trimmed.length });
-        respond(tr(busy ? 'assistant.error_busy' : 'assistant.error'));
+        if (!busy) logClientError(error, { source: 'assistant', transcriptLength: text.length });
+        if (sessionRef.current !== session) return;
+        respond(text, tr(busy ? 'assistant.error_busy' : 'assistant.error'));
       }
     },
-    [applyMove, endSession, ensureListening, pauseListening, settleState],
+    [respond, runMove, settleState],
+  );
+
+  const handleTranscript = useCallback(
+    async (transcript: string) => {
+      const session = sessionRef.current;
+      const trimmed = transcript.trim();
+      if (!trimmed) return;
+
+      // « Merci » clôt la session, y compris posé à la FIN d'un ordre —
+      // « range mes clés dans le tiroir, merci » est une phrase normale.
+      // Testé avant tout le reste : c'est la seule chose qui ne coûte pas un
+      // appel réseau, et la seule qui doive marcher même quand tout échoue.
+      const { closing, rest } = splitClosing(trimmed);
+      if (!closing) {
+        await handlePhrase(trimmed, session);
+        return;
+      }
+
+      if (rest) await handlePhrase(rest, session);
+      if (sessionRef.current !== session) return;
+      // Sauf si l'ordre a soulevé une question : on ne raccroche pas au nez
+      // de quelqu'un à qui l'on vient de demander quelque chose.
+      if (stateRef.current.status === 'choosing') return;
+
+      const count = stateRef.current.entries.length;
+      endSession(count > 0 ? tr('assistant.session.closing', { count }) : tr('assistant.session.closing_empty'));
+    },
+    [endSession, handlePhrase],
   );
 
   /**
@@ -697,6 +739,9 @@ export function useAssistant() {
     lastPhraseRef.current = { text: '', at: 0 };
     queueRef.current = [];
     silentRestartsRef.current = 0;
+    // Le cache des droits ne survit pas à la session : un partage peut avoir
+    // été retiré entre deux.
+    permissionsRef.current.clear();
     setState({ ...EMPTY, active: true, status: 'starting' });
 
     // La permission n'est demandée qu'une fois : c'est l'aller-retour natif

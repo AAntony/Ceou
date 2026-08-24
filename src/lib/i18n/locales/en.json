@@ -187,7 +187,7 @@
     "error": "I could not handle your request. Try again in a moment.",
     "error_busy": "Too many questions at once. Ask me again in a few seconds.",
     "answer": {
-      "unknown": "I can find things and put them away: ask me where something is, what a room contains, or tell me where you just put something.",
+      "unknown": "I didn't catch that.",
       "not_found": "I found nothing for \"{{query}}\".",
       "found_one": "{{name}} is in {{location}}.",
       "found_many": "I found {{n}} results for \"{{query}}\", spread across {{places}} places.",
