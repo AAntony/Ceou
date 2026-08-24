@@ -188,19 +188,24 @@
     "error_busy": "Trop de questions coup sur coup. Redemande-moi dans quelques secondes.",
     "answer": {
       "unknown": "Je n'ai pas compris.",
-      "not_found": "Je n'ai rien trouvé pour « {{query}} ».",
+      "not_found": "Je ne trouve rien pour « {{query}} ».",
       "found_one": "{{name}} se trouve dans {{location}}.",
       "found_many": "J'ai trouvé {{n}} résultats pour « {{query}} », répartis dans {{places}} endroits.",
       "found_many_here": "J'ai trouvé {{n}} résultats pour « {{query}} », tous dans {{location}}.",
       "room_unknown": "Je n'ai pas trouvé de pièce appelée « {{room}} ».",
       "room_empty": "Il n'y a aucun objet enregistré dans {{room}}.",
-      "room_list": "Il y a {{n}} objets dans {{room}}."
+      "room_list": "Il y a {{n}} objets dans {{room}}.",
+      "unknown_alt1": "Là, je n'ai pas suivi.",
+      "unknown_alt2": "Pardon, je n'ai pas saisi.",
+      "not_found_alt1": "Rien qui ressemble à « {{query}} ».",
+      "not_found_alt2": "Aucun « {{query}} » de mon côté.",
+      "found_one_alt1": "{{name}} est dans {{location}}.",
+      "found_one_alt2": "Tu trouveras {{name}} dans {{location}}."
     },
     "move": {
       "which_object": "Quel objet ? ({{n}} correspondent)",
       "which_destination": "Où exactement ? ({{n}} endroits possibles)",
-      "done": "C'est noté : {{name}} est maintenant dans {{location}}.",
-      "already_there": "{{name}} est déjà dans {{location}}, je n'ai rien changé.",
+      "already_there": "{{name}} est déjà dans {{location}}.",
       "denied": "Tu peux consulter cette habitation, mais pas la modifier. Le rangement n'a pas été enregistré.",
       "failed": "Je n'ai pas réussi à enregistrer ce rangement. Rien n'a été modifié.",
       "no_object": "Je ne trouve aucun objet appelé « {{query}} ». Je n'ai rien rangé.",
@@ -210,9 +215,17 @@
       "undo": "Annuler ce rangement",
       "undone": "C'est annulé : {{name}} est de nouveau dans {{location}}.",
       "undo_failed": "Je n'ai pas réussi à annuler. L'objet est resté à son nouvel emplacement.",
-      "ack": "OK.",
+      "ack": "Rangé dans {{place}}.",
       "skipped": "On passe.",
-      "skip": "Passer"
+      "skip": "Passer",
+      "ack_alt1": "C'est noté, dans {{place}}.",
+      "ack_alt2": "Dans {{place}}.",
+      "ack_alt3": "Parfait, dans {{place}}.",
+      "ack_alt4": "Voilà, c'est dans {{place}}.",
+      "already_there_alt1": "{{name}} y est déjà, je ne touche à rien.",
+      "already_there_alt2": "C'est déjà là, rien à changer.",
+      "no_object_alt1": "Je ne vois pas de « {{query}} » dans ton inventaire.",
+      "no_destination_alt1": "« {{query}} », ça ne me dit rien. Crée-le d'abord."
     },
     "session": {
       "title": "Céoù t’écoute",

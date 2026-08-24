@@ -188,19 +188,24 @@
     "error_busy": "Too many questions at once. Ask me again in a few seconds.",
     "answer": {
       "unknown": "I didn't catch that.",
-      "not_found": "I found nothing for \"{{query}}\".",
+      "not_found": "I found nothing for “{{query}}”.",
       "found_one": "{{name}} is in {{location}}.",
       "found_many": "I found {{n}} results for \"{{query}}\", spread across {{places}} places.",
       "found_many_here": "I found {{n}} results for \"{{query}}\", all in {{location}}.",
       "room_unknown": "I could not find a room called \"{{room}}\".",
       "room_empty": "There is no item recorded in {{room}}.",
-      "room_list": "There are {{n}} items in {{room}}."
+      "room_list": "There are {{n}} items in {{room}}.",
+      "unknown_alt1": "That one got past me.",
+      "unknown_alt2": "Sorry, I missed that.",
+      "not_found_alt1": "Nothing like “{{query}}” here.",
+      "not_found_alt2": "No “{{query}}” on my side.",
+      "found_one_alt1": "You will find {{name}} in {{location}}.",
+      "found_one_alt2": "{{name}} sits in {{location}}."
     },
     "move": {
       "which_object": "Which item? ({{n}} matches)",
       "which_destination": "Where exactly? ({{n}} possible places)",
-      "done": "Done: {{name}} is now in {{location}}.",
-      "already_there": "{{name}} is already in {{location}}, nothing changed.",
+      "already_there": "{{name}} is already in {{location}}.",
       "denied": "You can view this home, but not edit it. The move was not saved.",
       "failed": "I could not save this move. Nothing was changed.",
       "no_object": "I can't find any item called “{{query}}”. Nothing was moved.",
@@ -210,9 +215,17 @@
       "undo": "Undo this move",
       "undone": "Undone: {{name}} is back in {{location}}.",
       "undo_failed": "I couldn't undo that. The item stayed at its new location.",
-      "ack": "OK.",
+      "ack": "Put away in {{place}}.",
       "skipped": "Skipping.",
-      "skip": "Skip"
+      "skip": "Skip",
+      "ack_alt1": "Noted, in {{place}}.",
+      "ack_alt2": "In {{place}}.",
+      "ack_alt3": "Perfect, in {{place}}.",
+      "ack_alt4": "There, it's in {{place}}.",
+      "already_there_alt1": "{{name}} is already there, I left it alone.",
+      "already_there_alt2": "Already there — nothing to change.",
+      "no_object_alt1": "I don't see any “{{query}}” in your inventory.",
+      "no_destination_alt1": "“{{query}}” means nothing to me. Create it first."
     },
     "session": {
       "title": "Ceou is listening",

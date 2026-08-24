@@ -15,6 +15,7 @@ import { isAlreadyThere, resolveMove, type MoveDestination } from './move';
 import { parseMove, splitClosing } from './phrase';
 import { locationSentence, normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
+import { pickVariant } from './wording';
 
 // L'ASSISTANT EST UNE SESSION, PAS UNE QUESTION.
 //
@@ -413,7 +414,7 @@ export function useAssistant() {
       // ajouterait à l'historique une ligne racontant un rangement qui n'a pas
       // eu lieu — et cet historique est censé faire foi.
       if (isAlreadyThere(objet, destination)) {
-        settle(tr('assistant.move.already_there', { name: objet.name, location: destination.sentence }));
+        settle(pickVariant('assistant.move.already_there', { name: objet.name, location: destination.sentence }));
         return;
       }
 
@@ -455,12 +456,15 @@ export function useAssistant() {
           ...current,
           status: 'listening',
           transcript,
-          answer: tr('assistant.move.done', { name: objet.name, location: destination.sentence }),
+          // Rien à écrire : la ligne qui vient d'apparaître en tête du relevé
+          // dit déjà le nom et l'endroit. Le répéter juste au-dessus était du
+          // bruit.
+          answer: '',
           move: null,
           undo,
           entries: [...current.entries, { objetName: objet.name, location: destination.label }],
         }));
-        void say(tr('assistant.move.ack'));
+        void say(pickVariant('assistant.move.ack', { place: destination.name }));
       } catch (error) {
         const denied = isPermissionError(error);
         if (!denied) logClientError(error, { source: 'assistant.move' });
@@ -490,7 +494,7 @@ export function useAssistant() {
       // Un rangement impossible se dit comme une réponse ordinaire : c'est un
       // renseignement, pas une panne, et la session continue.
       if (resolution.status !== 'ready') {
-        respond(transcript, composeMoveFailure(resolution, tr));
+        respond(transcript, composeMoveFailure(resolution, pickVariant));
         return;
       }
 
@@ -544,7 +548,7 @@ export function useAssistant() {
           { action: 'locate', object_query: text, room_query: '', destination_query: '', scope: 'one' },
           indexRef.current ?? [],
         );
-        respond(text, composeAnswer(found, tr), found);
+        respond(text, composeAnswer(found, pickVariant), found);
         return;
       }
 
@@ -560,14 +564,14 @@ export function useAssistant() {
         }
 
         const result = resolveIntent(intent, indexRef.current ?? []);
-        respond(text, composeAnswer(result, tr), result);
+        respond(text, composeAnswer(result, pickVariant), result);
       } catch (error) {
         const busy = error instanceof RateLimitedError;
         // Une limitation de débit n'est pas une panne : inutile d'encombrer
         // le journal d'erreurs avec un utilisateur qui parle vite.
         if (!busy) logClientError(error, { source: 'assistant', transcriptLength: text.length });
         if (sessionRef.current !== session) return;
-        respond(text, tr(busy ? 'assistant.error_busy' : 'assistant.error'));
+        respond(text, pickVariant(busy ? 'assistant.error_busy' : 'assistant.error'));
       }
     },
     [respond, runMove, settleState],
