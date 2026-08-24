@@ -10,7 +10,7 @@ import {
 } from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
@@ -377,29 +377,26 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // pas par une logique de priorité à négocier.
   const pinchAnchor = useRef({ x: 0, y: 0 });
 
-  // LE PINCEMENT PASSE AVANT TOUS LES GLISSÉS À UN DOIGT, et il faut le dire
-  // explicitement. Un geste posé sur une vue DESCENDANTE (le corps d'une
-  // pièce, une poignée, une puce, une porte, la couche de déplacement) prend
-  // la main sur celui de l'ancêtre dès qu'il s'active : le pincement, qui vit
-  // sur le conteneur, se retrouvait alors bloqué pour tout le reste du
-  // toucher — c'est ce qui l'a cassé le 2026-08-24, quand la couche de
-  // déplacement s'est mise à couvrir toute la feuille.
-  //
-  // Cette référence circule donc jusqu'à chaque geste à un doigt du plan, qui
-  // se déclare simultané avec elle. Aucun d'eux n'agit vraiment à deux doigts
-  // (tous sont en maxPointers(1)) : la relation ne sert qu'à les empêcher de
-  // se faire annuler l'un l'autre.
-  const pinchRef = useRef<GestureType | undefined>(undefined);
+  // LE PINCEMENT A LA PRIORITÉ SUR `zoomOrigin`, et il faut le dire : les deux
+  // gestes du conteneur sont simultanés, donc tous deux peuvent être actifs
+  // sur le même toucher, et tous deux lisent puis écrivent cette même origine.
+  // Un second doigt qui se pose pendant un glissé faisait alors repartir le
+  // glissé de l'origine que le pincement venait d'inscrire, et les deux se
+  // disputaient la vue à chaque frame — le zoom « qui marche mal ».
+  const pinching = useRef(false);
 
   const pinch = Gesture.Pinch()
-    .withRef(pinchRef)
     .runOnJS(true)
     .onStart((event) => {
+      pinching.current = true;
       zoomOrigin.current = zoom;
       pinchAnchor.current = {
         x: (event.focalX - zoom.translateX) / zoom.scale,
         y: (event.focalY - zoom.translateY) / zoom.scale,
       };
+    })
+    .onFinalize(() => {
+      pinching.current = false;
     })
     .onUpdate((event) => {
       // Le scale est clampé AVANT de calculer translateX/Y (pas seulement
@@ -435,21 +432,24 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       return x >= g.x && x <= g.x + g.width && y >= g.y && y <= g.y + g.height;
     });
 
-  // Déplacer la vue à UN SEUL DOIGT, y compris pendant qu'une pièce est
-  // sélectionnée — tant que le geste part d'ailleurs que de cette pièce.
+  // === LE DÉPLACEMENT DE LA VUE À UN DOIGT ================================
   //
-  // Ce geste était purement et simplement coupé dès qu'une pièce était
-  // sélectionnée : il fallait alors deux doigts pour se déplacer, ou
-  // désélectionner d'abord. Ce qu'il faut vraiment exclure, ce n'est pas
-  // « une pièce est sélectionnée », c'est « ce doigt-là sert déjà à la
-  // déplacer ». On regarde donc D'OÙ part le geste.
+  // Il vit ICI, sur le conteneur, dans la MÊME composition que le pincement —
+  // et c'est la seule disposition qui tienne. Deux gestes déclarés simultanés
+  // au même endroit ne se disputent rien ; deux gestes posés sur des vues
+  // différentes, si, et le vainqueur dépend alors de règles de priorité
+  // internes à la bibliothèque.
   //
-  // La zone réservée déborde de la pièce de HANDLE_TOUCH_SIZE / 2 : les
-  // poignées de redimensionnement sont centrées sur ses coins et ses bords,
-  // donc la moitié de leur cible tombe dehors. Sans cette marge, un
-  // redimensionnement amorcé un poil en dehors déplaçait aussi le plan.
-  // Déplacer la vue à un doigt. Ce qui suit vaut pour les DEUX gestes ci-
-  // dessous, qui ne diffèrent que par la vue à laquelle ils sont accrochés.
+  // Une tentative de couche de déplacement posée sur la feuille, sous les
+  // cibles tactiles, a été retirée le 2026-08-24 : couvrant toute la feuille,
+  // elle captait le premier doigt partout et coupait le pincement de
+  // l'ancêtre. Les six relations `simultaneousWithExternalGesture` ajoutées
+  // ensuite pour recoudre l'ensemble n'ont fait qu'empiler l'incertitude.
+  //
+  // Le partage est donc redevenu simple, et il tient en une phrase : les
+  // gestes des ENFANTS (corps d'une pièce, poignée, puce, porte) coupent
+  // celui-ci quand ils s'activent, ce qui leur donne naturellement la
+  // priorité là où ils sont. Partout ailleurs, le doigt déplace la vue.
   const panTheView = (translationX: number, translationY: number) => {
     const next = {
       ...zoomOrigin.current,
@@ -459,30 +459,47 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
   };
 
-  const startViewPan = () => {
-    zoomOrigin.current = zoom;
+  // Le doigt qui part de la pièce SÉLECTIONNÉE lui appartient : il sert à la
+  // déplacer ou à la redimensionner. Ce geste-ci reste alors inerte, même
+  // s'il s'active — une double sécurité par-dessus la priorité des enfants,
+  // pour que le plan ne parte jamais en même temps que la pièce.
+  //
+  // La zone réservée déborde de la pièce d'une demi-poignée : les poignées de
+  // redimensionnement sont centrées sur ses coins et ses bords, donc la
+  // moitié de leur cible tombe dehors.
+  const startsOnSelectedRoom = (contentX: number, contentY: number) => {
+    if (!selectedFormeId) return false;
+    const geo = geoById[selectedFormeId];
+    if (!geo) return false;
+    const margin = HANDLE_TOUCH_SIZE / 2;
+    return (
+      contentX >= geo.x - margin &&
+      contentX <= geo.x + geo.width + margin &&
+      contentY >= geo.y - margin &&
+      contentY <= geo.y + geo.height + margin
+    );
   };
 
-  // UNE SEULE PIÈCE RÉSERVE LE DOIGT : celle qui est sélectionnée, parce
-  // qu'il sert alors à la déplacer. Partout ailleurs — le vide, mais AUSSI
-  // les autres pièces — le doigt déplace la vue.
-  //
-  // Cette couche récupère le vide. Elle est posée entre le canevas et toutes
-  // les cibles tactiles, donc elle ne voit que les touchers dont personne
-  // d'autre ne veut. Les touchers qui tombent sur une pièce NON sélectionnée
-  // sont rattrapés par ShapeBody lui-même, qui déplace alors la vue au lieu
-  // de la pièce (voir son geste plus bas) — sans quoi il fallait viser une
-  // zone vide du plan pour pouvoir se déplacer.
-  //
-  // Aucun geste concurrent à départager pour un même doigt : c'est toujours
-  // la cible la plus haute qui reçoit le toucher, et elle seule.
-  const planPan = Gesture.Pan()
+  const panFromOutside = useRef(true);
+
+  const backgroundPan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .simultaneousWithExternalGesture(pinchRef)
+    // Pendant la pose d'une porte, les bandes de mur couvrent tout le
+    // pourtour des pièces : le doigt sert à viser une ouverture, pas à se
+    // déplacer. Le pincement, lui, reste disponible pour naviguer.
+    .enabled(!doorPlacing)
     .runOnJS(true)
-    .onStart(startViewPan)
-    .onUpdate((event) => panTheView(event.translationX, event.translationY));
+    .onStart((event) => {
+      const point = viewportToContent(event.x, event.y);
+      panFromOutside.current = !startsOnSelectedRoom(point.x, point.y);
+      // Ne jamais écraser l'origine qu'un pincement en cours a posée.
+      if (!pinching.current) zoomOrigin.current = zoom;
+    })
+    .onUpdate((event) => {
+      if (pinching.current || !panFromOutside.current) return;
+      panTheView(event.translationX, event.translationY);
+    });
 
   // Remplace le bouton "Valider" : un tap qui ne touche aucune pièce
   // désélectionne. Le calcul en JS (plutôt que de compter sur une priorité
@@ -601,7 +618,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       className="rounded-2xl"
       onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
-      <GestureDetector gesture={Gesture.Simultaneous(pinch, backgroundTaps)}>
+      <GestureDetector gesture={Gesture.Simultaneous(pinch, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
             visible, quel que soit le zoom — voir le commentaire sur
             backgroundPan plus haut. */}
@@ -802,13 +819,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               ))}
             </Canvas>
 
-            {/* La couche de déplacement à un doigt. Posée ici, entre le
-                canevas et toutes les cibles tactiles, elle ne récupère que
-                les touchers tombés en dehors d'elles. */}
-            <GestureDetector gesture={planPan}>
-              <View style={{ position: 'absolute', left: 0, top: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT }} />
-            </GestureDetector>
-
             {/* Pendant la pose d'une porte, le corps des pièces et les
                 poignées disparaissent : un seul type de cible à l'écran,
                 donc aucun geste à départager. C'est ce qui manquait à la
@@ -828,9 +838,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
                   onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
                   onSelect={() => onSelect(forme)}
-                  onViewPanStart={startViewPan}
-                  onViewPan={panTheView}
-                  pinchRef={pinchRef}
                 />
               );
             })}
@@ -848,7 +855,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               readOnly={readOnly}
               onCreate={onDoorCreate}
               onPreview={setDoorPreview}
-              pinchRef={pinchRef}
               onSelect={onDoorSelect}
               onDragEnd={onDoorDragEnd}
             />
@@ -866,7 +872,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     scale={zoom.scale}
                     onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
                     onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
-                    pinchRef={pinchRef}
                   />
                 ))
               : null}
@@ -881,7 +886,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               size={pinSize}
               selectedPinId={selectedPinId}
               onSelectPin={onPinSelect}
-              pinchRef={pinchRef}
               readOnly={readOnly}
               onDragEnd={onPinDragEnd}
               onTap={onPinTap}
@@ -976,15 +980,12 @@ function formatCount(count: number): string {
 // Le corps d'une pièce. Un tap la sélectionne, toujours — y compris pendant
 // qu'une autre l'est, pour passer de l'une à l'autre sans rien valider.
 //
-// LE GLISSÉ, LUI, DÉPEND DE LA SÉLECTION. Sur la pièce sélectionnée il la
-// déplace (avec snapPosition, qui l'accole magnétiquement à ses voisines) ;
-// sur toutes les autres il déplace LA VUE, exactement comme le vide autour.
-//
-// Ce second cas manquait : le geste était simplement désactivé, et une pièce
-// non sélectionnée avalait donc le toucher sans rien en faire. Il fallait
-// viser une zone vide du plan pour pouvoir se déplacer — ce que le test a
-// reproché. C'est bien ici que ça se règle et pas sur une couche du dessous :
-// une vue posée par-dessus les pièces leur volerait le tap de sélection.
+// LE GLISSÉ N'EXISTE QUE SUR LA PIÈCE SÉLECTIONNÉE, et il la déplace (avec
+// snapPosition, qui l'accole magnétiquement à ses voisines). Ailleurs le
+// geste est éteint, et c'est délibéré : un geste d'enfant éteint laisse
+// passer le toucher jusqu'au conteneur, dont le glissé déplace alors la vue.
+// C'est ainsi qu'on se déplace en partant de par-dessus une autre pièce, sans
+// qu'aucun geste n'ait à en départager un autre.
 function ShapeBody({
   geo,
   others,
@@ -994,9 +995,6 @@ function ShapeBody({
   onMove,
   onDragEnd,
   onSelect,
-  onViewPanStart,
-  onViewPan,
-  pinchRef,
 }: {
   geo: ShapeGeometry;
   others: ShapeGeometry[];
@@ -1006,13 +1004,9 @@ function ShapeBody({
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onSelect: () => void;
-  onViewPanStart: () => void;
-  onViewPan: (translationX: number, translationY: number) => void;
-  pinchRef: React.RefObject<GestureType | undefined>;
 }) {
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
-  const movesTheRoom = isSelected && !readOnly;
 
   // event.translation(X|Y) est un delta ÉCRAN, avant mise à l'échelle du
   // zoom — diviser par `scale` pour obtenir le déplacement réel dans le
@@ -1027,22 +1021,16 @@ function ShapeBody({
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .simultaneousWithExternalGesture(pinchRef)
+    .enabled(isSelected && !readOnly)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = geo;
-      if (!movesTheRoom) onViewPanStart();
     })
     .onUpdate((event) => {
-      if (!movesTheRoom) {
-        onViewPan(event.translationX, event.translationY);
-        return;
-      }
       const snapped = resolve(event.translationX, event.translationY);
       onMove(snapped.x, snapped.y);
     })
     .onEnd((event) => {
-      if (!movesTheRoom) return;
       const snapped = resolve(event.translationX, event.translationY);
       onDragEnd(snapped.x, snapped.y);
     });
@@ -1082,7 +1070,6 @@ function HandleDot({
   scale,
   onResize,
   onResizeEnd,
-  pinchRef,
 }: {
   geo: ShapeGeometry;
   handle: HandleId;
@@ -1090,7 +1077,6 @@ function HandleDot({
   scale: number;
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
-  pinchRef: React.RefObject<GestureType | undefined>;
 }) {
   const origin = useRef(geo);
   const last = useRef(geo);
@@ -1099,7 +1085,6 @@ function HandleDot({
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(() => {
       origin.current = geo;

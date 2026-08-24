@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { View } from 'react-native';
-import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { PlanDoor } from '../../types/database';
 import { clamp } from './snap';
 import type { DoorEdge, ShapeGeometry } from './types';
@@ -54,8 +54,6 @@ type DoorLayerProps = {
   onPreview: (preview: { formeId: string; edge: DoorEdge; position: number } | null) => void;
   onSelect: (door: PlanDoor) => void;
   onDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
-  /** Le pincement à deux doigts passe avant le glissé d une porte. */
-  pinchRef: React.RefObject<GestureType | undefined>;
 };
 
 /**
@@ -86,7 +84,6 @@ export function DoorLayer({
   onPreview,
   onSelect,
   onDragEnd,
-  pinchRef,
 }: DoorLayerProps) {
   // Position en cours de glissé, locale : la base ne connaît la nouvelle
   // place de la porte qu'au relâché, comme pour les pièces et les pastilles.
@@ -132,7 +129,6 @@ export function DoorLayer({
                 geo={geo}
                 thickness={stripThickness(geo)}
                 place={(raw) => freeDoorPosition(geo, edge, raw, spansByForme[formeId] ?? [], neighboursOf(formeId))}
-                pinchRef={pinchRef}
                 onCreate={(position) => onCreate(formeId, edge, position)}
                 onPreview={(position) => onPreview(position === null ? null : { formeId, edge, position })}
               />
@@ -168,7 +164,6 @@ export function DoorLayer({
                   )
                 }
                 interactive={!readOnly}
-                pinchRef={pinchRef}
                 selected={door.id === selectedDoorId}
                 onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
                 onRelease={(next) => onDragEnd(door.id, next.edge, next.position)}
@@ -194,7 +189,6 @@ function WallStrip({
   geo,
   thickness,
   place,
-  pinchRef,
   onCreate,
   onPreview,
 }: {
@@ -203,7 +197,6 @@ function WallStrip({
   thickness: number;
   /** La place libre la plus proche, ou `null` si ce mur est complet. */
   place: (raw: number) => number | null;
-  pinchRef: React.RefObject<GestureType | undefined>;
   onCreate: (position: number) => void;
   onPreview: (position: number | null) => void;
 }) {
@@ -230,7 +223,6 @@ function WallStrip({
     .minPointers(1)
     .maxPointers(1)
     .minDistance(0)
-    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onBegin((event) => preview(event.x, event.y))
     .onUpdate((event) => preview(event.x, event.y))
@@ -266,7 +258,6 @@ function DoorTarget({
   interactive,
   selected,
   place,
-  pinchRef,
   onMove,
   onRelease,
   onSelect,
@@ -277,7 +268,6 @@ function DoorTarget({
   interactive: boolean;
   selected: boolean;
   place: (edge: DoorEdge, raw: number) => number | null;
-  pinchRef: React.RefObject<GestureType | undefined>;
   onMove: (next: EdgePosition) => void;
   onRelease: (next: EdgePosition) => void;
   onSelect: () => void;
@@ -307,7 +297,6 @@ function DoorTarget({
     .minPointers(1)
     .maxPointers(1)
     .enabled(interactive && selected)
-    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = live;
