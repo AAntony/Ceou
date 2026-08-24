@@ -89,7 +89,17 @@ function ListeningRing({ active }: { active: boolean }) {
   );
 }
 
-export function AssistantFab({ isListening, onPress }: { isListening: boolean; onPress: () => void }) {
+export function AssistantFab({
+  isListening,
+  handsFree,
+  onPress,
+  onLongPress,
+}: {
+  isListening: boolean;
+  handsFree: boolean;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -107,9 +117,16 @@ export function AssistantFab({ isListening, onPress }: { isListening: boolean; o
       <ListeningRing active={isListening} />
       <Pressable
         onPress={onPress}
+        // L'appui long ouvre la session mains libres. Elle a une autre porte,
+        // plus visible — le bouton proposé juste après un rangement — parce
+        // qu'un appui long ne se devine pas ; celle-ci est le raccourci de
+        // qui sait déjà qu'il part ranger.
+        onLongPress={onLongPress}
+        delayLongPress={450}
         accessibilityRole="button"
         accessibilityState={{ selected: isListening }}
-        accessibilityLabel={t('home.assistant_a11y')}
+        accessibilityLabel={t(handsFree ? 'assistant.move.handsfree_title' : 'home.assistant_a11y')}
+        accessibilityHint={handsFree ? undefined : t('assistant.move.handsfree_hint')}
         style={{
           height: BUTTON_HEIGHT,
           flexDirection: 'row',
@@ -130,7 +147,11 @@ export function AssistantFab({ isListening, onPress }: { isListening: boolean; o
       >
         <Icon name="microphone" size={ICON_SIZE} color="#FFFFFF" />
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: LABEL_SIZE, fontWeight: '600' }}>
-          {isListening ? t('home.voice_search_listening') : t('home.assistant_cta')}
+          {handsFree
+            ? t('assistant.move.handsfree_title')
+            : isListening
+              ? t('home.voice_search_listening')
+              : t('home.assistant_cta')}
         </Text>
       </Pressable>
     </View>

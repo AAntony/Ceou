@@ -217,7 +217,21 @@
       "scope_unsupported": "Je ne sais ranger qu'un objet à la fois pour l'instant. Redemande-moi en nommant celui que tu veux ranger.",
       "undo": "Annuler ce rangement",
       "undone": "C'est annulé : {{name}} est de nouveau dans {{location}}.",
-      "undo_failed": "Je n'ai pas réussi à annuler. L'objet est resté à son nouvel emplacement."
+      "undo_failed": "Je n'ai pas réussi à annuler. L'objet est resté à son nouvel emplacement.",
+      "ack": "OK.",
+      "session_done_one": "Session terminée. Un objet rangé.",
+      "session_done_other": "Session terminée. {{count}} objets rangés.",
+      "skipped": "On passe.",
+      "handsfree_cta": "Enchaîner les rangements",
+      "handsfree_title": "Mains libres",
+      "handsfree_listening": "Je t’écoute — dis où tu ranges.",
+      "handsfree_working": "J’enregistre…",
+      "handsfree_empty": "Dis par exemple : « j’ai rangé mes clés dans le tiroir de l’entrée ».",
+      "handsfree_count_one": "Un objet rangé",
+      "handsfree_count_other": "{{count}} objets rangés",
+      "handsfree_hint": "Appui long sur le micro pour démarrer une session.",
+      "finish": "Terminer",
+      "skip": "Passer"
     }
   },
   "friends": {

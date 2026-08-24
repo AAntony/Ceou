@@ -323,7 +323,9 @@ export function HomeDashboard() {
           demandait de changer de prise en main pour l'atteindre. */}
       <AssistantFab
         isListening={voiceSearch.isListening}
+        handsFree={voiceSearch.handsFree}
         onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
+        onLongPress={voiceSearch.startHandsFree}
       />
 
       <AssistantSheet
@@ -333,6 +335,9 @@ export function HomeDashboard() {
         onChooseDestination={voiceSearch.chooseDestination}
         onConfirmMove={voiceSearch.confirmMove}
         onUndoMove={voiceSearch.undoMove}
+        onStartHandsFree={voiceSearch.startHandsFree}
+        onStopHandsFree={voiceSearch.stopHandsFree}
+        onSkipChoice={voiceSearch.skipChoice}
       />
     </View>
   );

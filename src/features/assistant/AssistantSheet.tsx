@@ -74,6 +74,9 @@ export function AssistantSheet({
   onChooseDestination,
   onConfirmMove,
   onUndoMove,
+  onStartHandsFree,
+  onStopHandsFree,
+  onSkipChoice,
 }: {
   state: AssistantState;
   onClose: () => void;
@@ -81,11 +84,15 @@ export function AssistantSheet({
   onChooseDestination: (destinationId: string | null) => void;
   onConfirmMove: () => void;
   onUndoMove: () => void;
+  onStartHandsFree: () => void;
+  onStopHandsFree: () => void;
+  onSkipChoice: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const colors = useThemeColors();
 
   const visible =
+    state.handsFree ||
     state.status === 'thinking' ||
     state.status === 'answered' ||
     state.status === 'error' ||
@@ -104,6 +111,28 @@ export function AssistantSheet({
       sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-5"
       sheetStyle={{ maxHeight: '85%' }}
     >
+      {/* === Session mains libres : le bandeau qui reste tout du long ====== */}
+      {state.handsFree ? (
+        <View className="mb-4 flex-row items-center gap-3 rounded-2xl bg-coral-light px-4 py-3">
+          <Icon name="microphone" size={20} color={ACCENT} />
+          <View className="flex-1">
+            <Text className="text-sm font-semibold text-coral-dark">{t('assistant.move.handsfree_title')}</Text>
+            <Text className="text-xs text-ink-soft" numberOfLines={2}>
+              {state.status === 'moving' || state.status === 'thinking'
+                ? t('assistant.move.handsfree_working')
+                : state.status === 'move'
+                  ? t('assistant.move.confirm_title')
+                  : t('assistant.move.handsfree_listening')}
+            </Text>
+          </View>
+          {state.handsFreeDone.length > 0 ? (
+            <Text className="text-xs font-semibold text-coral-dark">
+              {t('assistant.move.handsfree_count', { count: state.handsFreeDone.length })}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
       {/* Ce que l'app a compris, affiché tel quel : c'est la seule façon pour
           l'utilisateur de comprendre une réponse à côté de la plaque — la
           dictée a pu entendre autre chose que ce qu'il a dit. */}
@@ -205,6 +234,46 @@ export function AssistantSheet({
         </>
       ) : null}
 
+      {/* === Mains libres : ce qui s'affiche entre deux phrases ============ */}
+      {state.handsFree && state.status === 'listening' ? (
+        <>
+          {state.answer ? (
+            <Text className="mb-3 text-base leading-6 text-ink">{state.answer}</Text>
+          ) : state.handsFreeDone.length === 0 ? (
+            <Text className="mb-3 text-base leading-6 text-ink-soft">{t('assistant.move.handsfree_empty')}</Text>
+          ) : null}
+
+          {/* Le plus récent en haut : c'est celui qu'on veut vérifier, et
+              c'est aussi celui que « Annuler » vise. */}
+          {state.handsFreeDone.length > 0 ? (
+            <ScrollView style={{ maxHeight: 240, flexShrink: 1 }}>
+              {[...state.handsFreeDone].reverse().map((entry, index) => (
+                <View
+                  key={`${entry.objetName}-${state.handsFreeDone.length - index}`}
+                  className="flex-row items-center gap-3 border-b border-ink/5 py-2.5"
+                >
+                  <Icon name="validate" size={16} color={colors.inkFaint} />
+                  <View className="flex-1">
+                    <Text className="text-sm text-ink" numberOfLines={1}>
+                      {entry.objetName}
+                    </Text>
+                    <Text className="text-xs text-ink-soft" numberOfLines={1}>
+                      {entry.location}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
+
+          {state.undo ? (
+            <View className="mt-3">
+              <Button label={t('assistant.move.undo')} variant="outline" onPress={onUndoMove} />
+            </View>
+          ) : null}
+        </>
+      ) : null}
+
       {/* === Réponse ordinaire, et fin d'un rangement ======================= */}
       {state.status === 'answered' || state.status === 'moved' ? (
         <>
@@ -267,12 +336,35 @@ export function AssistantSheet({
         </>
       ) : null}
 
-      <View className="mt-4">
-        <Button
-          label={state.status === 'move' ? t('common.cancel') : t('common.close')}
-          variant="ghost"
-          onPress={onClose}
-        />
+      {/* Après un rangement isolé, la porte d'entrée du mode mains libres :
+          c'est le moment précis où il devient utile, donc le seul endroit où
+          le proposer sans encombrer. */}
+      {!state.handsFree && state.status === 'moved' ? (
+        <View className="mt-3">
+          <Button label={t('assistant.move.handsfree_cta')} variant="outline" onPress={onStartHandsFree} />
+          <Text className="mt-2 text-center text-xs text-ink-faint">{t('assistant.move.handsfree_hint')}</Text>
+        </View>
+      ) : null}
+
+      <View className="mt-4 flex-row gap-3">
+        {state.handsFree && state.status === 'move' ? (
+          <View className="flex-1">
+            <Button label={t('assistant.move.skip')} variant="ghost" onPress={onSkipChoice} />
+          </View>
+        ) : null}
+        <View className="flex-1">
+          <Button
+            label={
+              state.handsFree
+                ? t('assistant.move.finish')
+                : state.status === 'move'
+                  ? t('common.cancel')
+                  : t('common.close')
+            }
+            variant="ghost"
+            onPress={state.handsFree ? onStopHandsFree : onClose}
+          />
+        </View>
       </View>
     </BottomSheetModal>
   );

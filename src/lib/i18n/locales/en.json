@@ -217,7 +217,21 @@
       "scope_unsupported": "I can only put one item away at a time for now. Ask me again naming the one you mean.",
       "undo": "Undo this move",
       "undone": "Undone: {{name}} is back in {{location}}.",
-      "undo_failed": "I couldn't undo that. The item stayed at its new location."
+      "undo_failed": "I couldn't undo that. The item stayed at its new location.",
+      "ack": "OK.",
+      "session_done_one": "Session over. One item put away.",
+      "session_done_other": "Session over. {{count}} items put away.",
+      "skipped": "Skipping.",
+      "handsfree_cta": "Keep putting things away",
+      "handsfree_title": "Hands-free",
+      "handsfree_listening": "Listening — say where you put it.",
+      "handsfree_working": "Saving…",
+      "handsfree_empty": "Say for example: “I put my keys in the hallway drawer”.",
+      "handsfree_count_one": "One item put away",
+      "handsfree_count_other": "{{count}} items put away",
+      "handsfree_hint": "Long-press the microphone to start a session.",
+      "finish": "Finish",
+      "skip": "Skip"
     }
   },
   "friends": {
