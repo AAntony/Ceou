@@ -87,7 +87,9 @@ export type IconName =
   | 'porte'
   | 'recenter'
   | 'help'
-  | 'dots';
+  | 'dots'
+  | 'eye'
+  | 'eyeOff';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -173,6 +175,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   validate: 'check',
   microphone: 'microphone',
   dots: 'dots-horizontal',
+  // Dévoiler / masquer un mot de passe (voir TextField).
+  eye: 'eye-outline',
+  eyeOff: 'eye-off-outline',
   arrowDown: 'arrow-down-bold',
   scan: 'creation',
   included: 'check-circle',

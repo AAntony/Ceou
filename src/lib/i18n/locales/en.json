@@ -18,7 +18,9 @@
     "error_load_hint": "Check your connection, then try again.",
     "retry": "Retry",
     "clear": "Clear",
-    "edit": "Edit"
+    "edit": "Edit",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "auth": {
     "email": "Email",
