@@ -377,16 +377,33 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // pas par une logique de priorité à négocier.
   const pinchAnchor = useRef({ x: 0, y: 0 });
 
-  // LE PINCEMENT A LA PRIORITÉ SUR `zoomOrigin`, et il faut le dire : les deux
-  // gestes du conteneur sont simultanés, donc tous deux peuvent être actifs
-  // sur le même toucher, et tous deux lisent puis écrivent cette même origine.
-  // Un second doigt qui se pose pendant un glissé faisait alors repartir le
-  // glissé de l'origine que le pincement venait d'inscrire, et les deux se
-  // disputaient la vue à chaque frame — le zoom « qui marche mal ».
+  // DÈS QU'IL Y A DEUX DOIGTS, PLUS RIEN NE SE DÉPLACE SUR LE PLAN.
+  //
+  // Ce drapeau sert deux fois. D'abord entre les deux gestes du conteneur :
+  // ils sont simultanés, donc tous deux peuvent être actifs sur le même
+  // toucher, et tous deux lisent puis écrivent `zoomOrigin`. Un second doigt
+  // posé pendant un glissé faisait repartir celui-ci de l'origine que le
+  // pincement venait d'inscrire, et les deux se disputaient la vue.
+  //
+  // Ensuite pour tout ce qui se déplace SOUS le doigt — pièce, poignée, puce,
+  // porte. Chacun de ces gestes est en maxPointers(1) : il s'active au
+  // premier doigt et rend la main au second, mais la pièce a déjà bougé, et
+  // sa fin de geste enregistrait ce déplacement involontaire. Ils consultent
+  // donc ce drapeau, remettent ce qu'ils déplaçaient là où il était, et
+  // n'enregistrent rien.
+  //
+  // Il se lève au TOUCHER du second doigt et non au démarrage du pincement,
+  // qui n'a lieu qu'une fois les doigts écartés — bien trop tard. Et il ne
+  // retombe qu'à la fin du geste complet : sans ça, lever un doigt sur deux
+  // rendait la main au glissé, qui emportait la pièce avec le doigt restant.
   const pinching = useRef(false);
+  const isPinching = () => pinching.current;
 
   const pinch = Gesture.Pinch()
     .runOnJS(true)
+    .onTouchesDown((event) => {
+      if (event.numberOfTouches >= 2) pinching.current = true;
+    })
     .onStart((event) => {
       pinching.current = true;
       zoomOrigin.current = zoom;
@@ -838,6 +855,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
                   onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
                   onSelect={() => onSelect(forme)}
+                  isPinching={isPinching}
                 />
               );
             })}
@@ -855,6 +873,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               readOnly={readOnly}
               onCreate={onDoorCreate}
               onPreview={setDoorPreview}
+              isPinching={isPinching}
               onSelect={onDoorSelect}
               onDragEnd={onDoorDragEnd}
             />
@@ -872,6 +891,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     scale={zoom.scale}
                     onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
                     onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
+                    isPinching={isPinching}
                   />
                 ))
               : null}
@@ -886,6 +906,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               size={pinSize}
               selectedPinId={selectedPinId}
               onSelectPin={onPinSelect}
+              isPinching={isPinching}
               readOnly={readOnly}
               onDragEnd={onPinDragEnd}
               onTap={onPinTap}
@@ -995,6 +1016,7 @@ function ShapeBody({
   onMove,
   onDragEnd,
   onSelect,
+  isPinching,
 }: {
   geo: ShapeGeometry;
   others: ShapeGeometry[];
@@ -1004,6 +1026,8 @@ function ShapeBody({
   onMove: (x: number, y: number) => void;
   onDragEnd: (x: number, y: number) => void;
   onSelect: () => void;
+  /** Deux doigts sont posés : la pièce ne suit plus, voir PlanCanvas. */
+  isPinching: () => boolean;
 }) {
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
@@ -1027,10 +1051,17 @@ function ShapeBody({
       dragOrigin.current = geo;
     })
     .onUpdate((event) => {
+      if (isPinching()) return;
       const snapped = resolve(event.translationX, event.translationY);
       onMove(snapped.x, snapped.y);
     })
     .onEnd((event) => {
+      // Le geste est devenu un pincement : la pièce revient d où elle vient
+      // et rien n est enregistré.
+      if (isPinching()) {
+        onMove(dragOrigin.current.x, dragOrigin.current.y);
+        return;
+      }
       const snapped = resolve(event.translationX, event.translationY);
       onDragEnd(snapped.x, snapped.y);
     });
@@ -1070,6 +1101,7 @@ function HandleDot({
   scale,
   onResize,
   onResizeEnd,
+  isPinching,
 }: {
   geo: ShapeGeometry;
   handle: HandleId;
@@ -1077,6 +1109,7 @@ function HandleDot({
   scale: number;
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
+  isPinching: () => boolean;
 }) {
   const origin = useRef(geo);
   const last = useRef(geo);
@@ -1091,11 +1124,18 @@ function HandleDot({
       last.current = geo;
     })
     .onUpdate((event) => {
+      if (isPinching()) return;
       const raw = applyHandle(origin.current, handle, event.translationX / scale, event.translationY / scale);
       last.current = clampResizeToWorld(snapResize(raw, handle, others));
       onResize(last.current);
     })
-    .onEnd(() => onResizeEnd(last.current));
+    .onEnd(() => {
+      if (isPinching()) {
+        onResize(origin.current);
+        return;
+      }
+      onResizeEnd(last.current);
+    });
 
   return (
     <GestureDetector gesture={pan}>

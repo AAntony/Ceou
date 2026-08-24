@@ -54,6 +54,8 @@ type DoorLayerProps = {
   onPreview: (preview: { formeId: string; edge: DoorEdge; position: number } | null) => void;
   onSelect: (door: PlanDoor) => void;
   onDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
+  /** Deux doigts sont posés : la porte ne suit plus, voir PlanCanvas. */
+  isPinching: () => boolean;
 };
 
 /**
@@ -84,6 +86,7 @@ export function DoorLayer({
   onPreview,
   onSelect,
   onDragEnd,
+  isPinching,
 }: DoorLayerProps) {
   // Position en cours de glissé, locale : la base ne connaît la nouvelle
   // place de la porte qu'au relâché, comme pour les pièces et les pastilles.
@@ -164,6 +167,7 @@ export function DoorLayer({
                   )
                 }
                 interactive={!readOnly}
+                isPinching={isPinching}
                 selected={door.id === selectedDoorId}
                 onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
                 onRelease={(next) => onDragEnd(door.id, next.edge, next.position)}
@@ -258,6 +262,7 @@ function DoorTarget({
   interactive,
   selected,
   place,
+  isPinching,
   onMove,
   onRelease,
   onSelect,
@@ -268,6 +273,7 @@ function DoorTarget({
   interactive: boolean;
   selected: boolean;
   place: (edge: DoorEdge, raw: number) => number | null;
+  isPinching: () => boolean;
   onMove: (next: EdgePosition) => void;
   onRelease: (next: EdgePosition) => void;
   onSelect: () => void;
@@ -302,8 +308,18 @@ function DoorTarget({
       dragOrigin.current = live;
       lastValid.current = live;
     })
-    .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
-    .onEnd((event) => onRelease(resolve(event.translationX, event.translationY)));
+    .onUpdate((event) => {
+      if (isPinching()) return;
+      onMove(resolve(event.translationX, event.translationY));
+    })
+    .onEnd((event) => {
+      // Le geste est devenu un pincement : la porte revient d où elle vient.
+      if (isPinching()) {
+        onMove(dragOrigin.current);
+        return;
+      }
+      onRelease(resolve(event.translationX, event.translationY));
+    });
 
   const tap = Gesture.Tap().enabled(interactive).runOnJS(true).onEnd(() => onSelect());
 

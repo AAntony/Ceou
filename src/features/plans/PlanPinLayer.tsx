@@ -87,6 +87,8 @@ type PlanPinLayerProps = {
   // apparaître le sélecteur S/M/XL au-dessus du plan.
   selectedPinId: string | null;
   onSelectPin: (pinId: string | null) => void;
+  /** Deux doigts sont posés : la puce ne suit plus, voir PlanCanvas. */
+  isPinching: () => boolean;
   // Consultation seule : les puces restent AFFICHÉES (c'est tout leur
   // intérêt — voir où sont les Emplacements) mais ne se déplacent plus et
   // n'ouvrent plus leur fiche, qui ne propose que « Retirer du plan ».
@@ -114,6 +116,7 @@ export function PlanPinLayer({
   size,
   selectedPinId,
   onSelectPin,
+  isPinching,
   readOnly = false,
   onDragEnd,
   onTap,
@@ -203,10 +206,18 @@ export function PlanPinLayer({
             scale={scale}
             metrics={metrics}
             siblings={siblings}
+            isPinching={isPinching}
             onDragStart={() => {
               draggingIdRef.current = pin.id;
             }}
             onMove={(next) => setPositions((current) => ({ ...current, [pin.id]: next }))}
+            onDragCancel={() => {
+              // Le verrou de resynchronisation doit tomber ici aussi, sinon
+              // cette puce ne recevrait plus jamais de valeur fraiche du
+              // serveur apres un glisse interrompu par un pincement.
+              draggingIdRef.current = null;
+              setPositions((current) => ({ ...current, [pin.id]: { relX: pin.rel_x, relY: pin.rel_y } }));
+            }}
             onDragEnd={(next) => {
               draggingIdRef.current = null;
               onDragEnd(pin.id, next.relX, next.relY);
@@ -230,8 +241,10 @@ function PinBadge({
   scale,
   metrics,
   siblings,
+  isPinching,
   onDragStart,
   onMove,
+  onDragCancel,
   onDragEnd,
   onToggleSelect,
   onTap,
@@ -246,8 +259,10 @@ function PinBadge({
   metrics: PinMetrics;
   /** Les autres puces de la MÊME pièce, centres en coordonnées de feuille. */
   siblings: { x: number; y: number }[];
+  isPinching: () => boolean;
   onDragStart: () => void;
   onMove: (pos: RelPosition) => void;
+  onDragCancel: () => void;
   onDragEnd: (pos: RelPosition) => void;
   onToggleSelect: () => void;
   onTap: () => void;
@@ -289,8 +304,18 @@ function PinBadge({
       dragOrigin.current = pos;
       onDragStart();
     })
-    .onUpdate((event) => onMove(resolve(event.translationX, event.translationY)))
-    .onEnd((event) => onDragEnd(resolve(event.translationX, event.translationY)));
+    .onUpdate((event) => {
+      if (isPinching()) return;
+      onMove(resolve(event.translationX, event.translationY));
+    })
+    .onEnd((event) => {
+      // Le geste est devenu un pincement : la puce revient d ou elle vient.
+      if (isPinching()) {
+        onDragCancel();
+        return;
+      }
+      onDragEnd(resolve(event.translationX, event.translationY));
+    });
 
   // Même principe que ShapeBody (pièces) : doubleTap listé en premier dans
   // Exclusive pour que singleTap attende de voir si un second tap suit. Un
