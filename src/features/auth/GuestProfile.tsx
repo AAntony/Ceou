@@ -73,7 +73,7 @@ export function GuestProfile() {
 
       {/* Quitter le mode invité perd l'accès : le libellé le dit, et c'est
           volontairement le lien le plus discret de l'écran. */}
-      <Pressable onPress={() => supabase.auth.signOut({ scope: 'local' })} className="mt-6 py-2">
+      <Pressable accessibilityRole="button" onPress={() => supabase.auth.signOut({ scope: 'local' })} className="mt-6 py-2">
         <Text className="text-center text-sm font-semibold text-red-600">{t('guest.leave')}</Text>
       </Pressable>
     </ScrollView>

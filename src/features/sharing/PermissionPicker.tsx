@@ -24,6 +24,7 @@ export function PermissionPicker({ value, onChange }: PermissionPickerProps) {
         const active = opt.value === value;
         return (
           <Pressable
+            accessibilityRole="button"
             key={opt.labelKey}
             onPress={() => onChange(opt.value)}
             className={`rounded-full border px-3 py-1.5 ${active ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'}`}

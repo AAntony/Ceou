@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from './Icon';
@@ -15,17 +16,25 @@ type PhotoViewerModalProps = {
 // standard des visionneuses photo.
 export function PhotoViewerModal({ visible, uri, onClose }: PhotoViewerModalProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   if (!uri) return null;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View className="flex-1 bg-black">
-        <Pressable className="flex-1 items-center justify-center" onPress={onClose}>
+        <Pressable
+          className="flex-1 items-center justify-center"
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
+        >
           <Image source={{ uri }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
         </Pressable>
         <Pressable
           onPress={onClose}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
           className="absolute right-5 h-10 w-10 items-center justify-center rounded-full bg-black/50"
           style={{ top: insets.top + 12 }}
         >

@@ -36,6 +36,7 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
         {unplaced.map((e) => (
           <Pressable
+            accessibilityRole="button"
             key={e.id}
             onPress={() => onPlace(e.id)}
             className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-sand px-3 py-1.5 active:opacity-70"

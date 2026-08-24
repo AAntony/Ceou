@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { useThemeColors } from '../lib/theme';
@@ -72,11 +73,13 @@ export function EntityRow({
   favoriteDisabled,
 }: EntityRowProps) {
   const colors = useThemeColors();
+  const { t } = useTranslation();
 
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
+      accessibilityRole="button"
       className="mb-2.5 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
       <View
@@ -100,6 +103,9 @@ export function EntityRow({
             onPress={onToggleFavorite}
             disabled={favoriteDisabled}
             hitSlop={8}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isFavorite, disabled: favoriteDisabled }}
+            accessibilityLabel={t(isFavorite ? 'a11y.favorite_remove' : 'a11y.favorite_add', { name: title })}
             className={`absolute left-1 top-1 rounded-full bg-white/85 p-1 ${favoriteDisabled ? 'opacity-50' : ''}`}
           >
             <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />
@@ -123,7 +129,13 @@ export function EntityRow({
       </View>
 
       {onEdit ? (
-        <Pressable onPress={onEdit} hitSlop={10} className="ml-1 p-1.5 active:opacity-60">
+        <Pressable
+          onPress={onEdit}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={t('a11y.edit_named', { name: title })}
+          className="ml-1 p-1.5 active:opacity-60"
+        >
           <Icon name="pencil" size={18} color={colors.inkFaint} />
         </Pressable>
       ) : null}

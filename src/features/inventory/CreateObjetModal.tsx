@@ -45,6 +45,7 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
             toute la feuille. */}
         <View className="flex-row gap-2">
           <Pressable
+            accessibilityRole="button"
             onPress={() => setMode('manual')}
             className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'manual' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
           >
@@ -53,6 +54,7 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
             </Text>
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             onPress={() => setMode('scan')}
             className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'scan' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
           >

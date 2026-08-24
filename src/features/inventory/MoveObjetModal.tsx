@@ -28,7 +28,7 @@ export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProp
         <View className="mb-2 flex-row items-center justify-between px-6">
           <View style={{ width: 22 }} />
           <Text className="text-lg font-bold text-ink">{t('inventory.objet.move_title')}</Text>
-          <Pressable onPress={onClose} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>

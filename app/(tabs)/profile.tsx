@@ -88,7 +88,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40" refreshControl={refreshControl}>
-      <Pressable onPress={handleAvatarPress} className="mb-8 items-center">
+      <Pressable accessibilityRole="button" onPress={handleAvatarPress} className="mb-8 items-center">
         <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-sand-dark">
           {avatarUploading ? (
             <ActivityIndicator />
@@ -113,6 +113,7 @@ export default function ProfileScreen() {
       <View className="flex-row gap-2">
         {SUPPORTED_LANGUAGES.map((language) => (
           <Pressable
+            accessibilityRole="button"
             key={language}
             onPress={() => handleLanguageChange(language)}
             className={`rounded-xl border px-4 py-2 ${
@@ -132,6 +133,7 @@ export default function ProfileScreen() {
 
       <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
       <Pressable
+        accessibilityRole="button"
         onPress={() => setMyCodeOpen((current) => !current)}
         className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-sand-dark px-4 py-3"
       >

@@ -128,7 +128,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           écran d'AddObjetModal. Cf. le commentaire de la branche manuelle
           dans CreateObjetModal avant d'y ajouter quoi que ce soit. */}
       <ScrollView contentContainerClassName="px-6 pb-6 pt-2" keyboardShouldPersistTaps="handled">
-        <Pressable onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
+        <Pressable accessibilityRole="button" onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
           {lookupLoading ? (
             <ActivityIndicator />
           ) : localPhotoUri ? (

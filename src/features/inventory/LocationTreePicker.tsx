@@ -106,7 +106,7 @@ export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: 
   return (
     <View>
       {stack.length > 1 ? (
-        <Pressable onPress={pop} hitSlop={8} className="mb-3 flex-row items-center gap-1 self-start">
+        <Pressable accessibilityRole="button" onPress={pop} hitSlop={8} className="mb-3 flex-row items-center gap-1 self-start">
           <Icon name="back" size={16} color={colors.inkSoft} />
           <Text className="text-sm font-medium text-ink-soft">{t('common.back')}</Text>
         </Pressable>
@@ -147,6 +147,7 @@ function AddInlineCard({ label, onPress }: { label: string; onPress: () => void 
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       className="mb-2 flex-row items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-coral bg-coral-light px-4 py-3 active:opacity-70"
     >

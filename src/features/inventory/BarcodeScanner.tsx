@@ -50,7 +50,7 @@ export function BarcodeScanner({ visible, onClose, onScanned }: BarcodeScannerPr
                 {t('inventory.objet.scan_hint')}
               </Text>
             </View>
-            <Pressable onPress={onClose} className="absolute bottom-12 self-center rounded-full bg-white/90 px-6 py-3">
+            <Pressable accessibilityRole="button" onPress={onClose} className="absolute bottom-12 self-center rounded-full bg-white/90 px-6 py-3">
               <Text className="font-semibold text-ink">{t('common.cancel')}</Text>
             </Pressable>
           </>

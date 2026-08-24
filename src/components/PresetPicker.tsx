@@ -21,6 +21,8 @@ export function PresetPicker<T extends Preset>({ presets, selectedKey, onSelect,
           <Pressable
             key={preset.key}
             onPress={() => onSelect(preset.key)}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
             android_ripple={{ color: colors.ripple, borderless: false }}
             className={`flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-3 py-2 ${
               selected ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'

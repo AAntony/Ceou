@@ -161,6 +161,7 @@ function HomeHeader({
       {pieceOptions.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1" contentContainerClassName="px-1">
           <Pressable
+            accessibilityRole="button"
             onPress={() => onSelectPiece(null)}
             android_ripple={{ color: colors.ripple, borderless: false }}
             className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
@@ -176,6 +177,7 @@ function HomeHeader({
             const selected = selectedPiece?.toLowerCase() === pieceName.toLowerCase();
             return (
               <Pressable
+                accessibilityRole="button"
                 key={pieceName}
                 onPress={() => onSelectPiece(selected ? null : pieceName)}
                 android_ripple={{ color: colors.ripple, borderless: false }}

@@ -50,6 +50,7 @@ export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowP
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       className="mb-2 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >

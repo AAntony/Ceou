@@ -591,5 +591,18 @@
       "empty": "No storage in this room yet.",
       "open": "Open the room"
     }
+  },
+  "a11y": {
+    "edit_named": "Edit {{name}}",
+    "favorite_add": "Add {{name}} to favourites",
+    "favorite_remove": "Remove {{name}} from favourites",
+    "no_color": "No colour",
+    "color_index": "Colour {{index}} of {{total}}",
+    "accept_friend": "Accept request from {{name}}",
+    "decline_friend": "Decline request from {{name}}",
+    "category_options": "Options for category {{name}}",
+    "change_photo": "Change photo",
+    "view_photo": "View photo full screen",
+    "select_named": "Select {{name}}"
   }
 }

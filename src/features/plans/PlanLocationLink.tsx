@@ -22,6 +22,7 @@ export function PlanLocationLink({ pieceId, emplacementId }: PlanLocationLinkPro
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={() =>
         router.push(
           `/plan/${data.planId}?highlightFormeId=${data.formeId}${emplacementId ? `&highlightEmplacementId=${emplacementId}` : ''}`,

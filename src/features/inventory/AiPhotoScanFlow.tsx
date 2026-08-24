@@ -225,7 +225,16 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
               editable={item.selected}
               className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-base text-ink"
             />
-            <Pressable onPress={() => toggleSelected(item.key)} hitSlop={8}>
+            {/* Coche verte contre croix grise : la couleur seule
+                distinguait « je garde » de « j'écarte ». Le libellé nomme
+                l'objet, l'état dit lequel des deux est en cours. */}
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: item.selected }}
+              accessibilityLabel={t('a11y.select_named', { name: item.label })}
+              onPress={() => toggleSelected(item.key)}
+              hitSlop={8}
+            >
               <Icon name={item.selected ? 'included' : 'excluded'} size={26} color={item.selected ? '#4CAF50' : colors.inkFaint} />
             </Pressable>
           </View>

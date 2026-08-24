@@ -591,5 +591,18 @@
       "empty": "Aucun rangement dans cette pièce pour l’instant.",
       "open": "Ouvrir la pièce"
     }
+  },
+  "a11y": {
+    "edit_named": "Modifier {{name}}",
+    "favorite_add": "Ajouter {{name}} aux favoris",
+    "favorite_remove": "Retirer {{name}} des favoris",
+    "no_color": "Aucune couleur",
+    "color_index": "Couleur {{index}} sur {{total}}",
+    "accept_friend": "Accepter la demande de {{name}}",
+    "decline_friend": "Refuser la demande de {{name}}",
+    "category_options": "Options de la catégorie {{name}}",
+    "change_photo": "Changer la photo",
+    "view_photo": "Voir la photo en grand",
+    "select_named": "Sélectionner {{name}}"
   }
 }

@@ -60,6 +60,7 @@ type ResultCardProps = {
 export function ResultCard({ entry }: ResultCardProps) {
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
       // 31.5 % : trois tuiles plus les deux écarts de 9 px posés par la
       // rangée (COLUMN_WRAPPER, HomeDashboard) remplissent la largeur utile.

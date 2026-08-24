@@ -167,6 +167,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
           <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.share.target_type')}</Text>
           <View className="mb-4 flex-row gap-2">
             <Pressable
+              accessibilityRole="button"
               onPress={() => setTargetType('friend')}
               className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'friend' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
             >
@@ -175,6 +176,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
               </Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               onPress={() => setTargetType('guest')}
               className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'guest' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
             >
@@ -192,6 +194,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
               const selected = selectedHabitationIds.includes(h.id);
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={h.id}
                   onPress={() => toggleHabitation(h.id)}
                   className="mb-2 flex-row items-center justify-between rounded-xl border border-ink/10 px-4 py-2.5"
@@ -215,6 +218,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
               <Text className="mb-2 mt-4 text-sm font-medium text-ink-soft">{t('friends.share.validity')}</Text>
               <View className="mb-3 flex-row gap-2">
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => setGuestPermanent(false)}
                   className={`flex-1 items-center rounded-xl border px-4 py-3 ${!guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
                 >
@@ -223,6 +227,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   </Text>
                 </Pressable>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => setGuestPermanent(true)}
                   className={`flex-1 items-center rounded-xl border px-4 py-3 ${guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
                 >

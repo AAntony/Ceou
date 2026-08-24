@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -56,11 +57,28 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 // bug.
 export function BottomSheetModal({ visible, onClose, sheetClassName, sheetStyle, children }: BottomSheetModalProps) {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
-          <Pressable onPress={() => {}} className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME} style={sheetStyle}>
+        {/* Le fond ferme la feuille : c'est la seule sortie pour qui ne
+            voit pas le bouton du bas, donc il doit s'annoncer. */}
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
+        >
+          {/* Celui-ci n'existe que pour avaler le tap et empêcher la feuille
+              de se fermer quand on touche son contenu. Ce n'est pas une
+              commande : `accessible={false}` évite qu'un lecteur d'écran
+              l'annonce comme tel et laisse lire les enfants un par un. */}
+          <Pressable
+            onPress={() => {}}
+            accessible={false}
+            className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
+            style={sheetStyle}
+          >
             {children}
             <View style={{ height: insets.bottom }} />
           </Pressable>

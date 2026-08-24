@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
 import { useEntityTints, useThemeColors } from '../lib/theme';
@@ -56,16 +57,26 @@ export function EntityCard({
 }: EntityCardProps) {
   const colors = useThemeColors();
   const { surfaceTint } = useEntityTints();
+  const { t } = useTranslation();
 
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
+      accessibilityRole="button"
       style={{ backgroundColor: surfaceTint(bgColor) }}
       className="mb-3 w-[48%] rounded-2xl p-4 active:opacity-70"
     >
       {onEdit ? (
-        <Pressable onPress={onEdit} hitSlop={8} className="absolute right-2 top-2 z-10 rounded-full bg-white/70 p-1.5">
+        <Pressable
+          onPress={onEdit}
+          hitSlop={8}
+          accessibilityRole="button"
+          // Le nom dans le libellé : « Modifier » seul, répété sur chaque
+          // carte d'une grille, ne dit pas laquelle on s'apprête à modifier.
+          accessibilityLabel={t('a11y.edit_named', { name: title })}
+          className="absolute right-2 top-2 z-10 rounded-full bg-white/70 p-1.5"
+        >
           <Icon name="pencil" size={14} color={ON_LIGHT_PILL} />
         </Pressable>
       ) : null}
@@ -74,6 +85,9 @@ export function EntityCard({
           onPress={onToggleFavorite}
           disabled={favoriteDisabled}
           hitSlop={8}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isFavorite, disabled: favoriteDisabled }}
+          accessibilityLabel={t(isFavorite ? 'a11y.favorite_remove' : 'a11y.favorite_add', { name: title })}
           className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/70 p-1.5 ${favoriteDisabled ? 'opacity-50' : ''}`}
         >
           <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />

@@ -110,14 +110,14 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
       <View className="flex-1 bg-sand pt-16">
         <View className="mb-2 flex-row items-center justify-between px-6">
           {step !== 'choice' ? (
-            <Pressable onPress={handleBack} hitSlop={8}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={handleBack} hitSlop={8}>
               <Icon name="back" size={22} color={colors.ink} />
             </Pressable>
           ) : (
             <View style={{ width: 22 }} />
           )}
           <Text className="text-lg font-bold text-ink">{title}</Text>
-          <Pressable onPress={onClose} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>
@@ -171,6 +171,7 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
   return (
     <View className="flex-1 justify-center gap-4 px-6 pb-16">
       <Pressable
+        accessibilityRole="button"
         onPress={onChooseScan}
         className="items-center gap-2 rounded-2xl border-2 border-coral bg-coral-light px-6 py-6 active:opacity-70"
       >
@@ -179,6 +180,7 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         <Text className="text-center text-sm text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
       </Pressable>
       <Pressable
+        accessibilityRole="button"
         onPress={onChooseManual}
         className="items-center gap-2 rounded-2xl border border-ink/10 bg-sand-dark px-6 py-6 active:opacity-70"
       >

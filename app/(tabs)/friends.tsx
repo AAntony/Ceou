@@ -112,10 +112,23 @@ export default function FriendsScreen() {
                   {f.otherDisplayName || f.otherFriendCode}
                 </Text>
                 <View className="flex-row gap-3">
-                  <Pressable onPress={() => respond.mutate({ friendshipId: f.id, accept: true })} hitSlop={8}>
+                  {/* Deux icônes que seule la COULEUR distinguait — coche
+                      verte contre croix grise. Sans libellé, rien ne disait
+                      laquelle accepte, pour une action irréversible. */}
+                  <Pressable
+                    onPress={() => respond.mutate({ friendshipId: f.id, accept: true })}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.accept_friend', { name: f.otherDisplayName || f.otherFriendCode })}
+                  >
                     <Icon name="included" size={24} color="#4CAF50" />
                   </Pressable>
-                  <Pressable onPress={() => respond.mutate({ friendshipId: f.id, accept: false })} hitSlop={8}>
+                  <Pressable
+                    onPress={() => respond.mutate({ friendshipId: f.id, accept: false })}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.decline_friend', { name: f.otherDisplayName || f.otherFriendCode })}
+                  >
                     <Icon name="close" size={24} color={colors.inkFaint} />
                   </Pressable>
                 </View>
@@ -132,7 +145,7 @@ export default function FriendsScreen() {
                 <Text numberOfLines={1} className="flex-1 pr-2 text-sm text-ink">
                   {f.otherDisplayName || f.otherFriendCode}
                 </Text>
-                <Pressable onPress={() => cancelRequest.mutate(f.id)} hitSlop={8}>
+                <Pressable onPress={() => cancelRequest.mutate(f.id)} hitSlop={8} accessibilityRole="button">
                   <Text className="text-xs font-semibold text-ink-soft">{t('friends.requests.cancel')}</Text>
                 </Pressable>
               </View>
@@ -158,7 +171,12 @@ export default function FriendsScreen() {
                   catégorie mais l'absence de rangement — rien à renommer ni
                   à supprimer. */}
               {section.category ? (
-                <Pressable onPress={() => setCategorySheet(section.category)} hitSlop={10} accessibilityRole="button">
+                <Pressable
+                  onPress={() => setCategorySheet(section.category)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('a11y.category_options', { name: section.category.name })}
+                >
                   <Icon name="dots" size={20} color={colors.inkFaint} />
                 </Pressable>
               ) : null}

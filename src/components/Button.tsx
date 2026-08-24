@@ -27,6 +27,8 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
     return (
       <Pressable
         disabled={disabled || loading}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
         className={`items-center justify-center self-center rounded-full bg-red-500 px-6 py-2.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
         {...pressableProps}
       >
@@ -39,6 +41,8 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
     return (
       <Pressable
         disabled={disabled || loading}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: disabled || loading, busy: loading }}
         className={`items-center justify-center rounded-xl border-2 border-coral bg-coral-light py-3.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
         {...pressableProps}
       >
@@ -50,6 +54,10 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
   return (
     <Pressable
       disabled={disabled || loading}
+      accessibilityRole="button"
+      // `busy` fait annoncer « en cours » pendant l'attente : sans lui, un
+      // bouton qui tourne est simplement un bouton qui ne répond pas.
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       className={`items-center justify-center rounded-xl py-3.5 active:opacity-80 ${
         isPrimary ? 'bg-coral' : 'bg-transparent'
       } ${disabled || loading ? 'opacity-50' : ''}`}

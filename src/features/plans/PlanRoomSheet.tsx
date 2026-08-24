@@ -71,6 +71,7 @@ export function PlanRoomSheet({
               <ScrollView style={{ maxHeight: 260, flexShrink: 1 }}>
                 {list.map((emplacement) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={emplacement.id}
                     onPress={() => {
                       onClose();

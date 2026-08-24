@@ -98,6 +98,8 @@ export default function ObjetScreen() {
         <View className="mb-6 self-center">
           <Pressable
             onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : editable ? handleChangePhoto() : undefined)}
+            accessibilityRole="button"
+            accessibilityLabel={t(objet.photo_url ? 'a11y.view_photo' : 'a11y.change_photo')}
             className="h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-sand-dark"
           >
             {photoUploading ? (
@@ -112,6 +114,8 @@ export default function ObjetScreen() {
             <Pressable
               onPress={handleChangePhoto}
               hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.change_photo')}
               className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface"
               style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }}
             >
