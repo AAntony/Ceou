@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
+import { normalize } from '../../lib/text/match';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission } from '../../types/database';
 import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
@@ -43,18 +44,25 @@ const SILENT_ERROR_CODES = new Set(['no-speech', 'aborted', 'speech-timeout']);
 const SHORT_QUERY_MAX_WORDS = 2;
 
 // Silence après lequel on considère qu'une phrase est terminée, quand le
-// moteur ne le dit pas lui-même. Chaque centaine de millisecondes ici se
-// ressent directement comme de la lenteur, puisqu'elle s'ajoute au délai que
-// le moteur s'accorde déjà avant de rendre son verdict.
-const PHRASE_PAUSE = 600;
+// moteur ne le dit pas lui-même.
+//
+// Une version précédente l'avait descendu à 600 ms, et raccourci du même coup
+// les délais de fin de parole du moteur Android, pour gagner en vivacité. Les
+// deux ont été annulés : on hésite au milieu d'une phrase, et couper à la
+// première respiration faisait perdre la moitié des mots. La vivacité se
+// gagne en retirant le réseau du chemin (voir phrase.ts), pas en coupant la
+// parole.
+const PHRASE_PAUSE = 900;
 
-// Ce que le moteur Android s'accorde AVANT de considérer qu'on a fini de
-// parler. Ses valeurs par défaut sont taillées pour la dictée d'un texte
-// long, pas pour un ordre de six mots enchaîné à un autre.
-const ANDROID_SILENCE = {
-  EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 900,
-  EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 700,
-};
+// Après avoir parlé, le temps de laisser mourir le son dans la pièce avant de
+// rouvrir le micro. Sans lui, la queue de l'énoncé revient par le
+// haut-parleur et se fait prendre pour une phrase de l'utilisateur.
+const ECHO_GUARD = 350;
+
+// Durée pendant laquelle ce qui vient d'être énoncé est écarté s'il revient
+// par le micro. Le silence pendant l'énoncé suffit en principe ; ceci couvre
+// la réverbération d'une pièce et les moteurs qui rendent en retard.
+const ECHO_WINDOW = 2500;
 
 // Le moteur s'arrête de lui-même après chaque silence : on le relance, et
 // c'est ce qui donne l'impression d'un micro qui reste ouvert. Au bout de
@@ -260,6 +268,15 @@ export function useAssistant() {
   const silentRestartsRef = useRef(0);
   /** Droits déjà vérifiés pendant cette session : un aller-retour par logement, pas par objet. */
   const permissionsRef = useRef(new Map<string, boolean>());
+  /** Ce que l'assistant vient de dire, pour ne pas le prendre pour une phrase entendue. */
+  const spokenRef = useRef({ text: '', at: 0 });
+  // `say` est utilisé par presque tout le hook, et utilise lui-même de quoi
+  // suspendre et reprendre l'écoute. Ces deux relais brisent la boucle de
+  // dépendances sans rendre les callbacks instables.
+  const pauseListeningRef = useRef<() => void>(() => {});
+  const ensureListeningRef = useRef<() => void>(() => {});
+  /** Jeton du dernier énoncé : lui seul a le droit de rouvrir le micro. */
+  const speakGenerationRef = useRef(0);
 
   // La permission est relue AU MONTAGE, pas au premier appui : c'est
   // justement l'appui qui doit être instantané. Sans ça, la toute première
@@ -304,7 +321,6 @@ export function useAssistant() {
       // phrase tronquée.
       interimResults: false,
       continuous: true,
-      androidIntentOptions: ANDROID_SILENCE,
     });
   }, []);
 
@@ -315,11 +331,44 @@ export function useAssistant() {
     ExpoSpeechRecognitionModule.stop();
   }, []);
 
+  /**
+   * Énonce, puis se remet à écouter.
+   *
+   * Le micro se TAIT pendant l'énoncé. C'est la seule façon de ne pas
+   * s'entendre soi-même par le haut-parleur : sans ça l'assistant prend sa
+   * propre voix pour celle de l'utilisateur, se répond, s'entend répondre, et
+   * la session part en boucle sans fin.
+   */
+  const say = useCallback(
+    async (text: string, resume = true) => {
+      const session = sessionRef.current;
+      // Deux énoncés peuvent se chevaucher si une phrase suivante est traitée
+      // pendant qu'on parle. Seul le DERNIER a le droit de rouvrir le micro :
+      // sans ce jeton, le premier le rouvrirait au milieu du second, et l'on
+      // retomberait exactement dans la boucle qu'on cherche à éviter.
+      const generation = ++speakGenerationRef.current;
+      pauseListeningRef.current();
+      spokenRef.current = { text: normalize(text), at: Date.now() };
+      await speak(text, i18n.language);
+      if (sessionRef.current !== session || speakGenerationRef.current !== generation || !resume) return;
+      await new Promise((done) => setTimeout(done, ECHO_GUARD));
+      if (sessionRef.current !== session || speakGenerationRef.current !== generation) return;
+      // L'horodatage repart de la réouverture : c'est à partir de là que
+      // l'écho peut encore se présenter.
+      spokenRef.current = { text: spokenRef.current.text, at: Date.now() };
+      ensureListeningRef.current();
+    },
+    [],
+  );
+
   const ensureListening = useCallback(() => {
     if (!activeRef.current || listeningRef.current) return;
     silentRestartsRef.current = 0;
     beginListening();
   }, [beginListening]);
+
+  pauseListeningRef.current = pauseListening;
+  ensureListeningRef.current = ensureListening;
 
   /** Ferme la session : une phrase de conclusion, et la feuille disparaît. */
   const endSession = useCallback((spoken: string | null) => {
@@ -357,8 +406,7 @@ export function useAssistant() {
       const settle = (answer: string) => {
         if (sessionRef.current !== session) return;
         settleState({ status: 'listening', transcript, answer });
-        void speak(answer, i18n.language);
-        ensureListening();
+        void say(answer);
       };
 
       // Déjà au bon endroit : on n'écrit rien. Un déplacement redondant
@@ -412,8 +460,7 @@ export function useAssistant() {
           undo,
           entries: [...current.entries, { objetName: objet.name, location: destination.label }],
         }));
-        void speak(tr('assistant.move.ack'), i18n.language);
-        ensureListening();
+        void say(tr('assistant.move.ack'));
       } catch (error) {
         const denied = isPermissionError(error);
         if (!denied) logClientError(error, { source: 'assistant.move' });
@@ -422,17 +469,16 @@ export function useAssistant() {
         settle(tr(denied ? 'assistant.move.denied' : 'assistant.move.failed'));
       }
     },
-    [ensureListening, queryClient, settleState],
+    [queryClient, say, settleState],
   );
 
   /** Répond, et se remet aussitôt à écouter. */
   const respond = useCallback(
     (transcript: string, answer: string, result: AssistantResult | null = null) => {
       settleState({ status: 'listening', transcript, answer, result });
-      void speak(answer, i18n.language);
-      ensureListening();
+      void say(answer);
     },
-    [ensureListening, settleState],
+    [say, settleState],
   );
 
   /** Résout un rangement et l'exécute, ou pose la seule question qui manque. */
@@ -462,11 +508,11 @@ export function useAssistant() {
 
       // On ne peut pas répondre à une question en parlant : le micro se tait
       // le temps du choix, et reprend après.
-      pauseListening();
       settleState({ status: 'choosing', transcript, move: draft });
-      void speak(movePrompt(draft), i18n.language);
+      // `false` : on ne rouvre pas le micro, la réponse attendue est un appui.
+      void say(movePrompt(draft), false);
     },
-    [applyMove, pauseListening, respond, settleState],
+    [applyMove, respond, say, settleState],
   );
 
   const handlePhrase = useCallback(
@@ -602,6 +648,13 @@ export function useAssistant() {
     // Deux résultats identiques rapprochés viennent du moteur, pas de
     // l'utilisateur : les traiter tous les deux rangerait l'objet deux fois.
     const now = Date.now();
+
+    // Ce que l'assistant vient de dire ne doit pas revenir par le micro. Le
+    // silence pendant l'énoncé l'évite en principe ; ceci rattrape la queue
+    // captée juste après la réouverture, et la réverbération d'une pièce.
+    const spoken = spokenRef.current;
+    if (spoken.text && now - spoken.at < ECHO_WINDOW && spoken.text.includes(normalize(phrase))) return;
+
     if (phrase === lastPhraseRef.current.text && now - lastPhraseRef.current.at < REPEAT_GUARD) return;
     lastPhraseRef.current = { text: phrase, at: now };
 
@@ -715,8 +768,7 @@ export function useAssistant() {
         undo: null,
         entries: current.entries.slice(0, -1),
       }));
-      void speak(answer, i18n.language);
-      ensureListening();
+      void say(answer);
     } catch (error) {
       logClientError(error, { source: 'assistant.undo' });
       if (sessionRef.current !== session) return;
@@ -724,10 +776,9 @@ export function useAssistant() {
       // à son nouvel emplacement, et réessayer est le geste attendu.
       const answer = tr('assistant.move.undo_failed');
       settleState({ status: 'listening', transcript, answer });
-      void speak(answer, i18n.language);
-      ensureListening();
+      void say(answer);
     }
-  }, [ensureListening, queryClient, settleState]);
+  }, [queryClient, say, settleState]);
 
   /** Ouvre une session : le micro s'ouvre et reste ouvert. */
   const start = useCallback(async () => {

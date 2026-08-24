@@ -32,6 +32,8 @@ type SpeakOptions = {
   pitch?: number;
   voice?: string;
   onError?: (error: Error) => void;
+  onDone?: () => void;
+  onStopped?: () => void;
 };
 
 type SpeechModule = {
@@ -131,6 +133,18 @@ export function primeVoices(language: string): void {
   void bestVoice(speech, prefix, LOCALE_BY_LANGUAGE[prefix] ?? LOCALE_BY_LANGUAGE.fr);
 }
 
+/**
+ * Énonce un texte, et NE REND LA MAIN QU'UNE FOIS DIT.
+ *
+ * La promesse se résout à la fin de l'énoncé — pas à son lancement. C'est ce
+ * qui permet à l'assistant de rouvrir son micro au bon moment : tant qu'il
+ * parle, il doit être sourd, sinon il s'entend lui-même par le haut-parleur,
+ * se prend pour l'utilisateur et se répond en boucle.
+ *
+ * La résolution est protégée par un délai maximum : sur certaines voix, ni
+ * `onDone` ni `onStopped` ne sont appelés, et attendre indéfiniment
+ * laisserait le micro fermé pour de bon.
+ */
 export async function speak(text: string, language: string): Promise<void> {
   const speech = speechModule();
   if (!speech || !text.trim()) return;
@@ -139,36 +153,54 @@ export async function speak(text: string, language: string): Promise<void> {
   const locale = LOCALE_BY_LANGUAGE[prefix] ?? LOCALE_BY_LANGUAGE.fr;
   const voice = await bestVoice(speech, prefix, locale);
 
-  try {
-    speech.stop();
-    speech.speak(text, {
-      language: locale,
-      voice,
-      // Débit et hauteur naturels. Une version précédente ralentissait à 0.95
-      // pour la clarté : sur les voix embarquées, ralentir accentue en fait
-      // l'effet robotique en étirant chaque phonème. Avec une bonne voix, le
-      // débit normal est plus intelligible.
-      rate: 1.0,
-      pitch: 1.0,
-      // Les voix réseau ont besoin de connectivité. Hors ligne, elles
-      // échouent sans rien dire — on rejoue alors avec la voix par défaut
-      // plutôt que de laisser l'assistant muet.
-      onError: voice
-        ? () => {
-            voiceByLanguage.set(prefix, null);
-            try {
-              speech.speak(text, { language: locale, rate: 1.0, pitch: 1.0 });
-            } catch {
-              // Plus rien à tenter.
-            }
+  await new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(guard);
+      resolve();
+    };
+    // Repli large : environ 90 ms par caractère couvre les débits les plus
+    // lents, plus une seconde de marge.
+    const guard = setTimeout(finish, 1000 + text.length * 90);
+
+    try {
+      speech.stop();
+      speech.speak(text, {
+        language: locale,
+        voice,
+        onDone: finish,
+        onStopped: finish,
+        // Débit et hauteur naturels. Une version précédente ralentissait à
+        // 0.95 pour la clarté : sur les voix embarquées, ralentir accentue en
+        // fait l'effet robotique en étirant chaque phonème. Avec une bonne
+        // voix, le débit normal est plus intelligible.
+        rate: 1.0,
+        pitch: 1.0,
+        // Les voix réseau ont besoin de connectivité. Hors ligne, elles
+        // échouent sans rien dire — on rejoue alors avec la voix par défaut
+        // plutôt que de laisser l'assistant muet.
+        onError: () => {
+          if (!voice) {
+            finish();
+            return;
           }
-        : undefined,
-    });
-  } catch {
-    // Module présent mais synthèse indisponible (voix non installée sur
-    // l'appareil, par exemple) : on n'a rien de mieux à proposer que le
-    // silence, et surtout pas une alerte à chaque réponse.
-  }
+          voiceByLanguage.set(prefix, null);
+          try {
+            speech.speak(text, { language: locale, rate: 1.0, pitch: 1.0, onDone: finish, onStopped: finish });
+          } catch {
+            finish();
+          }
+        },
+      });
+    } catch {
+      // Module présent mais synthèse indisponible (voix non installée sur
+      // l'appareil, par exemple) : on n'a rien de mieux à proposer que le
+      // silence, et surtout pas une alerte à chaque réponse.
+      finish();
+    }
+  });
 }
 
 export function stopSpeaking(): void {
