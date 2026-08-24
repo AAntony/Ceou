@@ -44,9 +44,11 @@ yarn-error.*
 # local tooling config (Claude Code preview server)
 /.claude/
 
-# Maquette assemblee (design/) : embarque l'editeur entier, ~2,3 Mo, et se
-# regenere a partir des .dc.html + canvas.json qui, eux, sont versionnes.
-design/plan-ceou-refonte.html
+# Maquettes de conception : le depot ne garde que du code. Une maquette
+# assemblee pese 2,3 Mo a elle seule (elle embarque l'editeur entier), et
+# aucune n'a survecu a l'ecran qu'elle a servi a dessiner -- elles vivent
+# desormais en ligne, sous forme d'Artifacts publies.
+design/
 
 # Cles de signature Android exportees depuis EAS (mot de passe en clair).
 # Ne doit JAMAIS etre versionne. Le *.jks au-dessus couvre deja le magasin.
