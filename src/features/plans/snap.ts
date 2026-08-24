@@ -141,3 +141,85 @@ export function clampResizeToWorld(geo: ShapeGeometry): ShapeGeometry {
   }
   return { x, y, width: Math.max(width, MIN_SHAPE_SIZE), height: Math.max(height, MIN_SHAPE_SIZE) };
 }
+
+// === Puces d Emplacement =================================================
+
+// La marge qu'une puce garde avec le mur, exprimée en unités feuille : la
+// DEMI-HAUTEUR de la carte, sur les DEUX axes.
+//
+// C'était la demi-LARGEUR à l'horizontale, et c'est ce qui empêchait de coller
+// une puce au mur de gauche ou de droite. Les pièces sont bien plus larges que
+// hautes du point de vue d'une carte de 54×36 : dans une chambre de 130 de
+// large, la demi-largeur mangeait 42 % du débattement horizontal quand la
+// demi-hauteur n'en prenait que 20 % à la verticale — et en taille XL la plage
+// se refermait complètement, la puce restait clouée au centre. D'où
+// l'asymétrie constatée : haut et bas répondaient, gauche et droite non.
+//
+// Prendre la demi-hauteur des deux côtés rend le débattement identique sur les
+// deux axes. La carte déborde alors du mur latéral de la moitié de ce qui la
+// rend plus large que haute — une dizaine d'unités —, ce qui est le prix pour
+// que l'icône vienne réellement se poser contre le mur.
+const MAX_EDGE_INSET_REL = 0.35;
+
+// Distance, en unités feuille, à laquelle deux puces s'aimantent l'une à
+// l'autre. Plus courte que l'aimant des murs (SNAP_THRESHOLD) : deux puces
+// voisines sont bien plus proches l'une de l'autre qu'un mur ne l'est du
+// centre d'une pièce, et un aimant trop long les rendrait impossibles à
+// séparer.
+const PIN_SNAP = 8;
+
+/**
+ * Aimante la puce sur ses voisines de la MÊME pièce.
+ *
+ * Trois accroches par axe, essayées de la plus proche à la plus lointaine :
+ * bord contre bord des deux côtés (les deux cartes se touchent), et centre
+ * contre centre (les deux s'alignent en rangée ou en colonne). Toutes les
+ * puces ayant la même taille, un décalage d'exactement une largeur ou une
+ * hauteur de carte suffit à les faire se toucher.
+ *
+ * Les deux axes sont traités séparément : une puce peut donc s'aligner en
+ * hauteur sur une voisine tout en gardant sa position horizontale.
+ */
+export function snapToSiblings(
+  x: number,
+  y: number,
+  siblings: { x: number; y: number }[],
+  cardWidth: number,
+  cardHeight: number,
+): { x: number; y: number } {
+  let snappedX = x;
+  let snappedY = y;
+  let closestX = PIN_SNAP;
+  let closestY = PIN_SNAP;
+
+  for (const sibling of siblings) {
+    for (const candidate of [sibling.x - cardWidth, sibling.x, sibling.x + cardWidth]) {
+      const distance = Math.abs(x - candidate);
+      if (distance < closestX) {
+        closestX = distance;
+        snappedX = candidate;
+      }
+    }
+    for (const candidate of [sibling.y - cardHeight, sibling.y, sibling.y + cardHeight]) {
+      const distance = Math.abs(y - candidate);
+      if (distance < closestY) {
+        closestY = distance;
+        snappedY = candidate;
+      }
+    }
+  }
+
+  return { x: snappedX, y: snappedY };
+}
+
+export function resolvePinRel(value: number, sideLength: number, margin: number): number {
+  if (sideLength <= 0) return clamp(value, 0, 1);
+  // Plafond : sur une pièce minuscule, la marge ne doit jamais refermer la
+  // plage au point de figer la puce au centre.
+  const edgeInsetRel = Math.min(margin / sideLength, MAX_EDGE_INSET_REL);
+  const thresholdRel = SNAP_THRESHOLD / sideLength;
+  const bounded = clamp(value, edgeInsetRel, 1 - edgeInsetRel);
+  if (bounded < edgeInsetRel + thresholdRel) return edgeInsetRel;
+  if (bounded > 1 - edgeInsetRel - thresholdRel) return 1 - edgeInsetRel;
+  return bounded;
+}

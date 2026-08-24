@@ -104,7 +104,14 @@ export function freeDoorPosition(
   // comme une seule baie.
   const keepOut = DOOR_WIDTH + DOOR_MIN_GAP;
   const occupiedCenters = [
-    ...ownDoors.map((door) => door.position * length),
+    // `.filter` SUR LE MUR, et c'est tout le correctif du 2026-08-24 : sans
+    // lui, chaque porte de la pièce bloquait sa position RELATIVE sur les
+    // quatre murs à la fois. Une porte au milieu du mur sud interdisait donc
+    // le milieu des trois autres — et comme la zone interdite fait 54 unités
+    // de part et d'autre, un mur de moins de 160 se retrouvait entièrement
+    // condamné. D'où des murs sur lesquels il devenait impossible de poser
+    // quoi que ce soit.
+    ...ownDoors.filter((door) => door.edge === edge).map((door) => door.position * length),
     ...facingDoorGaps(geo, edge, neighbours).map((gap) => (gap.start + gap.end) / 2),
   ];
   const blocked = mergeIntervals(occupiedCenters.map((center) => ({ start: center - keepOut, end: center + keepOut })));

@@ -6,7 +6,7 @@ import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
 import { useThemeColors } from '../../lib/theme';
 import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
-import { clamp, SNAP_THRESHOLD } from './snap';
+import { resolvePinRel, snapToSiblings } from './snap';
 import type { ShapeGeometry } from './types';
 
 // === La puce d'un Emplacement ============================================
@@ -160,6 +160,27 @@ export function PlanPinLayer({
     [pins, selectedPinId, highlightedEmplacementId],
   );
 
+  // Le centre de chaque puce en coordonnées de feuille — de quoi aimanter
+  // celle qu'on glisse sur les autres. Recalculé pendant le geste, puisque la
+  // position vécue vit dans `positions`.
+  const centers = useMemo(
+    () =>
+      pins.flatMap((pin) => {
+        const geo = formeGeo[pin.forme_id];
+        if (!geo) return [];
+        const pos = positions[pin.id] ?? { relX: pin.rel_x, relY: pin.rel_y };
+        return [
+          {
+            id: pin.id,
+            formeId: pin.forme_id,
+            x: geo.x + pos.relX * geo.width,
+            y: geo.y + pos.relY * geo.height,
+          },
+        ];
+      }),
+    [pins, positions, formeGeo],
+  );
+
   return (
     <>
       {sortedPins.map((pin) => {
@@ -167,6 +188,9 @@ export function PlanPinLayer({
         const display = pinDisplay[pin.emplacement_id];
         const pos = positions[pin.id] ?? { relX: pin.rel_x, relY: pin.rel_y };
         if (!geo || !display) return null;
+        // Les voisines de la même pièce seulement : deux puces séparées par
+        // un mur n'ont aucune raison de s'aligner l'une sur l'autre.
+        const siblings = centers.filter((c) => c.formeId === pin.forme_id && c.id !== pin.id);
         return (
           <PinBadge
             key={pin.id}
@@ -178,6 +202,7 @@ export function PlanPinLayer({
             highlighted={pin.emplacement_id === highlightedEmplacementId}
             scale={scale}
             metrics={metrics}
+            siblings={siblings}
             onDragStart={() => {
               draggingIdRef.current = pin.id;
             }}
@@ -195,35 +220,6 @@ export function PlanPinLayer({
   );
 }
 
-// La marge qu'une puce garde avec le mur, exprimée en unités feuille : la
-// DEMI-HAUTEUR de la carte, sur les DEUX axes.
-//
-// C'était la demi-LARGEUR à l'horizontale, et c'est ce qui empêchait de coller
-// une puce au mur de gauche ou de droite. Les pièces sont bien plus larges que
-// hautes du point de vue d'une carte de 54×36 : dans une chambre de 130 de
-// large, la demi-largeur mangeait 42 % du débattement horizontal quand la
-// demi-hauteur n'en prenait que 20 % à la verticale — et en taille XL la plage
-// se refermait complètement, la puce restait clouée au centre. D'où
-// l'asymétrie constatée : haut et bas répondaient, gauche et droite non.
-//
-// Prendre la demi-hauteur des deux côtés rend le débattement identique sur les
-// deux axes. La carte déborde alors du mur latéral de la moitié de ce qui la
-// rend plus large que haute — une dizaine d'unités —, ce qui est le prix pour
-// que l'icône vienne réellement se poser contre le mur.
-const MAX_EDGE_INSET_REL = 0.35;
-
-function resolveRel(value: number, sideLength: number, margin: number): number {
-  if (sideLength <= 0) return clamp(value, 0, 1);
-  // Plafond : sur une pièce minuscule, la marge ne doit jamais refermer la
-  // plage au point de figer la puce au centre.
-  const edgeInsetRel = Math.min(margin / sideLength, MAX_EDGE_INSET_REL);
-  const thresholdRel = SNAP_THRESHOLD / sideLength;
-  const bounded = clamp(value, edgeInsetRel, 1 - edgeInsetRel);
-  if (bounded < edgeInsetRel + thresholdRel) return edgeInsetRel;
-  if (bounded > 1 - edgeInsetRel - thresholdRel) return 1 - edgeInsetRel;
-  return bounded;
-}
-
 function PinBadge({
   geo,
   pos,
@@ -233,6 +229,7 @@ function PinBadge({
   highlighted,
   scale,
   metrics,
+  siblings,
   onDragStart,
   onMove,
   onDragEnd,
@@ -247,6 +244,8 @@ function PinBadge({
   highlighted: boolean;
   scale: number;
   metrics: PinMetrics;
+  /** Les autres puces de la MÊME pièce, centres en coordonnées de feuille. */
+  siblings: { x: number; y: number }[];
   onDragStart: () => void;
   onMove: (pos: RelPosition) => void;
   onDragEnd: (pos: RelPosition) => void;
@@ -260,17 +259,26 @@ function PinBadge({
   // le repère du contenu zoomable), pas besoin de projeter quoi que ce soit.
   const screen = { x: geo.x + pos.relX * geo.width, y: geo.y + pos.relY * geo.height };
 
-  // Le geste rapporte un delta en pixels ÉCRAN (avant mise à l'échelle du
-  // zoom) — diviser par `scale` pour obtenir le déplacement réel dans le
-  // repère (non zoomé) où vivent x/y, avant resolveRel (bornage + aimantation
-  // sur bord, demi-taille de la puce incluse).
-  // Même marge sur les deux axes — voir resolveRel : c'est ce qui rend le
-  // débattement horizontal aussi libre que le vertical.
+  // La même marge avec le mur sur les DEUX axes — voir resolvePinRel : c'est
+  // ce qui rend le débattement horizontal aussi libre que le vertical.
   const margin = metrics.cardHeight / 2;
-  const resolve = (translationX: number, translationY: number): RelPosition => ({
-    relX: resolveRel(dragOrigin.current.relX + translationX / scale / geo.width, geo.width, margin),
-    relY: resolveRel(dragOrigin.current.relY + translationY / scale / geo.height, geo.height, margin),
-  });
+
+  // Le geste rapporte un delta en pixels ÉCRAN, avant mise à l'échelle du
+  // zoom : on le divise par `scale` pour retrouver un déplacement dans le
+  // repère de la feuille.
+  //
+  // L'aimant des VOISINES s'applique AVANT celui des murs, et il travaille en
+  // coordonnées de feuille — c'est là que vivent les autres puces. On repasse
+  // en relatif ensuite, pour le bornage dans la pièce.
+  const resolve = (translationX: number, translationY: number): RelPosition => {
+    const rawX = geo.x + dragOrigin.current.relX * geo.width + translationX / scale;
+    const rawY = geo.y + dragOrigin.current.relY * geo.height + translationY / scale;
+    const snapped = snapToSiblings(rawX, rawY, siblings, metrics.cardWidth, metrics.cardHeight);
+    return {
+      relX: resolvePinRel((snapped.x - geo.x) / geo.width, geo.width, margin),
+      relY: resolvePinRel((snapped.y - geo.y) / geo.height, geo.height, margin),
+    };
+  };
 
   const pan = Gesture.Pan()
     .minPointers(1)
