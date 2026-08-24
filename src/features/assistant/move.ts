@@ -3,8 +3,8 @@ import type { LocationType } from '../../types/database';
 import type { SearchIndexEntry } from '../search/queries';
 import { MIN_SCORE, scoreMatch, type AssistantIntent } from './resolve';
 
-// Résolution d'un DÉPLACEMENT, la première intention de l'assistant qui
-// débouche sur une ÉCRITURE.
+// Résolution d'un DÉPLACEMENT, la seule intention de l'assistant qui débouche
+// sur une ÉCRITURE.
 //
 // Tout le reste de l'assistant peut se tromper sans conséquence : une réponse
 // à côté se corrige en reposant la question. Ici non — un objet rangé au
@@ -35,8 +35,13 @@ export type MoveDestination = {
 };
 
 export type MoveResolution =
-  /** Les deux côtés sont résolus. Une seule entrée = certitude, plusieurs = on demande. */
-  | { status: 'ready'; objets: SearchIndexEntry[]; destinations: MoveDestination[] }
+  /**
+   * Les deux côtés sont résolus. Plusieurs entrées d'un côté = on demande.
+   * `confident` dit qu'il n'y a rien à demander DU TOUT : un seul candidat de
+   * chaque côté, et les deux reconnus franchement — c'est ce qui autorise à
+   * ranger sans confirmation préalable.
+   */
+  | { status: 'ready'; objets: SearchIndexEntry[]; destinations: MoveDestination[]; confident: boolean }
   | { status: 'no_object'; query: string }
   | { status: 'no_destination'; query: string }
   /** La destination nommée est une Pièce, mais elle n'a aucun meuble où ranger. */
@@ -62,7 +67,22 @@ const MAX_CHOICES = 6;
 // qu'on puisse toujours dire pourquoi un candidat a gagné.
 const FULL_MATCH_BONUS = 40;
 
-function topCandidates<T>(items: T[], score: (item: T) => number): T[] {
+// Seuil de la reconnaissance FRANCHE, celle qui autorise à écrire sans
+// demander. Il est calé sur les paliers de scoreMatch : 100 quand le nom
+// prononcé est le nom enregistré, 70 quand il y est contenu, en dessous la
+// correspondance a été reconstituée mot à mot.
+//
+// Côté destination, on compare le score TOTAL, et ce n'est pas un raccourci :
+// 30 + FULL_MATCH_BONUS fait exactement 70. Autrement dit, est franche soit
+// une destination dont le nom seul suffit, soit une destination dont le
+// chemin complet rend compte de tous les mots dits — « tiroir de l'entrée »
+// est de celles-là. Une correspondance partielle sans ce bonus reste sous le
+// seuil et passera par une confirmation.
+const STRONG_SCORE = 70;
+
+type Scored<T> = { item: T; score: number };
+
+function topCandidates<T>(items: T[], score: (item: T) => number): Scored<T>[] {
   const scored = items
     .map((item) => ({ item, score: score(item) }))
     .filter((candidate) => candidate.score >= MIN_SCORE)
@@ -70,10 +90,7 @@ function topCandidates<T>(items: T[], score: (item: T) => number): T[] {
 
   if (scored.length === 0) return [];
   const best = scored[0].score;
-  return scored
-    .filter((candidate) => candidate.score >= best - TOLERANCE)
-    .slice(0, MAX_CHOICES)
-    .map((candidate) => candidate.item);
+  return scored.filter((candidate) => candidate.score >= best - TOLERANCE).slice(0, MAX_CHOICES);
 }
 
 function scoreDestination(query: string, entry: SearchIndexEntry): number {
@@ -114,9 +131,13 @@ function toDestination(entry: SearchIndexEntry): MoveDestination {
  * s'applique que s'il laisse quelque chose : déplacer un objet d'un logement
  * à l'autre reste possible (« j'ai emmené la perceuse au garage »).
  */
-function preferHabitation<T extends { habitationId: string }>(candidates: T[], habitationId: string | null): T[] {
+function preferHabitation<T>(
+  candidates: Scored<T>[],
+  homeOf: (item: T) => string,
+  habitationId: string | null,
+): Scored<T>[] {
   if (!habitationId || candidates.length <= 1) return candidates;
-  const sameHome = candidates.filter((candidate) => candidate.habitationId === habitationId);
+  const sameHome = candidates.filter((candidate) => homeOf(candidate.item) === habitationId);
   return sameHome.length > 0 ? sameHome : candidates;
 }
 
@@ -126,13 +147,29 @@ function commonHabitation(objets: SearchIndexEntry[]): string | null {
   return homes.size === 1 ? [...homes][0] : null;
 }
 
+/**
+ * Peut-on ranger sans rien demander ?
+ *
+ * Trois conditions, et il les faut toutes : un seul objet possible, un seul
+ * endroit possible, et les deux reconnus FRANCHEMENT. La dernière est celle
+ * qu'on oublie — un candidat unique n'est pas un candidat sûr. « Range le truc
+ * dans le machin » peut ne laisser qu'un candidat de chaque côté tout en
+ * n'ayant presque rien reconnu ; là, on montre avant d'écrire.
+ */
+function isConfident(objets: Scored<unknown>[], destinations: Scored<unknown>[]): boolean {
+  if (objets.length !== 1 || destinations.length !== 1) return false;
+  return objets[0].score >= STRONG_SCORE && destinations[0].score >= STRONG_SCORE;
+}
+
 export function resolveMove(intent: AssistantIntent, index: SearchIndexEntry[]): MoveResolution {
-  const objets = topCandidates(
+  const ranked = topCandidates(
     index.filter((entry) => entry.kind === 'objet'),
     (entry) => scoreMatch(intent.object_query, entry.name),
   );
 
-  if (objets.length === 0) return { status: 'no_object', query: intent.object_query };
+  if (ranked.length === 0) return { status: 'no_object', query: intent.object_query };
+
+  const objets = ranked.map((candidate) => candidate.item);
 
   // « Range toutes les assiettes » quand il n'y en a qu'une revient à ranger
   // cette assiette : on ne refuse que si le lot est réel.
@@ -146,13 +183,22 @@ export function resolveMove(intent: AssistantIntent, index: SearchIndexEntry[]):
   // Un objet se range dans un meuble ou une boîte, jamais dans une pièce nue :
   // c'est la contrainte de move_objet, et elle est juste — « dans la cuisine »
   // ne dit pas où l'on retrouvera l'objet.
-  const direct = topCandidates(
-    index.filter((entry) => entry.kind === 'emplacement' || entry.kind === 'conteneur'),
-    (entry) => scoreDestination(query, entry),
-  ).map(toDestination);
+  const direct = preferHabitation(
+    topCandidates(
+      index.filter((entry) => entry.kind === 'emplacement' || entry.kind === 'conteneur'),
+      (entry) => scoreDestination(query, entry),
+    ),
+    (entry) => entry.habitation_id,
+    home,
+  );
 
   if (direct.length > 0) {
-    return { status: 'ready', objets, destinations: preferHabitation(direct, home) };
+    return {
+      status: 'ready',
+      objets,
+      destinations: direct.map((candidate) => toDestination(candidate.item)),
+      confident: isConfident(ranked, direct),
+    };
   }
 
   // Rien de ce nom : la phrase désignait peut-être la PIÈCE (« range-le dans
@@ -161,15 +207,24 @@ export function resolveMove(intent: AssistantIntent, index: SearchIndexEntry[]):
     topCandidates(
       index.filter((entry) => entry.kind === 'piece'),
       (entry) => scoreMatch(query, entry.name),
-    ).map((entry) => ({ entry, habitationId: entry.habitation_id })),
+    ),
+    (entry) => entry.habitation_id,
     home,
   );
 
   if (rooms.length > 0) {
-    const room = rooms[0].entry;
+    const room = rooms[0].item;
     const inRoom = index.filter((entry) => entry.kind === 'emplacement' && entry.piece_id === room.piece_id);
     if (inRoom.length === 0) return { status: 'room_without_emplacement', roomName: room.name };
-    return { status: 'ready', objets, destinations: inRoom.slice(0, MAX_CHOICES).map(toDestination) };
+    return {
+      status: 'ready',
+      objets,
+      destinations: inRoom.slice(0, MAX_CHOICES).map(toDestination),
+      // Jamais sans confirmation ici, même si la pièce n'a qu'un meuble :
+      // l'utilisateur a nommé un endroit qui n'est PAS celui où l'on écrit. On
+      // le lui montre une fois plutôt que de choisir dans son dos.
+      confident: false,
+    };
   }
 
   return { status: 'no_destination', query };

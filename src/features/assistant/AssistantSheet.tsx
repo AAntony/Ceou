@@ -73,12 +73,14 @@ export function AssistantSheet({
   onChooseObjet,
   onChooseDestination,
   onConfirmMove,
+  onUndoMove,
 }: {
   state: AssistantState;
   onClose: () => void;
   onChooseObjet: (objetId: string | null) => void;
   onChooseDestination: (destinationId: string | null) => void;
   onConfirmMove: () => void;
+  onUndoMove: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const colors = useThemeColors();
@@ -235,6 +237,15 @@ export function AssistantSheet({
                 router.push(`/objet/${selection.objet.id}`);
               }}
             />
+          ) : null}
+
+          {/* Le rangement s'écrit sans confirmation quand la dictée est nette.
+              Ce bouton est donc le filet — il doit se voir tout de suite, pas
+              se chercher. */}
+          {state.status === 'moved' && state.undo ? (
+            <View className="mt-4">
+              <Button label={t('assistant.move.undo')} variant="outline" onPress={onUndoMove} />
+            </View>
           ) : null}
 
           {state.status === 'answered' && entries.length > 0 ? (

@@ -332,6 +332,7 @@ export function HomeDashboard() {
         onChooseObjet={voiceSearch.chooseObjet}
         onChooseDestination={voiceSearch.chooseDestination}
         onConfirmMove={voiceSearch.confirmMove}
+        onUndoMove={voiceSearch.undoMove}
       />
     </View>
   );

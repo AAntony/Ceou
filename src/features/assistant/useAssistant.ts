@@ -6,12 +6,18 @@ import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission } from '../../types/database';
-import { invalidateAfterMove, moveObjet } from '../inventory/queries';
+import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
 import { useSearchIndex, type SearchIndexEntry } from '../search/queries';
 import { canModify } from '../sharing/queries';
 import { composeAnswer, composeMoveFailure } from './answer';
 import { isAlreadyThere, resolveMove, type MoveDestination } from './move';
-import { normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
+import {
+  locationSentence,
+  normalizeIntent,
+  resolveIntent,
+  type AssistantIntent,
+  type AssistantResult,
+} from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
 
 const LOCALE_BY_LANGUAGE: Record<string, string> = {
@@ -58,12 +64,28 @@ export type MoveDraft = {
   destinationId: string | null;
 };
 
+/**
+ * De quoi revenir en arrière sur le rangement qui vient d'être écrit.
+ *
+ * C'est la contrepartie du rangement sans confirmation : ce qui protège d'un
+ * mot mal entendu n'est plus une question posée avant, c'est un retour en
+ * arrière offert après. Sans ça, retirer la confirmation serait une
+ * régression, pas une simplification.
+ */
+export type MoveUndo = {
+  objetId: string;
+  objetName: string;
+  /** D'où il vient, sous la forme qui se lit à voix haute. */
+  fromLabel: string;
+};
+
 export type AssistantState = {
   status: AssistantStatus;
   transcript: string;
   answer: string;
   result: AssistantResult | null;
   move: MoveDraft | null;
+  undo: MoveUndo | null;
   errorKey: AssistantErrorKey;
 };
 
@@ -73,6 +95,7 @@ const EMPTY: AssistantState = {
   answer: '',
   result: null,
   move: null,
+  undo: null,
   errorKey: 'error',
 };
 
@@ -220,6 +243,79 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
   const handledRef = useRef(true);
   const listeningRef = useRef(false);
 
+  /**
+   * Écrit le rangement. LE seul endroit de l'assistant qui modifie l'inventaire.
+   *
+   * Appelé soit directement quand la dictée ne laissait aucun doute, soit
+   * après l'accord explicite de l'utilisateur — la suite est identique dans
+   * les deux cas, y compris l'annonce et l'annulation offerte ensuite.
+   */
+  const applyMove = useCallback(
+    async (draft: MoveDraft, transcript: string, session: number) => {
+      const selection = draftSelection(draft);
+      if (!selection) return;
+      const { objet, destination } = selection;
+
+      const settle = (
+        answer: string,
+        status: AssistantStatus,
+        move: MoveDraft | null,
+        undo: MoveUndo | null,
+      ) => {
+        if (sessionRef.current !== session) return;
+        setState({ status, transcript, answer, result: null, move, undo, errorKey: 'error' });
+        void speak(answer, i18n.language);
+      };
+
+      // Déjà au bon endroit : on n'écrit rien. Un déplacement redondant
+      // ajouterait à l'historique une ligne racontant un rangement qui n'a pas
+      // eu lieu — et cet historique est censé faire foi.
+      if (isAlreadyThere(objet, destination)) {
+        settle(
+          tr('assistant.move.already_there', { name: objet.name, location: destination.sentence }),
+          'answered',
+          null,
+          null,
+        );
+        return;
+      }
+
+      setState({ status: 'moving', transcript, answer: '', result: null, move: draft, undo: null, errorKey: 'error' });
+
+      try {
+        // Droits vérifiés AVANT d'écrire, et des DEUX côtés : ranger, c'est
+        // retirer d'un logement et poser dans un autre, qui peuvent être
+        // partagés à des niveaux différents. La RLS refuserait de toute façon,
+        // mais après coup et avec un message que personne ne comprend.
+        const homes = [...new Set([objet.habitation_id, destination.habitationId])];
+        for (const home of homes) {
+          if (!(await canModifyHabitation(home))) {
+            settle(tr('assistant.move.denied'), 'answered', null, null);
+            return;
+          }
+        }
+
+        await moveObjet(objet.id, { type: destination.type, id: destination.id });
+        invalidateAfterMove(queryClient, objet.id);
+        settle(
+          tr('assistant.move.done', { name: objet.name, location: destination.sentence }),
+          'moved',
+          draft,
+          // L'index n'a pas encore été rechargé : l'entrée décrit donc bien
+          // l'emplacement d'AVANT, celui où « Annuler » doit remettre l'objet.
+          { objetId: objet.id, objetName: objet.name, fromLabel: locationSentence(objet) },
+        );
+      } catch (error) {
+        const denied = isPermissionError(error);
+        if (!denied) logClientError(error, { source: 'assistant.move' });
+        // On n'annonce JAMAIS un rangement qu'on n'a pas fait : quelqu'un qui
+        // range n'ira pas vérifier dans l'app que ça a bien été enregistré.
+        settle(tr(denied ? 'assistant.move.denied' : 'assistant.move.failed'), 'answered', null, null);
+      }
+    },
+    [queryClient],
+  );
+
   const handleTranscript = useCallback(
     async (transcript: string) => {
       const session = sessionRef.current;
@@ -236,7 +332,15 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
         return;
       }
 
-      setState({ status: 'thinking', transcript: trimmed, answer: '', result: null, move: null, errorKey: 'error' });
+      setState({
+        status: 'thinking',
+        transcript: trimmed,
+        answer: '',
+        result: null,
+        move: null,
+        undo: null,
+        errorKey: 'error',
+      });
 
       try {
         const intent = await requestIntent(trimmed);
@@ -249,7 +353,15 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
           // même feuille, même voix. C'est un renseignement, pas une panne.
           if (resolution.status !== 'ready') {
             const answer = composeMoveFailure(resolution, tr);
-            setState({ status: 'answered', transcript: trimmed, answer, result: null, move: null, errorKey: 'error' });
+            setState({
+              status: 'answered',
+              transcript: trimmed,
+              answer,
+              result: null,
+              move: null,
+              undo: null,
+              errorKey: 'error',
+            });
             void speak(answer, i18n.language);
             return;
           }
@@ -257,13 +369,27 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
           const draft: MoveDraft = {
             objets: resolution.objets,
             destinations: resolution.destinations,
-            // Un seul candidat = aucune question à poser. La confirmation, elle,
-            // reste due dans tous les cas.
             objetId: resolution.objets.length === 1 ? resolution.objets[0].id : null,
             destinationId: resolution.destinations.length === 1 ? resolution.destinations[0].id : null,
           };
 
-          setState({ status: 'move', transcript: trimmed, answer: '', result: null, move: draft, errorKey: 'error' });
+          // Rien à demander : on range, on annonce, et « Annuler » reste
+          // offert. Confirmer une phrase qui ne prête à aucune confusion ne
+          // protège de rien et coûte un geste à chaque objet rangé.
+          if (resolution.confident) {
+            await applyMove(draft, trimmed, session);
+            return;
+          }
+
+          setState({
+            status: 'move',
+            transcript: trimmed,
+            answer: '',
+            result: null,
+            move: draft,
+            undo: null,
+            errorKey: 'error',
+          });
           void speak(movePrompt(draft), i18n.language);
           return;
         }
@@ -272,7 +398,7 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
         const answer = composeAnswer(result, tr);
 
         if (!isCurrent()) return;
-        setState({ status: 'answered', transcript: trimmed, answer, result, move: null, errorKey: 'error' });
+        setState({ status: 'answered', transcript: trimmed, answer, result, move: null, undo: null, errorKey: 'error' });
         void speak(answer, i18n.language);
       } catch (error) {
         const busy = error instanceof RateLimitedError;
@@ -286,11 +412,12 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
           answer: '',
           result: null,
           move: null,
+          undo: null,
           errorKey: busy ? 'error_busy' : 'error',
         });
       }
     },
-    [onDirectSearch],
+    [applyMove, onDirectSearch],
   );
 
   /** Envoie la phrase retenue, au plus une fois par session d'écoute. */
@@ -339,59 +466,44 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
     setState((current) => (current.move ? { ...current, move: { ...current.move, destinationId } } : current));
   }, []);
 
-  /**
-   * Applique le rangement — le SEUL endroit de l'assistant qui écrive.
-   *
-   * Déclenché par un appui explicite, jamais par la voix seule : cette
-   * version confirme systématiquement. La reconnaissance vocale se trompe de
-   * mot assez souvent pour qu'un inventaire réputé fiable ne puisse pas être
-   * modifié sur sa seule foi.
-   */
+  /** Accord explicite de l'utilisateur, quand la dictée laissait un doute. */
   const confirmMove = useCallback(async () => {
     const { move: draft, transcript } = stateRef.current;
-    const selection = draft ? draftSelection(draft) : null;
-    if (!draft || !selection) return;
-    const { objet, destination } = selection;
+    if (!draft) return;
+    await applyMove(draft, transcript, sessionRef.current);
+  }, [applyMove]);
+
+  /**
+   * Remet l'objet là où il était.
+   *
+   * C'est ce qui remplace la confirmation quand la dictée ne prête à aucune
+   * confusion : plutôt que de faire valider chaque phrase, on écrit, on
+   * annonce, et le retour en arrière reste à portée. L'annulation est
+   * elle-même un déplacement, donc journalisée — l'historique doit raconter ce
+   * qui s'est passé, correction comprise.
+   */
+  const undoMove = useCallback(async () => {
+    const { undo, transcript, move } = stateRef.current;
+    if (!undo) return;
 
     const session = sessionRef.current;
-    const settle = (answer: string, status: AssistantStatus, move: MoveDraft | null) => {
-      if (sessionRef.current !== session) return;
-      setState({ status, transcript, answer, result: null, move, errorKey: 'error' });
-      void speak(answer, i18n.language);
-    };
-
-    // Déjà au bon endroit : on n'écrit rien. Un déplacement redondant
-    // ajouterait à l'historique une ligne racontant un rangement qui n'a pas
-    // eu lieu — et cet historique est censé faire foi.
-    if (isAlreadyThere(objet, destination)) {
-      settle(tr('assistant.move.already_there', { name: objet.name, location: destination.sentence }), 'answered', null);
-      return;
-    }
-
-    setState({ status: 'moving', transcript, answer: '', result: null, move: draft, errorKey: 'error' });
+    setState((current) => ({ ...current, status: 'moving' }));
 
     try {
-      // Droits vérifiés AVANT d'écrire, et des DEUX côtés : ranger, c'est
-      // retirer d'un logement et poser dans un autre, qui peuvent être
-      // partagés à des niveaux différents. La RLS refuserait de toute façon,
-      // mais après coup et avec un message que personne ne comprend.
-      const homes = [...new Set([objet.habitation_id, destination.habitationId])];
-      for (const home of homes) {
-        if (!(await canModifyHabitation(home))) {
-          settle(tr('assistant.move.denied'), 'answered', null);
-          return;
-        }
-      }
-
-      await moveObjet(objet.id, { type: destination.type, id: destination.id });
-      invalidateAfterMove(queryClient, objet.id);
-      settle(tr('assistant.move.done', { name: objet.name, location: destination.sentence }), 'moved', draft);
+      await undoLastMove(undo.objetId);
+      invalidateAfterMove(queryClient, undo.objetId);
+      if (sessionRef.current !== session) return;
+      const answer = tr('assistant.move.undone', { name: undo.objetName, location: undo.fromLabel });
+      setState({ status: 'answered', transcript, answer, result: null, move: null, undo: null, errorKey: 'error' });
+      void speak(answer, i18n.language);
     } catch (error) {
-      const denied = isPermissionError(error);
-      if (!denied) logClientError(error, { source: 'assistant.move' });
-      // On n'annonce JAMAIS un rangement qu'on n'a pas fait : quelqu'un qui
-      // range n'ira pas vérifier dans l'app que ça a bien été enregistré.
-      settle(tr(denied ? 'assistant.move.denied' : 'assistant.move.failed'), 'answered', null);
+      logClientError(error, { source: 'assistant.undo' });
+      if (sessionRef.current !== session) return;
+      // L'annulation reste offerte : elle a échoué, l'objet est donc toujours
+      // à son nouvel emplacement, et réessayer est le geste attendu.
+      const answer = tr('assistant.move.undo_failed');
+      setState({ status: 'moved', transcript, answer, result: null, move, undo, errorKey: 'error' });
+      void speak(answer, i18n.language);
     }
   }, [queryClient]);
 
@@ -409,7 +521,15 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
     pendingRef.current = '';
     handledRef.current = false;
     listeningRef.current = true;
-    setState({ status: 'listening', transcript: '', answer: '', result: null, move: null, errorKey: 'error' });
+    setState({
+      status: 'listening',
+      transcript: '',
+      answer: '',
+      result: null,
+      move: null,
+      undo: null,
+      errorKey: 'error',
+    });
     ExpoSpeechRecognitionModule.start({
       lang: LOCALE_BY_LANGUAGE[i18n.language] ?? 'fr-FR',
       // Pas de résultats intermédiaires, contrairement à la recherche vocale :
@@ -442,5 +562,6 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
     chooseObjet,
     chooseDestination,
     confirmMove,
+    undoMove,
   };
 }

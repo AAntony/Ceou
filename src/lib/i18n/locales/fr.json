@@ -214,7 +214,10 @@
       "no_object": "Je ne trouve aucun objet appelé « {{query}} ». Je n'ai rien rangé.",
       "no_destination": "Je ne trouve pas d'endroit appelé « {{query}} ». Crée-le d'abord, je ne l'invente pas.",
       "room_without_emplacement": "{{room}} n'a encore aucun meuble où ranger quelque chose.",
-      "scope_unsupported": "Je ne sais ranger qu'un objet à la fois pour l'instant. Redemande-moi en nommant celui que tu veux ranger."
+      "scope_unsupported": "Je ne sais ranger qu'un objet à la fois pour l'instant. Redemande-moi en nommant celui que tu veux ranger.",
+      "undo": "Annuler ce rangement",
+      "undone": "C'est annulé : {{name}} est de nouveau dans {{location}}.",
+      "undo_failed": "Je n'ai pas réussi à annuler. L'objet est resté à son nouvel emplacement."
     }
   },
   "friends": {

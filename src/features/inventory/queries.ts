@@ -642,6 +642,34 @@ export async function moveObjet(objetId: string, destination: { type: LocationTy
 }
 
 /**
+ * Remet un objet là où il était juste avant.
+ *
+ * L'origine est relue dans l'HISTORIQUE plutôt que retenue côté client : c'est
+ * la seule source qui fasse foi, et ça évite une requête supplémentaire sur
+ * chaque déplacement pour un retour en arrière qui reste rare.
+ *
+ * L'annulation est elle-même un déplacement, donc journalisée à son tour.
+ * L'historique dit ce qui s'est passé, erreurs et corrections comprises ;
+ * effacer la ligne fautive reviendrait à mentir sur le passé.
+ */
+export async function undoLastMove(objetId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('objet_deplacements')
+    .select('from_location_type, from_location_id')
+    .eq('objet_id', objetId)
+    .order('moved_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+
+  // Un objet créé directement à sa place n'a pas d'origine à retrouver.
+  const type = data?.from_location_type as LocationType | null | undefined;
+  if (!data?.from_location_id || !type) throw new Error('no_previous_location');
+
+  await moveObjet(objetId, { type, id: data.from_location_id });
+}
+
+/**
  * Ce qu'un déplacement rend périmé, quelle que soit sa provenance.
  *
  * Un seul endroit pour les deux chemins (fiche objet et assistant vocal) :

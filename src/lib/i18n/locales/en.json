@@ -214,7 +214,10 @@
       "no_object": "I can't find any item called “{{query}}”. Nothing was moved.",
       "no_destination": "I can't find a place called “{{query}}”. Create it first — I won't invent it.",
       "room_without_emplacement": "{{room}} doesn't have any furniture to put things in yet.",
-      "scope_unsupported": "I can only put one item away at a time for now. Ask me again naming the one you mean."
+      "scope_unsupported": "I can only put one item away at a time for now. Ask me again naming the one you mean.",
+      "undo": "Undo this move",
+      "undone": "Undone: {{name}} is back in {{location}}.",
+      "undo_failed": "I couldn't undo that. The item stayed at its new location."
     }
   },
   "friends": {
