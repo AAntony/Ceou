@@ -7,14 +7,17 @@ import { useCallback, useEffect, useState } from 'react';
 // qu'on y cherche : S pour voir la structure du logement d'un coup d'œil, XL
 // pour lire les rangements d'une pièce sans plisser les yeux.
 //
-// Chaque cran multiplie le PRÉCÉDENT par trois — c'est le rapport demandé, et
-// il est franc : deux crans voisins ne se confondent jamais.
+// Les crans montent d'environ moitié à chaque fois (×1,5 puis ×1,3), et non
+// plus ×3 puis ×9 : à ce rythme-là, M dépassait déjà la largeur d'une chambre
+// et XL était plus grand que n'importe quelle pièce du plan. Une puce doit
+// tenir DANS la pièce qu'elle habite — c'est la contrainte qui fixe l'échelle,
+// pas un rapport choisi à l'avance.
 //
-// Le TEXTE, lui, ne suit pas le même facteur (×2 puis ×3 au lieu de ×3 puis
-// ×9). S'il grandissait comme la carte, exactement le même nombre de lettres
-// tiendrait dans les trois tailles — agrandir la puce n'aurait alors rien
-// apporté au nom, qui est justement ce qu'on agrandit pour lire. Le nom gagne
-// donc de la place à chaque cran, et peut passer sur deux puis trois lignes.
+// Le TEXTE ne suit pas le même facteur que la carte. S'il grandissait comme
+// elle, exactement le même nombre de lettres tiendrait dans les trois tailles
+// — agrandir la puce n'aurait alors rien apporté au nom, qui est justement ce
+// qu'on agrandit pour lire. Le nom gagne donc de la place à chaque cran, et
+// passe sur deux lignes dès M.
 export type PinSize = 'S' | 'M' | 'XL';
 
 export const PIN_SIZES: PinSize[] = ['S', 'M', 'XL'];
@@ -51,30 +54,30 @@ export const PIN_METRICS: Record<PinSize, PinMetrics> = {
     marker: 20,
   },
   M: {
-    cardWidth: 162,
-    cardHeight: 108,
-    icon: 48,
-    label: 17,
-    lineHeight: 20,
-    radius: 27,
-    border: 4.5,
-    padding: 12,
+    cardWidth: 82,
+    cardHeight: 58,
+    icon: 24,
+    label: 11.5,
+    lineHeight: 13.5,
+    radius: 11,
+    border: 2,
+    padding: 5,
     lines: 2,
     maxChars: null,
-    marker: 60,
+    marker: 28,
   },
   XL: {
-    cardWidth: 486,
-    cardHeight: 324,
-    icon: 144,
-    label: 25.5,
-    lineHeight: 30,
-    radius: 81,
-    border: 13.5,
-    padding: 36,
-    lines: 3,
+    cardWidth: 108,
+    cardHeight: 74,
+    icon: 34,
+    label: 14,
+    lineHeight: 16,
+    radius: 15,
+    border: 2.5,
+    padding: 7,
+    lines: 2,
     maxChars: null,
-    marker: 180,
+    marker: 38,
   },
 };
 

@@ -195,16 +195,28 @@ export function PlanPinLayer({
   );
 }
 
-// Borne ET aimante rel_x/rel_y sur un bord de la pièce quand on l'en
-// approche. La DEMI-TAILLE de la puce (en unités monde, comme
-// SNAP_THRESHOLD — cette couche vit dans le même contenu mis à l'échelle que
-// le reste du plan) est retranchée de la plage autorisée : sans ça, rel=0/1
-// place le CENTRE de la puce pile sur le mur et sa moitié déborde hors de la
-// pièce. C'est donc le bord de la carte qui touche le mur, jamais son centre.
-// Sur une pièce plus étroite que la puce, la plage se referme au centre.
-function resolveRel(value: number, sideLength: number, halfSize: number): number {
+// La marge qu'une puce garde avec le mur, exprimée en unités feuille : la
+// DEMI-HAUTEUR de la carte, sur les DEUX axes.
+//
+// C'était la demi-LARGEUR à l'horizontale, et c'est ce qui empêchait de coller
+// une puce au mur de gauche ou de droite. Les pièces sont bien plus larges que
+// hautes du point de vue d'une carte de 54×36 : dans une chambre de 130 de
+// large, la demi-largeur mangeait 42 % du débattement horizontal quand la
+// demi-hauteur n'en prenait que 20 % à la verticale — et en taille XL la plage
+// se refermait complètement, la puce restait clouée au centre. D'où
+// l'asymétrie constatée : haut et bas répondaient, gauche et droite non.
+//
+// Prendre la demi-hauteur des deux côtés rend le débattement identique sur les
+// deux axes. La carte déborde alors du mur latéral de la moitié de ce qui la
+// rend plus large que haute — une dizaine d'unités —, ce qui est le prix pour
+// que l'icône vienne réellement se poser contre le mur.
+const MAX_EDGE_INSET_REL = 0.35;
+
+function resolveRel(value: number, sideLength: number, margin: number): number {
   if (sideLength <= 0) return clamp(value, 0, 1);
-  const edgeInsetRel = clamp(halfSize / sideLength, 0, 0.5);
+  // Plafond : sur une pièce minuscule, la marge ne doit jamais refermer la
+  // plage au point de figer la puce au centre.
+  const edgeInsetRel = Math.min(margin / sideLength, MAX_EDGE_INSET_REL);
   const thresholdRel = SNAP_THRESHOLD / sideLength;
   const bounded = clamp(value, edgeInsetRel, 1 - edgeInsetRel);
   if (bounded < edgeInsetRel + thresholdRel) return edgeInsetRel;
@@ -252,9 +264,12 @@ function PinBadge({
   // zoom) — diviser par `scale` pour obtenir le déplacement réel dans le
   // repère (non zoomé) où vivent x/y, avant resolveRel (bornage + aimantation
   // sur bord, demi-taille de la puce incluse).
+  // Même marge sur les deux axes — voir resolveRel : c'est ce qui rend le
+  // débattement horizontal aussi libre que le vertical.
+  const margin = metrics.cardHeight / 2;
   const resolve = (translationX: number, translationY: number): RelPosition => ({
-    relX: resolveRel(dragOrigin.current.relX + translationX / scale / geo.width, geo.width, metrics.cardWidth / 2),
-    relY: resolveRel(dragOrigin.current.relY + translationY / scale / geo.height, geo.height, metrics.cardHeight / 2),
+    relX: resolveRel(dragOrigin.current.relX + translationX / scale / geo.width, geo.width, margin),
+    relY: resolveRel(dragOrigin.current.relY + translationY / scale / geo.height, geo.height, margin),
   });
 
   const pan = Gesture.Pan()

@@ -433,65 +433,49 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // poignées de redimensionnement sont centrées sur ses coins et ses bords,
   // donc la moitié de leur cible tombe dehors. Sans cette marge, un
   // redimensionnement amorcé un poil en dehors déplaçait aussi le plan.
-  // L'activation est MANUELLE, et c'est délibéré. Laisser ce geste s'activer
-  // tout seul le mettrait en concurrence, pour le même doigt, avec ceux de la
-  // pièce sélectionnée (déplacement, poignées, puces, portes) — et le
-  // vainqueur dépendrait alors d'une règle de priorité de la bibliothèque, pas
-  // d'une décision prise ici. On le fait donc échouer d'emblée quand le doigt
-  // se pose sur la pièce sélectionnée : ses gestes à elle restent seuls en
-  // lice, exactement comme lorsque ce geste-ci était purement désactivé.
-  const panStart = useRef({ x: 0, y: 0 });
-  const PAN_THRESHOLD = 10;
-
-  const startsOnSelectedRoom = (contentX: number, contentY: number) => {
-    if (!selectedFormeId) return false;
-    const geo = geoById[selectedFormeId];
-    if (!geo) return false;
-    // La zone réservée déborde de la pièce d'une demi-poignée : les poignées
-    // de redimensionnement sont centrées sur ses coins et ses bords, donc la
-    // moitié de leur cible tombe dehors.
-    const margin = HANDLE_TOUCH_SIZE / 2;
-    return (
-      contentX >= geo.x - margin &&
-      contentX <= geo.x + geo.width + margin &&
-      contentY >= geo.y - margin &&
-      contentY <= geo.y + geo.height + margin
-    );
+  // Déplacer la vue à un doigt. Ce qui suit vaut pour les DEUX gestes ci-
+  // dessous, qui ne diffèrent que par la vue à laquelle ils sont accrochés.
+  const panTheView = (translationX: number, translationY: number) => {
+    const next = {
+      ...zoomOrigin.current,
+      translateX: zoomOrigin.current.translateX + translationX,
+      translateY: zoomOrigin.current.translateY + translationY,
+    };
+    setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
   };
 
+  // Aucune pièce sélectionnée : le doigt ne sert à rien d'autre, ce geste est
+  // posé sur toute la fenêtre et déplace la vue où qu'il parte — y compris
+  // par-dessus une pièce.
   const backgroundPan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
-    .manualActivation(true)
+    .enabled(selectedFormeId === null)
     .runOnJS(true)
-    .onTouchesDown((event, manager) => {
-      const touch = event.allTouches[0];
-      if (!touch) return;
-      panStart.current = { x: touch.absoluteX, y: touch.absoluteY };
-      const point = viewportToContent(touch.x, touch.y);
-      if (startsOnSelectedRoom(point.x, point.y)) manager.fail();
-    })
-    .onTouchesMove((event, manager) => {
-      const touch = event.allTouches[0];
-      if (!touch) return;
-      // Le seuil que `Gesture.Pan` applique d'ordinaire tout seul, refait à la
-      // main puisque l'activation l'est aussi : sans lui, le moindre tremblement
-      // volerait le tap qui sert à désélectionner.
-      const dx = touch.absoluteX - panStart.current.x;
-      const dy = touch.absoluteY - panStart.current.y;
-      if (dx * dx + dy * dy > PAN_THRESHOLD * PAN_THRESHOLD) manager.activate();
-    })
     .onStart(() => {
       zoomOrigin.current = zoom;
     })
-    .onUpdate((event) => {
-      const next = {
-        ...zoomOrigin.current,
-        translateX: zoomOrigin.current.translateX + event.translationX,
-        translateY: zoomOrigin.current.translateY + event.translationY,
-      };
-      setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
-    });
+    .onUpdate((event) => panTheView(event.translationX, event.translationY));
+
+  // Une pièce EST sélectionnée : le doigt lui appartient dès qu'il se pose
+  // sur elle (déplacement, poignées, puces, portes). Ce second geste vit donc
+  // sur une couche posée SOUS toutes ces cibles et au-dessus du seul canevas :
+  // il ne reçoit que les touchers dont personne d'autre ne veut, c'est-à-dire
+  // ceux qui tombent en dehors de la pièce.
+  //
+  // Deux gestes plutôt qu'un seul avec un test de position, parce qu'un seul
+  // devrait alors se départager avec ceux de la pièce pour le même doigt, et
+  // le vainqueur dépendrait d'une règle de priorité de la bibliothèque. Ici
+  // les deux ne sont jamais actifs en même temps, et la couche du dessous ne
+  // voit tout simplement pas les touchers qu'une cible du dessus a captés.
+  const selectionPan = Gesture.Pan()
+    .minPointers(1)
+    .maxPointers(1)
+    .runOnJS(true)
+    .onStart(() => {
+      zoomOrigin.current = zoom;
+    })
+    .onUpdate((event) => panTheView(event.translationX, event.translationY));
 
   // Remplace le bouton "Valider" : un tap qui ne touche aucune pièce
   // désélectionne. Le calcul en JS (plutôt que de compter sur une priorité
@@ -810,6 +794,16 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 />
               ))}
             </Canvas>
+
+            {/* La couche de déplacement à un doigt, active seulement quand une
+                pièce est sélectionnée. Posée ici, entre le canevas et toutes
+                les cibles tactiles, elle ne récupère que les touchers tombés
+                en dehors d'elles. */}
+            {selectedFormeId && !doorPlacing ? (
+              <GestureDetector gesture={selectionPan}>
+                <View style={{ position: 'absolute', left: 0, top: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT }} />
+              </GestureDetector>
+            ) : null}
 
             {/* Pendant la pose d'une porte, le corps des pièces et les
                 poignées disparaissent : un seul type de cible à l'écran,
