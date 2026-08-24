@@ -10,7 +10,7 @@ import {
 } from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
@@ -377,7 +377,22 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // pas par une logique de priorité à négocier.
   const pinchAnchor = useRef({ x: 0, y: 0 });
 
+  // LE PINCEMENT PASSE AVANT TOUS LES GLISSÉS À UN DOIGT, et il faut le dire
+  // explicitement. Un geste posé sur une vue DESCENDANTE (le corps d'une
+  // pièce, une poignée, une puce, une porte, la couche de déplacement) prend
+  // la main sur celui de l'ancêtre dès qu'il s'active : le pincement, qui vit
+  // sur le conteneur, se retrouvait alors bloqué pour tout le reste du
+  // toucher — c'est ce qui l'a cassé le 2026-08-24, quand la couche de
+  // déplacement s'est mise à couvrir toute la feuille.
+  //
+  // Cette référence circule donc jusqu'à chaque geste à un doigt du plan, qui
+  // se déclare simultané avec elle. Aucun d'eux n'agit vraiment à deux doigts
+  // (tous sont en maxPointers(1)) : la relation ne sert qu'à les empêcher de
+  // se faire annuler l'un l'autre.
+  const pinchRef = useRef<GestureType | undefined>(undefined);
+
   const pinch = Gesture.Pinch()
+    .withRef(pinchRef)
     .runOnJS(true)
     .onStart((event) => {
       zoomOrigin.current = zoom;
@@ -464,6 +479,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   const planPan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
+    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(startViewPan)
     .onUpdate((event) => panTheView(event.translationX, event.translationY));
@@ -814,6 +830,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   onSelect={() => onSelect(forme)}
                   onViewPanStart={startViewPan}
                   onViewPan={panTheView}
+                  pinchRef={pinchRef}
                 />
               );
             })}
@@ -831,6 +848,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               readOnly={readOnly}
               onCreate={onDoorCreate}
               onPreview={setDoorPreview}
+              pinchRef={pinchRef}
               onSelect={onDoorSelect}
               onDragEnd={onDoorDragEnd}
             />
@@ -848,6 +866,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     scale={zoom.scale}
                     onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
                     onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
+                    pinchRef={pinchRef}
                   />
                 ))
               : null}
@@ -862,6 +881,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               size={pinSize}
               selectedPinId={selectedPinId}
               onSelectPin={onPinSelect}
+              pinchRef={pinchRef}
               readOnly={readOnly}
               onDragEnd={onPinDragEnd}
               onTap={onPinTap}
@@ -976,6 +996,7 @@ function ShapeBody({
   onSelect,
   onViewPanStart,
   onViewPan,
+  pinchRef,
 }: {
   geo: ShapeGeometry;
   others: ShapeGeometry[];
@@ -987,6 +1008,7 @@ function ShapeBody({
   onSelect: () => void;
   onViewPanStart: () => void;
   onViewPan: (translationX: number, translationY: number) => void;
+  pinchRef: React.RefObject<GestureType | undefined>;
 }) {
   const dragOrigin = useRef(geo);
   const HIT_SLOP = 12;
@@ -1005,6 +1027,7 @@ function ShapeBody({
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
+    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = geo;
@@ -1059,6 +1082,7 @@ function HandleDot({
   scale,
   onResize,
   onResizeEnd,
+  pinchRef,
 }: {
   geo: ShapeGeometry;
   handle: HandleId;
@@ -1066,6 +1090,7 @@ function HandleDot({
   scale: number;
   onResize: (geometry: ShapeGeometry) => void;
   onResizeEnd: (geometry: ShapeGeometry) => void;
+  pinchRef: React.RefObject<GestureType | undefined>;
 }) {
   const origin = useRef(geo);
   const last = useRef(geo);
@@ -1074,6 +1099,7 @@ function HandleDot({
   const pan = Gesture.Pan()
     .minPointers(1)
     .maxPointers(1)
+    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(() => {
       origin.current = geo;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import { Icon } from '../../components/Icon';
 import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
@@ -87,6 +87,8 @@ type PlanPinLayerProps = {
   // apparaître le sélecteur S/M/XL au-dessus du plan.
   selectedPinId: string | null;
   onSelectPin: (pinId: string | null) => void;
+  /** Le pincement à deux doigts passe avant le glissé d une puce. */
+  pinchRef: React.RefObject<GestureType | undefined>;
   // Consultation seule : les puces restent AFFICHÉES (c'est tout leur
   // intérêt — voir où sont les Emplacements) mais ne se déplacent plus et
   // n'ouvrent plus leur fiche, qui ne propose que « Retirer du plan ».
@@ -114,6 +116,7 @@ export function PlanPinLayer({
   size,
   selectedPinId,
   onSelectPin,
+  pinchRef,
   readOnly = false,
   onDragEnd,
   onTap,
@@ -203,6 +206,7 @@ export function PlanPinLayer({
             scale={scale}
             metrics={metrics}
             siblings={siblings}
+            pinchRef={pinchRef}
             onDragStart={() => {
               draggingIdRef.current = pin.id;
             }}
@@ -230,6 +234,7 @@ function PinBadge({
   scale,
   metrics,
   siblings,
+  pinchRef,
   onDragStart,
   onMove,
   onDragEnd,
@@ -246,6 +251,7 @@ function PinBadge({
   metrics: PinMetrics;
   /** Les autres puces de la MÊME pièce, centres en coordonnées de feuille. */
   siblings: { x: number; y: number }[];
+  pinchRef: React.RefObject<GestureType | undefined>;
   onDragStart: () => void;
   onMove: (pos: RelPosition) => void;
   onDragEnd: (pos: RelPosition) => void;
@@ -284,6 +290,7 @@ function PinBadge({
     .minPointers(1)
     .maxPointers(1)
     .enabled(interactive)
+    .simultaneousWithExternalGesture(pinchRef)
     .runOnJS(true)
     .onStart(() => {
       dragOrigin.current = pos;
