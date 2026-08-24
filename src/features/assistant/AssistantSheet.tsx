@@ -7,19 +7,18 @@ import { Icon, type IconName } from '../../components/Icon';
 import { getEmplacementIcon } from '../inventory/constants';
 import type { MoveDestination } from './move';
 import { locationLabel } from './resolve';
-import { isSpeechAvailable, speak } from './speak';
-import { draftSelection, type AssistantState } from './useAssistant';
+import type { AssistantState } from './useAssistant';
 import { useThemeColors } from '../../lib/theme';
 
-// Réponse de l'assistant vocal.
+// La feuille d'une SESSION vocale.
 //
-// La réponse en toutes lettres passe AVANT la liste : à « où sont mes clés »,
-// on répond « dans l'Entrée, meuble d'entrée », pas par une grille de cartes à
-// déchiffrer. La liste vient ensuite, pour agir.
+// Elle ne demande rien tant qu'il n'y a rien à demander. Ce qui s'y passe est
+// un compte rendu : ce que Céoù a entendu, ce qu'il a répondu, ce qu'il a
+// rangé. Une seule question peut l'interrompre — laquelle des propositions —
+// et y répondre exécute aussitôt : le choix VAUT accord.
 //
-// Le RANGEMENT ajoute un temps à ce dialogue : quand la dictée laisse un
-// doute, le même écran sert à trancher ET à confirmer. Rien ne s'écrit avant
-// l'appui sur « Ranger ».
+// Un seul bouton en bas, et il n'est qu'un filet : la sortie normale se dit à
+// voix haute, « merci ».
 
 const ACCENT = '#1591EA';
 
@@ -28,25 +27,23 @@ function destinationIcon(destination: MoveDestination): IconName {
   return destination.type === 'conteneur' ? 'conteneur' : getEmplacementIcon(destination.presetKey);
 }
 
-function Row({
+function ChoiceRow({
   icon,
   title,
   subtitle,
   onPress,
-  accessibilityLabel,
 }: {
   icon: IconName;
   title: string;
   subtitle?: string | null;
   onPress: () => void;
-  accessibilityLabel?: string;
 }) {
   const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel ?? [title, subtitle].filter(Boolean).join(', ')}
+      accessibilityLabel={[title, subtitle].filter(Boolean).join(', ')}
       className="flex-row items-center gap-3 border-b border-ink/5 py-3 active:opacity-70"
     >
       <View className="h-9 w-9 items-center justify-center rounded-xl bg-coral-light">
@@ -72,125 +69,97 @@ export function AssistantSheet({
   onClose,
   onChooseObjet,
   onChooseDestination,
-  onConfirmMove,
-  onUndoMove,
-  onStartHandsFree,
-  onStopHandsFree,
   onSkipChoice,
+  onUndoMove,
 }: {
   state: AssistantState;
   onClose: () => void;
   onChooseObjet: (objetId: string | null) => void;
   onChooseDestination: (destinationId: string | null) => void;
-  onConfirmMove: () => void;
-  onUndoMove: () => void;
-  onStartHandsFree: () => void;
-  onStopHandsFree: () => void;
   onSkipChoice: () => void;
+  onUndoMove: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const colors = useThemeColors();
 
-  const visible =
-    state.handsFree ||
-    state.status === 'thinking' ||
-    state.status === 'answered' ||
-    state.status === 'error' ||
-    state.status === 'move' ||
-    state.status === 'moving' ||
-    state.status === 'moved';
-
-  const entries = state.result?.entries ?? [];
   const draft = state.move;
-  const selection = draft ? draftSelection(draft) : null;
+  const choosing = state.status === 'choosing' && draft;
+  const working = state.status === 'thinking' || state.status === 'moving';
+
+  // Le plus récent en haut : c'est celui qu'on veut vérifier, et c'est aussi
+  // celui que « Annuler » vise.
+  const recent = [...state.entries].reverse();
+
+  const subtitle = choosing
+    ? t('assistant.session.choosing')
+    : state.status === 'starting'
+      ? t('assistant.session.starting')
+      : state.status === 'thinking'
+        ? t('assistant.thinking')
+        : state.status === 'moving'
+          ? t('assistant.session.saving')
+          : t('assistant.session.listening');
 
   return (
     <BottomSheetModal
-      visible={visible}
+      visible={state.active}
       onClose={onClose}
       sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-5"
       sheetStyle={{ maxHeight: '85%' }}
     >
-      {/* === Session mains libres : le bandeau qui reste tout du long ====== */}
-      {state.handsFree ? (
-        <View className="mb-4 flex-row items-center gap-3 rounded-2xl bg-coral-light px-4 py-3">
+      {/* Le bandeau reste tout du long : c'est lui qui dit si Céoù écoute
+          vraiment. « Un instant » plutôt qu'un faux « je t'écoute » évite de
+          parler avant que le micro soit prêt. */}
+      <View className="mb-4 flex-row items-center gap-3 rounded-2xl bg-coral-light px-4 py-3">
+        {working || state.status === 'starting' ? (
+          <ActivityIndicator color={ACCENT} />
+        ) : (
           <Icon name="microphone" size={20} color={ACCENT} />
-          <View className="flex-1">
-            <Text className="text-sm font-semibold text-coral-dark">{t('assistant.move.handsfree_title')}</Text>
-            <Text className="text-xs text-ink-soft" numberOfLines={2}>
-              {state.status === 'moving' || state.status === 'thinking'
-                ? t('assistant.move.handsfree_working')
-                : state.status === 'move'
-                  ? t('assistant.move.confirm_title')
-                  : t('assistant.move.handsfree_listening')}
-            </Text>
-          </View>
-          {state.handsFreeDone.length > 0 ? (
-            <Text className="text-xs font-semibold text-coral-dark">
-              {t('assistant.move.handsfree_count', { count: state.handsFreeDone.length })}
-            </Text>
-          ) : null}
+        )}
+        <View className="flex-1">
+          <Text className="text-sm font-semibold text-coral-dark">{t('assistant.session.title')}</Text>
+          <Text className="text-xs text-ink-soft" numberOfLines={2}>
+            {subtitle}
+          </Text>
         </View>
-      ) : null}
+        {state.entries.length > 0 ? (
+          <Text className="text-xs font-semibold text-coral-dark">
+            {t('assistant.session.count', { count: state.entries.length })}
+          </Text>
+        ) : null}
+      </View>
 
-      {/* Ce que l'app a compris, affiché tel quel : c'est la seule façon pour
-          l'utilisateur de comprendre une réponse à côté de la plaque — la
-          dictée a pu entendre autre chose que ce qu'il a dit. */}
+      {/* Ce que l'app a compris, affiché tel quel : c'est la seule façon de
+          comprendre une réponse à côté de la plaque — la dictée a pu entendre
+          autre chose que ce qui a été dit. */}
       {state.transcript ? (
-        <View className="mb-4 flex-row items-start gap-2">
-          <Icon name="microphone" size={16} color={colors.inkFaint} />
-          <Text className="flex-1 text-sm italic leading-5 text-ink-soft">« {state.transcript} »</Text>
+        <View className="mb-3 flex-row items-start gap-2">
+          <Icon name="microphone" size={14} color={colors.inkFaint} />
+          <Text className="flex-1 text-xs italic leading-5 text-ink-soft">« {state.transcript} »</Text>
         </View>
       ) : null}
 
-      {state.status === 'thinking' ? (
-        <View className="items-center py-6">
-          <ActivityIndicator />
-          <Text className="mt-3 text-sm text-ink-soft">{t('assistant.thinking')}</Text>
-        </View>
-      ) : null}
-
-      {state.status === 'moving' ? (
-        <View className="items-center py-6">
-          <ActivityIndicator />
-          <Text className="mt-3 text-sm text-ink-soft">{t('assistant.move.moving')}</Text>
-        </View>
-      ) : null}
-
-      {state.status === 'error' ? (
-        <View className="py-2">
-          <Text className="text-base leading-6 text-ink">{t(`assistant.${state.errorKey}`)}</Text>
-        </View>
-      ) : null}
-
-      {/* === Rangement : choisir, puis confirmer ============================ */}
-      {state.status === 'move' && draft ? (
+      {/* === La seule interruption possible : lever une ambiguïté ========== */}
+      {choosing ? (
         <>
-          {!draft.objetId ? (
-            <>
-              <Text className="mb-2 text-lg font-semibold leading-7 text-ink">
-                {t('assistant.move.which_object', { n: draft.objets.length })}
-              </Text>
-              <ScrollView style={{ maxHeight: 300, flexShrink: 1 }}>
-                {draft.objets.map((objet) => (
-                  <Row
+          <Text className="mb-2 text-lg font-semibold leading-7 text-ink">
+            {!draft.objetId
+              ? t('assistant.move.which_object', { n: draft.objets.length })
+              : t('assistant.move.which_destination', { n: draft.destinations.length })}
+          </Text>
+          <ScrollView style={{ maxHeight: 300, flexShrink: 1 }}>
+            {!draft.objetId
+              ? draft.objets.map((objet) => (
+                  <ChoiceRow
                     key={objet.id}
                     icon="objet"
                     title={objet.name}
                     subtitle={locationLabel(objet)}
                     onPress={() => onChooseObjet(objet.id)}
                   />
-                ))}
-              </ScrollView>
-            </>
-          ) : !draft.destinationId ? (
-            <>
-              <Text className="mb-2 text-lg font-semibold leading-7 text-ink">
-                {t('assistant.move.which_destination', { n: draft.destinations.length })}
-              </Text>
-              <ScrollView style={{ maxHeight: 300, flexShrink: 1 }}>
-                {draft.destinations.map((destination) => (
-                  <Row
+                ))
+              : draft.destinations.map((destination) => (
+                  <ChoiceRow
                     key={destination.id}
                     icon={destinationIcon(destination)}
                     title={destination.name}
@@ -198,129 +167,25 @@ export function AssistantSheet({
                     onPress={() => onChooseDestination(destination.id)}
                   />
                 ))}
-              </ScrollView>
-            </>
-          ) : selection ? (
-            <>
-              <Text className="mb-3 text-lg font-semibold leading-7 text-ink">
-                {t('assistant.move.confirm_title')}
-              </Text>
-
-              <View className="rounded-2xl border border-ink/10 p-4">
-                <MovePart
-                  label={t('assistant.move.what')}
-                  name={selection.objet.name}
-                  detail={t('assistant.move.from', { location: locationLabel(selection.objet) })}
-                  changeable={draft.objets.length > 1}
-                  onChange={() => onChooseObjet(null)}
-                  changeLabel={t('assistant.move.change')}
-                />
-                <View className="my-3 h-px bg-ink/10" />
-                <MovePart
-                  label={t('assistant.move.where')}
-                  name={selection.destination.name}
-                  detail={selection.destination.label}
-                  changeable={draft.destinations.length > 1}
-                  onChange={() => onChooseDestination(null)}
-                  changeLabel={t('assistant.move.change')}
-                />
-              </View>
-
-              <View className="mt-4">
-                <Button label={t('assistant.move.confirm')} onPress={onConfirmMove} />
-              </View>
-            </>
-          ) : null}
+          </ScrollView>
+          <View className="mt-3">
+            <Button label={t('assistant.move.skip')} variant="ghost" onPress={onSkipChoice} />
+          </View>
         </>
-      ) : null}
-
-      {/* === Mains libres : ce qui s'affiche entre deux phrases ============ */}
-      {state.handsFree && state.status === 'listening' ? (
+      ) : (
         <>
           {state.answer ? (
             <Text className="mb-3 text-base leading-6 text-ink">{state.answer}</Text>
-          ) : state.handsFreeDone.length === 0 ? (
-            <Text className="mb-3 text-base leading-6 text-ink-soft">{t('assistant.move.handsfree_empty')}</Text>
+          ) : state.entries.length === 0 && !working ? (
+            <Text className="mb-3 text-base leading-6 text-ink-soft">{t('assistant.session.example')}</Text>
           ) : null}
 
-          {/* Le plus récent en haut : c'est celui qu'on veut vérifier, et
-              c'est aussi celui que « Annuler » vise. */}
-          {state.handsFreeDone.length > 0 ? (
-            <ScrollView style={{ maxHeight: 240, flexShrink: 1 }}>
-              {[...state.handsFreeDone].reverse().map((entry, index) => (
-                <View
-                  key={`${entry.objetName}-${state.handsFreeDone.length - index}`}
-                  className="flex-row items-center gap-3 border-b border-ink/5 py-2.5"
-                >
-                  <Icon name="validate" size={16} color={colors.inkFaint} />
-                  <View className="flex-1">
-                    <Text className="text-sm text-ink" numberOfLines={1}>
-                      {entry.objetName}
-                    </Text>
-                    <Text className="text-xs text-ink-soft" numberOfLines={1}>
-                      {entry.location}
-                    </Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          ) : null}
-
-          {state.undo ? (
-            <View className="mt-3">
-              <Button label={t('assistant.move.undo')} variant="outline" onPress={onUndoMove} />
-            </View>
-          ) : null}
-        </>
-      ) : null}
-
-      {/* === Réponse ordinaire, et fin d'un rangement ======================= */}
-      {state.status === 'answered' || state.status === 'moved' ? (
-        <>
-          <View className="mb-4 flex-row items-start gap-3">
-            <Text className="flex-1 text-lg font-semibold leading-7 text-ink">{state.answer}</Text>
-            {/* Réécouter : sans valeur si l'appareil ne peut pas parler (build
-                sans le module natif), donc masqué dans ce cas plutôt
-                qu'affiché et inerte. */}
-            {isSpeechAvailable() ? (
-              <Pressable
-                onPress={() => void speak(state.answer, i18n.language)}
-                accessibilityRole="button"
-                accessibilityLabel={t('assistant.replay')}
-                className="h-11 w-11 items-center justify-center rounded-full border border-ink/10 active:opacity-70"
-              >
-                <Icon name="microphone" size={18} color={ACCENT} />
-              </Pressable>
-            ) : null}
-          </View>
-
-          {/* Après un rangement, l'objet rangé reste à portée : c'est le seul
-              endroit où vérifier, et sa fiche porte l'historique. */}
-          {state.status === 'moved' && selection ? (
-            <Row
-              icon="objet"
-              title={selection.objet.name}
-              subtitle={selection.destination.label}
-              onPress={() => {
-                onClose();
-                router.push(`/objet/${selection.objet.id}`);
-              }}
-            />
-          ) : null}
-
-          {/* Le rangement s'écrit sans confirmation quand la dictée est nette.
-              Ce bouton est donc le filet — il doit se voir tout de suite, pas
-              se chercher. */}
-          {state.status === 'moved' && state.undo ? (
-            <View className="mt-4">
-              <Button label={t('assistant.move.undo')} variant="outline" onPress={onUndoMove} />
-            </View>
-          ) : null}
-
-          {state.status === 'answered' && entries.length > 0 ? (
-            <ScrollView style={{ maxHeight: 320, flexShrink: 1 }}>
-              {entries.map((entry) => (
-                <Row
+          {/* Les objets trouvés par une question posée en passant (« où sont
+              mes clés ») restent cliquables, sans interrompre la session. */}
+          {state.result && state.result.entries.length > 0 ? (
+            <ScrollView style={{ maxHeight: 200, flexShrink: 1 }}>
+              {state.result.entries.map((entry) => (
+                <ChoiceRow
                   key={entry.id}
                   icon="objet"
                   title={entry.name}
@@ -333,71 +198,40 @@ export function AssistantSheet({
               ))}
             </ScrollView>
           ) : null}
+
+          {recent.length > 0 ? (
+            <ScrollView style={{ maxHeight: 240, flexShrink: 1 }}>
+              {recent.map((entry, index) => (
+                <View
+                  key={`${entry.objetName}-${recent.length - index}`}
+                  className="flex-row items-center gap-3 border-b border-ink/5 py-2.5"
+                >
+                  <Icon name="validate" size={16} color={colors.inkFaint} />
+                  <View className="flex-1">
+                    <Text className="text-sm text-ink" numberOfLines={1}>
+                      {entry.objetName}
+                    </Text>
+                    <Text className="text-xs text-ink-soft" numberOfLines={1}>
+                      {entry.location}
+                    </Text>
+                  </View>
+                  {/* Discret et sur la seule ligne concernée : c'est un filet,
+                      pas une étape. */}
+                  {index === 0 && state.undo ? (
+                    <Pressable onPress={onUndoMove} hitSlop={8} accessibilityRole="button" className="active:opacity-60">
+                      <Text className="text-xs font-semibold text-coral">{t('assistant.move.undo')}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ))}
+            </ScrollView>
+          ) : null}
         </>
-      ) : null}
+      )}
 
-      {/* Après un rangement isolé, la porte d'entrée du mode mains libres :
-          c'est le moment précis où il devient utile, donc le seul endroit où
-          le proposer sans encombrer. */}
-      {!state.handsFree && state.status === 'moved' ? (
-        <View className="mt-3">
-          <Button label={t('assistant.move.handsfree_cta')} variant="outline" onPress={onStartHandsFree} />
-          <Text className="mt-2 text-center text-xs text-ink-faint">{t('assistant.move.handsfree_hint')}</Text>
-        </View>
-      ) : null}
-
-      <View className="mt-4 flex-row gap-3">
-        {state.handsFree && state.status === 'move' ? (
-          <View className="flex-1">
-            <Button label={t('assistant.move.skip')} variant="ghost" onPress={onSkipChoice} />
-          </View>
-        ) : null}
-        <View className="flex-1">
-          <Button
-            label={
-              state.handsFree
-                ? t('assistant.move.finish')
-                : state.status === 'move'
-                  ? t('common.cancel')
-                  : t('common.close')
-            }
-            variant="ghost"
-            onPress={state.handsFree ? onStopHandsFree : onClose}
-          />
-        </View>
+      <View className="mt-4">
+        <Button label={t('assistant.session.finish')} variant="ghost" onPress={onClose} />
       </View>
     </BottomSheetModal>
-  );
-}
-
-/** Une moitié de la confirmation : ce qu'on range, ou l'endroit où on le range. */
-function MovePart({
-  label,
-  name,
-  detail,
-  changeable,
-  onChange,
-  changeLabel,
-}: {
-  label: string;
-  name: string;
-  detail: string | null;
-  changeable: boolean;
-  onChange: () => void;
-  changeLabel: string;
-}) {
-  return (
-    <View className="flex-row items-start gap-3">
-      <View className="flex-1">
-        <Text className="text-xs uppercase tracking-wide text-ink-faint">{label}</Text>
-        <Text className="mt-0.5 text-base font-semibold text-ink">{name}</Text>
-        {detail ? <Text className="text-xs text-ink-soft">{detail}</Text> : null}
-      </View>
-      {changeable ? (
-        <Pressable onPress={onChange} accessibilityRole="button" className="py-1 active:opacity-70">
-          <Text className="text-sm font-semibold text-coral">{changeLabel}</Text>
-        </Pressable>
-      ) : null}
-    </View>
   );
 }

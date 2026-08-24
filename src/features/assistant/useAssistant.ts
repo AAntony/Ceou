@@ -1,9 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
+import { normalizeForMatch } from '../../lib/text/match';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission } from '../../types/database';
 import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
@@ -11,70 +12,104 @@ import { useSearchIndex, type SearchIndexEntry } from '../search/queries';
 import { canModify } from '../sharing/queries';
 import { composeAnswer, composeMoveFailure } from './answer';
 import { isAlreadyThere, resolveMove, type MoveDestination } from './move';
-import {
-  locationSentence,
-  normalizeIntent,
-  resolveIntent,
-  type AssistantIntent,
-  type AssistantResult,
-} from './resolve';
+import { locationSentence, normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
+
+// L'ASSISTANT EST UNE SESSION, PAS UNE QUESTION.
+//
+// Un appui ouvre le micro et le laisse ouvert. On enchaîne les phrases, les
+// ordres s'exécutent sans confirmation dès qu'ils ne prêtent à aucune
+// confusion, et l'on dit « merci » pour clore.
+//
+// C'est le troisième état de ce fichier, et il vient de deux constats
+// d'usage : le micro qui s'ouvrait à chaque phrase perdait le début de
+// celle-ci, et chaque rangement demandait un appui alors qu'on range
+// justement les mains prises. Les deux disparaissent en cessant de traiter
+// une demande vocale comme un aller-retour.
 
 const LOCALE_BY_LANGUAGE: Record<string, string> = {
   fr: 'fr-FR',
   en: 'en-US',
 };
 
-// Codes qu'un utilisateur déclenche sans que ce soit une panne (silence,
-// nouvel appui sur le micro) — même liste que la recherche vocale.
+// Codes qu'un utilisateur déclenche sans que ce soit une panne — un silence
+// entre deux objets est même l'état le plus courant d'une session.
 const SILENT_ERROR_CODES = new Set(['no-speech', 'aborted', 'speech-timeout']);
 
 // En dessous de ce nombre de mots, on considère que l'utilisateur DICTE un
-// terme de recherche plutôt qu'il ne POSE une question, et on court-circuite
-// l'IA : « tournevis » n'a rien à faire dans un appel réseau facturé, alors
-// que « où sont mes clés » en a besoin. Économise le quota Gemini, qui est
-// partagé entre tous les utilisateurs (voir detect-objects).
-const DIRECT_SEARCH_MAX_WORDS = 2;
+// nom d'objet plutôt qu'il ne formule une demande. On répond alors sans
+// passer par l'IA : « tournevis » n'a rien à faire dans un appel réseau
+// facturé, et le quota Gemini est partagé entre tous les utilisateurs.
+const SHORT_QUERY_MAX_WORDS = 2;
 
-// === Mains libres =========================================================
 // Silence après lequel on considère qu'une phrase est terminée, quand le
 // moteur ne le dit pas lui-même. Assez long pour laisser respirer au milieu
 // d'une phrase, assez court pour ne pas faire attendre entre deux objets.
-const HANDS_FREE_PHRASE_PAUSE = 900;
+const PHRASE_PAUSE = 900;
 
 // Le moteur s'arrête de lui-même après chaque silence : on le relance, et
 // c'est ce qui donne l'impression d'un micro qui reste ouvert. Au bout de
 // tant de relances SANS la moindre phrase, la session s'arrête d'elle-même —
 // quelques minutes de silence veulent dire qu'on a reposé le téléphone, et un
 // micro qui écoute indéfiniment n'est ni souhaitable ni honnête.
-const HANDS_FREE_MAX_SILENT_RESTARTS = 40;
-const HANDS_FREE_RESTART_DELAY = 250;
+const MAX_SILENT_RESTARTS = 40;
+const RESTART_DELAY = 120;
 
 // Deux `result` identiques rapprochés viennent du moteur, pas de
 // l'utilisateur. Passé ce délai, répéter la même phrase est un acte
 // volontaire et doit être exécuté.
-const HANDS_FREE_REPEAT_GUARD = 2500;
+const REPEAT_GUARD = 2500;
+
+// Ce qui clôt une session. Comparaison EXACTE sur la phrase entière, jamais
+// sur un mot contenu : « merci de ranger mes clés dans le tiroir » est un
+// ordre, pas un au revoir.
+const CLOSING_PHRASES = new Set([
+  'merci',
+  'merci ceou',
+  'merci beaucoup',
+  'merci bien',
+  'c est bon',
+  'termine',
+  'fini',
+  'j ai fini',
+  'stop',
+  'au revoir',
+  'thank you',
+  'thanks',
+  'that s all',
+  'done',
+  'stop it',
+]);
+
+function isClosingPhrase(transcript: string): boolean {
+  return CLOSING_PHRASES.has(normalizeForMatch(transcript));
+}
+
+// La permission ne se redemande qu'une fois. C'est le principal responsable
+// du micro qui s'ouvrait en retard : un aller-retour natif attendu à chaque
+// appui, alors que la réponse ne change plus après le premier accord.
+let microphoneGranted = false;
 
 export type AssistantStatus =
   | 'idle'
+  /** Appui reçu, le moteur n'a pas encore la parole : ne parle pas tout de suite. */
+  | 'starting'
   | 'listening'
   | 'thinking'
-  | 'answered'
-  | 'error'
-  /** Rangement compris, en attente du choix et de l'accord de l'utilisateur. */
-  | 'move'
   | 'moving'
-  | 'moved';
+  /** Une ambiguïté attend une réponse à l'écran. */
+  | 'choosing';
 
 /** Clé i18n du message d'erreur, sous `assistant.`. */
 export type AssistantErrorKey = 'error' | 'error_busy';
 
 /**
- * Un rangement en attente d'accord.
+ * Un rangement dont il reste quelque chose à trancher.
  *
  * Les candidats restent au pluriel jusqu'au bout : quand la dictée est
- * ambiguë, c'est l'utilisateur qui tranche, et le même écran sert alors à
- * choisir ET à confirmer. Un identifiant nul veut dire « pas encore choisi ».
+ * ambiguë, c'est l'utilisateur qui choisit, et son choix VAUT accord — il n'y
+ * a pas de confirmation par-dessus. Un identifiant nul veut dire « pas encore
+ * choisi ».
  */
 export type MoveDraft = {
   objets: SearchIndexEntry[];
@@ -84,12 +119,11 @@ export type MoveDraft = {
 };
 
 /**
- * De quoi revenir en arrière sur le rangement qui vient d'être écrit.
+ * De quoi revenir en arrière sur le dernier rangement écrit.
  *
- * C'est la contrepartie du rangement sans confirmation : ce qui protège d'un
- * mot mal entendu n'est plus une question posée avant, c'est un retour en
- * arrière offert après. Sans ça, retirer la confirmation serait une
- * régression, pas une simplification.
+ * C'est la contrepartie de l'exécution sans confirmation : ce qui protège
+ * d'un mot mal entendu n'est pas une question posée avant, c'est un retour en
+ * arrière offert après.
  */
 export type MoveUndo = {
   objetId: string;
@@ -98,32 +132,31 @@ export type MoveUndo = {
   fromLabel: string;
 };
 
-/** Une ligne du relevé de session en mains libres. */
-export type HandsFreeEntry = { objetName: string; location: string };
+/** Une ligne du relevé de session. */
+export type SessionEntry = { objetName: string; location: string };
 
 export type AssistantState = {
   status: AssistantStatus;
+  /** Une session est en cours : le micro lui appartient, la feuille est ouverte. */
+  active: boolean;
   transcript: string;
   answer: string;
   result: AssistantResult | null;
   move: MoveDraft | null;
   undo: MoveUndo | null;
-  /** Le micro reste ouvert et enchaîne les phrases. */
-  handsFree: boolean;
-  /** Ce qui a été rangé depuis le début de la session mains libres. */
-  handsFreeDone: HandsFreeEntry[];
+  entries: SessionEntry[];
   errorKey: AssistantErrorKey;
 };
 
 const EMPTY: AssistantState = {
   status: 'idle',
+  active: false,
   transcript: '',
   answer: '',
   result: null,
   move: null,
   undo: null,
-  handsFree: false,
-  handsFreeDone: [],
+  entries: [],
   errorKey: 'error',
 };
 
@@ -147,25 +180,6 @@ function isPermissionError(error: unknown): boolean {
   const failure = error as { code?: string; message?: string } | null;
   if (failure?.code === '42501') return true;
   return typeof failure?.message === 'string' && failure.message.toLowerCase().includes('row-level security');
-}
-
-/**
- * Ce que l'assistant énonce en présentant un rangement.
- *
- * Soit la question qui reste à trancher, soit la proposition complète. Elle
- * est dite à voix haute parce que ranger se fait les mains prises : on doit
- * pouvoir savoir ce qui va être écrit sans regarder l'écran.
- */
-function movePrompt(draft: MoveDraft): string {
-  if (!draft.objetId) return tr('assistant.move.which_object', { n: draft.objets.length });
-  if (!draft.destinationId) return tr('assistant.move.which_destination', { n: draft.destinations.length });
-
-  const selection = draftSelection(draft);
-  if (!selection) return tr('assistant.move.which_object', { n: draft.objets.length });
-  return tr('assistant.move.confirm_question', {
-    name: selection.objet.name,
-    location: selection.destination.sentence,
-  });
 }
 
 async function canModifyHabitation(habitationId: string): Promise<boolean> {
@@ -201,10 +215,9 @@ class RateLimitedError extends Error {}
 /**
  * Interroge l'IA, avec UNE seule reprise en cas de limitation de débit.
  *
- * La limite serveur est de quelques secondes entre deux questions. Deux
- * questions d'affilée sont un usage parfaitement normal (« et mes lunettes
- * ? ») : attendre puis réessayer une fois est bien meilleur que d'afficher
- * une erreur pour un délai que l'app connaît déjà.
+ * La limite serveur est de quelques secondes entre deux demandes. En session
+ * on enchaîne les phrases, donc on la rencontre : attendre puis réessayer une
+ * fois vaut mieux qu'une erreur pour un délai que l'app connaît déjà.
  */
 async function requestIntent(transcript: string): Promise<AssistantIntent> {
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -225,78 +238,35 @@ async function requestIntent(transcript: string): Promise<AssistantIntent> {
   throw new RateLimitedError('rate_limited');
 }
 
-/**
- * Assistant vocal : micro -> texte -> intention -> résultats réels -> réponse.
- *
- * `onDirectSearch` reçoit les dictées courtes, qui restent une simple
- * recherche texte sans passer par l'IA.
- */
-export function useAssistant(onDirectSearch: (text: string) => void) {
+/** Assistant vocal : un appui, une session, autant de phrases qu'on veut. */
+export function useAssistant() {
   const { data: index } = useSearchIndex();
   const queryClient = useQueryClient();
   const [state, setState] = useState<AssistantState>(EMPTY);
 
-  // L'index est lu dans un callback d'événement, hors du rendu : un ref évite
-  // de recréer les abonnements aux événements de reconnaissance à chaque
-  // rafraîchissement de l'index.
+  // L'index et l'état sont lus dans des callbacks d'événement, hors du
+  // rendu : les refs évitent de recréer les abonnements à chaque
+  // rafraîchissement.
   const indexRef = useRef(index);
   indexRef.current = index;
-
-  // Même raison pour l'état : la confirmation d'un rangement est déclenchée
-  // par la feuille et lit le brouillon courant sans que le callback ait
-  // besoin d'être recréé à chaque choix.
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  /**
-   * Remplace l'état en préservant ce qui appartient à la SESSION.
-   *
-   * Le mode mains libres et son relevé traversent toutes les réponses : une
-   * ambiguïté, une erreur, un rangement réussi ne mettent pas fin à la
-   * session, ils ne sont qu'un moment dedans. Passer par ici évite d'avoir à
-   * répéter ces deux champs à chaque transition — et de les oublier.
-   */
-  const settleState = useCallback((next: Partial<AssistantState> & { status: AssistantStatus }) => {
-    setState((current) => ({
-      ...EMPTY,
-      handsFree: current.handsFree,
-      handsFreeDone: current.handsFreeDone,
-      ...next,
-    }));
-  }, []);
-
-  // ⚠️ UNE SEULE QUESTION PAR APPUI SUR LE MICRO. Bug réel corrigé ici
-  // (retour utilisateur du 2026-08-21 : « plusieurs popups se superposent,
-  // comme si chaque mot déclenchait une popup », avec de nombreux « je n'ai
-  // pas pu traiter ta demande »). La reconnaissance émet PLUSIEURS
-  // événements `result` pour une même phrase — y compris avec
-  // `interimResults: false`, que tous les moteurs Android ne respectent pas.
-  // Chaque événement déclenchait un appel IA : la feuille se rouvrait à
-  // chaque mot, et l'appel suivant tombait mécaniquement sur la limite de
-  // débit de 3 s côté serveur, transformant une phrase parfaitement comprise
-  // en message d'erreur.
-  //
-  // On ne traite donc RIEN pendant l'écoute : on retient la dernière
-  // transcription reçue (la plus complète) et on ne l'envoie qu'une fois la
-  // reconnaissance terminée, une seule fois par session.
-
-  // Jeton de session : incrémenté à chaque nouvel appui sur le micro et à
-  // chaque fermeture. Une réponse qui arrive après coup est ignorée plutôt
-  // que de rouvrir la feuille que l'utilisateur vient de fermer.
+  // Jeton de session : incrémenté à chaque ouverture et à chaque fermeture.
+  // Une réponse qui arrive après coup est ignorée plutôt que de rouvrir la
+  // feuille que l'utilisateur vient de fermer.
   const sessionRef = useRef(0);
-  const pendingRef = useRef('');
-  const handledRef = useRef(true);
+  const activeRef = useRef(false);
   const listeningRef = useRef(false);
-
-  // === Mains libres ======================================================
-  // Le micro reste ouvert et enchaîne les phrases. Les précautions ci-dessous
-  // découlent toutes du même écueil que le garde-fou ci-dessus : un moteur
-  // émet plusieurs `result` pour une seule phrase, et rien ne garantit qu'il
-  // marque le dernier comme final.
-  const handsFreeRef = useRef(false);
   /** Écoute suspendue le temps qu'on réponde à une question posée à l'écran. */
   const pausedRef = useRef(false);
-  /** Phrase en cours d'agrégation, et la minuterie qui la déclare terminée. */
+
+  // ⚠️ UN MOTEUR DE RECONNAISSANCE ÉMET PLUSIEURS `result` POUR UNE PHRASE,
+  // y compris avec `interimResults: false`, et rien ne garantit qu'il marque
+  // le dernier comme final. Bug réel déjà corrigé une fois ici (retour du
+  // 2026-08-21 : « plusieurs popups se superposent, comme si chaque mot
+  // déclenchait une popup »). D'où l'agrégation ci-dessous plutôt qu'un
+  // traitement direct de chaque événement.
   const phraseRef = useRef('');
   const phraseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPhraseRef = useRef({ text: '', at: 0 });
@@ -305,65 +275,91 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
   const busyRef = useRef(false);
   const silentRestartsRef = useRef(0);
 
-  const beginListening = useCallback((handsFree: boolean) => {
+  // La permission est relue AU MONTAGE, pas au premier appui : c'est
+  // justement l'appui qui doit être instantané. Sans ça, la toute première
+  // session de chaque lancement d'app payait encore l'aller-retour natif.
+  useEffect(() => {
+    if (microphoneGranted) return;
+    ExpoSpeechRecognitionModule.getPermissionsAsync()
+      .then(({ granted }) => {
+        if (granted) microphoneGranted = true;
+      })
+      .catch(() => {
+        // Sans réponse, on redemandera au premier appui : le comportement
+        // d'avant, jamais pire.
+      });
+  }, []);
+
+  /**
+   * Remplace l'état en préservant ce qui appartient à la SESSION.
+   *
+   * Une ambiguïté, une erreur, un rangement réussi ne mettent pas fin à la
+   * session : ils ne sont qu'un moment dedans. Passer par ici évite d'avoir à
+   * répéter le relevé et le drapeau d'activité à chaque transition — et de
+   * les oublier.
+   */
+  const settleState = useCallback((next: Partial<AssistantState> & { status: AssistantStatus }) => {
+    setState((current) => ({
+      ...EMPTY,
+      active: current.active,
+      entries: current.entries,
+      undo: current.undo,
+      ...next,
+    }));
+  }, []);
+
+  const beginListening = useCallback(() => {
     pausedRef.current = false;
     listeningRef.current = true;
-    handsFreeRef.current = handsFree;
     ExpoSpeechRecognitionModule.start({
       lang: LOCALE_BY_LANGUAGE[i18n.language] ?? 'fr-FR',
-      // Pas de résultats intermédiaires : ici on n'exploite que la phrase
-      // FINALE, et un résultat partiel déclencherait un appel IA sur une
+      // Pas de résultats intermédiaires : on n'exploite que la phrase
+      // terminée, et un résultat partiel déclencherait un appel IA sur une
       // phrase tronquée.
       interimResults: false,
-      continuous: handsFree,
+      continuous: true,
     });
   }, []);
 
-  /** Suspend l'écoute : on ne peut pas répondre en parlant à une question posée à l'écran. */
+  /** Suspend l'écoute : on ne répond pas en parlant à une question posée à l'écran. */
   const pauseListening = useCallback(() => {
     pausedRef.current = true;
     listeningRef.current = false;
     ExpoSpeechRecognitionModule.stop();
   }, []);
 
-  /** Remet le micro en écoute si la session mains libres est toujours en cours. */
   const ensureListening = useCallback(() => {
-    if (!handsFreeRef.current || listeningRef.current) return;
+    if (!activeRef.current || listeningRef.current) return;
     silentRestartsRef.current = 0;
-    beginListening(true);
+    beginListening();
   }, [beginListening]);
 
-  const stopHandsFree = useCallback(() => {
-    const done = stateRef.current.handsFreeDone;
-    handsFreeRef.current = false;
+  /** Ferme la session : une phrase de conclusion, et la feuille disparaît. */
+  const endSession = useCallback((spoken: string | null) => {
+    activeRef.current = false;
     pausedRef.current = false;
     listeningRef.current = false;
     queueRef.current = [];
+    sessionRef.current += 1;
     if (phraseTimerRef.current) {
       clearTimeout(phraseTimerRef.current);
       phraseTimerRef.current = null;
     }
     ExpoSpeechRecognitionModule.stop();
-    stopSpeaking();
-
-    // Une session qui n'a rien rangé se referme sans rien dire ; sinon on
-    // clôt par le compte, qui est la seule chose qu'on veuille entendre après
-    // avoir rangé dix objets.
-    if (done.length === 0) {
-      setState(EMPTY);
-      return;
-    }
-    const answer = tr('assistant.move.session_done', { count: done.length });
-    setState((current) => ({ ...current, status: 'answered', handsFree: false, answer, move: null }));
-    void speak(answer, i18n.language);
+    setState(EMPTY);
+    // La feuille se referme tout de suite ; la phrase de conclusion se
+    // termine par-dessus, comme une personne à qui on dit au revoir en
+    // quittant la pièce.
+    if (spoken) void speak(spoken, i18n.language);
+    else stopSpeaking();
   }, []);
 
   /**
    * Écrit le rangement. LE seul endroit de l'assistant qui modifie l'inventaire.
    *
-   * Appelé soit directement quand la dictée ne laissait aucun doute, soit
-   * après l'accord explicite de l'utilisateur — la suite est identique dans
-   * les deux cas, y compris l'annonce et l'annulation offerte ensuite.
+   * Aucune confirmation ne le précède : soit la dictée ne prêtait à aucune
+   * confusion, soit l'utilisateur vient de trancher en désignant à l'écran —
+   * et ce choix vaut accord.
    */
   const applyMove = useCallback(
     async (draft: MoveDraft, transcript: string, session: number) => {
@@ -371,16 +367,9 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       if (!selection) return;
       const { objet, destination } = selection;
 
-      const settle = (
-        answer: string,
-        status: AssistantStatus,
-        move: MoveDraft | null,
-        undo: MoveUndo | null,
-      ) => {
+      const settle = (answer: string) => {
         if (sessionRef.current !== session) return;
-        // En mains libres, aucune issue n'est un point final : on revient
-        // écouter la phrase suivante, l'écran garde la dernière réponse.
-        settleState({ status: handsFreeRef.current ? 'listening' : status, transcript, answer, move, undo });
+        settleState({ status: 'listening', transcript, answer });
         void speak(answer, i18n.language);
         ensureListening();
       };
@@ -389,12 +378,7 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       // ajouterait à l'historique une ligne racontant un rangement qui n'a pas
       // eu lieu — et cet historique est censé faire foi.
       if (isAlreadyThere(objet, destination)) {
-        settle(
-          tr('assistant.move.already_there', { name: objet.name, location: destination.sentence }),
-          'answered',
-          null,
-          null,
-        );
+        settle(tr('assistant.move.already_there', { name: objet.name, location: destination.sentence }));
         return;
       }
 
@@ -408,7 +392,7 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
         const homes = [...new Set([objet.habitation_id, destination.habitationId])];
         for (const home of homes) {
           if (!(await canModifyHabitation(home))) {
-            settle(tr('assistant.move.denied'), 'answered', null, null);
+            settle(tr('assistant.move.denied'));
             return;
           }
         }
@@ -420,33 +404,27 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
         // L'index n'a pas encore été rechargé : l'entrée décrit donc bien
         // l'emplacement d'AVANT, celui où « Annuler » doit remettre l'objet.
         const undo = { objetId: objet.id, objetName: objet.name, fromLabel: locationSentence(objet) };
-        const done = tr('assistant.move.done', { name: objet.name, location: destination.sentence });
 
-        if (handsFreeRef.current) {
-          // La confirmation doit être BRÈVE : on enchaîne les objets, et une
-          // phrase entière à chaque fois deviendrait vite insupportable. Le
-          // relevé à l'écran garde le détail pour qui veut regarder.
-          setState((current) => ({
-            ...current,
-            status: 'listening',
-            transcript,
-            answer: done,
-            move: null,
-            undo,
-            handsFreeDone: [...current.handsFreeDone, { objetName: objet.name, location: destination.label }],
-          }));
-          void speak(tr('assistant.move.ack'), i18n.language);
-          ensureListening();
-          return;
-        }
-
-        settle(done, 'moved', draft, undo);
+        // La confirmation est BRÈVE : on enchaîne les objets, une phrase
+        // entière à chaque fois deviendrait vite insupportable. Le relevé à
+        // l'écran garde le détail pour qui veut regarder.
+        setState((current) => ({
+          ...current,
+          status: 'listening',
+          transcript,
+          answer: tr('assistant.move.done', { name: objet.name, location: destination.sentence }),
+          move: null,
+          undo,
+          entries: [...current.entries, { objetName: objet.name, location: destination.label }],
+        }));
+        void speak(tr('assistant.move.ack'), i18n.language);
+        ensureListening();
       } catch (error) {
         const denied = isPermissionError(error);
         if (!denied) logClientError(error, { source: 'assistant.move' });
         // On n'annonce JAMAIS un rangement qu'on n'a pas fait : quelqu'un qui
         // range n'ira pas vérifier dans l'app que ça a bien été enregistré.
-        settle(tr(denied ? 'assistant.move.denied' : 'assistant.move.failed'), 'answered', null, null);
+        settle(tr(denied ? 'assistant.move.denied' : 'assistant.move.failed'));
       }
     },
     [ensureListening, queryClient, settleState],
@@ -457,17 +435,32 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       const session = sessionRef.current;
       const isCurrent = () => sessionRef.current === session;
       const trimmed = transcript.trim();
-      if (!trimmed) {
-        if (!handsFreeRef.current) setState(EMPTY);
+      if (!trimmed) return;
+
+      const respond = (answer: string, result: AssistantResult | null = null) => {
+        if (!isCurrent()) return;
+        settleState({ status: 'listening', transcript: trimmed, answer, result });
+        void speak(answer, i18n.language);
+        ensureListening();
+      };
+
+      // « Merci » clôt la session. Testé AVANT tout le reste : c'est la seule
+      // phrase qui ne coûte pas un appel réseau, et la seule qui doive
+      // fonctionner même quand tout le reste échoue.
+      if (isClosingPhrase(trimmed)) {
+        const count = stateRef.current.entries.length;
+        endSession(count > 0 ? tr('assistant.session.closing', { count }) : tr('assistant.session.closing_empty'));
         return;
       }
 
-      if (trimmed.split(/\s+/).length <= DIRECT_SEARCH_MAX_WORDS) {
-        // En mains libres on RANGE, on ne cherche pas : renvoyer vers la
-        // barre de recherche au milieu d'un rangement n'aurait aucun sens.
-        if (handsFreeRef.current) return;
-        onDirectSearch(trimmed);
-        setState(EMPTY);
+      // Une dictée très courte est un nom d'objet : on y répond localement,
+      // sans appel à l'IA, exactement comme le ferait la barre de recherche.
+      if (trimmed.split(/\s+/).length <= SHORT_QUERY_MAX_WORDS) {
+        const local = resolveIntent(
+          { action: 'locate', object_query: trimmed, room_query: '', destination_query: '', scope: 'one' },
+          indexRef.current ?? [],
+        );
+        respond(composeAnswer(local, tr), local);
         return;
       }
 
@@ -480,12 +473,10 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
           const resolution = resolveMove(intent, indexRef.current ?? []);
           if (!isCurrent()) return;
 
-          // Un rangement impossible se présente comme une réponse ordinaire :
-          // même feuille, même voix. C'est un renseignement, pas une panne.
+          // Un rangement impossible se dit comme une réponse ordinaire : c'est
+          // un renseignement, pas une panne, et la session continue.
           if (resolution.status !== 'ready') {
-            const answer = composeMoveFailure(resolution, tr);
-            settleState({ status: handsFreeRef.current ? 'listening' : 'answered', transcript: trimmed, answer });
-            void speak(answer, i18n.language);
+            respond(composeMoveFailure(resolution, tr));
             return;
           }
 
@@ -496,54 +487,39 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
             destinationId: resolution.destinations.length === 1 ? resolution.destinations[0].id : null,
           };
 
-          // Rien à demander : on range, on annonce, et « Annuler » reste
-          // offert. Confirmer une phrase qui ne prête à aucune confusion ne
-          // protège de rien et coûte un geste à chaque objet rangé.
           if (resolution.confident) {
             await applyMove(draft, trimmed, session);
             return;
           }
 
           // On ne peut pas répondre à une question en parlant : le micro se
-          // tait le temps du choix, et reprendra après.
-          if (handsFreeRef.current) pauseListening();
-          settleState({ status: 'move', transcript: trimmed, move: draft });
+          // tait le temps du choix, et reprend après.
+          pauseListening();
+          settleState({ status: 'choosing', transcript: trimmed, move: draft });
           void speak(movePrompt(draft), i18n.language);
           return;
         }
 
         const result = resolveIntent(intent, indexRef.current ?? []);
-        const answer = composeAnswer(result, tr);
-
-        if (!isCurrent()) return;
-        settleState({ status: handsFreeRef.current ? 'listening' : 'answered', transcript: trimmed, answer, result });
-        void speak(answer, i18n.language);
+        respond(composeAnswer(result, tr), result);
       } catch (error) {
         const busy = error instanceof RateLimitedError;
         // Une limitation de débit n'est pas une panne : inutile d'encombrer
         // le journal d'erreurs avec un utilisateur qui parle vite.
         if (!busy) logClientError(error, { source: 'assistant', transcriptLength: trimmed.length });
-        if (!isCurrent()) return;
-        settleState({
-          status: handsFreeRef.current ? 'listening' : 'error',
-          transcript: trimmed,
-          // En mains libres l'erreur est dite et l'on continue d'écouter :
-          // c'est un incident de parcours, pas la fin de la session.
-          answer: handsFreeRef.current ? tr(busy ? 'assistant.error_busy' : 'assistant.error') : '',
-          errorKey: busy ? 'error_busy' : 'error',
-        });
+        respond(tr(busy ? 'assistant.error_busy' : 'assistant.error'));
       }
     },
-    [applyMove, onDirectSearch, pauseListening, settleState],
+    [applyMove, endSession, ensureListening, pauseListening, settleState],
   );
 
   /**
    * Traite les phrases UNE PAR UNE.
    *
-   * En mains libres, deux phrases dites coup sur coup lanceraient deux appels
-   * simultanés, dont le second se heurterait à la limite de débit du serveur.
-   * La file les sérialise ; l'attente se voit à peine parce que le temps de
-   * parler la suivante couvre déjà le traitement de la précédente.
+   * Deux phrases dites coup sur coup lanceraient deux appels simultanés, dont
+   * le second se heurterait à la limite de débit du serveur. La file les
+   * sérialise ; l'attente se voit à peine parce que le temps de dire la
+   * suivante couvre déjà le traitement de la précédente.
    */
   const drainQueue = useCallback(async () => {
     if (busyRef.current) return;
@@ -559,26 +535,17 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
   }, [handleTranscript]);
 
   /** Relance le moteur, qui s'arrête de lui-même à chaque silence. */
-  const restartHandsFree = useCallback(() => {
-    if (!handsFreeRef.current || pausedRef.current) return;
-    if (silentRestartsRef.current >= HANDS_FREE_MAX_SILENT_RESTARTS) {
-      stopHandsFree();
+  const restartListening = useCallback(() => {
+    if (!activeRef.current || pausedRef.current) return;
+    if (silentRestartsRef.current >= MAX_SILENT_RESTARTS) {
+      endSession(null);
       return;
     }
     silentRestartsRef.current += 1;
     setTimeout(() => {
-      if (handsFreeRef.current && !pausedRef.current) beginListening(true);
-    }, HANDS_FREE_RESTART_DELAY);
-  }, [beginListening, stopHandsFree]);
-
-  /** Envoie la phrase retenue, au plus une fois par session d'écoute. */
-  const consumePending = useCallback(() => {
-    if (handledRef.current) return;
-    handledRef.current = true;
-    const transcript = pendingRef.current;
-    pendingRef.current = '';
-    void handleTranscript(transcript);
-  }, [handleTranscript]);
+      if (activeRef.current && !pausedRef.current) beginListening();
+    }, RESTART_DELAY);
+  }, [beginListening, endSession]);
 
   /** Déclare la phrase courante terminée et la met en file. */
   const flushPhrase = useCallback(() => {
@@ -593,7 +560,7 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
     // Deux résultats identiques rapprochés viennent du moteur, pas de
     // l'utilisateur : les traiter tous les deux rangerait l'objet deux fois.
     const now = Date.now();
-    if (phrase === lastPhraseRef.current.text && now - lastPhraseRef.current.at < HANDS_FREE_REPEAT_GUARD) return;
+    if (phrase === lastPhraseRef.current.text && now - lastPhraseRef.current.at < REPEAT_GUARD) return;
     lastPhraseRef.current = { text: phrase, at: now };
 
     silentRestartsRef.current = 0;
@@ -601,95 +568,94 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
     void drainQueue();
   }, [drainQueue]);
 
+  // Le moteur a réellement la parole : c'est SEULEMENT maintenant qu'on
+  // affiche « je t'écoute ». Annoncer l'écoute dès l'appui, alors que le
+  // moteur met encore un instant à démarrer, est précisément ce qui faisait
+  // perdre le début des phrases.
+  useSpeechRecognitionEvent('start', () => {
+    if (!activeRef.current) return;
+    listeningRef.current = true;
+    setState((current) => (current.status === 'starting' ? { ...current, status: 'listening' } : current));
+  });
+
   useSpeechRecognitionEvent('result', (event) => {
+    if (!activeRef.current) return;
     const transcript = event.results[0]?.transcript?.trim();
+    if (!transcript) return;
 
-    if (handsFreeRef.current) {
-      if (!transcript) return;
-      phraseRef.current = transcript;
-      if (phraseTimerRef.current) clearTimeout(phraseTimerRef.current);
-      // Un résultat marqué final n'a plus rien à attendre. Sinon on laisse
-      // passer un silence : certains moteurs livrent la phrase par morceaux
-      // successifs sans jamais dire lequel est le dernier.
-      if (event.isFinal) flushPhrase();
-      else phraseTimerRef.current = setTimeout(flushPhrase, HANDS_FREE_PHRASE_PAUSE);
-      return;
-    }
-
-    // On garde la dernière transcription non vide : sur les moteurs qui
-    // émettent des résultats partiels malgré tout, c'est la plus complète.
-    if (transcript) pendingRef.current = transcript;
-    // Filet de sécurité si `end` est déjà passé — l'ordre des deux
-    // événements n'est pas garanti d'un moteur à l'autre.
-    if (event.isFinal && !listeningRef.current) consumePending();
+    phraseRef.current = transcript;
+    if (phraseTimerRef.current) clearTimeout(phraseTimerRef.current);
+    // Un résultat marqué final n'a plus rien à attendre. Sinon on laisse
+    // passer un silence : certains moteurs livrent la phrase par morceaux
+    // successifs sans jamais dire lequel est le dernier.
+    if (event.isFinal) flushPhrase();
+    else phraseTimerRef.current = setTimeout(flushPhrase, PHRASE_PAUSE);
   });
 
   useSpeechRecognitionEvent('end', () => {
-    if (handsFreeRef.current) {
-      listeningRef.current = false;
-      // Une phrase encore en attente de son silence part maintenant : le
-      // moteur vient de nous dire qu'il n'y aura rien de plus.
-      flushPhrase();
-      restartHandsFree();
-      return;
-    }
-    if (!listeningRef.current) return;
+    if (!activeRef.current) return;
     listeningRef.current = false;
-    consumePending();
+    // Une phrase encore en attente de son silence part maintenant : le moteur
+    // vient de nous dire qu'il n'y aura rien de plus.
+    flushPhrase();
+    restartListening();
   });
 
   useSpeechRecognitionEvent('error', (event) => {
     listeningRef.current = false;
+    if (!activeRef.current) return;
 
-    if (handsFreeRef.current) {
-      // Un silence n'est pas une panne : en session, c'est même l'état le
-      // plus courant entre deux objets. On relance.
-      if (SILENT_ERROR_CODES.has(event.error)) {
-        restartHandsFree();
-        return;
-      }
-      stopHandsFree();
-      Alert.alert(i18n.t('home.voice_search_error'));
+    // Un silence n'est pas une panne : en session, c'est même l'état le plus
+    // courant entre deux objets. On relance.
+    if (SILENT_ERROR_CODES.has(event.error)) {
+      restartListening();
       return;
     }
-
-    handledRef.current = true;
-    pendingRef.current = '';
-    setState((current) => (current.status === 'listening' ? EMPTY : current));
-    if (!SILENT_ERROR_CODES.has(event.error)) {
-      Alert.alert(i18n.t('home.voice_search_error'));
-    }
+    endSession(null);
+    Alert.alert(i18n.t('home.voice_search_error'));
   });
 
-  // `null` remet le choix en jeu : c'est le « Changer » de l'écran de
-  // confirmation, qui évite d'avoir à tout redicter pour un candidat mal
-  // sélectionné.
-  const chooseObjet = useCallback((objetId: string | null) => {
-    setState((current) => (current.move ? { ...current, move: { ...current.move, objetId } } : current));
-  }, []);
+  /**
+   * Enregistre un choix — et l'exécute dès qu'il ne manque plus rien.
+   *
+   * Désigner à l'écran VAUT accord : demander en plus « confirmez-vous ? »
+   * ferait deux gestes pour une seule décision.
+   */
+  const choose = useCallback(
+    (patch: { objetId?: string | null; destinationId?: string | null }) => {
+      const current = stateRef.current;
+      if (!current.move) return;
+      const next = { ...current.move, ...patch };
 
-  const chooseDestination = useCallback((destinationId: string | null) => {
-    setState((current) => (current.move ? { ...current, move: { ...current.move, destinationId } } : current));
-  }, []);
+      if (draftSelection(next)) {
+        void applyMove(next, current.transcript, sessionRef.current);
+        return;
+      }
+      setState((state) => (state.move ? { ...state, move: next } : state));
+    },
+    [applyMove],
+  );
 
-  /** Accord explicite de l'utilisateur, quand la dictée laissait un doute. */
-  const confirmMove = useCallback(async () => {
-    const { move: draft, transcript } = stateRef.current;
-    if (!draft) return;
-    await applyMove(draft, transcript, sessionRef.current);
-  }, [applyMove]);
+  const chooseObjet = useCallback((objetId: string | null) => choose({ objetId }), [choose]);
+  const chooseDestination = useCallback((destinationId: string | null) => choose({ destinationId }), [choose]);
+
+  /** Abandonne la question en cours et se remet à écouter. */
+  const skipChoice = useCallback(() => {
+    stopSpeaking();
+    settleState({ status: 'listening', answer: tr('assistant.move.skipped') });
+    ensureListening();
+  }, [ensureListening, settleState]);
 
   /**
    * Remet l'objet là où il était.
    *
-   * C'est ce qui remplace la confirmation quand la dictée ne prête à aucune
-   * confusion : plutôt que de faire valider chaque phrase, on écrit, on
-   * annonce, et le retour en arrière reste à portée. L'annulation est
-   * elle-même un déplacement, donc journalisée — l'historique doit raconter ce
-   * qui s'est passé, correction comprise.
+   * C'est ce qui remplace la confirmation : plutôt que de faire valider
+   * chaque phrase, on écrit, on annonce, et le retour en arrière reste à
+   * portée. L'annulation est elle-même un déplacement, donc journalisée —
+   * l'historique doit raconter ce qui s'est passé, correction comprise.
    */
   const undoMove = useCallback(async () => {
-    const { undo, transcript, move } = stateRef.current;
+    const { undo, transcript } = stateRef.current;
     if (!undo) return;
 
     const session = sessionRef.current;
@@ -700,8 +666,13 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       invalidateAfterMove(queryClient, undo.objetId);
       if (sessionRef.current !== session) return;
       const answer = tr('assistant.move.undone', { name: undo.objetName, location: undo.fromLabel });
-      // En session, annuler ne met pas fin au rangement : on revient écouter.
-      settleState({ status: handsFreeRef.current ? 'listening' : 'answered', transcript, answer });
+      setState((current) => ({
+        ...current,
+        status: 'listening',
+        answer,
+        undo: null,
+        entries: current.entries.slice(0, -1),
+      }));
       void speak(answer, i18n.language);
       ensureListening();
     } catch (error) {
@@ -710,98 +681,68 @@ export function useAssistant(onDirectSearch: (text: string) => void) {
       // L'annulation reste offerte : elle a échoué, l'objet est donc toujours
       // à son nouvel emplacement, et réessayer est le geste attendu.
       const answer = tr('assistant.move.undo_failed');
-      settleState({ status: handsFreeRef.current ? 'listening' : 'moved', transcript, answer, move, undo });
+      settleState({ status: 'listening', transcript, answer });
       void speak(answer, i18n.language);
       ensureListening();
     }
   }, [ensureListening, queryClient, settleState]);
 
-  /** Prépare une écoute, quel qu'en soit le mode. `false` si refusée. */
-  const openMicrophone = useCallback(async (): Promise<boolean> => {
+  /** Ouvre une session : le micro s'ouvre et reste ouvert. */
+  const start = useCallback(async () => {
     stopSpeaking();
-    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!granted) {
-      Alert.alert(i18n.t('home.voice_search_permission_message'));
-      return false;
-    }
-    // Pendant que l'utilisateur parle, on fait chauffer la liste des voix :
-    // l'énumération coûte un instant qui s'entendrait juste avant la réponse.
-    primeVoices(i18n.language);
     sessionRef.current += 1;
-    pendingRef.current = '';
+    activeRef.current = true;
+    pausedRef.current = false;
     phraseRef.current = '';
     lastPhraseRef.current = { text: '', at: 0 };
     queueRef.current = [];
     silentRestartsRef.current = 0;
-    handledRef.current = false;
-    return true;
-  }, []);
+    setState({ ...EMPTY, active: true, status: 'starting' });
 
-  /** Une question, une réponse. */
-  const start = useCallback(async () => {
-    if (!(await openMicrophone())) return;
-    settleState({ status: 'listening' });
-    beginListening(false);
-  }, [beginListening, openMicrophone, settleState]);
+    // La permission n'est demandée qu'une fois : c'est l'aller-retour natif
+    // qu'on attendait à chaque appui, pour une réponse qui ne change plus.
+    if (!microphoneGranted) {
+      const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+      if (!granted) {
+        activeRef.current = false;
+        setState(EMPTY);
+        Alert.alert(i18n.t('home.voice_search_permission_message'));
+        return;
+      }
+      microphoneGranted = true;
+    }
 
-  /**
-   * Session mains libres : le micro reste ouvert, on enchaîne les objets.
-   *
-   * C'est le mode qui correspond à ce qu'on fait vraiment — ranger avec les
-   * mains prises. Chaque rangement est confirmé par un mot, pas par une
-   * phrase, et le relevé à l'écran garde le détail.
-   */
-  const startHandsFree = useCallback(async () => {
-    if (!(await openMicrophone())) return;
-    setState({ ...EMPTY, status: 'listening', handsFree: true });
-    beginListening(true);
-  }, [beginListening, openMicrophone]);
+    beginListening();
+    // Après le démarrage du micro, jamais avant : l'énumération des voix ne
+    // doit retarder l'écoute d'aucun instant.
+    primeVoices(i18n.language);
+  }, [beginListening]);
 
-  /** Abandonne la question en cours et se remet à écouter. */
-  const skipChoice = useCallback(() => {
-    stopSpeaking();
-    settleState({ status: 'listening', answer: tr('assistant.move.skipped') });
-    ensureListening();
-  }, [ensureListening, settleState]);
-
+  /** Ferme la session à la main, quand la voix n'a pas suffi. */
   const stop = useCallback(() => {
-    if (handsFreeRef.current) {
-      stopHandsFree();
-      return;
-    }
-    ExpoSpeechRecognitionModule.stop();
-  }, [stopHandsFree]);
-
-  const dismiss = useCallback(() => {
-    stopSpeaking();
-    // Fermer la feuille annule aussi une phrase encore en vol : sans ça, une
-    // réponse arriverait par-dessus l'écran que l'utilisateur vient de
-    // quitter.
-    sessionRef.current += 1;
-    handledRef.current = true;
-    pendingRef.current = '';
-    if (handsFreeRef.current) {
-      handsFreeRef.current = false;
-      pausedRef.current = false;
-      listeningRef.current = false;
-      queueRef.current = [];
-      ExpoSpeechRecognitionModule.stop();
-    }
-    setState(EMPTY);
-  }, []);
+    const count = stateRef.current.entries.length;
+    endSession(count > 0 ? tr('assistant.session.closing', { count }) : null);
+  }, [endSession]);
 
   return {
     ...state,
     isListening: state.status === 'listening',
     start,
     stop,
-    dismiss,
     chooseObjet,
     chooseDestination,
-    confirmMove,
-    undoMove,
-    startHandsFree,
-    stopHandsFree,
     skipChoice,
+    undoMove,
   };
+}
+
+/**
+ * Ce que l'assistant énonce en posant une question.
+ *
+ * Elle est dite à voix haute parce que ranger se fait les mains prises : on
+ * doit savoir qu'on est attendu sans regarder l'écran.
+ */
+function movePrompt(draft: MoveDraft): string {
+  if (!draft.objetId) return tr('assistant.move.which_object', { n: draft.objets.length });
+  return tr('assistant.move.which_destination', { n: draft.destinations.length });
 }

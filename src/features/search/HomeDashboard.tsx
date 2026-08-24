@@ -208,7 +208,7 @@ export function HomeDashboard() {
   // vraie question (« ou sont mes cles ? » etait cherche mot pour mot). Les
   // dictees courtes restent une recherche texte, sans appel IA (voir
   // DIRECT_SEARCH_MAX_WORDS).
-  const voiceSearch = useAssistant(setSearchText);
+  const voiceSearch = useAssistant();
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -321,23 +321,15 @@ export function HomeDashboard() {
           pastille micro vivait dans le champ de recherche, tout en haut de
           l'écran, là où l'utilisateur la trouvait trop discrète et où elle
           demandait de changer de prise en main pour l'atteindre. */}
-      <AssistantFab
-        isListening={voiceSearch.isListening}
-        handsFree={voiceSearch.handsFree}
-        onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
-        onLongPress={voiceSearch.startHandsFree}
-      />
+      <AssistantFab active={voiceSearch.active} onPress={voiceSearch.active ? voiceSearch.stop : voiceSearch.start} />
 
       <AssistantSheet
         state={voiceSearch}
-        onClose={voiceSearch.dismiss}
+        onClose={voiceSearch.stop}
         onChooseObjet={voiceSearch.chooseObjet}
         onChooseDestination={voiceSearch.chooseDestination}
-        onConfirmMove={voiceSearch.confirmMove}
-        onUndoMove={voiceSearch.undoMove}
-        onStartHandsFree={voiceSearch.startHandsFree}
-        onStopHandsFree={voiceSearch.stopHandsFree}
         onSkipChoice={voiceSearch.skipChoice}
+        onUndoMove={voiceSearch.undoMove}
       />
     </View>
   );

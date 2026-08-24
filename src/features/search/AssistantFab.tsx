@@ -89,17 +89,7 @@ function ListeningRing({ active }: { active: boolean }) {
   );
 }
 
-export function AssistantFab({
-  isListening,
-  handsFree,
-  onPress,
-  onLongPress,
-}: {
-  isListening: boolean;
-  handsFree: boolean;
-  onPress: () => void;
-  onLongPress: () => void;
-}) {
+export function AssistantFab({ active, onPress }: { active: boolean; onPress: () => void }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -114,19 +104,12 @@ export function AssistantFab({
         bottom: insets.bottom + APP_TAB_BAR_HEIGHT + GAP_ABOVE_TAB_BAR,
       }}
     >
-      <ListeningRing active={isListening} />
+      <ListeningRing active={active} />
       <Pressable
         onPress={onPress}
-        // L'appui long ouvre la session mains libres. Elle a une autre porte,
-        // plus visible — le bouton proposé juste après un rangement — parce
-        // qu'un appui long ne se devine pas ; celle-ci est le raccourci de
-        // qui sait déjà qu'il part ranger.
-        onLongPress={onLongPress}
-        delayLongPress={450}
         accessibilityRole="button"
-        accessibilityState={{ selected: isListening }}
-        accessibilityLabel={t(handsFree ? 'assistant.move.handsfree_title' : 'home.assistant_a11y')}
-        accessibilityHint={handsFree ? undefined : t('assistant.move.handsfree_hint')}
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={t(active ? 'assistant.session.title' : 'home.assistant_a11y')}
         style={{
           height: BUTTON_HEIGHT,
           flexDirection: 'row',
@@ -147,11 +130,7 @@ export function AssistantFab({
       >
         <Icon name="microphone" size={ICON_SIZE} color="#FFFFFF" />
         <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: LABEL_SIZE, fontWeight: '600' }}>
-          {handsFree
-            ? t('assistant.move.handsfree_title')
-            : isListening
-              ? t('home.voice_search_listening')
-              : t('home.assistant_cta')}
+          {active ? t('assistant.session.title') : t('home.assistant_cta')}
         </Text>
       </Pressable>
     </View>

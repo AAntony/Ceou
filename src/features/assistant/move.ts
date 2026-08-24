@@ -220,10 +220,11 @@ export function resolveMove(intent: AssistantIntent, index: SearchIndexEntry[]):
       status: 'ready',
       objets,
       destinations: inRoom.slice(0, MAX_CHOICES).map(toDestination),
-      // Jamais sans confirmation ici, même si la pièce n'a qu'un meuble :
-      // l'utilisateur a nommé un endroit qui n'est PAS celui où l'on écrit. On
-      // le lui montre une fois plutôt que de choisir dans son dos.
-      confident: false,
+      // Une pièce qui n'a qu'UN meuble ne laisse aucun choix : demander
+      // « lequel ? » quand il n'existe qu'une réponse est une question pour
+      // rien. Dès qu'il y en a deux, en revanche, l'utilisateur a nommé un
+      // endroit qui n'est pas celui où l'on écrit — on le lui montre.
+      confident: inRoom.length === 1 && ranked.length === 1 && ranked[0].score >= STRONG_SCORE,
     };
   }
 
