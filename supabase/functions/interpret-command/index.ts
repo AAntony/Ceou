@@ -38,8 +38,9 @@ Ta seule tâche est de classer la demande et d'en extraire les termes de recherc
 Actions possibles :
 - "locate" : l'utilisateur cherche où se trouve un objet précis. Ex : "Où sont mes clés ?", "Retrouve-moi le chargeur".
 - "list_room" : l'utilisateur veut la liste des objets d'une pièce. Ex : "Liste tous les objets de mon bureau", "Qu'est-ce qu'il y a dans la cuisine ?".
+- "move" : l'utilisateur indique qu'un objet est désormais rangé quelque part. Ex : "J'ai rangé mes clés dans le tiroir de l'entrée", "Range la perceuse dans l'établi", "Les ciseaux sont maintenant dans la boîte à couture", "Mets le chargeur dans mon bureau".
 - "search" : une recherche libre, sans pièce ni intention de localisation claire. Ex : "les tournevis".
-- "unknown" : la demande ne concerne pas la recherche d'objets, ou est incompréhensible.
+- "unknown" : la demande ne concerne pas la recherche ni le rangement d'objets, ou est incompréhensible.
 
 Règles d'extraction :
 - object_query : le nom de l'objet, au plus près des mots de l'utilisateur, SANS les possessifs ni les articles. "mes clés de voiture" -> "clés de voiture".
@@ -48,26 +49,51 @@ Règles d'extraction :
 - Ignore les formules d'adresse : "indique-moi", "dis-moi", "peux-tu me dire", "est-ce que tu sais".
 - Si la phrase nomme À LA FOIS un objet et une pièce ("les verres dans la cuisine"), remplis les deux champs et classe en "locate".
 - Laisse une chaîne vide pour ce qui ne s'applique pas.
-- Une demande de DÉPLACEMENT ou de modification ("j'ai rangé X dans Y", "supprime X") doit être classée "unknown" : cette version ne sait que consulter.`;
+
+Règles propres à "move" :
+- destination_query : l'endroit où l'objet est rangé, au plus près des mots de l'utilisateur, articles et possessifs retirés mais en GARDANT la pièce quand elle est mentionnée. "dans le tiroir de l'entrée" -> "tiroir de l'entrée", "dans ma boîte à outils" -> "boîte à outils". Ne le mets JAMAIS au pluriel.
+- "move" exige un objet ET une destination. Si l'un des deux manque, ce n'est pas un déplacement : classe en "locate" ou "unknown" selon le sens.
+- La phrase est souvent au PASSÉ et purement déclarative ("j'ai posé", "j'ai mis", "sont maintenant dans", "je viens de ranger") : c'est bien un "move", pas une question.
+- Ne confonds pas avec "locate" : "où sont mes clés" cherche, "j'ai rangé mes clés dans le tiroir" range. La présence d'une destination tranche.
+- scope : "all" si la phrase vise explicitement l'ensemble d'un type d'objet ("range TOUTES les assiettes", "j'ai rangé mes assiettes" au pluriel général), "one" sinon. Dans le doute, "one".
+- Une demande de SUPPRESSION, de création ou de renommage ("supprime X", "crée une pièce") reste "unknown" : cette version sait consulter et ranger, rien d'autre.`;
 
 const RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
-    action: { type: 'STRING', enum: ['locate', 'list_room', 'search', 'unknown'] },
+    action: { type: 'STRING', enum: ['locate', 'list_room', 'move', 'search', 'unknown'] },
     object_query: { type: 'STRING' },
     room_query: { type: 'STRING' },
+    destination_query: { type: 'STRING' },
+    scope: { type: 'STRING', enum: ['one', 'all'] },
   },
-  required: ['action', 'object_query', 'room_query'],
+  required: ['action', 'object_query', 'room_query', 'destination_query', 'scope'],
 };
 
 type Intent = {
-  action: 'locate' | 'list_room' | 'search' | 'unknown';
+  action: 'locate' | 'list_room' | 'move' | 'search' | 'unknown';
   object_query: string;
   room_query: string;
+  destination_query: string;
+  scope: 'one' | 'all';
+};
+
+const ACTIONS: Intent['action'][] = ['locate', 'list_room', 'move', 'search', 'unknown'];
+
+const EMPTY_INTENT: Intent = {
+  action: 'unknown',
+  object_query: '',
+  room_query: '',
+  destination_query: '',
+  scope: 'one',
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+}
+
+function text(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function parseIntent(rawText: string): Intent {
@@ -75,22 +101,34 @@ function parseIntent(rawText: string): Intent {
   try {
     raw = JSON.parse(rawText);
   } catch {
-    return { action: 'unknown', object_query: '', room_query: '' };
+    return EMPTY_INTENT;
   }
 
   const value = raw as Partial<Intent>;
   const action = value.action;
   // On revalide la sortie du modèle plutôt que de lui faire confiance : le
   // schéma de réponse est une consigne, pas une garantie.
-  if (action !== 'locate' && action !== 'list_room' && action !== 'search' && action !== 'unknown') {
-    return { action: 'unknown', object_query: '', room_query: '' };
+  if (!action || !ACTIONS.includes(action)) return EMPTY_INTENT;
+
+  const intent: Intent = {
+    action,
+    object_query: text(value.object_query),
+    room_query: text(value.room_query),
+    destination_query: text(value.destination_query),
+    scope: value.scope === 'all' ? 'all' : 'one',
+  };
+
+  // Un déplacement AMPUTÉ n'est pas un déplacement. C'est la seule intention
+  // qui débouche sur une écriture : on refuse ici, au plus près du modèle,
+  // plutôt que de laisser l'app deviner ce qui manque. Sans objet il n'y a
+  // rien à ranger ; sans destination, la phrase disait probablement où
+  // CHERCHER, pas où ranger — « locate » est alors la lecture honnête.
+  if (intent.action === 'move') {
+    if (!intent.object_query) return EMPTY_INTENT;
+    if (!intent.destination_query) return { ...intent, action: 'locate', scope: 'one' };
   }
 
-  return {
-    action,
-    object_query: typeof value.object_query === 'string' ? value.object_query.trim() : '',
-    room_query: typeof value.room_query === 'string' ? value.room_query.trim() : '',
-  };
+  return intent;
 }
 
 Deno.serve(async (req: Request) => {

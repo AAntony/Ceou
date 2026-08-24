@@ -187,7 +187,7 @@
     "error": "Je n'ai pas pu traiter ta demande. Réessaie dans un instant.",
     "error_busy": "Trop de questions coup sur coup. Redemande-moi dans quelques secondes.",
     "answer": {
-      "unknown": "Je ne sais faire que de la recherche pour l'instant : demande-moi où se trouve un objet, ou ce que contient une pièce.",
+      "unknown": "Je sais chercher un objet et le ranger : demande-moi où se trouve quelque chose, ce que contient une pièce, ou dis-moi où tu viens de ranger un objet.",
       "not_found": "Je n'ai rien trouvé pour « {{query}} ».",
       "found_one": "{{name}} se trouve dans {{location}}.",
       "found_many": "J'ai trouvé {{n}} résultats pour « {{query}} », répartis dans {{places}} endroits.",
@@ -195,6 +195,26 @@
       "room_unknown": "Je n'ai pas trouvé de pièce appelée « {{room}} ».",
       "room_empty": "Il n'y a aucun objet enregistré dans {{room}}.",
       "room_list": "Il y a {{n}} objets dans {{room}}."
+    },
+    "move": {
+      "which_object": "Quel objet ? ({{n}} correspondent)",
+      "which_destination": "Où exactement ? ({{n}} endroits possibles)",
+      "confirm_question": "Je range {{name}} dans {{location}} ?",
+      "confirm_title": "Confirmer le rangement",
+      "what": "Objet",
+      "where": "Nouvel emplacement",
+      "from": "Actuellement dans {{location}}",
+      "change": "Changer",
+      "confirm": "Ranger",
+      "moving": "J'enregistre…",
+      "done": "C'est noté : {{name}} est maintenant dans {{location}}.",
+      "already_there": "{{name}} est déjà dans {{location}}, je n'ai rien changé.",
+      "denied": "Tu peux consulter cette habitation, mais pas la modifier. Le rangement n'a pas été enregistré.",
+      "failed": "Je n'ai pas réussi à enregistrer ce rangement. Rien n'a été modifié.",
+      "no_object": "Je ne trouve aucun objet appelé « {{query}} ». Je n'ai rien rangé.",
+      "no_destination": "Je ne trouve pas d'endroit appelé « {{query}} ». Crée-le d'abord, je ne l'invente pas.",
+      "room_without_emplacement": "{{room}} n'a encore aucun meuble où ranger quelque chose.",
+      "scope_unsupported": "Je ne sais ranger qu'un objet à la fois pour l'instant. Redemande-moi en nommant celui que tu veux ranger."
     }
   },
   "friends": {

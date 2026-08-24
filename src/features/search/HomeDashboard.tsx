@@ -326,7 +326,13 @@ export function HomeDashboard() {
         onPress={voiceSearch.isListening ? voiceSearch.stop : voiceSearch.start}
       />
 
-      <AssistantSheet state={voiceSearch} onClose={voiceSearch.dismiss} />
+      <AssistantSheet
+        state={voiceSearch}
+        onClose={voiceSearch.dismiss}
+        onChooseObjet={voiceSearch.chooseObjet}
+        onChooseDestination={voiceSearch.chooseDestination}
+        onConfirmMove={voiceSearch.confirmMove}
+      />
     </View>
   );
 }

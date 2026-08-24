@@ -626,23 +626,41 @@ export function useObjetHistory(objetId: string) {
   });
 }
 
+/**
+ * L'appel de déplacement, sans React.
+ *
+ * Extrait de `useMoveObjet` parce que l'assistant vocal déplace un objet
+ * choisi À L'EXÉCUTION : il ne peut pas instancier un hook par objet.
+ */
+export async function moveObjet(objetId: string, destination: { type: LocationType; id: string }): Promise<void> {
+  const { error } = await supabase.rpc('move_objet', {
+    p_objet_id: objetId,
+    p_to_type: destination.type,
+    p_to_id: destination.id,
+  });
+  if (error) throw error;
+}
+
+/**
+ * Ce qu'un déplacement rend périmé, quelle que soit sa provenance.
+ *
+ * Un seul endroit pour les deux chemins (fiche objet et assistant vocal) :
+ * deux listes d'invalidation à maintenir en parallèle finiraient par
+ * diverger, et l'écart ne se verrait que sur un écran resté à l'ancien
+ * emplacement.
+ */
+export function invalidateAfterMove(queryClient: ReturnType<typeof useQueryClient>, objetId: string) {
+  queryClient.invalidateQueries({ queryKey: ['objet', objetId] });
+  queryClient.invalidateQueries({ queryKey: ['objetHistory', objetId] });
+  queryClient.invalidateQueries({ queryKey: ['objetLocationChain', objetId] });
+  invalidateContainerContents(queryClient);
+}
+
 export function useMoveObjet(objetId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (destination: { type: LocationType; id: string }) => {
-      const { error } = await supabase.rpc('move_objet', {
-        p_objet_id: objetId,
-        p_to_type: destination.type,
-        p_to_id: destination.id,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['objet', objetId] });
-      queryClient.invalidateQueries({ queryKey: ['objetHistory', objetId] });
-      queryClient.invalidateQueries({ queryKey: ['objetLocationChain', objetId] });
-      invalidateContainerContents(queryClient);
-    },
+    mutationFn: (destination: { type: LocationType; id: string }) => moveObjet(objetId, destination),
+    onSuccess: () => invalidateAfterMove(queryClient, objetId),
   });
 }
 

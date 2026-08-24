@@ -1,3 +1,4 @@
+import type { MoveResolution } from './move';
 import { locationSentence, type AssistantResult } from './resolve';
 
 // Composition de la réponse, À PARTIR DES DONNÉES RÉELLES.
@@ -46,4 +47,25 @@ export function composeAnswer(result: AssistantResult, t: Translate): string {
   // Éparpillés : on ne choisit pas à la place de l'utilisateur, on annonce le
   // nombre et le nombre d'endroits, la liste tranche.
   return t('assistant.answer.found_many', { n: entries.length, query, places: locations.size });
+}
+
+/**
+ * Pourquoi un déplacement n'a PAS eu lieu.
+ *
+ * Un échec de rangement se présente comme une réponse ordinaire — même
+ * feuille, même voix. Ce qui compte est que la phrase dise ce qui manque
+ * (« je n'ai pas de tiroir de l'entrée ») et non un « impossible » qui
+ * laisserait l'utilisateur sans rien à corriger.
+ */
+export function composeMoveFailure(resolution: Exclude<MoveResolution, { status: 'ready' }>, t: Translate): string {
+  switch (resolution.status) {
+    case 'no_object':
+      return t('assistant.move.no_object', { query: resolution.query });
+    case 'no_destination':
+      return t('assistant.move.no_destination', { query: resolution.query });
+    case 'room_without_emplacement':
+      return t('assistant.move.room_without_emplacement', { room: resolution.roomName });
+    case 'scope_unsupported':
+      return t('assistant.move.scope_unsupported', { query: resolution.query });
+  }
 }

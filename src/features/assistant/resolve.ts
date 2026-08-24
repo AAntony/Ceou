@@ -17,10 +17,32 @@ import type { SearchIndexEntry } from '../search/queries';
 export { normalize } from '../../lib/text/match';
 
 export type AssistantIntent = {
-  action: 'locate' | 'list_room' | 'search' | 'unknown';
+  action: 'locate' | 'list_room' | 'move' | 'search' | 'unknown';
   object_query: string;
   room_query: string;
+  /** Où ranger, pour l'action « move » uniquement. */
+  destination_query: string;
+  /** « all » quand la phrase vise tout un type d'objet (« range toutes les assiettes »). */
+  scope: 'one' | 'all';
 };
+
+/**
+ * Complète une intention reçue du serveur.
+ *
+ * Les champs `destination_query` et `scope` sont arrivés avec le déplacement
+ * vocal : une fonction Edge encore en version précédente ne les renvoie pas.
+ * L'app doit continuer de fonctionner face à ce serveur-là — elle ne recevra
+ * simplement jamais d'action « move ».
+ */
+export function normalizeIntent(raw: Partial<AssistantIntent> | null | undefined): AssistantIntent {
+  return {
+    action: raw?.action ?? 'unknown',
+    object_query: raw?.object_query ?? '',
+    room_query: raw?.room_query ?? '',
+    destination_query: raw?.destination_query ?? '',
+    scope: raw?.scope === 'all' ? 'all' : 'one',
+  };
+}
 
 export type AssistantResult = {
   intent: AssistantIntent;
@@ -37,7 +59,7 @@ export type AssistantResult = {
  * pouvoir expliquer pourquoi tel objet est sorti, et le comportement doit
  * rester le même d'une exécution à l'autre.
  */
-function scoreMatch(query: string, text: string): number {
+export function scoreMatch(query: string, text: string): number {
   const haystack = normalizeForMatch(text);
   if (!haystack) return 0;
 
@@ -58,7 +80,7 @@ function scoreMatch(query: string, text: string): number {
   return Math.round((hits / words.length) * 60);
 }
 
-const MIN_SCORE = 30;
+export const MIN_SCORE = 30;
 const MAX_RESULTS = 12;
 
 function bestMatch(candidates: SearchIndexEntry[], query: string): SearchIndexEntry | null {
