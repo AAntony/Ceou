@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { DOOR_TARGET } from './constants';
 import type { PlanDoor } from '../../types/database';
 import { clamp } from './snap';
 import type { DoorEdge, ShapeGeometry } from './types';
@@ -30,7 +31,6 @@ import { clampDoorPosition, doorCenter, freeDoorPosition, type DoorSpan, type Ne
 // En unités de la feuille : la bande grandit avec le zoom, ce qui est le
 // comportement attendu — on zoome justement pour viser plus facilement.
 const STRIP_THICKNESS = 22;
-const DOOR_TARGET = 30;
 
 function stripThickness(geo: ShapeGeometry): number {
   // Plafonnée au quart du plus petit côté : sur une petite pièce, deux
@@ -45,63 +45,26 @@ type DoorLayerProps = {
   formeGeo: Record<string, ShapeGeometry>;
   /** Pose armée : les murs deviennent des cibles, le reste se tait. */
   placing: boolean;
-  selectedDoorId: string | null;
-  scale: number;
   readOnly?: boolean;
   onCreate: (formeId: string, edge: DoorEdge, position: number) => void;
   /** Où tomberait l'ouverture si le doigt se levait maintenant — `null` dès
    *  qu'il quitte le mur. Le dessin, lui, est dans le canevas Skia. */
   onPreview: (preview: { formeId: string; edge: DoorEdge; position: number } | null) => void;
   onSelect: (door: PlanDoor) => void;
-  onDragEnd: (doorId: string, edge: DoorEdge, position: number) => void;
-  /** Deux doigts sont posés : la porte ne suit plus, voir PlanCanvas. */
-  isPinching: () => boolean;
+  /** La porte en cours de glissé, donnée en direct par le conteneur. */
+  live: { id: string; edge: DoorEdge; position: number } | null;
 };
-
-/**
- * Projette un point sur le bord le plus proche du rectangle. Une porte ne
- * peut pas quitter les murs : en glissant, elle contourne la pièce et change
- * de mur en passant un coin, plutôt que de se détacher.
- */
-function nearestEdge(px: number, py: number, geo: ShapeGeometry): EdgePosition {
-  const distances: { edge: DoorEdge; distance: number; position: number }[] = [
-    { edge: 'n', distance: Math.abs(py - geo.y), position: (px - geo.x) / geo.width },
-    { edge: 's', distance: Math.abs(py - (geo.y + geo.height)), position: (px - geo.x) / geo.width },
-    { edge: 'w', distance: Math.abs(px - geo.x), position: (py - geo.y) / geo.height },
-    { edge: 'e', distance: Math.abs(px - (geo.x + geo.width)), position: (py - geo.y) / geo.height },
-  ];
-  const nearest = distances.reduce((best, candidate) => (candidate.distance < best.distance ? candidate : best));
-  const length = nearest.edge === 'n' || nearest.edge === 's' ? geo.width : geo.height;
-  return { edge: nearest.edge, position: clampDoorPosition(clamp(nearest.position, 0, 1), length) };
-}
 
 export function DoorLayer({
   doors,
   formeGeo,
   placing,
-  selectedDoorId,
-  scale,
   readOnly,
   onCreate,
   onPreview,
   onSelect,
-  onDragEnd,
-  isPinching,
+  live,
 }: DoorLayerProps) {
-  // Position en cours de glissé, locale : la base ne connaît la nouvelle
-  // place de la porte qu'au relâché, comme pour les pièces et les pastilles.
-  const [positions, setPositions] = useState<Record<string, EdgePosition>>({});
-
-  useEffect(() => {
-    setPositions((current) => {
-      const next: Record<string, EdgePosition> = {};
-      for (const door of doors) {
-        next[door.id] = current[door.id] ?? { edge: door.edge as DoorEdge, position: door.position };
-      }
-      return next;
-    });
-  }, [doors]);
-
   // Les portes de chaque pièce, dans la forme qu'attend le calcul des murs.
   // Servent ici à empêcher deux ouvertures de se poser l'une sur l'autre :
   // rien ne l'interdisait, et les deux fusionnaient alors en un seul trou dont
@@ -146,31 +109,14 @@ export function DoorLayer({
         : doors.map((door) => {
             const geo = formeGeo[door.forme_id];
             if (!geo) return null;
-            const live = positions[door.id] ?? { edge: door.edge as DoorEdge, position: door.position };
+            // La valeur du serveur, sauf pour la porte qu on glisse.
+            const shown = live?.id === door.id ? live : { edge: door.edge as DoorEdge, position: door.position };
             return (
               <DoorTarget
                 key={door.id}
                 geo={geo}
-                live={live}
-                scale={scale}
-                place={(edge, raw) =>
-                  freeDoorPosition(
-                    geo,
-                    edge,
-                    raw,
-                    // Sans s'exclure elle-même, une porte se bloquerait sur
-                    // sa propre place dès le premier millimètre de glissé.
-                    (spansByForme[door.forme_id] ?? []).filter(
-                      (span) => !(span.edge === (door.edge as DoorEdge) && span.position === door.position),
-                    ),
-                    neighboursOf(door.forme_id),
-                  )
-                }
+                live={shown}
                 interactive={!readOnly}
-                isPinching={isPinching}
-                selected={door.id === selectedDoorId}
-                onMove={(next) => setPositions((current) => ({ ...current, [door.id]: next }))}
-                onRelease={(next) => onDragEnd(door.id, next.edge, next.position)}
                 onSelect={() => onSelect(door)}
               />
             );
@@ -255,76 +201,26 @@ function WallStrip({
 }
 
 /** Cible d'une porte posée : appuyer la sélectionne, glisser la déplace. */
+// LA CIBLE D UNE PORTE N EST PLUS QU UN TAP. Son glissé est parti dans le
+// geste unique du conteneur, qui reconnaît la porte visée par sa position et
+// la fait contourner la pièce (voir hitTest et applyDrag dans PlanCanvas).
 function DoorTarget({
   geo,
   live,
-  scale,
   interactive,
-  selected,
-  place,
-  isPinching,
-  onMove,
-  onRelease,
   onSelect,
 }: {
   geo: ShapeGeometry;
   live: EdgePosition;
-  scale: number;
   interactive: boolean;
-  selected: boolean;
-  place: (edge: DoorEdge, raw: number) => number | null;
-  isPinching: () => boolean;
-  onMove: (next: EdgePosition) => void;
-  onRelease: (next: EdgePosition) => void;
   onSelect: () => void;
 }) {
-  const dragOrigin = useRef(live);
-  // Dernière position VALIDE : quand le doigt emmène la porte sur une place
-  // déjà prise, elle s'arrête là plutôt que de sauter par-dessus sa voisine.
-  const lastValid = useRef(live);
   const center = doorCenter(geo, live.edge, live.position);
-
-  // translationX/Y est un delta ÉCRAN, avant zoom : le diviser par `scale`
-  // pour retrouver un déplacement dans le repère de la feuille (même
-  // raisonnement que ShapeBody et PlanPinLayer).
-  const resolve = (translationX: number, translationY: number): EdgePosition => {
-    const origin = doorCenter(geo, dragOrigin.current.edge, dragOrigin.current.position);
-    const target = nearestEdge(origin.x + translationX / scale, origin.y + translationY / scale, geo);
-    const free = place(target.edge, target.position);
-    if (free === null) return lastValid.current;
-    lastValid.current = { edge: target.edge, position: free };
-    return lastValid.current;
-  };
-
-  // Le glissé n'est ouvert qu'une fois la porte SÉLECTIONNÉE — un pouce qui
-  // ripe en voulant simplement la désigner ne doit pas la déplacer. Même
-  // règle que pour les pièces.
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .maxPointers(1)
-    .enabled(interactive && selected)
-    .runOnJS(true)
-    .onStart(() => {
-      dragOrigin.current = live;
-      lastValid.current = live;
-    })
-    .onUpdate((event) => {
-      if (isPinching()) return;
-      onMove(resolve(event.translationX, event.translationY));
-    })
-    .onEnd((event) => {
-      // Le geste est devenu un pincement : la porte revient d où elle vient.
-      if (isPinching()) {
-        onMove(dragOrigin.current);
-        return;
-      }
-      onRelease(resolve(event.translationX, event.translationY));
-    });
 
   const tap = Gesture.Tap().enabled(interactive).runOnJS(true).onEnd(() => onSelect());
 
   return (
-    <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
+    <GestureDetector gesture={tap}>
       <View
         style={{
           position: 'absolute',

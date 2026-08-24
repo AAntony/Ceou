@@ -1,4 +1,5 @@
 import { DOOR_JAMB_LENGTH, DOOR_MIN_GAP, DOOR_WIDTH, WALL_WIDTH, WALL_WIDTH_INNER } from './constants';
+import { clamp } from './snap';
 import type { DoorEdge, ShapeGeometry } from './types';
 
 // Le trait de mur d'une pièce, PERCÉ de ses portes et HIÉRARCHISÉ.
@@ -380,4 +381,21 @@ export function wallSegments(geo: ShapeGeometry, doors: DoorSpan[], neighbours: 
   }
 
   return segments;
+}
+
+/**
+ * Projette un point sur le bord le plus proche du rectangle. Une porte ne
+ * peut pas quitter les murs : en glissant, elle contourne la pièce et change
+ * de mur en passant un coin, plutôt que de se détacher.
+ */
+export function nearestEdge(px: number, py: number, geo: ShapeGeometry): DoorSpan {
+  const distances: { edge: DoorEdge; distance: number; position: number }[] = [
+    { edge: 'n', distance: Math.abs(py - geo.y), position: (px - geo.x) / geo.width },
+    { edge: 's', distance: Math.abs(py - (geo.y + geo.height)), position: (px - geo.x) / geo.width },
+    { edge: 'w', distance: Math.abs(px - geo.x), position: (py - geo.y) / geo.height },
+    { edge: 'e', distance: Math.abs(px - (geo.x + geo.width)), position: (py - geo.y) / geo.height },
+  ];
+  const nearest = distances.reduce((best, candidate) => (candidate.distance < best.distance ? candidate : best));
+  const length = nearest.edge === 'n' || nearest.edge === 's' ? geo.width : geo.height;
+  return { edge: nearest.edge, position: clampDoorPosition(clamp(nearest.position, 0, 1), length) };
 }

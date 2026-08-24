@@ -16,6 +16,7 @@ import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import type { PlanDoor, PlanForme, PlanPin } from '../../types/database';
 import {
   DOOR_JAMB_WIDTH,
+  DOOR_TARGET,
   MAX_ZOOM,
   MIN_ZOOM,
   roomColorForForme,
@@ -26,11 +27,12 @@ import {
   WORLD_WIDTH,
 } from './constants';
 import { DoorLayer } from './DoorLayer';
+import { hitTestPlan, type PlanTarget, type PlanTargets } from './hitTest';
 import { PlanPinLayer } from './PlanPinLayer';
-import type { PinSize } from './pinSize';
-import { doorJambs, doorSpan, wallSegments, wallWidth } from './walls';
+import { PIN_METRICS, type PinSize } from './pinSize';
+import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSegments, wallWidth } from './walls';
 import type { DoorEdge } from './types';
-import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, snapPosition, snapResize } from './snap';
+import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
 import { useThemeColors } from '../../lib/theme';
 
@@ -377,27 +379,16 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // pas par une logique de priorité à négocier.
   const pinchAnchor = useRef({ x: 0, y: 0 });
 
-  // DÈS QU'IL Y A DEUX DOIGTS, PLUS RIEN NE SE DÉPLACE SUR LE PLAN.
+  // Le pincement garde la main sur `zoomOrigin`, que les deux gestes du
+  // conteneur partagent : un second doigt posé pendant un glissé faisait
+  // repartir celui-ci de l'origine que le pincement venait d'inscrire, et les
+  // deux se disputaient la vue à chaque frame.
   //
-  // Ce drapeau sert deux fois. D'abord entre les deux gestes du conteneur :
-  // ils sont simultanés, donc tous deux peuvent être actifs sur le même
-  // toucher, et tous deux lisent puis écrivent `zoomOrigin`. Un second doigt
-  // posé pendant un glissé faisait repartir celui-ci de l'origine que le
-  // pincement venait d'inscrire, et les deux se disputaient la vue.
-  //
-  // Ensuite pour tout ce qui se déplace SOUS le doigt — pièce, poignée, puce,
-  // porte. Chacun de ces gestes est en maxPointers(1) : il s'active au
-  // premier doigt et rend la main au second, mais la pièce a déjà bougé, et
-  // sa fin de geste enregistrait ce déplacement involontaire. Ils consultent
-  // donc ce drapeau, remettent ce qu'ils déplaçaient là où il était, et
-  // n'enregistrent rien.
-  //
-  // Il se lève au TOUCHER du second doigt et non au démarrage du pincement,
-  // qui n'a lieu qu'une fois les doigts écartés — bien trop tard. Et il ne
-  // retombe qu'à la fin du geste complet : sans ça, lever un doigt sur deux
-  // rendait la main au glissé, qui emportait la pièce avec le doigt restant.
+  // Pour tout ce qui se déplace SOUS le doigt — pièce, poignée, puce, porte —
+  // ce n'est plus ce drapeau qui protège, mais `numberOfPointers`, lu par le
+  // glissé unique lui-même : n'ayant plus de `maxPointers`, il reste vivant
+  // pendant le pincement et voit donc le second doigt arriver.
   const pinching = useRef(false);
-  const isPinching = () => pinching.current;
 
   const pinch = Gesture.Pinch()
     .runOnJS(true)
@@ -449,24 +440,24 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       return x >= g.x && x <= g.x + g.width && y >= g.y && y <= g.y + g.height;
     });
 
-  // === LE DÉPLACEMENT DE LA VUE À UN DOIGT ================================
+  // === UN SEUL GLISSÉ POUR TOUT LE PLAN ===================================
   //
-  // Il vit ICI, sur le conteneur, dans la MÊME composition que le pincement —
-  // et c'est la seule disposition qui tienne. Deux gestes déclarés simultanés
-  // au même endroit ne se disputent rien ; deux gestes posés sur des vues
-  // différentes, si, et le vainqueur dépend alors de règles de priorité
-  // internes à la bibliothèque.
+  // Déplacer la vue, déplacer une pièce, la redimensionner, glisser une puce
+  // ou une porte : c'est LE MÊME geste, posé sur le conteneur, dans la même
+  // composition que le pincement. Ce qu'il manipule se décide en JS au moment
+  // où le doigt se pose (hitTestPlan).
   //
-  // Une tentative de couche de déplacement posée sur la feuille, sous les
-  // cibles tactiles, a été retirée le 2026-08-24 : couvrant toute la feuille,
-  // elle captait le premier doigt partout et coupait le pincement de
-  // l'ancêtre. Les six relations `simultaneousWithExternalGesture` ajoutées
-  // ensuite pour recoudre l'ensemble n'ont fait qu'empiler l'incertitude.
+  // C'est l'aboutissement de trois corrections ratées. Tant que chaque pièce,
+  // poignée, puce et porte portait son propre geste, il fallait arbitrer : un
+  // geste d'enfant coupe celui de l'ancêtre en s'activant, ce qui tuait le
+  // pincement, et le rétablir demandait des relations croisées entre
+  // composants — invérifiables d'ici, et fausses en pratique.
   //
-  // Le partage est donc redevenu simple, et il tient en une phrase : les
-  // gestes des ENFANTS (corps d'une pièce, poignée, puce, porte) coupent
-  // celui-ci quand ils s'activent, ce qui leur donne naturellement la
-  // priorité là où ils sont. Partout ailleurs, le doigt déplace la vue.
+  // Ici il n'y a plus rien à arbitrer. Un seul glissé, un seul pincement,
+  // déclarés simultanés au même endroit : ils ne se coupent jamais, et le
+  // glissé reste donc VIVANT pendant tout le pincement. C'est ce qui permet
+  // enfin de lire `numberOfPointers` et de savoir, à chaque frame, qu'un
+  // second doigt s'est posé.
   const panTheView = (translationX: number, translationY: number) => {
     const next = {
       ...zoomOrigin.current,
@@ -476,46 +467,256 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     setZoom(clampZoomState(next, viewportSize.width, viewportSize.height, minScale));
   };
 
-  // Le doigt qui part de la pièce SÉLECTIONNÉE lui appartient : il sert à la
-  // déplacer ou à la redimensionner. Ce geste-ci reste alors inerte, même
-  // s'il s'active — une double sécurité par-dessus la priorité des enfants,
-  // pour que le plan ne parte jamais en même temps que la pièce.
+  // Ce qu'une puce ou une porte vaut PENDANT qu'on la glisse, et jusqu'à ce
+  // que le serveur l'ait confirmé. Les couches d'affichage n'ont plus d'état
+  // propre : elles dessinent la valeur du serveur, sauf pour celle-ci.
   //
-  // La zone réservée déborde de la pièce d'une demi-poignée : les poignées de
-  // redimensionnement sont centrées sur ses coins et ses bords, donc la
-  // moitié de leur cible tombe dehors.
-  const startsOnSelectedRoom = (contentX: number, contentY: number) => {
-    if (!selectedFormeId) return false;
-    const geo = geoById[selectedFormeId];
-    if (!geo) return false;
-    const margin = HANDLE_TOUCH_SIZE / 2;
-    return (
-      contentX >= geo.x - margin &&
-      contentX <= geo.x + geo.width + margin &&
-      contentY >= geo.y - margin &&
-      contentY <= geo.y + geo.height + margin
-    );
+  // L'effet plus bas efface l'override dès que le serveur annonce la même
+  // valeur. Sans lui il faudrait le retirer à la fin du geste, et la puce
+  // reviendrait visiblement à son ancienne place le temps du rechargement.
+  const [livePin, setLivePin] = useState<{ id: string; relX: number; relY: number } | null>(null);
+  const [liveDoor, setLiveDoor] = useState<{ id: string; edge: DoorEdge; position: number } | null>(null);
+
+  useEffect(() => {
+    if (!livePin) return;
+    const pin = pins.find((candidate) => candidate.id === livePin.id);
+    if (!pin) {
+      setLivePin(null);
+      return;
+    }
+    if (Math.abs(pin.rel_x - livePin.relX) < 0.0005 && Math.abs(pin.rel_y - livePin.relY) < 0.0005) setLivePin(null);
+  }, [pins, livePin]);
+
+  useEffect(() => {
+    if (!liveDoor) return;
+    const door = doors.find((candidate) => candidate.id === liveDoor.id);
+    if (!door) {
+      setLiveDoor(null);
+      return;
+    }
+    if (door.edge === liveDoor.edge && Math.abs(door.position - liveDoor.position) < 0.0005) setLiveDoor(null);
+  }, [doors, liveDoor]);
+
+  const panTargets = useMemo<PlanTargets>(() => {
+    const selectedGeo = selectedFormeId ? geoById[selectedFormeId] : null;
+    if (readOnly || doorPlacing || !selectedGeo || !selectedFormeId) {
+      // Rien n'est manipulable : le doigt ne peut que déplacer la vue.
+      return { handles: [], pins: [], doors: [], room: null };
+    }
+    const metrics = PIN_METRICS[pinSize];
+    return {
+      handles: HANDLES.map((handle) => ({
+        handle,
+        ...handleAnchor(selectedGeo, handle),
+        radius: HANDLE_TOUCH_SIZE / 2,
+      })),
+      pins: pins
+        .filter((pin) => pin.forme_id === selectedFormeId)
+        .map((pin) => ({
+          id: pin.id,
+          x: selectedGeo.x + (livePin?.id === pin.id ? livePin.relX : pin.rel_x) * selectedGeo.width,
+          y: selectedGeo.y + (livePin?.id === pin.id ? livePin.relY : pin.rel_y) * selectedGeo.height,
+          halfWidth: metrics.cardWidth / 2,
+          halfHeight: metrics.cardHeight / 2,
+        })),
+      // Toutes les portes du plan, pas seulement celles de la pièce
+      // sélectionnée : une porte se glisse dès qu'elle est désignée.
+      doors: doors.flatMap((door) => {
+        const geo = geoById[door.forme_id];
+        if (!geo || door.id !== selectedDoorId) return [];
+        const live = liveDoor?.id === door.id ? liveDoor : null;
+        const center = doorCenter(geo, (live?.edge ?? door.edge) as DoorEdge, live?.position ?? door.position);
+        return [{ id: door.id, x: center.x, y: center.y, radius: DOOR_TARGET / 2 }];
+      }),
+      room: { formeId: selectedFormeId, geo: selectedGeo },
+    };
+  }, [readOnly, doorPlacing, selectedFormeId, geoById, pins, pinSize, doors, selectedDoorId, livePin, liveDoor]);
+
+  const panTarget = useRef<PlanTarget>({ kind: 'view' });
+  // Le geste a-t-il vu un second doigt ? Tant que oui, plus rien ne se
+  // déplace, et à la fin tout revient d'où ça vient sans être enregistré.
+  const panWentMultiTouch = useRef(false);
+  const roomOrigin = useRef<ShapeGeometry | null>(null);
+  const roomLive = useRef<ShapeGeometry | null>(null);
+  const pinOrigin = useRef<{ id: string; relX: number; relY: number } | null>(null);
+  const doorOrigin = useRef<{ id: string; edge: DoorEdge; position: number } | null>(null);
+
+  // Retient d'où part ce qu'on va glisser, pour pouvoir l'y ramener.
+  const primeDrag = (target: PlanTarget) => {
+    roomOrigin.current = null;
+    pinOrigin.current = null;
+    doorOrigin.current = null;
+    if (target.kind === 'room' || target.kind === 'handle') {
+      const geo = selectedFormeId ? geoById[selectedFormeId] : null;
+      if (!geo) return;
+      roomOrigin.current = geo;
+      roomLive.current = geo;
+    } else if (target.kind === 'pin') {
+      const pin = pins.find((candidate) => candidate.id === target.pinId);
+      if (!pin) return;
+      const live = livePin?.id === pin.id ? livePin : null;
+      pinOrigin.current = { id: pin.id, relX: live?.relX ?? pin.rel_x, relY: live?.relY ?? pin.rel_y };
+    } else if (target.kind === 'door') {
+      const door = doors.find((candidate) => candidate.id === target.doorId);
+      if (!door) return;
+      const live = liveDoor?.id === door.id ? liveDoor : null;
+      doorOrigin.current = {
+        id: door.id,
+        edge: (live?.edge ?? door.edge) as DoorEdge,
+        position: live?.position ?? door.position,
+      };
+    }
   };
 
-  const panFromOutside = useRef(true);
+  const applyDrag = (target: PlanTarget, translationX: number, translationY: number) => {
+    // translation est un delta ÉCRAN : le diviser par l'échelle donne le
+    // déplacement dans le repère de la feuille, où vivent toutes les
+    // géométries. Le déplacement de la VUE, lui, travaille bien en pixels.
+    const dx = translationX / zoom.scale;
+    const dy = translationY / zoom.scale;
 
-  const backgroundPan = Gesture.Pan()
+    if (target.kind === 'view') {
+      panTheView(translationX, translationY);
+      return;
+    }
+
+    if (target.kind === 'room') {
+      const origin = roomOrigin.current;
+      if (!origin) return;
+      const others = formes.filter((f) => f.id !== target.formeId).map((f) => geoById[f.id]);
+      const snapped = snapPosition(origin.x + dx, origin.y + dy, origin.width, origin.height, others);
+      const bounded = clampPositionToWorld(snapped.x, snapped.y, origin.width, origin.height);
+      roomLive.current = { ...origin, x: bounded.x, y: bounded.y };
+      setShapes((current) => ({ ...current, [target.formeId]: roomLive.current as ShapeGeometry }));
+      return;
+    }
+
+    if (target.kind === 'handle') {
+      const origin = roomOrigin.current;
+      if (!origin || !selectedFormeId) return;
+      const others = formes.filter((f) => f.id !== selectedFormeId).map((f) => geoById[f.id]);
+      const raw = applyHandle(origin, target.handle, dx, dy);
+      roomLive.current = clampResizeToWorld(snapResize(raw, target.handle, others));
+      setShapes((current) => ({ ...current, [selectedFormeId]: roomLive.current as ShapeGeometry }));
+      return;
+    }
+
+    if (target.kind === 'pin') {
+      const origin = pinOrigin.current;
+      const pin = pins.find((candidate) => candidate.id === target.pinId);
+      const geo = pin ? geoById[pin.forme_id] : null;
+      if (!origin || !pin || !geo) return;
+      const metrics = PIN_METRICS[pinSize];
+      const siblings = pins
+        .filter((candidate) => candidate.forme_id === pin.forme_id && candidate.id !== pin.id)
+        .map((candidate) => ({
+          x: geo.x + candidate.rel_x * geo.width,
+          y: geo.y + candidate.rel_y * geo.height,
+        }));
+      const snapped = snapToSiblings(
+        geo.x + origin.relX * geo.width + dx,
+        geo.y + origin.relY * geo.height + dy,
+        siblings,
+        metrics.cardWidth,
+        metrics.cardHeight,
+      );
+      const margin = metrics.cardHeight / 2;
+      setLivePin({
+        id: pin.id,
+        relX: resolvePinRel((snapped.x - geo.x) / geo.width, geo.width, margin),
+        relY: resolvePinRel((snapped.y - geo.y) / geo.height, geo.height, margin),
+      });
+      return;
+    }
+
+    const origin = doorOrigin.current;
+    const door = doors.find((candidate) => candidate.id === target.doorId);
+    const geo = door ? geoById[door.forme_id] : null;
+    if (!origin || !door || !geo) return;
+    const from = doorCenter(geo, origin.edge, origin.position);
+    const aimed = nearestEdge(from.x + dx, from.y + dy, geo);
+    const free = freeDoorPosition(
+      geo,
+      aimed.edge,
+      aimed.position,
+      // Sans s'exclure elle-même, la porte se bloquerait sur sa propre place
+      // dès le premier millimètre de glissé.
+      (doorsByForme[door.forme_id] ?? [])
+        .filter((candidate) => candidate.id !== door.id)
+        .map((candidate) => ({ edge: candidate.edge as DoorEdge, position: candidate.position })),
+      // Les voisines comptent : sur un mur mitoyen, les deux pièces tracent
+      // le même trait.
+      formes
+        .filter((f) => f.id !== door.forme_id)
+        .map((f) => ({
+          geo: geoById[f.id],
+          doors: (doorsByForme[f.id] ?? []).map((d) => ({ edge: d.edge as DoorEdge, position: d.position })),
+        })),
+    );
+    if (free === null) return;
+    setLiveDoor({ id: door.id, edge: aimed.edge, position: free });
+  };
+
+  // Le geste s'est transformé en pincement : tout revient d'où ça vient, et
+  // rien n'est enregistré.
+  const revertDrag = (target: PlanTarget) => {
+    if (target.kind === 'room' || target.kind === 'handle') {
+      const origin = roomOrigin.current;
+      if (!origin || !selectedFormeId) return;
+      roomLive.current = origin;
+      setShapes((current) => ({ ...current, [selectedFormeId]: origin }));
+    } else if (target.kind === 'pin') {
+      setLivePin(null);
+    } else if (target.kind === 'door') {
+      setLiveDoor(null);
+    }
+  };
+
+  const commitDrag = (target: PlanTarget) => {
+    if (target.kind === 'room' || target.kind === 'handle') {
+      const geometry = roomLive.current;
+      if (!geometry || !selectedFormeId) return;
+      if (target.kind === 'room') onDragEnd(selectedFormeId, geometry.x, geometry.y);
+      else onResizeEnd(selectedFormeId, geometry.x, geometry.y, geometry.width, geometry.height);
+    } else if (target.kind === 'pin' && livePin) {
+      onPinDragEnd(livePin.id, livePin.relX, livePin.relY);
+    } else if (target.kind === 'door' && liveDoor) {
+      onDoorDragEnd(liveDoor.id, liveDoor.edge, liveDoor.position);
+    }
+  };
+
+  const pan = Gesture.Pan()
     .minPointers(1)
-    .maxPointers(1)
-    // Pendant la pose d'une porte, les bandes de mur couvrent tout le
-    // pourtour des pièces : le doigt sert à viser une ouverture, pas à se
-    // déplacer. Le pincement, lui, reste disponible pour naviguer.
-    .enabled(!doorPlacing)
+    // PAS de maxPointers : le geste doit rester vivant quand le second doigt
+    // se pose, justement pour s'en apercevoir. Il devient alors inerte, et le
+    // pincement — simultané — fait son travail.
     .runOnJS(true)
     .onStart((event) => {
+      panWentMultiTouch.current = false;
+      zoomOrigin.current = zoom;
       const point = viewportToContent(event.x, event.y);
-      panFromOutside.current = !startsOnSelectedRoom(point.x, point.y);
-      // Ne jamais écraser l'origine qu'un pincement en cours a posée.
-      if (!pinching.current) zoomOrigin.current = zoom;
+      panTarget.current = hitTestPlan(point, panTargets);
+      primeDrag(panTarget.current);
     })
     .onUpdate((event) => {
-      if (pinching.current || !panFromOutside.current) return;
-      panTheView(event.translationX, event.translationY);
+      // UNE FOIS QU'UN SECOND DOIGT S'EST POSÉ, ce geste ne bouge plus rien
+      // jusqu'à son terme. Rendre la main en repassant à un doigt — ce qui
+      // arrive dès qu'on relâche un pincement — emporterait la pièce avec le
+      // doigt restant.
+      if (panWentMultiTouch.current) return;
+      if (event.numberOfPointers > 1) {
+        panWentMultiTouch.current = true;
+        revertDrag(panTarget.current);
+        return;
+      }
+      applyDrag(panTarget.current, event.translationX, event.translationY);
+    })
+    .onEnd(() => {
+      if (panWentMultiTouch.current) {
+        revertDrag(panTarget.current);
+        return;
+      }
+      commitDrag(panTarget.current);
     });
 
   // Remplace le bouton "Valider" : un tap qui ne touche aucune pièce
@@ -635,7 +836,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       className="rounded-2xl"
       onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
     >
-      <GestureDetector gesture={Gesture.Simultaneous(pinch, Gesture.Exclusive(backgroundPan, backgroundTaps))}>
+      <GestureDetector gesture={Gesture.Simultaneous(pinch, Gesture.Exclusive(pan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre
             visible, quel que soit le zoom — voir le commentaire sur
             backgroundPan plus haut. */}
@@ -840,25 +1041,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 poignées disparaissent : un seul type de cible à l'écran,
                 donc aucun geste à départager. C'est ce qui manquait à la
                 première version. */}
-            {doorPlacing ? null : formes.map((forme) => {
-              const geo = geoById[forme.id];
-              const isSelected = forme.id === selectedFormeId;
-              const others = formes.filter((f) => f.id !== forme.id).map((f) => geoById[f.id]);
-              return (
-                <ShapeBody
-                  key={forme.id}
-                  geo={geo}
-                  others={others}
-                  isSelected={isSelected}
-                  readOnly={readOnly}
-                  scale={zoom.scale}
-                  onMove={(x, y) => setShapes((current) => ({ ...current, [forme.id]: { ...current[forme.id], x, y } }))}
-                  onDragEnd={(x, y) => onDragEnd(forme.id, x, y)}
-                  onSelect={() => onSelect(forme)}
-                  isPinching={isPinching}
-                />
-              );
-            })}
+            {doorPlacing
+              ? null
+              : formes.map((forme) => (
+                  <ShapeBody key={forme.id} geo={geoById[forme.id]} onSelect={() => onSelect(forme)} />
+                ))}
 
             {/* Après ShapeBody (appuyer sur un mur perce une porte plutôt
                 que de resélectionner la pièce) mais AVANT les poignées de
@@ -868,14 +1055,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               doors={doors}
               formeGeo={geoById}
               placing={doorPlacing}
-              selectedDoorId={selectedDoorId}
-              scale={zoom.scale}
               readOnly={readOnly}
               onCreate={onDoorCreate}
               onPreview={setDoorPreview}
-              isPinching={isPinching}
               onSelect={onDoorSelect}
-              onDragEnd={onDoorDragEnd}
+              live={liveDoor}
             />
 
             {/* Poignées de redimensionnement : pas rendues du tout en
@@ -887,11 +1071,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     key={handle}
                     geo={geoById[selectedForme.id]}
                     handle={handle}
-                    others={formes.filter((f) => f.id !== selectedForme.id).map((f) => geoById[f.id])}
-                    scale={zoom.scale}
-                    onResize={(geometry) => setShapes((current) => ({ ...current, [selectedForme.id]: geometry }))}
-                    onResizeEnd={(geometry) => onResizeEnd(selectedForme.id, geometry.x, geometry.y, geometry.width, geometry.height)}
-                    isPinching={isPinching}
                   />
                 ))
               : null}
@@ -902,13 +1081,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               pinDisplay={pinDisplay}
               selectedFormeId={selectedFormeId}
               highlightedEmplacementId={highlightEmplacementId}
-              scale={zoom.scale}
               size={pinSize}
               selectedPinId={selectedPinId}
               onSelectPin={onPinSelect}
-              isPinching={isPinching}
               readOnly={readOnly}
-              onDragEnd={onPinDragEnd}
+              live={livePin}
               onTap={onPinTap}
             />
           </View>
@@ -1007,160 +1184,55 @@ function formatCount(count: number): string {
 // passer le toucher jusqu'au conteneur, dont le glissé déplace alors la vue.
 // C'est ainsi qu'on se déplace en partant de par-dessus une autre pièce, sans
 // qu'aucun geste n'ait à en départager un autre.
-function ShapeBody({
-  geo,
-  others,
-  isSelected,
-  readOnly,
-  scale,
-  onMove,
-  onDragEnd,
-  onSelect,
-  isPinching,
-}: {
-  geo: ShapeGeometry;
-  others: ShapeGeometry[];
-  isSelected: boolean;
-  readOnly?: boolean;
-  scale: number;
-  onMove: (x: number, y: number) => void;
-  onDragEnd: (x: number, y: number) => void;
-  onSelect: () => void;
-  /** Deux doigts sont posés : la pièce ne suit plus, voir PlanCanvas. */
-  isPinching: () => boolean;
-}) {
-  const dragOrigin = useRef(geo);
-  const HIT_SLOP = 12;
-
-  // event.translation(X|Y) est un delta ÉCRAN, avant mise à l'échelle du
-  // zoom — diviser par `scale` pour obtenir le déplacement réel dans le
-  // repère (non zoomé) où vivent x/y.
-  const resolve = (translationX: number, translationY: number) => {
-    const rawX = dragOrigin.current.x + translationX / scale;
-    const rawY = dragOrigin.current.y + translationY / scale;
-    const snapped = snapPosition(rawX, rawY, geo.width, geo.height, others);
-    return clampPositionToWorld(snapped.x, snapped.y, geo.width, geo.height);
-  };
-
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .maxPointers(1)
-    .enabled(isSelected && !readOnly)
-    .runOnJS(true)
-    .onStart(() => {
-      dragOrigin.current = geo;
-    })
-    .onUpdate((event) => {
-      if (isPinching()) return;
-      const snapped = resolve(event.translationX, event.translationY);
-      onMove(snapped.x, snapped.y);
-    })
-    .onEnd((event) => {
-      // Le geste est devenu un pincement : la pièce revient d où elle vient
-      // et rien n est enregistré.
-      if (isPinching()) {
-        onMove(dragOrigin.current.x, dragOrigin.current.y);
-        return;
-      }
-      const snapped = resolve(event.translationX, event.translationY);
-      onDragEnd(snapped.x, snapped.y);
-    });
-
-  // UN SEUL TAP, ET C'EST TOUT. La fiche d'édition s'ouvrait au DOUBLE-tap :
-  // un geste que rien n'annonçait à l'écran, et une vraie difficulté motrice
-  // passé un certain âge — or l'objectif est que le plan reste utilisable à
-  // tout âge. Le tap simple sélectionne, et c'est la barre d'action en bas
-  // d'écran (voir plan/[id].tsx) qui donne accès à l'édition : une cible
-  // large, visible, sans geste à deviner.
+// LE CORPS D UNE PIÈCE N EST PLUS QU UNE CIBLE DE TAP.
+//
+// Son glissé est parti dans le geste unique du conteneur (voir plus haut) :
+// c est de là que se décide, au toucher, si le doigt déplace la pièce ou le
+// plan. Ne reste ici que la sélection, un tap — et un tap ne dispute rien à
+// un glissé, il échoue dès que le doigt bouge.
+function ShapeBody({ geo, onSelect }: { geo: ShapeGeometry; onSelect: () => void }) {
+  // UN SEUL TAP, ET C EST TOUT. La fiche d édition s ouvrait au DOUBLE-tap :
+  // un geste que rien n annonçait à l écran, et une vraie difficulté motrice
+  // passé un certain âge — or l objectif est que le plan reste utilisable à
+  // tout âge. Le tap simple sélectionne, et c est la barre d action en bas
+  // d écran (voir plan/[id].tsx) qui donne accès à l édition.
   //
   // Il reste actif en consultation : il ne modifie rien et sert à mettre une
   // pièce en évidence.
-  const singleTap = Gesture.Tap().numberOfTaps(1).hitSlop(HIT_SLOP).runOnJS(true).onEnd(() => onSelect());
-  const gesture = Gesture.Exclusive(pan, singleTap);
+  const tap = Gesture.Tap().numberOfTaps(1).hitSlop(12).runOnJS(true).onEnd(() => onSelect());
 
   return (
-    <GestureDetector gesture={gesture}>
+    <GestureDetector gesture={tap}>
       <View style={{ position: 'absolute', left: geo.x, top: geo.y, width: geo.width, height: geo.height }} />
     </GestureDetector>
   );
 }
 
-// 44px : le minimum recommandé pour une cible tactile. Les 32px précédents
-// étaient en dessous, et redimensionner une pièce demandait de viser.
-const HANDLE_TOUCH_SIZE = 44;
+// 44px : le minimum recommandé pour une cible tactile. C est aussi le rayon
+// dans lequel hitTestPlan reconnaît cette poignée.
+export const HANDLE_TOUCH_SIZE = 44;
 const HANDLE_DOT_SIZE = 18;
 
-// Petit point d'ancrage — sa propre zone de geste (32x32, centrée sur le
-// point), rendu par-dessus ShapeBody pour que le toucher y soit prioritaire
-// à cet endroit précis plutôt que d'aller au déplacement. Le redimensionnement
-// passe par snapResize() pour aligner le bord actif sur une pièce voisine.
-function HandleDot({
-  geo,
-  handle,
-  others,
-  scale,
-  onResize,
-  onResizeEnd,
-  isPinching,
-}: {
-  geo: ShapeGeometry;
-  handle: HandleId;
-  others: ShapeGeometry[];
-  scale: number;
-  onResize: (geometry: ShapeGeometry) => void;
-  onResizeEnd: (geometry: ShapeGeometry) => void;
-  isPinching: () => boolean;
-}) {
-  const origin = useRef(geo);
-  const last = useRef(geo);
+// Le point d ancrage, PUREMENT VISUEL désormais : le redimensionnement est
+// porté par le geste unique du conteneur, qui reconnaît la poignée visée par
+// sa position. Une vue sans geste ne capte rien et ne coupe donc plus rien.
+function HandleDot({ geo, handle }: { geo: ShapeGeometry; handle: HandleId }) {
   const anchor = handleAnchor(geo, handle);
 
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .maxPointers(1)
-    .runOnJS(true)
-    .onStart(() => {
-      origin.current = geo;
-      last.current = geo;
-    })
-    .onUpdate((event) => {
-      if (isPinching()) return;
-      const raw = applyHandle(origin.current, handle, event.translationX / scale, event.translationY / scale);
-      last.current = clampResizeToWorld(snapResize(raw, handle, others));
-      onResize(last.current);
-    })
-    .onEnd(() => {
-      if (isPinching()) {
-        onResize(origin.current);
-        return;
-      }
-      onResizeEnd(last.current);
-    });
-
   return (
-    <GestureDetector gesture={pan}>
-      <View
-        style={{
-          position: 'absolute',
-          left: anchor.x - HANDLE_TOUCH_SIZE / 2,
-          top: anchor.y - HANDLE_TOUCH_SIZE / 2,
-          width: HANDLE_TOUCH_SIZE,
-          height: HANDLE_TOUCH_SIZE,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <View
-          style={{
-            width: HANDLE_DOT_SIZE,
-            height: HANDLE_DOT_SIZE,
-            borderRadius: HANDLE_DOT_SIZE / 2,
-            backgroundColor: '#1591EA',
-            borderWidth: 2,
-            borderColor: '#fff',
-          }}
-        />
-      </View>
-    </GestureDetector>
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: anchor.x - HANDLE_DOT_SIZE / 2,
+        top: anchor.y - HANDLE_DOT_SIZE / 2,
+        width: HANDLE_DOT_SIZE,
+        height: HANDLE_DOT_SIZE,
+        borderRadius: HANDLE_DOT_SIZE / 2,
+        backgroundColor: ACCENT,
+        borderWidth: 2,
+        borderColor: '#fff',
+      }}
+    />
   );
 }

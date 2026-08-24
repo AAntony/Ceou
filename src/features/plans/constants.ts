@@ -132,3 +132,7 @@ export function roomColorForForme(formeId: string): string {
 // maintenir une deuxième valeur à la main. Réexportée depuis lib/color.ts,
 // où elle sert aussi à l'adaptation des pastels au thème sombre.
 export { shade } from '../../lib/color';
+
+// Cible tactile d une porte deja posee, en unites feuille. Partagee entre le
+// dessin (DoorLayer) et le test de cible du glisse unique (hitTest).
+export const DOOR_TARGET = 30;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '../../components/Icon';
@@ -6,7 +6,6 @@ import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
 import { useThemeColors } from '../../lib/theme';
 import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
-import { resolvePinRel, snapToSiblings } from './snap';
 import type { ShapeGeometry } from './types';
 
 // === La puce d'un Emplacement ============================================
@@ -81,19 +80,17 @@ type PlanPinLayerProps = {
   pinDisplay: Record<string, { name: string; icon: IconName }>;
   selectedFormeId: string | null;
   highlightedEmplacementId?: string | null;
-  scale: number;
   size: PinSize;
   // La sélection d'une puce vit chez l'écran et non ici : c'est elle qui fait
   // apparaître le sélecteur S/M/XL au-dessus du plan.
   selectedPinId: string | null;
   onSelectPin: (pinId: string | null) => void;
-  /** Deux doigts sont posés : la puce ne suit plus, voir PlanCanvas. */
-  isPinching: () => boolean;
   // Consultation seule : les puces restent AFFICHÉES (c'est tout leur
   // intérêt — voir où sont les Emplacements) mais ne se déplacent plus et
   // n'ouvrent plus leur fiche, qui ne propose que « Retirer du plan ».
   readOnly?: boolean;
-  onDragEnd: (pinId: string, relX: number, relY: number) => void;
+  /** La puce en cours de glissé, donnée en direct par le conteneur. */
+  live: { id: string; relX: number; relY: number } | null;
   onTap: (pin: PlanPin) => void;
 };
 
@@ -112,44 +109,16 @@ export function PlanPinLayer({
   pinDisplay,
   selectedFormeId,
   highlightedEmplacementId,
-  scale,
   size,
   selectedPinId,
   onSelectPin,
-  isPinching,
   readOnly = false,
-  onDragEnd,
+  live,
   onTap,
 }: PlanPinLayerProps) {
-  const [positions, setPositions] = useState<Record<string, RelPosition>>({});
   const metrics = PIN_METRICS[size];
-  // Id de la puce EN COURS de glisser (pas forcément selectedPinId, qui ne
-  // suit que le tap) — protège juste celle-là d'un écrasement par un refetch
-  // pendant le geste, voir l'effet ci-dessous.
-  const draggingIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    setPositions((current) => {
-      const next = { ...current };
-      const ids = new Set(pins.map((p) => p.id));
-      for (const pin of pins) {
-        // Resynchronise TOUJOURS depuis le serveur, sauf la puce en plein
-        // geste — même correctif que `shapes` dans PlanCanvas : avant ça, une
-        // puce déjà connue de `next` ne recevait plus jamais de valeur fraîche
-        // d'un refetch ultérieur (position figée jusqu'au prochain montage
-        // complet), symptôme "il faut redémarrer l'app pour voir la
-        // modification" alors qu'elle était bien enregistrée.
-        if (pin.id === draggingIdRef.current) continue;
-        next[pin.id] = { relX: pin.rel_x, relY: pin.rel_y };
-      }
-      for (const id of Object.keys(next)) {
-        if (!ids.has(id)) delete next[id];
-      }
-      return next;
-    });
-  }, [pins]);
-
-  // La puce sélectionnée (ou mise en évidence depuis "Voir sur le plan") se
+  // La puce sélectionnée (ou mise en évidence depuis « Voir sur le plan ») se
   // dessine en dernier — sans ça, une puce mise en avant pouvait rester
   // partiellement recouverte par une voisine posée après elle, exactement le
   // même souci déjà réglé pour les pièces (sortedFormes, PlanCanvas).
@@ -163,37 +132,15 @@ export function PlanPinLayer({
     [pins, selectedPinId, highlightedEmplacementId],
   );
 
-  // Le centre de chaque puce en coordonnées de feuille — de quoi aimanter
-  // celle qu'on glisse sur les autres. Recalculé pendant le geste, puisque la
-  // position vécue vit dans `positions`.
-  const centers = useMemo(
-    () =>
-      pins.flatMap((pin) => {
-        const geo = formeGeo[pin.forme_id];
-        if (!geo) return [];
-        const pos = positions[pin.id] ?? { relX: pin.rel_x, relY: pin.rel_y };
-        return [
-          {
-            id: pin.id,
-            formeId: pin.forme_id,
-            x: geo.x + pos.relX * geo.width,
-            y: geo.y + pos.relY * geo.height,
-          },
-        ];
-      }),
-    [pins, positions, formeGeo],
-  );
-
   return (
     <>
       {sortedPins.map((pin) => {
         const geo = formeGeo[pin.forme_id];
         const display = pinDisplay[pin.emplacement_id];
-        const pos = positions[pin.id] ?? { relX: pin.rel_x, relY: pin.rel_y };
         if (!geo || !display) return null;
-        // Les voisines de la même pièce seulement : deux puces séparées par
-        // un mur n'ont aucune raison de s'aligner l'une sur l'autre.
-        const siblings = centers.filter((c) => c.formeId === pin.forme_id && c.id !== pin.id);
+        // La valeur du serveur, sauf pour la puce qu on est en train de
+        // glisser : celle-là, le conteneur la donne en direct.
+        const pos = live?.id === pin.id ? { relX: live.relX, relY: live.relY } : { relX: pin.rel_x, relY: pin.rel_y };
         return (
           <PinBadge
             key={pin.id}
@@ -203,25 +150,7 @@ export function PlanPinLayer({
             interactive={!readOnly && pin.forme_id === selectedFormeId}
             selected={pin.id === selectedPinId}
             highlighted={pin.emplacement_id === highlightedEmplacementId}
-            scale={scale}
             metrics={metrics}
-            siblings={siblings}
-            isPinching={isPinching}
-            onDragStart={() => {
-              draggingIdRef.current = pin.id;
-            }}
-            onMove={(next) => setPositions((current) => ({ ...current, [pin.id]: next }))}
-            onDragCancel={() => {
-              // Le verrou de resynchronisation doit tomber ici aussi, sinon
-              // cette puce ne recevrait plus jamais de valeur fraiche du
-              // serveur apres un glisse interrompu par un pincement.
-              draggingIdRef.current = null;
-              setPositions((current) => ({ ...current, [pin.id]: { relX: pin.rel_x, relY: pin.rel_y } }));
-            }}
-            onDragEnd={(next) => {
-              draggingIdRef.current = null;
-              onDragEnd(pin.id, next.relX, next.relY);
-            }}
             onToggleSelect={() => onSelectPin(selectedPinId === pin.id ? null : pin.id)}
             onTap={() => onTap(pin)}
           />
@@ -238,14 +167,7 @@ function PinBadge({
   interactive,
   selected,
   highlighted,
-  scale,
   metrics,
-  siblings,
-  isPinching,
-  onDragStart,
-  onMove,
-  onDragCancel,
-  onDragEnd,
   onToggleSelect,
   onTap,
 }: {
@@ -255,76 +177,23 @@ function PinBadge({
   interactive: boolean;
   selected: boolean;
   highlighted: boolean;
-  scale: number;
   metrics: PinMetrics;
-  /** Les autres puces de la MÊME pièce, centres en coordonnées de feuille. */
-  siblings: { x: number; y: number }[];
-  isPinching: () => boolean;
-  onDragStart: () => void;
-  onMove: (pos: RelPosition) => void;
-  onDragCancel: () => void;
-  onDragEnd: (pos: RelPosition) => void;
   onToggleSelect: () => void;
   onTap: () => void;
 }) {
   const colors = useThemeColors();
-  const dragOrigin = useRef(pos);
-
-  // Plan 2D top-down pur : x/y sont directement des coordonnées écran (dans
-  // le repère du contenu zoomable), pas besoin de projeter quoi que ce soit.
+  // Plan 2D top-down pur : x/y sont directement des coordonnées de feuille.
   const screen = { x: geo.x + pos.relX * geo.width, y: geo.y + pos.relY * geo.height };
 
-  // La même marge avec le mur sur les DEUX axes — voir resolvePinRel : c'est
-  // ce qui rend le débattement horizontal aussi libre que le vertical.
-  const margin = metrics.cardHeight / 2;
-
-  // Le geste rapporte un delta en pixels ÉCRAN, avant mise à l'échelle du
-  // zoom : on le divise par `scale` pour retrouver un déplacement dans le
-  // repère de la feuille.
+  // LE GLISSÉ D UNE PUCE EST PARTI DANS LE GESTE UNIQUE DU CONTENEUR. Ne
+  // restent ici que les deux taps — et un tap ne dispute rien à un glissé,
+  // il échoue dès que le doigt bouge.
   //
-  // L'aimant des VOISINES s'applique AVANT celui des murs, et il travaille en
-  // coordonnées de feuille — c'est là que vivent les autres puces. On repasse
-  // en relatif ensuite, pour le bornage dans la pièce.
-  const resolve = (translationX: number, translationY: number): RelPosition => {
-    const rawX = geo.x + dragOrigin.current.relX * geo.width + translationX / scale;
-    const rawY = geo.y + dragOrigin.current.relY * geo.height + translationY / scale;
-    const snapped = snapToSiblings(rawX, rawY, siblings, metrics.cardWidth, metrics.cardHeight);
-    return {
-      relX: resolvePinRel((snapped.x - geo.x) / geo.width, geo.width, margin),
-      relY: resolvePinRel((snapped.y - geo.y) / geo.height, geo.height, margin),
-    };
-  };
-
-  const pan = Gesture.Pan()
-    .minPointers(1)
-    .maxPointers(1)
-    .enabled(interactive)
-    .runOnJS(true)
-    .onStart(() => {
-      dragOrigin.current = pos;
-      onDragStart();
-    })
-    .onUpdate((event) => {
-      if (isPinching()) return;
-      onMove(resolve(event.translationX, event.translationY));
-    })
-    .onEnd((event) => {
-      // Le geste est devenu un pincement : la puce revient d ou elle vient.
-      if (isPinching()) {
-        onDragCancel();
-        return;
-      }
-      onDragEnd(resolve(event.translationX, event.translationY));
-    });
-
-  // Même principe que ShapeBody (pièces) : doubleTap listé en premier dans
-  // Exclusive pour que singleTap attende de voir si un second tap suit. Un
-  // tap simple sélectionne/désélectionne (passe au premier plan, cadre
-  // appuyé) ; un double-tap ouvre la fiche "retirer" (onTap).
+  // Même principe que le corps d une pièce : un tap simple désigne la puce,
+  // un double-tap ouvre sa fiche « retirer du plan ».
   const singleTap = Gesture.Tap().numberOfTaps(1).enabled(interactive).hitSlop(6).runOnJS(true).onEnd(onToggleSelect);
   const doubleTap = Gesture.Tap().numberOfTaps(2).enabled(interactive).hitSlop(6).runOnJS(true).onEnd(() => onTap());
-  const taps = Gesture.Exclusive(doubleTap, singleTap);
-  const gesture = Gesture.Exclusive(pan, taps);
+  const gesture = Gesture.Exclusive(doubleTap, singleTap);
 
   // Mise en évidence ("Voir sur le plan", depuis la fiche d'un objet) : c'est
   // la puce ELLE-MÊME qui passe en bleu plein, entourée d'un halo, et coiffée
