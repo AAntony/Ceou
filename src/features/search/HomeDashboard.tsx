@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
@@ -17,7 +17,6 @@ import { useAssistant } from '../assistant/useAssistant';
 import { normalizeForMatch } from '../../lib/text/match';
 import {
   ONE_COLUMN_SCALE,
-  STACK_SCALE,
   TWO_COLUMN_SCALE,
   useScaled,
   useTextScale,
@@ -42,18 +41,28 @@ function searchTermsFor(query: string): string[] {
 // tableau a chaque rendu et ferait retravailler la FlatList pour rien.
 const NO_ENTRIES: SearchIndexEntry[] = [];
 
-// L'EN-TETE EST FIGE, LE RESTE DEFILE. Recherche et filtres par Piece sont
-// les commandes de l'ecran : les faire partir vers le haut des qu'on parcourt
-// l'inventaire obligeait a remonter toute la liste pour changer de filtre ou
-// lancer une recherche.
+// L'EN-TÊTE EST UN CALQUE POSÉ SUR LA LISTE, PAS UN BLOC AU-DESSUS D'ELLE.
 //
-// Le rembourrage haut passe donc de la liste a l'en-tete, et la liste ne
-// garde qu'une marge de respiration sous lui.
+// C'est ce qui distingue ce montage des trois précédents, tous défaillants :
+// la liste occupe TOUTE la hauteur de l'écran et ne change JAMAIS de taille.
+// Sa course de défilement est donc constante, et la boucle qui faisait
+// clignoter la salutation — replier le bloc rendait de la hauteur à la liste,
+// ce qui déplaçait le défilement, ce qui rouvrait le bloc — n'a tout
+// simplement plus de prise.
 //
-// La salutation et le bouton d'ajout, eux, DEFILENT : ce ne sont pas des
-// commandes de recherche. Ils sont passes dans l'en-tete de la LISTE — voir
-// GreetingRow.
-const HEADER_PADDING = { paddingHorizontal: 24, paddingTop: 64 };
+// Le calque glisse vers le haut de la hauteur EXACTE de la salutation, pas
+// plus : la recherche et les filtres viennent alors se poser sous la barre
+// d'état et n'en bougent plus. La salutation, elle, passe derrière le bandeau
+// opaque du haut et disparaît progressivement, liée au doigt image par image.
+//
+// Le glissement est calculé par le PILOTE NATIF : il ne traverse jamais le
+// fil JavaScript, donc aucune saccade même pendant que la liste monte des
+// cartes.
+//
+// Hauteur du bandeau opaque qui coiffe le calque. Il dégage la barre d'état,
+// et c'est aussi lui qui AVALE la salutation : elle glisse derrière lui, donc
+// elle a disparu au moment précis où la recherche arrive en haut.
+const HEADER_TOP_INSET = 64;
 // Le rembourrage bas degage la barre d'onglets ET le bouton de l'assistant,
 // qui grandissent tous deux avec le reglage de taille : une valeur figee
 // laisserait les dernieres cartes dessous des qu'on agrandit.
@@ -69,72 +78,22 @@ const CONTENT_BOTTOM_PADDING = 160;
 // comme les autres.
 const COLUMN_WRAPPER = { gap: 9 };
 
-// LA SALUTATION DEFILE AVEC LA LISTE.
+// LE SEUL BLOC QUI GLISSE : le texte d'accueil, et rien d'autre.
 //
-// Elle a d'abord ete repliee par un etat pilote au defilement : deux tours de
-// correctifs plus tard, elle clignotait encore. La cause etait structurelle —
-// posee AU-DESSUS de la liste, la replier rendait sa hauteur a la liste, ce
-// qui deplacait le defilement, ce qui rouvrait le bloc. Une mise en page qui
-// se repond a elle-meme ne se rattrape pas au seuil pres.
+// Le bouton d'ajout en a été SORTI (il l'accompagnait jusqu'ici) et rejoint
+// la rangée de recherche, qui ne bouge pas. C'est la contrainte posée à
+// l'usage : ce qui glisse finit par être hors d'atteinte, et l'ajout d'un
+// objet est la seule action que cet écran propose.
 //
-// Elle est donc devenue l'en-tete de la LISTE elle-meme : le systeme la fait
-// glisser vers le haut avec les cartes et la ramene quand on revient en
-// haut. Aucun etat, aucun evenement de defilement, aucune mesure — donc rien
-// qui puisse osciller, et un mouvement parfaitement lie au doigt quelle que
-// soit la taille du texte.
-//
-// CE QUI RESTE FIGE : la recherche et les filtres par Piece. Ce sont les
-// commandes de l'ecran, les faire partir obligerait a remonter toute la
-// liste pour changer de filtre. La salutation, elle, n'est pas une commande.
-// Elle passe donc SOUS elles, ce qui est le prix assume de ce choix.
-//
-// Le bouton d'ajout SUIT la salutation plutot que de rester seul en haut :
-// separes, l'un defilerait pendant que l'autre resterait, et la rangee se
-// disloquerait a l'ecran.
-
-function GreetingRow({
-  greeting,
-  stacked,
-  isGuest,
-  onAddObjet,
-}: {
-  greeting: string;
-  stacked: boolean;
-  isGuest: boolean;
-  onAddObjet: () => void;
-}) {
+// Le texte y gagne toute la largeur, que la pastille lui disputait — et la
+// phrase d'accroche cesse de se replier sur trois lignes en gros texte.
+function GreetingText({ greeting }: { greeting: string }) {
   const { t } = useTranslation();
 
   return (
-    <View className={`mb-4 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
-      <View className={stacked ? '' : 'flex-1 pr-4'}>
-        <Text className="text-title font-bold text-ink">{greeting}</Text>
-        <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
-      </View>
-      {/* Ancien "+" central de la barre d'onglets. Il y annoncait un ajout
-          CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des ecrans
-          qui ont deja leur propre bouton "Ajouter" dans l'en-tete natif —
-          d'ou la confusion signalee par les testeurs. L'Accueil est le seul
-          ecran SANS contexte, donc le seul ou le geste n'a qu'un sens
-          possible ; le libelle leve le reste du doute. `shrink-0` : c'est la
-          salutation qui se replie sur deux lignes si la place manque, jamais
-          la pastille — jusqu'a ce que le texte grossisse assez pour que les
-          deux ne tiennent plus cote a cote, auquel cas le bouton passe
-          dessous et prend toute la largeur. */}
-      {isGuest ? null : (
-        <Pressable
-          onPress={onAddObjet}
-          accessibilityRole="button"
-          className={`flex-row items-center justify-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80 ${
-            stacked ? 'mt-3 self-stretch' : 'shrink-0'
-          }`}
-        >
-          <Icon name="add" size={18} color="#FFFFFF" />
-          <Text numberOfLines={1} className="shrink text-label font-semibold text-white">
-            {t('home.add_objet')}
-          </Text>
-        </Pressable>
-      )}
+    <View className="mb-4">
+      <Text className="text-title font-bold text-ink">{greeting}</Text>
+      <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
     </View>
   );
 }
@@ -144,6 +103,7 @@ type HomeHeaderProps = {
   searchText: string;
   onSearchTextChange: (text: string) => void;
   voiceSearch: ReturnType<typeof useAssistant>;
+  onAddObjet: () => void;
   pieceOptions: string[];
   selectedPiece: string | null;
   onSelectPiece: (piece: string | null) => void;
@@ -163,6 +123,7 @@ function HomeHeader({
   searchText,
   onSearchTextChange,
   voiceSearch,
+  onAddObjet,
   pieceOptions,
   selectedPiece,
   onSelectPiece,
@@ -174,11 +135,16 @@ function HomeHeader({
     <>
       {isGuest ? <GuestBanner /> : null}
 
+      {/* LA RANGÉE QUI NE BOUGE JAMAIS : chercher, et ajouter.
+          Le bouton d'ajout accompagnait la salutation ; il l'a quittée pour
+          venir ici, parce que la salutation glisse et que lui doit rester
+          sous le pouce. */}
+      <View className="mb-4 flex-row items-center gap-2">
       {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
           colorée façon maquette n'est pas fiable sur Android (elevation
           ne rend qu'une ombre grise), ce cerne fait l'effet sans lib
           supplémentaire ni rendu différent iOS/Android. */}
-      <View className="mb-4 rounded-full bg-teal/15 p-[3px]">
+      <View className="flex-1 rounded-full bg-teal/15 p-[3px]">
         {/* Hauteur MINIMALE et non fixe : le reglage de police du telephone
             grossit le texte du champ sans passer par `rem`, et une hauteur
             en dur l'aurait rogne. Elle vaut toujours 3rem au repos, donc la
@@ -214,6 +180,24 @@ function HomeHeader({
           ) : null}
 
         </View>
+      </View>
+
+        {/* Pastille ronde plutôt que la pastille libellée d'avant : à côté du
+            champ, un libellé complet ne laisserait plus de place où écrire.
+            Le lecteur d'écran, lui, garde la phrase entière.
+            `self-stretch` + carré : elle prend exactement la hauteur de la
+            barre de recherche, quelle que soit la taille du texte. */}
+        {isGuest ? null : (
+          <Pressable
+            onPress={onAddObjet}
+            accessibilityRole="button"
+            accessibilityLabel={t('home.add_objet')}
+            style={{ aspectRatio: 1 }}
+            className="items-center justify-center self-stretch rounded-full bg-coral active:opacity-80"
+          >
+            <Icon name="add" size={24} color="#FFFFFF" />
+          </Pressable>
+        )}
       </View>
 
       {pieceOptions.length > 0 ? (
@@ -255,7 +239,6 @@ function HomeHeader({
 }
 
 export function HomeDashboard() {
-  const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
   // Grossissement REEL du texte : choix dans l'app x reglage du telephone.
   // Trois tuiles par rangee ne tiennent pas davantage parce que c'est Android
@@ -263,6 +246,38 @@ export function HomeDashboard() {
   const { textScale } = useTextScale();
   const columns = textScale >= ONE_COLUMN_SCALE ? 1 : textScale >= TWO_COLUMN_SCALE ? 2 : 3;
   const contentPadding = useScaled(CONTENT_BOTTOM_PADDING);
+
+  // Les deux mesures dont dépend le calque. Elles sont FIABLES ici, alors
+  // qu'une mesure avait ruiné la version repliable : rien n'est jamais
+  // comprimé, le calque ne fait que glisser, donc `onLayout` rapporte
+  // toujours la vraie hauteur — y compris quand le réglage de taille du
+  // texte change.
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [greetingHeight, setGreetingHeight] = useState(0);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // `Math.max(..., 1)` : une plage d'interpolation doit être strictement
+  // croissante, et la hauteur vaut zéro avant la première mesure.
+  const slide = Math.max(greetingHeight, 1);
+  const headerTranslate = scrollY.interpolate({
+    inputRange: [0, slide],
+    outputRange: [0, -slide],
+    // `clamp` des deux côtés : au-delà le calque reste en place, et un
+    // « tirer pour rafraîchir » (offset négatif) ne le fait pas redescendre.
+    extrapolate: 'clamp',
+  });
+  // La salutation s'efface avant d'avoir fini de glisser : elle a disparu
+  // quand elle atteint le bandeau, plutôt que de sembler s'y engouffrer.
+  const greetingOpacity = scrollY.interpolate({
+    inputRange: [0, slide * 0.7],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  // Décalé de la hauteur du calque : sans ça, le rouleau tournerait DERRIÈRE
+  // lui et le geste paraîtrait sans effet.
+  const refreshControl = usePullToRefresh(headerHeight);
+
   const { data: profile } = useProfile();
   const { data: entries, isLoading, isError, refetch } = useSearchIndex();
 
@@ -335,28 +350,18 @@ export function HomeDashboard() {
 
   return (
     <View className="flex-1 bg-sand">
-      {/* Hors de la FlatList, donc hors du defilement. Il etait auparavant
-          passe a `ListHeaderComponent`, ce qui le faisait defiler avec les
-          cartes. */}
-      <View style={HEADER_PADDING}>
-        <HomeHeader
-          isGuest={isGuest}
-          searchText={searchText}
-          onSearchTextChange={setSearchText}
-          voiceSearch={voiceSearch}
-          pieceOptions={pieceOptions}
-          selectedPiece={selectedPiece}
-          onSelectPiece={setSelectedPiece}
-        />
-      </View>
-
       {/* Virtualisé (lot 4) : c'est la SEULE liste non bornée de l'app — elle
           agrège tous les objets de toutes les habitations favorites, alors
           que les autres écrans listent le contenu d'une pièce ou d'un tiroir
           (une dizaine d'éléments, pour lesquels une FlatList coûterait plus
           qu'elle ne rapporte). Avant, chaque objet était monté d'emblée :
-          ~7 vues natives et une requête d'image par carte. */}
-      <FlatList
+          ~7 vues natives et une requête d'image par carte.
+
+          Elle occupe TOUTE la hauteur et passe SOUS le calque d'en-tête : sa
+          taille ne change jamais, donc sa course de défilement non plus. La
+          place de l'en-tête lui est rendue par un rembourrage haut, pas par
+          un voisin qui grandit et rétrécit. */}
+      <Animated.FlatList
         // REMONTAGE VOLONTAIRE quand le nombre de colonnes change : une
         // FlatList refuse de changer `numColumns` en cours de route (elle
         // leve « Changing numColumns on the fly is not supported »).
@@ -364,23 +369,31 @@ export function HomeDashboard() {
         refreshControl={refreshControl}
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
-        keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
-        // Element et non fonction anonyme : une fonction redefinie a chaque
-        // rendu change de TYPE, et la FlatList remonterait son en-tete a
-        // chaque frappe dans le champ de recherche.
-        ListHeaderComponent={
-          <GreetingRow
-            greeting={greeting}
-            stacked={textScale >= STACK_SCALE}
-            isGuest={isGuest}
-            onAddObjet={() => setAddObjetOpen(true)}
-          />
-        }
+        keyExtractor={(entry: SearchIndexEntry) => `${entry.kind}-${entry.id}`}
+        // Le défilement alimente directement la valeur animée, SUR LE FIL
+        // NATIF : le glissement de l'en-tête ne dépend donc jamais de la
+        // disponibilité du JavaScript, y compris pendant que la liste monte
+        // de nouvelles cartes.
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
+        scrollEventThrottle={16}
+        // Invisible tant que le calque n'est pas mesuré : une seule image,
+        // le temps d'éviter de montrer les cartes sous l'en-tête avant que
+        // le rembourrage ne soit connu.
+        style={{ opacity: headerHeight === 0 ? 0 : 1 }}
         numColumns={columns}
         // Interdit sur une liste a une seule colonne, et pas seulement
         // inutile : la FlatList leve une erreur si les deux coexistent.
         columnWrapperStyle={columns > 1 ? COLUMN_WRAPPER : undefined}
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 4, paddingBottom: contentPadding }}
+        // Le rembourrage haut vaut la hauteur du calque : c'est lui qui rend
+        // sa place à l'en-tête, sans que la liste change de taille pour
+        // autant.
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: headerHeight + 4,
+          paddingBottom: contentPadding,
+        }}
         // Assez pour remplir le premier ecran sans laisser un blanc au
         // premier rendu — donc proportionnel au nombre de colonnes.
         initialNumToRender={columns * 5}
@@ -392,6 +405,46 @@ export function HomeDashboard() {
             <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
           ) : null
         }
+      />
+
+      {/* LE CALQUE. Posé après la liste, donc peint par-dessus elle. Il porte
+          son propre fond opaque : les cartes passent derrière sans qu'on les
+          devine. */}
+      <Animated.View
+        className="absolute left-0 right-0 top-0 bg-sand"
+        // Même retrait latéral que la liste, au point près : `px-6` vaudrait
+        // 21 points et suivrait le réglage de taille, alors que la liste est
+        // à 24 en dur — les deux se désaligneraient.
+        style={{ paddingHorizontal: 24, transform: [{ translateY: headerTranslate }] }}
+        onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
+      >
+        <View style={{ height: HEADER_TOP_INSET }} />
+        <Animated.View
+          style={{ opacity: greetingOpacity }}
+          onLayout={(event) => setGreetingHeight(event.nativeEvent.layout.height)}
+        >
+          <GreetingText greeting={greeting} />
+        </Animated.View>
+        <HomeHeader
+          isGuest={isGuest}
+          searchText={searchText}
+          onSearchTextChange={setSearchText}
+          voiceSearch={voiceSearch}
+          onAddObjet={() => setAddObjetOpen(true)}
+          pieceOptions={pieceOptions}
+          selectedPiece={selectedPiece}
+          onSelectPiece={setSelectedPiece}
+        />
+      </Animated.View>
+
+      {/* LE BANDEAU QUI AVALE LA SALUTATION. Posé après le calque, donc
+          au-dessus de lui : la salutation qui glisse vers le haut disparaît
+          derrière, au lieu de rester visible au ras de la barre d'état.
+          `pointerEvents="none"` — c'est un cache, pas une surface. */}
+      <View
+        pointerEvents="none"
+        className="absolute left-0 right-0 top-0 bg-sand"
+        style={{ height: HEADER_TOP_INSET }}
       />
 
       {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"

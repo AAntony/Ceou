@@ -21,7 +21,13 @@ import { RefreshControl } from 'react-native';
 
 const ACCENT = '#1591EA';
 
-export function usePullToRefresh() {
+/**
+ * @param progressViewOffset Ou faire apparaitre le rouleau, en partant du
+ * haut de la liste. Utile aux ecrans dont un calque recouvre ce haut-la :
+ * sans decalage, le rouleau tourne DERRIERE l'en-tete et le geste parait
+ * sans effet.
+ */
+export function usePullToRefresh(progressViewOffset?: number) {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,5 +43,13 @@ export function usePullToRefresh() {
     }
   }, [queryClient]);
 
-  return <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[ACCENT]} tintColor={ACCENT} />;
+  return (
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={onRefresh}
+      colors={[ACCENT]}
+      tintColor={ACCENT}
+      progressViewOffset={progressViewOffset}
+    />
+  );
 }
