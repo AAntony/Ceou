@@ -9,7 +9,7 @@ import {
   type SkFont,
 } from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Platform, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
@@ -275,20 +275,52 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     return Math.min(viewportSize.width / WORLD_WIDTH, viewportSize.height / WORLD_HEIGHT);
   }, [viewportSize]);
 
+  // CALCUL PUR, sans état : quel zoom cadre cette zone du monde dans un
+  // viewport de cette taille. Séparé de la pose du zoom parce que le cadrage
+  // INITIAL doit être décidé au moment même où l'on apprend la taille du
+  // viewport — dans le gestionnaire onLayout, où `viewportSize` n'est pas
+  // encore à jour. Voir handleLayout.
+  const zoomForBounds = (
+    minX: number,
+    minY: number,
+    maxX: number,
+    maxY: number,
+    padding: number,
+    vw: number,
+    vh: number,
+  ): ZoomState => {
+    const fitScale = Math.min(vw / WORLD_WIDTH, vh / WORLD_HEIGHT);
+    const boundsW = Math.max(maxX - minX, 1);
+    const boundsH = Math.max(maxY - minY, 1);
+    const availW = Math.max(vw - padding * 2, 1);
+    const availH = Math.max(vh - padding * 2, 1);
+    const scale = clamp(Math.min(availW / boundsW, availH / boundsH), fitScale, MAX_ZOOM);
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+    return clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, fitScale);
+  };
+
+  // Bornes de tout ce qui est posé sur le plan — ou la feuille entière quand
+  // il n'y a encore rien.
+  const roomsBounds = () => {
+    if (formes.length === 0) return { minX: 0, minY: 0, maxX: WORLD_WIDTH, maxY: WORLD_HEIGHT, padding: 0 };
+    const geos = formes.map((f) => geoById[f.id]);
+    return {
+      minX: Math.min(...geos.map((g) => g.x)),
+      minY: Math.min(...geos.map((g) => g.y)),
+      maxX: Math.max(...geos.map((g) => g.x + g.width)),
+      maxY: Math.max(...geos.map((g) => g.y + g.height)),
+      padding: 48,
+    };
+  };
+
   // Recentre/zoome sur une zone du monde (unités feuille), avec une marge en
   // pixels écran — base commune à la vue initiale et au double-tap "tout
   // voir" (fitToRooms plus bas).
   const fitToBounds = (minX: number, minY: number, maxX: number, maxY: number, padding: number) => {
     const { width: vw, height: vh } = viewportSize;
     if (!vw || !vh) return;
-    const boundsW = Math.max(maxX - minX, 1);
-    const boundsH = Math.max(maxY - minY, 1);
-    const availW = Math.max(vw - padding * 2, 1);
-    const availH = Math.max(vh - padding * 2, 1);
-    const scale = clamp(Math.min(availW / boundsW, availH / boundsH), minScale, MAX_ZOOM);
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
-    setZoom(clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, minScale));
+    setZoom(zoomForBounds(minX, minY, maxX, maxY, padding, vw, vh));
   };
 
   // Cadre toutes les pièces déjà posées (ou toute la feuille s'il n'y en a
@@ -296,18 +328,34 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // sur une zone vide du plan (backgroundDoubleTap plus bas) — "montre-moi
   // tout le plan d'un coup" plutôt qu'un simple retour à un zoom fixe.
   const fitToRooms = () => {
-    if (formes.length === 0) {
-      fitToBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT, 0);
-      return;
-    }
-    const geos = formes.map((f) => geoById[f.id]);
-    fitToBounds(
-      Math.min(...geos.map((g) => g.x)),
-      Math.min(...geos.map((g) => g.y)),
-      Math.max(...geos.map((g) => g.x + g.width)),
-      Math.max(...geos.map((g) => g.y + g.height)),
-      48,
+    const b = roomsBounds();
+    fitToBounds(b.minX, b.minY, b.maxX, b.maxY, b.padding);
+  };
+
+  // LE CADRAGE INITIAL EST DÉCIDÉ DANS LE MÊME ÉVÉNEMENT QUE LA MESURE.
+  //
+  // Il passait auparavant par un effet, déclenché APRÈS le rendu qui suit la
+  // mesure : le canevas peignait donc une image au zoom 1 — pièces et puces
+  // trois fois trop grandes sur un téléphone — avant de se recadrer à
+  // l'image suivante. Invisible à l'ouverture d'un plan, où la transition
+  // d'écran la recouvre ; parfaitement visible en changeant d'étage, où le
+  // canevas est remonté sans transition (retour utilisateur du 2026-08-26).
+  //
+  // Poser la taille du viewport ET le zoom dans le même gestionnaire les
+  // regroupe en un seul rendu : la première image peinte est déjà la bonne.
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    setViewportSize((current) =>
+      current.width === width && current.height === height ? current : { width, height },
     );
+    if (initializedRef.current) return;
+    if (!width || !height) return;
+    // « Voir sur le plan » vise une pièce précise : c'est l'effet dédié qui
+    // pilote le cadrage dans ce cas, pas celui-ci.
+    if (highlightFormeId) return;
+    initializedRef.current = true;
+    const b = roomsBounds();
+    setZoom(zoomForBounds(b.minX, b.minY, b.maxX, b.maxY, b.padding, width, height));
   };
 
   // Amène une pièce précise au centre du viewport sans changer le zoom en
@@ -322,11 +370,10 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     setZoom(clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, minScale));
   };
 
-  // Vue initiale : cadre tout ce qui est déjà posé dès que le viewport est
-  // mesuré, une seule fois (initializedRef) — ne doit pas re-cadrer de force
-  // après que l'utilisateur a lui-même zoomé/déplacé la vue. Si l'écran
-  // s'ouvre depuis "Voir sur le plan", c'est l'effet suivant qui pilote le
-  // cadrage initial à la place de celui-ci.
+  // FILET, pas chemin principal : le cadrage initial est posé par
+  // handleLayout, dans le même rendu que la mesure. Cet effet ne sert que si
+  // le viewport a été mesuré avant que les pièces ne soient là — le canevas
+  // aurait alors cadré la feuille vide, ce qui ne montre rien d'utile.
   useEffect(() => {
     if (initializedRef.current) return;
     if (!viewportSize.width || !viewportSize.height) return;
@@ -834,7 +881,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     <View
       style={{ flex: 1, overflow: 'hidden', backgroundColor: colors.sandDark }}
       className="rounded-2xl"
-      onLayout={(event) => setViewportSize({ width: event.nativeEvent.layout.width, height: event.nativeEvent.layout.height })}
+      onLayout={handleLayout}
     >
       <GestureDetector gesture={Gesture.Simultaneous(pinch, Gesture.Exclusive(pan, backgroundTaps))}>
         {/* Cette vue (non transformée) capte les gestes sur toute la fenêtre

@@ -66,7 +66,10 @@ export default function PlanScreen() {
   // déjà un autre.
   useEffect(() => setId(routePlanId), [routePlanId]);
   const { data: plan, isLoading: planLoading, isError: planError, refetch } = usePlan(id);
-  const { data: formes } = usePlanFormes(id);
+  // `isPending` sert la garde de chargement plus bas : sans elle, un etage
+  // encore inconnu du cache affichait un eclair de selecteur de logements
+  // types — l ecran du plan VIERGE — avant que ses pieces n arrivent.
+  const { data: formes, isPending: formesPending } = usePlanFormes(id);
   // Les autres niveaux de la même habitation, dans l'ordre choisi depuis la
   // liste des plans : c'est ce que propose le sélecteur d'étage.
   const { data: siblingPlans } = usePlans(plan?.habitation_id ?? '');
@@ -173,7 +176,7 @@ export default function PlanScreen() {
     );
   }
 
-  if (planLoading || !plan) {
+  if (planLoading || !plan || formesPending) {
     return (
       <View className="flex-1 items-center justify-center bg-sand">
         <ActivityIndicator />
