@@ -88,6 +88,10 @@ export type IconName =
   | 'porte'
   | 'recenter'
   | 'help'
+  // Guide de démarrage
+  | 'wave'
+  | 'guide'
+  | 'celebrate'
   | 'dots'
   | 'eye'
   | 'eyeOff'
@@ -210,6 +214,11 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   // Même glyphe que le type d'habitation 'autre', clé distincte : l'un est
   // un contenu inconnu, l'autre une aide contextuelle.
   help: 'help-circle-outline',
+  // Le guide de démarrage : la main qui salue ouvre, la boussole le rappelle
+  // depuis le Profil, le cotillon célèbre le premier objet rangé.
+  wave: 'hand-wave',
+  guide: 'compass-outline',
+  celebrate: 'party-popper',
 };
 
 type IconProps = {

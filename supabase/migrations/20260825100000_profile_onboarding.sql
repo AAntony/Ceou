@@ -1,0 +1,13 @@
+-- Horodate la fin (ou l'abandon volontaire) du GUIDE DE DÉMARRAGE, pour ne
+-- plus l'ouvrir tout seul ensuite.
+--
+-- Pourquoi côté profil et pas seulement sur l'appareil : le guide s'ouvre à
+-- la première utilisation, et « première » veut dire première fois pour la
+-- PERSONNE, pas pour le téléphone. Quelqu'un qui réinstalle l'app ou change
+-- d'appareil ne doit pas se le voir réimposer.
+--
+-- L'application garde par ailleurs un verrou local (AsyncStorage) : il ferme
+-- le guide immédiatement, hors ligne, et sans attendre le réseau. Les deux
+-- répondent à deux questions différentes — « est-ce que je viens de le
+-- terminer ? » et « est-ce que je l'ai déjà vu, un jour, quelque part ? ».
+alter table public.profiles add column onboarding_done_at timestamptz;

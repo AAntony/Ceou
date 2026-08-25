@@ -198,6 +198,87 @@
     "voice_search_error": "La reconnaissance vocale n'a pas fonctionné. Réessaie.",
     "add_objet": "Ajouter un objet"
   },
+  "onboarding": {
+    "entry_title": "Découvrir Céoù",
+    "entry_hint": "Un guide de deux minutes pour ranger ton premier objet.",
+    "replay": "Revoir le guide de démarrage",
+    "skip": "Passer",
+    "welcome": {
+      "title": "Tu ne retrouves jamais rien ?",
+      "body": "Céoù note où tu ranges tes affaires. Le jour où tu les cherches, il te dit exactement où elles sont.",
+      "body2": "On le fait ensemble ? Deux minutes, et tu ranges pour de vrai.",
+      "start": "C'est parti",
+      "later": "Plus tard"
+    },
+    "principle": {
+      "title": "Comment ça marche",
+      "intro": "Tes affaires vivent quelque part : dans un logement, dans une pièce, dans un meuble, parfois dans une boîte.",
+      "levels": {
+        "habitation": {
+          "example": "Maison",
+          "role": "ton logement"
+        },
+        "piece": {
+          "example": "Cuisine",
+          "role": "une pièce"
+        },
+        "emplacement": {
+          "example": "Commode",
+          "role": "un rangement : un meuble, une étagère, un placard"
+        },
+        "conteneur": {
+          "example": "Boîte",
+          "role": "parfois, une boîte à l'intérieur"
+        },
+        "objet": {
+          "example": "Ciseaux",
+          "role": "ton objet"
+        }
+      },
+      "outro": "Céoù emboîte ces endroits les uns dans les autres et retient le chemin en entier. Toi, tu n'as plus qu'à demander où sont tes ciseaux.",
+      "next": "J'ai compris"
+    },
+    "habitation": {
+      "title": "On commence par ton logement",
+      "hint": "Le grand contenant : tout le reste vivra dedans.",
+      "existing_title": "Tu en as déjà un",
+      "presets_title": "Ou crée-le maintenant",
+      "foot": "Un garage, une cave ou une voiture s'ajoutent plus tard, depuis Habitations."
+    },
+    "piece": {
+      "title": "Une pièce, pour commencer",
+      "hint": "Choisis celle où tu ranges le plus de choses. Tu ajouteras les autres quand tu voudras.",
+      "existing_title": "Les pièces que tu as déjà",
+      "presets_title": "Ou crée-en une"
+    },
+    "emplacement": {
+      "title": "Où ranges-tu, dans cette pièce ?",
+      "hint": "Un meuble, une étagère, un placard : c'est ce que Céoù appelle un rangement.",
+      "existing_title": "Les rangements que tu as déjà",
+      "presets_title": "Ou crée-en un"
+    },
+    "conteneur": {
+      "title": "Et là-dedans, une boîte ?",
+      "hint": "Un objet est parfois dans une boîte, un panier, une valise. Céoù sait le retenir aussi — mais ce n'est pas obligatoire.",
+      "existing_title": "Les boîtes que tu as déjà",
+      "presets_title": "Ou crée-en une",
+      "skip": "Non, rien de tout ça"
+    },
+    "objet": {
+      "title": "Ton premier objet",
+      "hint": "Quelque chose que tu cherches souvent : les ciseaux, le chargeur, les papiers de la voiture...",
+      "name_label": "Son nom",
+      "name_placeholder": "Ciseaux",
+      "submit": "Le ranger ici"
+    },
+    "done": {
+      "title": "C'est rangé !",
+      "search_hint": "La prochaine fois que tu cherches {{name}}, tape son nom sur l’accueil. Voilà ce que Céoù te répondra :",
+      "voice_hint": "Tu peux aussi appuyer sur le micro et demander à voix haute : « où sont mes ciseaux ? »",
+      "next_steps": "À toi de jouer : ajoute tes autres pièces, tes autres rangements, et tout ce que tu mets dedans. Plus Céoù en sait, plus il te fait gagner du temps.",
+      "finish": "Voir mon inventaire"
+    }
+  },
   "assistant": {
     "thinking": "Je cherche…",
     "replay": "Réécouter",

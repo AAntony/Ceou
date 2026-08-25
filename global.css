@@ -45,7 +45,13 @@
   --color-teal-light: 219 247 244;
 
   --color-mustard: 255 200 87;
-  --color-mustard-dark: 224 169 60;
+  /* Nettement assombri (224 169 60 auparavant) : la variante « dark » d'une
+     couleur sert à ÉCRIRE sur sa variante « light », et l'ancienne valeur ne
+     donnait qu'un rapport de contraste de 2 pour 1 sur le fond crème — la
+     moitié de ce que donnent déjà coral-dark et teal-dark sur les leurs.
+     Repéré en posant les premières pastilles moutarde portant du texte
+     (le fil du guide de démarrage). */
+  --color-mustard-dark: 146 112 40;
   --color-mustard-light: 255 243 218;
 
   --color-sky: 91 155 224;

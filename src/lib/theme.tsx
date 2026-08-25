@@ -102,6 +102,12 @@ export type ThemeColors = {
   teal: string;
   tealDark: string;
   mustard: string;
+  // Les deux teintes « foncées » de moutarde et de bleu ciel, qui n'existaient
+  // qu'en classe Tailwind (bg-mustard-dark). Une icône vectorielle ne prend
+  // pas de classe : elle veut une valeur, et elle doit changer avec le thème
+  // comme le reste. Mêmes valeurs que global.css.
+  mustardDark: string;
+  skyDark: string;
   danger: string;
   ripple: string;
 };
@@ -121,6 +127,8 @@ const LIGHT: ThemeColors = {
   teal: '#2EC4B6',
   tealDark: '#219488',
   mustard: '#FFC857',
+  mustardDark: '#927028',
+  skyDark: '#3F7BC0',
   danger: '#E2571F',
   ripple: 'rgba(45,42,38,0.08)',
 };
@@ -138,6 +146,8 @@ const DARK: ThemeColors = {
   teal: '#2EC4B6',
   tealDark: '#6FDDD1',
   mustard: '#FFC857',
+  mustardDark: '#F0C266',
+  skyDark: '#9CC4F0',
   danger: '#FF8A5C',
   ripple: 'rgba(244,240,233,0.10)',
 };

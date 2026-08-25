@@ -14,6 +14,7 @@ import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { DisplaySettings } from '../../src/features/profile/DisplaySettings';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
+import { OnboardingGuide } from '../../src/features/onboarding/OnboardingGuide';
 import { unregisterPushToken } from '../../src/features/notifications/push';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
 import { useProfile, useUpdateProfile } from '../../src/features/profile/useProfile';
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
   const [saved, setSaved] = useState(false);
   const [myCodeOpen, setMyCodeOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   useEffect(() => {
     if (profile) setDisplayName(profile.display_name ?? '');
@@ -139,6 +141,23 @@ export default function ProfileScreen() {
         <DisplaySettings />
       </View>
 
+      {/* Le guide de démarrage se rejoue à volonté. Il n'est pas rangé avec
+          les liens de bas de page (Compte, Confidentialité) : ce n'est pas
+          une mention légale, c'est la porte de secours de quelqu'un qui ne
+          sait plus comment on range — elle doit se voir. */}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => setGuideOpen(true)}
+        className="mt-8 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+      >
+        <Icon name="guide" size={22} color={colors.accentDark} />
+        <View className="flex-1">
+          <Text className="text-label font-semibold text-ink">{t('onboarding.replay')}</Text>
+          <Text className="mt-0.5 text-caption text-ink-soft">{t('onboarding.entry_hint')}</Text>
+        </View>
+        <Icon name="chevron" size={20} color={colors.inkFaint} />
+      </Pressable>
+
       <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
       <Pressable
         accessibilityRole="button"
@@ -216,6 +235,8 @@ export default function ProfileScreen() {
       </Text>
 
       <ShareInviteModal visible={shareModalOpen} onClose={() => setShareModalOpen(false)} />
+
+      <OnboardingGuide visible={guideOpen} onClose={() => setGuideOpen(false)} />
     </ScrollView>
   );
 }

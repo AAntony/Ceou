@@ -2,7 +2,7 @@ import { focusManager, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
@@ -15,6 +15,7 @@ import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
 import { queryClient } from '../src/lib/queryClient';
+import { SplashGateProvider, useSplashGate } from '../src/lib/splashGate';
 import { TextScaleProvider } from '../src/lib/textScale';
 import { ThemeProvider } from '../src/lib/theme';
 import '../global.css';
@@ -54,7 +55,9 @@ function AuthedTabBar() {
 
 function AppShell() {
   const { isLoading } = useSession();
-  const [splashDone, setSplashDone] = useState(false);
+  // La fin du splash n'est plus un état privé : le guide de démarrage doit la
+  // connaître pour ne pas ouvrir sa fenêtre par-dessus (voir lib/splashGate).
+  const { splashDone, markSplashDone } = useSplashGate();
   const nativeHidden = useRef(false);
 
   // BRANCHEMENT INDISPENSABLE SUR MOBILE. TanStack Query sait rafraîchir ses
@@ -97,7 +100,7 @@ function AppShell() {
 
       {/* En dernier : c'est un calque, il doit passer au-dessus du reste. */}
       {splashDone ? null : (
-        <AnimatedSplash ready={!isLoading} onFinish={() => setSplashDone(true)} onPainted={hideNativeSplash} />
+        <AnimatedSplash ready={!isLoading} onFinish={markSplashDone} onPainted={hideNativeSplash} />
       )}
     </>
   );
@@ -116,7 +119,11 @@ export default function RootLayout() {
                 Tailwind de l'app. */}
             <TextScaleProvider>
               <SessionProvider>
-                <AppShell />
+                {/* Autour d'AppShell, qui pose le signal, et de tous les
+                    écrans, qui le lisent. */}
+                <SplashGateProvider>
+                  <AppShell />
+                </SplashGateProvider>
               </SessionProvider>
             </TextScaleProvider>
           </ThemeProvider>

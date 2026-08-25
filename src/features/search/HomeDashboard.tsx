@@ -8,6 +8,8 @@ import { Icon } from '../../components/Icon';
 import { GuestBanner } from '../auth/GuestBanner';
 import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
+import { OnboardingGuide } from '../onboarding/OnboardingGuide';
+import { useOnboardingLaunch } from '../onboarding/useOnboarding';
 import { useProfile } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
@@ -238,6 +240,31 @@ function HomeHeader({
   );
 }
 
+// L'INVITATION AU GUIDE, posée dans l'écran vide de l'accueil.
+//
+// C'est le rattrapage de ceux qui ont répondu « plus tard » : le guide ne
+// s'ouvre plus tout seul, mais il reste à portée là où le manque se fait
+// sentir. Elle disparaît dès qu'une habitation existe — à ce moment-là,
+// l'accueil vide veut dire « aucun objet », plus « je ne sais pas commencer ».
+function GuideInvite({ onPress }: { onPress: () => void }) {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      className="flex-row items-center gap-3 rounded-2xl border-2 border-coral bg-coral-light px-4 py-4 active:opacity-70"
+    >
+      <Icon name="guide" size={26} color={colors.accentDark} />
+      <View className="flex-1">
+        <Text className="text-body font-bold text-coral-dark">{t('onboarding.entry_title')}</Text>
+        <Text className="mt-0.5 text-label text-coral-dark/80">{t('onboarding.entry_hint')}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export function HomeDashboard() {
   const { t } = useTranslation();
   // Grossissement REEL du texte : choix dans l'app x reglage du telephone.
@@ -290,6 +317,9 @@ export function HomeDashboard() {
   // dictees courtes restent une recherche texte, sans appel IA (voir
   // DIRECT_SEARCH_MAX_WORDS).
   const voiceSearch = useAssistant();
+  // Le guide de démarrage : il s'ouvre de lui-même à la toute première
+  // utilisation, et reste ensuite accessible depuis l'écran vide ci-dessous.
+  const onboarding = useOnboardingLaunch();
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -402,7 +432,11 @@ export function HomeDashboard() {
           isError ? (
             <ErrorState onRetry={() => refetch()} />
           ) : !isLoading ? (
-            <EmptyState icon="search" title={trimmedSearch ? t('home.no_results') : t('home.empty')} />
+            <EmptyState
+              icon="search"
+              title={trimmedSearch ? t('home.no_results') : t('home.empty')}
+              action={!trimmedSearch && onboarding.canOffer ? <GuideInvite onPress={onboarding.start} /> : undefined}
+            />
           ) : null
         }
       />
@@ -450,6 +484,11 @@ export function HomeDashboard() {
       {/* Montée ici plutôt que dans AppTabBar : l'ajout "depuis n'importe où"
           n'existe plus, il appartient maintenant à cet écran. */}
       <AddObjetModal visible={addObjetOpen} onClose={() => setAddObjetOpen(false)} />
+
+      {/* Le guide de démarrage. Il vit ICI et pas à la racine parce que
+          l'écran d'accueil est exactement l'endroit où quelqu'un qui découvre
+          l'app se retrouve bloqué : une recherche, et rien à chercher. */}
+      <OnboardingGuide visible={onboarding.open} onClose={onboarding.close} />
 
       {/* Au-dessus de la barre d'onglets, dans la zone du pouce : la
           pastille micro vivait dans le champ de recherche, tout en haut de

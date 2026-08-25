@@ -198,6 +198,87 @@
     "voice_search_error": "Speech recognition didn't work. Try again.",
     "add_objet": "Add an item"
   },
+  "onboarding": {
+    "entry_title": "Discover Céoù",
+    "entry_hint": "A two-minute guide to putting your first item away.",
+    "replay": "Replay the getting-started guide",
+    "skip": "Skip",
+    "welcome": {
+      "title": "Never find anything?",
+      "body": "Céoù notes where you put your things. The day you look for them, it tells you exactly where they are.",
+      "body2": "Shall we do it together? Two minutes, and you are really putting things away.",
+      "start": "Let's go",
+      "later": "Later"
+    },
+    "principle": {
+      "title": "How it works",
+      "intro": "Your things live somewhere: in a home, in a room, in a piece of furniture, sometimes in a box.",
+      "levels": {
+        "habitation": {
+          "example": "House",
+          "role": "your home"
+        },
+        "piece": {
+          "example": "Kitchen",
+          "role": "a room"
+        },
+        "emplacement": {
+          "example": "Dresser",
+          "role": "a storage spot: furniture, a shelf, a cupboard"
+        },
+        "conteneur": {
+          "example": "Box",
+          "role": "sometimes, a box inside"
+        },
+        "objet": {
+          "example": "Scissors",
+          "role": "your item"
+        }
+      },
+      "outro": "Céoù nests these places one inside the other and remembers the whole path. All you have to do is ask where your scissors are.",
+      "next": "Got it"
+    },
+    "habitation": {
+      "title": "Let's start with your home",
+      "hint": "The big container: everything else will live inside it.",
+      "existing_title": "You already have one",
+      "presets_title": "Or create it now",
+      "foot": "A garage, a cellar or a car can be added later, from Homes."
+    },
+    "piece": {
+      "title": "One room, to begin with",
+      "hint": "Pick the one where you store the most. You can add the others whenever you like.",
+      "existing_title": "Rooms you already have",
+      "presets_title": "Or create one"
+    },
+    "emplacement": {
+      "title": "Where do you store things, in that room?",
+      "hint": "A piece of furniture, a shelf, a cupboard: that is what Céoù calls a storage spot.",
+      "existing_title": "Storage spots you already have",
+      "presets_title": "Or create one"
+    },
+    "conteneur": {
+      "title": "And in there, a box?",
+      "hint": "An item is sometimes inside a box, a basket, a suitcase. Céoù can remember that too — but it is optional.",
+      "existing_title": "Boxes you already have",
+      "presets_title": "Or create one",
+      "skip": "No, none of that"
+    },
+    "objet": {
+      "title": "Your first item",
+      "hint": "Something you often look for: the scissors, the charger, the car papers...",
+      "name_label": "Its name",
+      "name_placeholder": "Scissors",
+      "submit": "Put it away here"
+    },
+    "done": {
+      "title": "All tidied up!",
+      "search_hint": "Next time you look for {{name}}, type its name on the home screen. Here is what Céoù will answer:",
+      "voice_hint": "You can also tap the microphone and ask out loud: \"where are my scissors?\"",
+      "next_steps": "Over to you: add your other rooms, your other storage spots, and everything you put inside them. The more Céoù knows, the more time it saves you.",
+      "finish": "See my inventory"
+    }
+  },
   "assistant": {
     "thinking": "Looking…",
     "replay": "Play again",
