@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -37,6 +38,7 @@ import {
   useHabitations,
   usePieces,
 } from '../inventory/queries';
+import { useCreateStarterPlan, type StarterPlan } from '../plans/queries';
 import { ChoiceStep, type ChoiceOption } from './ChoiceStep';
 import { PathRail, levelChipClass, useLevelColor, type RailItem } from './PathRail';
 import { Pop } from './Pop';
@@ -74,8 +76,28 @@ import type { LocationType } from '../../types/database';
 // - Le CONTENEUR est une question, pas une étape obligatoire. Tout le monde
 //   n'a pas de boîte dans son tiroir, et demander « et dans ce rangement, une
 //   boîte ? » enseigne la notion mieux qu'un écran de plus.
+//
+// LE CYCLE VA JUSQU'AU PLAN, et s'arrêter à l'objet le laissait à moitié
+// raconté : Céoù ne sert pas qu'à écrire où sont les choses, il sait les
+// MONTRER. Le plan est pourtant le seul maillon qui demande normalement de
+// dessiner — perdre quelqu'un là, juste avant la récompense, serait le pire
+// endroit. Le guide pose donc le plan pour elle (useCreateStarterPlan) et lui
+// laisse le seul geste qui compte pour la suite : appuyer sur « Voir sur le
+// plan » depuis la fiche de son objet. C'est pour ça que la dernière étape ne
+// téléporte pas vers le plan — elle dépose sur la fiche, bouton mis en
+// évidence, et laisse faire.
 
-const STEPS = ['welcome', 'principle', 'habitation', 'piece', 'emplacement', 'conteneur', 'objet', 'done'] as const;
+const STEPS = [
+  'welcome',
+  'principle',
+  'habitation',
+  'piece',
+  'emplacement',
+  'conteneur',
+  'objet',
+  'plan',
+  'done',
+] as const;
 type StepId = (typeof STEPS)[number];
 
 type PickedHabitation = { id: string; name: string; icon: IconName; type: string };
@@ -99,6 +121,7 @@ export function OnboardingGuide({ visible, onClose }: OnboardingGuideProps) {
   const [emplacement, setEmplacement] = useState<Picked | null>(null);
   const [conteneur, setConteneur] = useState<Picked | null>(null);
   const [objet, setObjet] = useState<Picked | null>(null);
+  const [plan, setPlan] = useState<StarterPlan | null>(null);
 
   useEffect(() => {
     if (!visible) return;
@@ -108,6 +131,7 @@ export function OnboardingGuide({ visible, onClose }: OnboardingGuideProps) {
     setEmplacement(null);
     setConteneur(null);
     setObjet(null);
+    setPlan(null);
   }, [visible]);
 
   // Une seule zone défilante pour tout le guide : sans remise à zéro, une
@@ -135,7 +159,9 @@ export function OnboardingGuide({ visible, onClose }: OnboardingGuideProps) {
   if (conteneur) rail.push({ level: 'conteneur', icon: conteneur.icon, label: conteneur.name });
   if (objet) rail.push({ level: 'objet', icon: 'objet', label: objet.name });
 
-  const canGoBack = step !== 'welcome' && step !== 'done';
+  // Pas de retour depuis l'étape du plan : l'objet est créé, et revenir en
+  // arrière n'offrirait qu'un formulaire vide où en créer un second.
+  const canGoBack = step !== 'welcome' && step !== 'plan' && step !== 'done';
   const back = () => {
     if (step === 'principle') setStep('welcome');
     else if (step === 'habitation') setStep('principle');
@@ -200,7 +226,7 @@ export function OnboardingGuide({ visible, onClose }: OnboardingGuideProps) {
             />
           </View>
 
-          {step === 'welcome' || step === 'done' ? (
+          {step === 'welcome' || step === 'plan' || step === 'done' ? (
             <View style={{ width: spacerWidth }} />
           ) : (
             <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8}>
@@ -284,12 +310,34 @@ export function OnboardingGuide({ visible, onClose }: OnboardingGuideProps) {
               parentId={conteneur ? conteneur.id : emplacement.id}
               onCreated={(picked) => {
                 setObjet(picked);
-                setStep('done');
+                setStep('plan');
               }}
             />
           ) : null}
 
-          {step === 'done' && objet ? <DoneStep objetName={objet.name} path={pathText} onFinish={onClose} /> : null}
+          {step === 'plan' && habitation && piece && emplacement ? (
+            <PlanStep
+              habitationId={habitation.id}
+              pieceId={piece.id}
+              pieceName={piece.hidden ? habitation.name : piece.name}
+              emplacement={emplacement}
+              onCreated={(created) => {
+                setPlan(created);
+                setStep('done');
+              }}
+              onSkip={() => setStep('done')}
+            />
+          ) : null}
+
+          {step === 'done' && objet ? (
+            <DoneStep
+              objetId={objet.id}
+              objetName={objet.name}
+              path={pathText}
+              hasPlan={!!plan}
+              onFinish={onClose}
+            />
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
@@ -723,11 +771,123 @@ function ObjetStep({
   );
 }
 
-// === Étape 8 : la récompense ==========================================
+// === Étape 8 : le plan ================================================
 
-function DoneStep({ objetName, path, onFinish }: { objetName: string; path: string; onFinish: () => void }) {
+function PlanStep({
+  habitationId,
+  pieceId,
+  pieceName,
+  emplacement,
+  onCreated,
+  onSkip,
+}: {
+  habitationId: string;
+  pieceId: string;
+  pieceName: string;
+  emplacement: Picked;
+  onCreated: (created: StarterPlan) => void;
+  onSkip: () => void;
+}) {
+  const { t } = useTranslation();
+  const levelColor = useLevelColor();
+  const createStarterPlan = useCreateStarterPlan();
+  // La maquette est dessinée en points, hors de portée de `rem` : elle suit
+  // le réglage de taille pour ne pas devenir un timbre-poste.
+  const mockHeight = useScaled(140);
+
+  const handleCreate = async () => {
+    try {
+      const created = await createStarterPlan.mutateAsync({
+        habitationId,
+        pieceId,
+        emplacementId: emplacement.id,
+        name: t('onboarding.plan.default_name'),
+      });
+      onCreated(created);
+    } catch (err) {
+      logClientError(err, { source: 'onboarding', step: 'plan' });
+      Alert.alert(t('common.error_generic'));
+    }
+  };
+
+  return (
+    <View>
+      <Text className="mb-1 text-title font-bold text-ink">{t('onboarding.plan.title')}</Text>
+      <Text className="mb-5 text-body text-ink-soft">{t('onboarding.plan.hint')}</Text>
+
+      {/* UN SCHÉMA, PAS UNE CAPTURE. Il reprend les couleurs du fil du haut —
+          la pièce en vert, le rangement en jaune — pour que « la case, c'est
+          ta pièce ; la pastille, c'est ton rangement » se lise sans une seule
+          phrase d'explication. Il porte d'ailleurs les VRAIS noms : c'est son
+          logement qui est dessiné là, pas un exemple. */}
+      <View className="mb-4 rounded-2xl border border-ink/10 bg-surface p-3">
+        <View
+          style={{ height: mockHeight }}
+          className={`items-center justify-center rounded-xl ${levelChipClass('piece')}`}
+        >
+          <Text className="text-label font-bold text-teal-dark">{pieceName}</Text>
+          {/* La puce : une carte claire cernée de la couleur du niveau
+              « rangement ». Un fond teinté par-dessus la pièce déjà teintée
+              ne se lirait pas — et deux classes de fond concurrentes sur la
+              même vue ne veulent rien dire. */}
+          <View className="mt-3 flex-row items-center gap-1.5 rounded-lg border-2 border-mustard-dark bg-surface px-2 py-1">
+            <Icon name={emplacement.icon} size={14} color={levelColor('emplacement')} />
+            <Text className="text-caption font-semibold text-mustard-dark">{emplacement.name}</Text>
+          </View>
+        </View>
+      </View>
+
+      <Text className="mb-6 text-label text-ink-soft">{t('onboarding.plan.foot')}</Text>
+
+      <Button
+        label={t('onboarding.plan.create')}
+        onPress={handleCreate}
+        loading={createStarterPlan.isPending}
+      />
+      <View className="mt-2">
+        <Button
+          label={t('onboarding.plan.skip')}
+          variant="ghost"
+          onPress={onSkip}
+          disabled={createStarterPlan.isPending}
+        />
+      </View>
+    </View>
+  );
+}
+
+// === Étape 9 : la récompense ==========================================
+
+function DoneStep({
+  objetId,
+  objetName,
+  path,
+  hasPlan,
+  onFinish,
+}: {
+  objetId: string;
+  objetName: string;
+  path: string;
+  hasPlan: boolean;
+  onFinish: () => void;
+}) {
   const { t } = useTranslation();
   const colors = useThemeColors();
+
+  // Fermer PUIS naviguer : le guide se marque comme vu, et la fiche apparaît
+  // sous la fenêtre qui s'efface. Le paramètre est ce qui fait clignoter le
+  // bouton « Voir sur le plan » à l'arrivée — sans lui, la dernière consigne
+  // reviendrait à chercher un bouton dont on ignore l'existence.
+  const openObjet = () => {
+    onFinish();
+    router.push(`/objet/${objetId}?highlightPlanLink=1`);
+  };
+
+  const cycle = [
+    { icon: 'search' as IconName, text: t('onboarding.done.cycle_search') },
+    { icon: 'objet' as IconName, text: t('onboarding.done.cycle_sheet') },
+    { icon: 'plan' as IconName, text: t('onboarding.done.cycle_plan') },
+  ];
 
   return (
     <View>
@@ -771,9 +931,35 @@ function DoneStep({ objetName, path, onFinish }: { objetName: string; path: stri
         <Text className="flex-1 text-label text-teal-dark">{t('onboarding.done.voice_hint')}</Text>
       </View>
 
-      <Text className="mb-6 text-body text-ink-soft">{t('onboarding.done.next_steps')}</Text>
+      {/* LE CYCLE COMPLET, en trois lignes, et seulement si le plan existe —
+          sinon la troisième promettrait un bouton qui n'apparaîtra pas. */}
+      {hasPlan ? (
+        <View className="mb-6 rounded-2xl bg-sand-dark px-4 py-4">
+          <Text className="mb-3 text-label font-bold text-ink">{t('onboarding.done.cycle_title')}</Text>
+          {cycle.map((entry, index) => (
+            <View key={entry.icon} className="mb-2 flex-row items-start gap-3">
+              <View className="h-7 w-7 items-center justify-center rounded-full bg-surface">
+                <Text className="text-caption font-bold text-ink-soft">{index + 1}</Text>
+              </View>
+              <Icon name={entry.icon} size={18} color={colors.inkSoft} />
+              <Text className="flex-1 text-label text-ink">{entry.text}</Text>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text className="mb-6 text-body text-ink-soft">{t('onboarding.done.next_steps')}</Text>
+      )}
 
-      <Button label={t('onboarding.done.finish')} onPress={onFinish} />
+      {hasPlan ? (
+        <>
+          <Button label={t('onboarding.done.try_it')} onPress={openObjet} />
+          <View className="mt-2">
+            <Button label={t('onboarding.done.finish')} variant="ghost" onPress={onFinish} />
+          </View>
+        </>
+      ) : (
+        <Button label={t('onboarding.done.finish')} onPress={onFinish} />
+      )}
     </View>
   );
 }

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
+import { nextPinSlot } from './pinSlots';
 import { clampPositionToWorld } from './snap';
 import type { Plan, PlanDoor, PlanForme, PlanPin } from '../../types/database';
 import type { DoorEdge } from './types';
@@ -182,6 +183,139 @@ export function usePieceLocationOnPlan(pieceId: string) {
       if (error) throw error;
       return data ? { planId: data.plan_id, formeId: data.id } : null;
     },
+  });
+}
+
+// Une pièce de départ un peu plus grande que celle qu'on ajoute à la main
+// (DEFAULT_SHAPE_SIZE, 80×80) : elle est SEULE sur la feuille, et elle doit
+// accueillir tout de suite une puce d'Emplacement sans que les deux se
+// marchent dessus. Proportions d'une pièce des gabarits (voir templates.ts).
+const STARTER_ROOM_WIDTH = 220;
+const STARTER_ROOM_HEIGHT = 180;
+
+export type StarterPlan = { planId: string; formeId: string };
+
+/**
+ * Pose d'un seul geste le plan minimal qui rend « Voir sur le plan » utile :
+ * un plan, la Pièce dessinée dessus, et la puce de l'Emplacement dedans.
+ *
+ * Sert au guide de démarrage. Le plan est le dernier maillon du cycle qu'il
+ * enseigne (chercher → la fiche → le plan), mais c'est aussi le seul qui
+ * demande normalement de dessiner : demander ça à quelqu'un qui découvre
+ * l'app le perdrait juste avant la récompense. Le guide le fait donc pour
+ * elle, et lui laisse le geste qui compte — appuyer sur « Voir sur le plan ».
+ *
+ * TOUT EST RÉUTILISÉ SI ÇA EXISTE DÉJÀ, et ce n'est pas une politesse : le
+ * guide se rejoue depuis le Profil, sur un inventaire parfois complet. Une
+ * deuxième forme pour la même Pièce rendrait « Voir sur le plan » ambigu
+ * (il prend la première), et une deuxième puce pour le même Emplacement
+ * serait carrément refusée par la base — plan_pins porte une contrainte
+ * d'unicité sur emplacement_id.
+ */
+export function useCreateStarterPlan() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: {
+      habitationId: string;
+      pieceId: string;
+      emplacementId: string;
+      /** Nom du plan s'il faut en créer un. */
+      name: string;
+    }): Promise<StarterPlan> => {
+      // 1. La pièce est-elle déjà dessinée quelque part ? Si oui c'est CE
+      // plan-là qu'il faut ouvrir, pas un nouveau.
+      const { data: existingForme, error: formeLookupError } = await supabase
+        .from('plan_formes')
+        .select('id, plan_id')
+        .eq('piece_id', input.pieceId)
+        .limit(1)
+        .maybeSingle();
+      if (formeLookupError) throw formeLookupError;
+
+      let planId = existingForme?.plan_id ?? null;
+      let formeId = existingForme?.id ?? null;
+
+      if (!planId) {
+        const { data: plans, error: plansError } = await supabase
+          .from('plans')
+          .select('id')
+          .eq('habitation_id', input.habitationId)
+          .order('floor_order');
+        if (plansError) throw plansError;
+
+        if (plans && plans.length > 0) {
+          planId = plans[0].id;
+        } else {
+          const { data: plan, error: planError } = await supabase
+            .from('plans')
+            .insert({ habitation_id: input.habitationId, name: input.name, floor_order: 0 })
+            .select()
+            .single();
+          if (planError) throw planError;
+          planId = plan.id;
+        }
+      }
+
+      if (!formeId) {
+        const { x, y } = clampPositionToWorld(
+          WORLD_WIDTH / 2 - STARTER_ROOM_WIDTH / 2,
+          WORLD_HEIGHT / 2 - STARTER_ROOM_HEIGHT / 2,
+          STARTER_ROOM_WIDTH,
+          STARTER_ROOM_HEIGHT,
+        );
+        const { data: forme, error: formeError } = await supabase
+          .from('plan_formes')
+          .insert({
+            plan_id: planId,
+            shape_type: 'rectangle',
+            piece_id: input.pieceId,
+            x,
+            y,
+            width: STARTER_ROOM_WIDTH,
+            height: STARTER_ROOM_HEIGHT,
+          })
+          .select()
+          .single();
+        if (formeError) throw formeError;
+        formeId = forme.id;
+      }
+
+      // 2. La puce de l'Emplacement. Absente, elle est posée sur le premier
+      // créneau libre de la pièce plutôt qu'en son centre, où elle
+      // recouvrirait le nom.
+      const { data: existingPin, error: pinLookupError } = await supabase
+        .from('plan_pins')
+        .select('id')
+        .eq('emplacement_id', input.emplacementId)
+        .limit(1)
+        .maybeSingle();
+      if (pinLookupError) throw pinLookupError;
+
+      if (!existingPin) {
+        const { data: siblings, error: siblingsError } = await supabase
+          .from('plan_pins')
+          .select('id')
+          .eq('forme_id', formeId);
+        if (siblingsError) throw siblingsError;
+
+        const slot = nextPinSlot(siblings?.length ?? 0);
+        const { error: pinError } = await supabase.from('plan_pins').insert({
+          plan_id: planId,
+          forme_id: formeId,
+          emplacement_id: input.emplacementId,
+          rel_x: slot.relX,
+          rel_y: slot.relY,
+        });
+        if (pinError) throw pinError;
+      }
+
+      return { planId, formeId };
+    },
+    // Large à dessein : ce seul geste crée un plan, une forme et une puce, et
+    // fait apparaître le lien « Voir sur le plan » sur les fiches objet de
+    // toute la pièce.
+    onSuccess: () => queryClient.invalidateQueries(),
   });
 }
 

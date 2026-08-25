@@ -271,12 +271,25 @@
       "name_placeholder": "Ciseaux",
       "submit": "Le ranger ici"
     },
+    "plan": {
+      "title": "Et sur un plan ?",
+      "hint": "Céoù sait aussi dessiner ton logement. Chaque pièce devient une case, chaque rangement une pastille dedans — et tu vois où est ton objet d'un seul coup d'œil.",
+      "foot": "Je pose ta pièce et ton rangement pour toi. Tu ajouteras les autres quand tu voudras, en les déplaçant du doigt.",
+      "create": "Dessine-le pour moi",
+      "skip": "Plus tard",
+      "default_name": "Rez-de-chaussée"
+    },
     "done": {
       "title": "C'est rangé !",
       "search_hint": "La prochaine fois que tu cherches {{name}}, tape son nom sur l’accueil. Voilà ce que Céoù te répondra :",
       "voice_hint": "Tu peux aussi appuyer sur le micro et demander à voix haute : « où sont mes ciseaux ? »",
       "next_steps": "À toi de jouer : ajoute tes autres pièces, tes autres rangements, et tout ce que tu mets dedans. Plus Céoù en sait, plus il te fait gagner du temps.",
-      "finish": "Voir mon inventaire"
+      "finish": "Voir mon inventaire",
+      "cycle_title": "Le tour est bouclé",
+      "cycle_search": "Tu tapes le nom de ton objet sur l'accueil.",
+      "cycle_sheet": "Tu ouvres sa fiche : elle dit où il est rangé.",
+      "cycle_plan": "Tu appuies sur « Voir sur le plan », et tu le vois dans ta pièce.",
+      "try_it": "Essayons : ouvre sa fiche"
     }
   },
   "assistant": {
@@ -589,7 +602,8 @@
       "history_empty": "Aucun déplacement pour l'instant.",
       "delete_confirm_title": "Supprimer cet objet ?",
       "delete_confirm_message": "Cette action est irréversible.",
-      "view_on_plan": "Voir sur le plan"
+      "view_on_plan": "Voir sur le plan",
+      "view_on_plan_hint": "Appuie ici pour le voir sur le plan."
     },
     "aiScan": {
       "title": "Scanner des objets",

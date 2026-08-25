@@ -271,12 +271,25 @@
       "name_placeholder": "Scissors",
       "submit": "Put it away here"
     },
+    "plan": {
+      "title": "And on a plan?",
+      "hint": "Céoù can also draw your home. Each room becomes a box, each storage spot a badge inside it — and you see where your item is at a glance.",
+      "foot": "I will place your room and your storage spot for you. You can add the others whenever you like, by dragging them around.",
+      "create": "Draw it for me",
+      "skip": "Later",
+      "default_name": "Ground floor"
+    },
     "done": {
       "title": "All tidied up!",
       "search_hint": "Next time you look for {{name}}, type its name on the home screen. Here is what Céoù will answer:",
       "voice_hint": "You can also tap the microphone and ask out loud: \"where are my scissors?\"",
       "next_steps": "Over to you: add your other rooms, your other storage spots, and everything you put inside them. The more Céoù knows, the more time it saves you.",
-      "finish": "See my inventory"
+      "finish": "See my inventory",
+      "cycle_title": "Full circle",
+      "cycle_search": "You type your item name on the home screen.",
+      "cycle_sheet": "You open its sheet: it says where the item is stored.",
+      "cycle_plan": "You tap \"View on plan\", and you see it inside your room.",
+      "try_it": "Let's try: open its sheet"
     }
   },
   "assistant": {
@@ -589,7 +602,8 @@
       "history_empty": "No move yet.",
       "delete_confirm_title": "Delete this item?",
       "delete_confirm_message": "This action cannot be undone.",
-      "view_on_plan": "View on plan"
+      "view_on_plan": "View on plan",
+      "view_on_plan_hint": "Tap here to see it on the plan."
     },
     "aiScan": {
       "title": "Scan items",

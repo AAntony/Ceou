@@ -22,7 +22,10 @@ import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 export default function ObjetScreen() {
   const refreshControl = usePullToRefresh();
   const colors = useThemeColors();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `highlightPlanLink` est posé par le guide de démarrage, qui vient de
+  // dessiner le plan et dépose la personne ici : c'est elle qui doit faire le
+  // dernier geste du cycle, encore faut-il qu'elle voie où.
+  const { id, highlightPlanLink } = useLocalSearchParams<{ id: string; highlightPlanLink?: string }>();
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: objet, isLoading, isError, refetch } = useObjet(id);
@@ -127,7 +130,7 @@ export default function ObjetScreen() {
         </View>
 
         <LocationBreadcrumb objetId={id} />
-        <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} />
+        <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} emphasis={!!highlightPlanLink} />
 
         <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} editable={editable} />
         <TextField

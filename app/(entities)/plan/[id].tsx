@@ -8,7 +8,7 @@ import { Icon, type IconName } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
 import { PlanCanvas, type PlanCanvasHandle } from '../../../src/features/plans/PlanCanvas';
-import { nextPinSlot } from '../../../src/features/plans/PlanPinLayer';
+import { nextPinSlot } from '../../../src/features/plans/pinSlots';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
 import { UnplacedEmplacementsBar } from '../../../src/features/plans/UnplacedEmplacementsBar';
 import {

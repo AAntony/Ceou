@@ -6,6 +6,7 @@ import type { IconName } from '../../components/Icon';
 import type { PlanPin } from '../../types/database';
 import { useThemeColors } from '../../lib/theme';
 import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
+import type { RelPosition } from './pinSlots';
 import type { ShapeGeometry } from './types';
 
 // === La puce d'un Emplacement ============================================
@@ -48,30 +49,6 @@ function pinLabel(name: string, maxChars: number | null): string {
   const trimmed = name.trim();
   if (maxChars === null || trimmed.length <= maxChars) return trimmed;
   return `${trimmed.slice(0, maxChars).trimEnd()}.`;
-}
-
-type RelPosition = { relX: number; relY: number };
-
-// Où poser une puce qu'on vient d'ajouter. Toutes arrivaient au centre exact
-// de la pièce (0.5 / 0.5) : elles s'empilaient donc les unes sur les autres,
-// ET sur le nom de la pièce écrit à cet endroit précis. Deux ajouts de suite
-// donnaient une seule puce visible. Les emplacements ci-dessous s'écartent du
-// centre et se répartissent, quitte à être ensuite glissés là où ils sont
-// vraiment.
-const PIN_SLOTS: RelPosition[] = [
-  { relX: 0.5, relY: 0.7 },
-  { relX: 0.25, relY: 0.7 },
-  { relX: 0.75, relY: 0.7 },
-  { relX: 0.25, relY: 0.28 },
-  { relX: 0.75, relY: 0.28 },
-  { relX: 0.5, relY: 0.28 },
-  { relX: 0.25, relY: 0.92 },
-  { relX: 0.5, relY: 0.92 },
-  { relX: 0.75, relY: 0.92 },
-];
-
-export function nextPinSlot(alreadyPlaced: number): RelPosition {
-  return PIN_SLOTS[alreadyPlaced % PIN_SLOTS.length];
 }
 
 type PlanPinLayerProps = {
