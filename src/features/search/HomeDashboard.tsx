@@ -1,15 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Animated,
-  Easing,
   FlatList,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-  type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from 'react-native';
@@ -92,63 +89,37 @@ const COLUMN_WRAPPER = { gap: 9 };
 // clignoter le bloc dès qu'un doigt s'arrête pile dessus.
 const GREETING_COLLAPSE_OFFSET = 24;
 const GREETING_EXPAND_OFFSET = 4;
-const GREETING_DURATION_MS = 180;
 
 /**
  * Le bloc d'accueil, replié au défilement.
  *
- * Sa hauteur est MESURÉE et non écrite : elle dépend du réglage de taille du
- * texte, de la longueur du prénom, du repli de la phrase sur deux lignes.
- * La mesure vient d'un View intérieur, jamais comprimé — prise sur le bloc
- * animé lui-même, elle tomberait à zéro à la première fermeture et le bloc ne
- * reviendrait plus.
+ * PAS D'ANIMATION, ET PAS DE MESURE. La première version fondait la hauteur
+ * d'une valeur mesurée à zéro : elle se repliait bien, et ne revenait jamais
+ * (retour utilisateur du 2026-08-26). La mesure était prise pendant que le
+ * bloc était déjà replié, donc valait zéro, et l'interpolation « de 0 à 0 »
+ * n'avait plus rien à rouvrir.
+ *
+ * `height: undefined` quand il est ouvert, c'est-à-dire AUCUNE contrainte :
+ * le bloc prend sa hauteur naturelle, quelle que soit la taille du texte ou
+ * la longueur du prénom. Rien à mesurer, donc rien à corrompre. Le repli est
+ * net plutôt que fondu — un fondu supposait justement de connaître la hauteur
+ * d'arrivée, et ce n'est pas un prix qui valait ce risque.
  */
 function CollapsibleGreeting({ greeting, collapsed }: { greeting: string; collapsed: boolean }) {
   const { t } = useTranslation();
-  const [height, setHeight] = useState<number | null>(null);
-  const progress = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.timing(progress, {
-      toValue: collapsed ? 0 : 1,
-      duration: GREETING_DURATION_MS,
-      easing: Easing.out(Easing.quad),
-      // `height` est une propriété de mise en page : le pilote natif ne sait
-      // pas l'animer, elle passe par le fil JS. Sans conséquence ici, cette
-      // animation ne joue qu'aux deux transitions, pas à chaque image du
-      // défilement.
-      useNativeDriver: false,
-    }).start();
-  }, [collapsed, progress]);
-
-  const handleLayout = (event: LayoutChangeEvent) => {
-    const next = event.nativeEvent.layout.height;
-    setHeight((current) => (current === next ? current : next));
-  };
 
   return (
-    <Animated.View
-      style={{
-        overflow: 'hidden',
-        opacity: progress,
-        // Tant que rien n'est mesuré, aucune hauteur imposée : le bloc prend
-        // la sienne, et l'écran s'affiche correctement au premier rendu.
-        height:
-          height === null
-            ? undefined
-            : progress.interpolate({ inputRange: [0, 1], outputRange: [0, height] }),
-      }}
+    <View
+      style={{ height: collapsed ? 0 : undefined, overflow: 'hidden' }}
       // Invisible veut dire absent : sans ça, un lecteur d'écran continuerait
       // d'annoncer une salutation que personne ne voit.
       accessibilityElementsHidden={collapsed}
       importantForAccessibility={collapsed ? 'no-hide-descendants' : 'auto'}
       pointerEvents={collapsed ? 'none' : 'auto'}
     >
-      <View onLayout={handleLayout}>
-        <Text className="text-title font-bold text-ink">{greeting}</Text>
-        <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
-      </View>
-    </Animated.View>
+      <Text className="text-title font-bold text-ink">{greeting}</Text>
+      <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
+    </View>
   );
 }
 
