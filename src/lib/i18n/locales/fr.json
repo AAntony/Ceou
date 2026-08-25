@@ -620,6 +620,8 @@
     "category_options": "Options de la catégorie {{name}}",
     "change_photo": "Changer la photo",
     "view_photo": "Voir la photo en grand",
-    "select_named": "Sélectionner {{name}}"
+    "select_named": "Sélectionner {{name}}",
+    "move_up_named": "Monter {{name}}",
+    "move_down_named": "Descendre {{name}}"
   }
 }

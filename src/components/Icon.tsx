@@ -92,7 +92,9 @@ export type IconName =
   | 'eye'
   | 'eyeOff'
   | 'theme'
-  | 'textSize';
+  | 'textSize'
+  | 'moveUp'
+  | 'moveDown';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -190,6 +192,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   qrcode: 'qrcode',
   // Reglages d'affichage du Profil.
   theme: 'theme-light-dark',
+  // Reordonner une liste : le niveau au-dessus, le niveau en dessous.
+  moveUp: 'chevron-up',
+  moveDown: 'chevron-down',
   textSize: 'format-size',
   share: 'share-variant',
   star: 'star',

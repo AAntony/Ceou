@@ -1,5 +1,5 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -18,6 +18,7 @@ import {
   useDeletePlanPin,
   usePlan,
   usePlanFormes,
+  usePlans,
   usePieceObjectCounts,
   useCreatePlanDoor,
   useDeletePlanDoor,
@@ -28,6 +29,7 @@ import {
   useUpdatePlanPin,
 } from '../../../src/features/plans/queries';
 import { ShapeInspectorSheet } from '../../../src/features/plans/ShapeInspectorSheet';
+import { PlanFloorSwitch } from '../../../src/features/plans/PlanFloorSwitch';
 import { PlanModeSwitch, type PlanMode } from '../../../src/features/plans/PlanModeSwitch';
 import { PlanPinSizeSwitch } from '../../../src/features/plans/PlanPinSizeSwitch';
 import { usePinSize } from '../../../src/features/plans/pinSize';
@@ -40,14 +42,34 @@ import type { PlanForme } from '../../../src/types/database';
 export default function PlanScreen() {
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
-  const { id, highlightFormeId, highlightEmplacementId } = useLocalSearchParams<{
+  const {
+    id: routePlanId,
+    highlightFormeId,
+    highlightEmplacementId,
+  } = useLocalSearchParams<{
     id: string;
     highlightFormeId?: string;
     highlightEmplacementId?: string;
   }>();
   const { t } = useTranslation();
+
+  // LE NIVEAU AFFICHÉ EST UN ÉTAT, PAS UNE ROUTE.
+  //
+  // Passer d'un étage à l'autre par le sélecteur ne navigue nulle part : on
+  // reste sur le même écran et on change de plan. Naviguer aurait empilé un
+  // écran par étage traversé (« retour » aurait alors remonté l'historique des
+  // étages au lieu de rendre la main à la liste), ou imposé une transition
+  // glissée à chaque appui — l'inverse d'un sélecteur de carte.
+  const [id, setId] = useState(routePlanId);
+  // La route peut changer sous nos pieds : « Voir sur le plan », depuis la
+  // fiche d'un objet, vise un plan précis alors qu'on en regarde peut-être
+  // déjà un autre.
+  useEffect(() => setId(routePlanId), [routePlanId]);
   const { data: plan, isLoading: planLoading, isError: planError, refetch } = usePlan(id);
   const { data: formes } = usePlanFormes(id);
+  // Les autres niveaux de la même habitation, dans l'ordre choisi depuis la
+  // liste des plans : c'est ce que propose le sélecteur d'étage.
+  const { data: siblingPlans } = usePlans(plan?.habitation_id ?? '');
   const { data: pieces } = usePieces(plan?.habitation_id ?? '');
   const { data: pins } = usePlanPins(id);
   const { data: doors } = usePlanDoors(id);
@@ -120,6 +142,29 @@ export default function PlanScreen() {
   const sheetPinDisplay = sheetPin ? (pinDisplay[sheetPin.emplacement_id] ?? null) : null;
   const selectedForme = (formes ?? []).find((f) => f.id === selectedFormeId) ?? null;
 
+  // CHANGER D'ÉTAGE RELÂCHE TOUT. Les sélections et les fiches ouvertes
+  // désignent des formes, des puces et des portes du niveau qu'on quitte :
+  // les garder afficherait une fiche sur un objet absent du plan. Le MODE,
+  // lui, survit — on monte souvent à l'étage pour continuer à faire la même
+  // chose.
+  const showFloor = (nextId: string) => {
+    if (nextId === id) return;
+    setId(nextId);
+    setSheetForme(null);
+    setSelectedFormeId(null);
+    setSheetPinId(null);
+    setSelectedPinId(null);
+    setSelectedDoorId(null);
+    setDoorPlacing(false);
+    setRoomSheetPieceId(null);
+  };
+
+  // Le surlignage vient de « Voir sur le plan » (fiche d'un objet) et ne vaut
+  // que pour le plan visé. Dès qu'on a changé d'étage, il ne désigne plus
+  // rien ici — et le laisser empêcherait en plus le cadrage initial du
+  // nouveau niveau, que le canevas suspend quand on lui désigne une pièce.
+  const onRoutePlan = id === routePlanId;
+
   if (planError) {
     return (
       <View className="flex-1 bg-sand">
@@ -146,6 +191,17 @@ export default function PlanScreen() {
         <Stack.Screen options={{ title: plan.name }} />
         <View className="flex-1 bg-sand">
           <PlanTemplatePicker planId={id} />
+          {/* Le sélecteur de niveau vit AUSSI ici : un étage encore vierge
+              amène sur cet écran-là, et sans lui il faudrait ressortir vers
+              la liste pour redescendre — exactement ce que le sélecteur
+              existe pour éviter. */}
+          <View
+            pointerEvents="box-none"
+            className="absolute right-3"
+            style={{ bottom: insets.bottom + 12 }}
+          >
+            <PlanFloorSwitch plans={siblingPlans ?? []} currentId={id} onSelect={showFloor} />
+          </View>
         </View>
       </>
     );
@@ -170,13 +226,20 @@ export default function PlanScreen() {
         <View className="flex-1 px-3 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
           <View className="flex-1">
             <PlanCanvas
+              // REMONTAGE VOLONTAIRE À CHAQUE CHANGEMENT D'ÉTAGE. Le canevas
+              // garde son zoom et sa position dans son propre état, et ne
+              // cadre le plan qu'une fois, au montage. Le remonter est donc
+              // exactement ce qui recadre le nouveau niveau — plutôt que
+              // d'hériter du cadrage de l'étage précédent, qui ne correspond
+              // à rien ici.
+              key={id}
               ref={canvasRef}
               formes={formes ?? []}
               pieceInfo={pieceInfo}
               pins={pins ?? []}
               pinDisplay={pinDisplay}
-              highlightFormeId={highlightFormeId}
-              highlightEmplacementId={highlightEmplacementId}
+              highlightFormeId={onRoutePlan ? highlightFormeId : undefined}
+              highlightEmplacementId={onRoutePlan ? highlightEmplacementId : undefined}
               selectedFormeId={selectedFormeId}
               roomCounts={roomCounts}
               readOnly={!editing}
@@ -246,6 +309,12 @@ export default function PlanScreen() {
                 voir son `flexShrink` et son ScrollView. */}
             <View pointerEvents="box-none" className="absolute bottom-3 left-3 right-3 top-3 justify-end gap-2">
               {hintOpen ? <HintCard editing={editing} onClose={() => setHintOpen(false)} /> : null}
+
+              {/* Juste au-dessus des deux boutons ronds, du même côté : la
+                  colonne des niveaux tombe ainsi dans la zone du pouce, et
+                  ne peut chevaucher ni la bascule du haut ni la fiche
+                  d'aide, puisque tout est empilé dans la même colonne. */}
+              <PlanFloorSwitch plans={siblingPlans ?? []} currentId={id} onSelect={showFloor} />
 
               <View pointerEvents="box-none" className="flex-row justify-end gap-2">
                 <RoundButton

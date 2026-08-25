@@ -60,6 +60,17 @@ type EntityRowProps = {
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   favoriteDisabled?: boolean;
+  /**
+   * Déplacer cette rangée dans une liste ORDONNÉE.
+   *
+   * Seuls les Plans le sont aujourd'hui : leur ordre est celui des étages, et
+   * c'est lui que reprend le sélecteur de niveau posé sur le plan. Passer
+   * `undefined` à l'un des deux (première ou dernière rangée) grise la flèche
+   * correspondante au lieu de la retirer — sans quoi les rangées n'auraient
+   * pas toutes la même largeur utile.
+   */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 };
 
 export function EntityRow({
@@ -76,6 +87,8 @@ export function EntityRow({
   isFavorite,
   onToggleFavorite,
   favoriteDisabled,
+  onMoveUp,
+  onMoveDown,
 }: EntityRowProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
@@ -118,6 +131,37 @@ export function EntityRow({
     </Pressable>
   ) : null;
 
+  // Les deux flèches d'ordre, en colonne serrée : elles disent « au-dessus »
+  // et « en dessous », ce qui est exactement le geste rendu. Rendues dès que
+  // l'une des deux existe, la manquante restant grisée à sa place.
+  const reorderButtons =
+    onMoveUp || onMoveDown ? (
+      <View className="mr-1">
+        <Pressable
+          onPress={onMoveUp}
+          disabled={!onMoveUp}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !onMoveUp }}
+          accessibilityLabel={t('a11y.move_up_named', { name: title })}
+          className={`px-1 ${onMoveUp ? 'active:opacity-60' : 'opacity-25'}`}
+        >
+          <Icon name="moveUp" size={20} color={colors.inkSoft} />
+        </Pressable>
+        <Pressable
+          onPress={onMoveDown}
+          disabled={!onMoveDown}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !onMoveDown }}
+          accessibilityLabel={t('a11y.move_down_named', { name: title })}
+          className={`px-1 ${onMoveDown ? 'active:opacity-60' : 'opacity-25'}`}
+        >
+          <Icon name="moveDown" size={20} color={colors.inkSoft} />
+        </Pressable>
+      </View>
+    ) : null;
+
   const media = thumbnail ?? (
     <Image
       source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
@@ -150,6 +194,7 @@ export function EntityRow({
             <Text className="text-body font-semibold text-ink">{title}</Text>
             {subtitle ? <Text className="mt-0.5 text-label text-ink-soft">{subtitle}</Text> : null}
           </View>
+          {reorderButtons}
           {onEdit ? (
             <Pressable
               onPress={onEdit}
@@ -201,6 +246,8 @@ export function EntityRow({
           </Text>
         ) : null}
       </View>
+
+      {reorderButtons}
 
       {onEdit ? (
         <Pressable

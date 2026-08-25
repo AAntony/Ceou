@@ -12,7 +12,7 @@ import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
 import { usePieces } from '../inventory/queries';
 import { roomColorForForme } from './constants';
 import { PlanThumbnail } from './PlanThumbnail';
-import { useCreatePlan, useDeletePlan, usePlanFormes, usePlans, useUpdatePlan } from './queries';
+import { useCreatePlan, useDeletePlan, usePlanFormes, usePlans, useReorderPlans, useUpdatePlan } from './queries';
 import type { Plan, PlanForme } from '../../types/database';
 
 type PlansListProps = {
@@ -31,6 +31,8 @@ function PlanRow({
   onOpen,
   onEdit,
   onDelete,
+  onMoveUp,
+  onMoveDown,
 }: {
   plan: Plan;
   pieceColors: Map<string, string>;
@@ -38,6 +40,8 @@ function PlanRow({
   onOpen: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   const { t } = useTranslation();
   const { data: formes } = usePlanFormes(plan.id);
@@ -61,6 +65,8 @@ function PlanRow({
       onPress={onOpen}
       onEdit={editable ? onEdit : undefined}
       onLongPress={editable ? onDelete : undefined}
+      onMoveUp={onMoveUp}
+      onMoveDown={onMoveDown}
     />
   );
 }
@@ -75,6 +81,7 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
   const createPlan = useCreatePlan(habitationId);
   const updatePlan = useUpdatePlan(habitationId);
   const deletePlan = useDeletePlan(habitationId);
+  const reorderPlans = useReorderPlans(habitationId);
   // Un plan se renomme et se supprime comme le reste de l'inventaire : les
   // gestes qui ecrivent suivent le meme droit que partout ailleurs.
   const { data: permission } = useHabitationPermission(habitationId);
@@ -82,6 +89,18 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [name, setName] = useState('');
+
+  // Deplacer un plan d'un cran : on renumerote la serie complete, ce qui
+  // repare au passage les rangs en double laisses par d'anciennes
+  // suppressions (voir useReorderPlans).
+  const move = (from: number, to: number) => {
+    const ids = (plans ?? []).map((plan) => plan.id);
+    if (to < 0 || to >= ids.length) return;
+    const next = [...ids];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    reorderPlans.mutate(next);
+  };
 
   const handleDelete = (id: string) => {
     confirmDelete(t, 'plans.delete_confirm_title', 'plans.delete_confirm_message', () => deletePlan.mutate(id));
@@ -114,7 +133,7 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
         ) : isEmpty ? (
           <EmptyState icon="plan" title={t('plans.empty')} />
         ) : (
-          plans?.map((plan) => (
+          plans?.map((plan, index) => (
             <PlanRow
               key={plan.id}
               plan={plan}
@@ -127,6 +146,12 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
                 setModalOpen(true);
               }}
               onDelete={() => handleDelete(plan.id)}
+              // L'ORDRE DE CETTE LISTE EST CELUI DES ÉTAGES : c'est lui que
+              // reprend, tel quel et de haut en bas, le sélecteur de niveau
+              // posé sur le plan. La personne range donc ses étages ici comme
+              // elle veut les retrouver là-bas.
+              onMoveUp={editable && index > 0 ? () => move(index, index - 1) : undefined}
+              onMoveDown={editable && index < (plans?.length ?? 0) - 1 ? () => move(index, index + 1) : undefined}
             />
           ))
         )}

@@ -50,6 +50,36 @@ export function useUpdatePlan(habitationId: string) {
   });
 }
 
+// L'ORDRE DES NIVEAUX, tel qu'il apparaît dans la liste ET dans le sélecteur
+// d'étage posé sur le plan : le même, de haut en bas. C'est la personne qui
+// décide si son grenier est en tête ou en queue.
+//
+// RENUMÉROTE TOUT plutôt que d'échanger deux valeurs. `floor_order` était
+// jusqu'ici l'indice de création (`existing.length`), ce qui laisse des trous
+// et des doublons dès qu'un plan est supprimé puis un autre créé — deux plans
+// à 2, et leur ordre devient celui que la base voudra. Réécrire la série
+// complète à chaque déplacement remet d'aplomb ce qui l'était mal, sans
+// migration ni réparation séparée.
+export function useReorderPlans(habitationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      await Promise.all(
+        orderedIds.map((id, index) =>
+          supabase
+            .from('plans')
+            .update({ floor_order: index })
+            .eq('id', id)
+            .then(({ error }) => {
+              if (error) throw error;
+            }),
+        ),
+      );
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['plans', habitationId] }),
+  });
+}
+
 export function useDeletePlan(habitationId: string) {
   const queryClient = useQueryClient();
   return useMutation({

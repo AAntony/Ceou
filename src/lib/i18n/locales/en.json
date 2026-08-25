@@ -620,6 +620,8 @@
     "category_options": "Options for category {{name}}",
     "change_photo": "Change photo",
     "view_photo": "View photo full screen",
-    "select_named": "Select {{name}}"
+    "select_named": "Select {{name}}",
+    "move_up_named": "Move {{name}} up",
+    "move_down_named": "Move {{name}} down"
   }
 }
