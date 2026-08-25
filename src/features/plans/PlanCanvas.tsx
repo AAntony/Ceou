@@ -202,7 +202,13 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // mur. Sans lui, on appuyait à l'aveugle et on découvrait où la porte était
   // tombée après coup — le reproche exact du dernier test.
   const [doorPreview, setDoorPreview] = useState<{ formeId: string; edge: DoorEdge; position: number } | null>(null);
+  // DEUX ROLES, DEUX SUPPORTS, et ce n'est pas une redondance :
+  //  - la ref garde « le cadrage a deja ete decide », lue et posee dans le
+  //    meme tour de boucle (un etat y serait perime) ;
+  //  - l'etat autorise la PEINTURE, et doit donc declencher un rendu.
+  // Les deux sont poses ensemble, aux trois endroits qui decident du cadrage.
   const initializedRef = useRef(false);
+  const [framed, setFramed] = useState(false);
   const centeredHighlightRef = useRef<string | null>(null);
   // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
   // native Skia has no such async init delay) isn't ready yet, which would
@@ -354,6 +360,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     // pilote le cadrage dans ce cas, pas celui-ci.
     if (highlightFormeId) return;
     initializedRef.current = true;
+    setFramed(true);
     const b = roomsBounds();
     setZoom(zoomForBounds(b.minX, b.minY, b.maxX, b.maxY, b.padding, width, height));
   };
@@ -379,6 +386,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     if (!viewportSize.width || !viewportSize.height) return;
     if (highlightFormeId) return;
     initializedRef.current = true;
+    setFramed(true);
     fitToRooms();
   }, [viewportSize, formes]);
 
@@ -393,6 +401,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     if (!geo) return;
     centeredHighlightRef.current = highlightFormeId;
     initializedRef.current = true;
+    setFramed(true);
     centerOnGeo(geo);
   }, [highlightFormeId, geoById, viewportSize]);
 
@@ -888,6 +897,25 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
             visible, quel que soit le zoom — voir le commentaire sur
             backgroundPan plus haut. */}
         <View style={{ width: viewportSize.width, height: viewportSize.height }}>
+          {/* ⚠️ RIEN N'EST PEINT AVANT LA MESURE. C'est la seule chose qui
+              empêche l'image fautive, et elle n'est pas décorative.
+
+              Le zoom démarre à l'échelle 1, et n'est cadré qu'une fois le
+              viewport mesuré. Or `onLayout` arrive APRÈS la première peinture :
+              sans ce garde-fou, le canevas peignait donc une image entière à
+              l'échelle 1 — trois fois trop grande sur un téléphone — avant de
+              se recadrer. Les pièces y passaient pour un zoom, mais les puces
+              d'Emplacement, qui sont des cartes avec icône et texte, sautaient
+              franchement (retour utilisateur du 2026-08-26).
+
+              La vue parente est bien en `overflow: hidden`, mais celle-ci fait
+              0x0 tant que rien n'est mesuré : son contenu débordait donc
+              simplement par-dessus, visible.
+
+              Une fois mesuré, `handleLayout` a posé la taille ET le cadrage
+              dans le même rendu : la première image peinte est déjà la bonne. */}
+          {framed ? (
+          <>
           {/* Le contenu réellement zoomable/déplaçable, LUI, doit couvrir
               toute la FEUILLE (WORLD_WIDTH/HEIGHT), pas seulement la fenêtre
               visible : un Canvas Skia ne peut jamais dessiner en dehors de
@@ -1136,6 +1164,8 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               onTap={onPinTap}
             />
           </View>
+          </>
+          ) : null}
         </View>
       </GestureDetector>
     </View>
