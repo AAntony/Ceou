@@ -105,11 +105,11 @@ export function EntityCard({
       <View className="mb-3">
         <IconBadge icon={icon} fill={badgeColor} photoUri={imageUri} size={52} />
       </View>
-      <Text numberOfLines={titleLines} className="text-base font-semibold text-ink">
+      <Text numberOfLines={titleLines} className="text-body font-semibold text-ink">
         {title}
       </Text>
       {subtitle ? (
-        <Text numberOfLines={1} className="mt-0.5 text-xs text-ink-soft">
+        <Text numberOfLines={1} className="mt-0.5 text-caption text-ink-soft">
           {subtitle}
         </Text>
       ) : null}

@@ -24,7 +24,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-8 text-3xl font-bold text-ink">{t('auth.login.title')}</Text>
+        <Text className="mb-8 text-display font-bold text-ink">{t('auth.login.title')}</Text>
 
         <TextField
           label={t('auth.email')}
@@ -41,7 +41,7 @@ export default function LoginScreen() {
           textContentType="password"
         />
 
-        {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+        {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
         <Button label={t('auth.login.submit')} onPress={handleSubmit} loading={loading} />
 
@@ -49,7 +49,7 @@ export default function LoginScreen() {
           href="/(auth)/forgot-password"
           label={t('auth.login.forgot_password_link')}
           className="mt-4 items-center"
-          textClassName="text-center text-sm text-ink-soft"
+          textClassName="text-center text-label text-ink-soft"
         />
 
         {/* Seule porte d'entrée sans compte. Placée AVANT l'inscription :
@@ -60,18 +60,18 @@ export default function LoginScreen() {
           href="/guest-invite"
           label={t('guest.entry')}
           className="mt-8 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
-          textClassName="text-center text-sm font-semibold text-ink"
+          textClassName="text-center text-label font-semibold text-ink"
         />
 
         {/* items-center : le lien a désormais une hauteur de cible minimale,
             sans quoi le texte voisin s'étirerait et se décalerait vers le haut. */}
         <View className="mt-6 flex-row flex-wrap items-center justify-center gap-1">
-          <Text className="text-sm text-ink-soft">{t('auth.login.no_account')}</Text>
+          <Text className="text-label text-ink-soft">{t('auth.login.no_account')}</Text>
           <TextLink
             href="/(auth)/sign-up"
             label={t('auth.login.sign_up_link')}
             className="px-1"
-            textClassName="text-sm font-semibold text-ink"
+            textClassName="text-label font-semibold text-ink"
           />
         </View>
       </ScrollView>

@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
+import { FormActions } from '../../components/FormActions';
 import { Icon } from '../../components/Icon';
 import { TextLink } from '../../components/TextLink';
 import { cropDetection, detectObjects, getImageSize, RateLimitedError } from '../../lib/ai/detectObjects';
@@ -177,8 +178,8 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
     return (
       <View className="flex-1 items-center justify-center px-6" style={{ paddingBottom: insets.bottom + 24 }}>
         <Icon name="scan" size={48} color={colors.accentDark} />
-        <Text className="mb-1 mt-4 text-center text-lg font-bold text-ink">{t('inventory.aiScan.capture_title')}</Text>
-        <Text className="mb-6 text-center text-sm text-ink-soft">{t('inventory.aiScan.capture_hint')}</Text>
+        <Text className="mb-1 mt-4 text-center text-subheading font-bold text-ink">{t('inventory.aiScan.capture_title')}</Text>
+        <Text className="mb-6 text-center text-label text-ink-soft">{t('inventory.aiScan.capture_hint')}</Text>
         <View className="w-full gap-3">
           <Button label={t('inventory.aiScan.take_photo')} onPress={handleTakePhoto} />
           <Button label={t('inventory.aiScan.pick_photo')} variant="ghost" onPress={handlePickPhoto} />
@@ -186,22 +187,21 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
         </View>
 
         <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6">
-          <Text className="mb-3 text-lg font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
-          <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
+          <Text className="mb-3 text-subheading font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
+          <Text className="mb-4 text-label leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
           <TextLink
             href="/privacy-policy"
             label={t('profile.privacy_policy')}
             className="mb-6 self-start"
-            textClassName="text-sm font-semibold text-coral-dark underline"
+            textClassName="text-label font-semibold text-coral-dark underline"
           />
-          <View className="flex-row gap-3">
-            <View className="flex-1">
-              <Button label={t('common.cancel')} variant="ghost" onPress={handleConsentCancel} />
-            </View>
-            <View className="flex-1">
-              <Button label={t('inventory.aiScan.consent_accept')} onPress={handleConsentAccept} loading={setAiPhotoConsent.isPending} />
-            </View>
-          </View>
+          <FormActions
+            cancelLabel={t('common.cancel')}
+            onCancel={handleConsentCancel}
+            confirmLabel={t('inventory.aiScan.consent_accept')}
+            onConfirm={handleConsentAccept}
+            loading={setAiPhotoConsent.isPending}
+          />
         </BottomSheetModal>
       </View>
     );
@@ -211,7 +211,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
     return (
       <View className="flex-1 items-center justify-center px-6">
         <ActivityIndicator size="large" color={colors.accentDark} />
-        <Text className="mt-4 text-center text-sm text-ink-soft">{t('inventory.aiScan.analyzing')}</Text>
+        <Text className="mt-4 text-center text-label text-ink-soft">{t('inventory.aiScan.analyzing')}</Text>
       </View>
     );
   }
@@ -219,7 +219,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   return (
     <View style={{ flex: 1 }}>
       <ScrollView contentContainerClassName="px-6 pt-2" contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
-        <Text className="mb-4 text-sm text-ink-soft">{t('inventory.aiScan.review_hint')}</Text>
+        <Text className="mb-4 text-label text-ink-soft">{t('inventory.aiScan.review_hint')}</Text>
         {items.map((item) => (
           <View key={item.key} className={`mb-3 flex-row items-center gap-3 rounded-xl bg-sand-dark p-2 ${item.selected ? '' : 'opacity-40'}`}>
             <Image source={{ uri: item.thumbUri }} style={{ width: thumbSize, height: thumbSize, borderRadius: 10 }} />
@@ -228,7 +228,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
               onChangeText={(text) => updateLabel(item.key, text)}
               editable={item.selected}
               // `min-w-0` : voir TextField, meme raison cote web.
-              className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-base text-ink"
+              className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-body text-ink"
             />
             {/* Coche verte contre croix grise : la couleur seule
                 distinguait « je garde » de « j'écarte ». Le libellé nomme
@@ -246,20 +246,17 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
         ))}
       </ScrollView>
       <View
-        className="absolute bottom-0 left-0 right-0 flex-row gap-3 border-t border-ink/10 bg-surface px-6 pt-3"
+        className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-surface px-6 pt-3"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
-        <View className="flex-1">
-          <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
-        </View>
-        <View className="flex-1">
-          <Button
-            label={t(onCollected ? 'inventory.aiScan.next' : 'inventory.aiScan.confirm', { count: selectedCount })}
-            onPress={handleConfirm}
-            loading={createObjetsBulk.isPending}
-            disabled={selectedCount === 0}
-          />
-        </View>
+        <FormActions
+          cancelLabel={t('common.cancel')}
+          onCancel={onCancel}
+          confirmLabel={t(onCollected ? 'inventory.aiScan.next' : 'inventory.aiScan.confirm', { count: selectedCount })}
+          onConfirm={handleConfirm}
+          loading={createObjetsBulk.isPending}
+          disabled={selectedCount === 0}
+        />
       </View>
     </View>
   );

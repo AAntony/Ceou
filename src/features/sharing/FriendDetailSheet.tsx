@@ -79,8 +79,8 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       sheetClassName="rounded-t-3xl bg-surface px-6 pt-6"
       sheetStyle={{ maxHeight: '80%' }}
     >
-      <Text className="mb-1 text-xl font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
-      <Text className="mb-4 text-xs text-ink-soft">{friend.otherFriendCode}</Text>
+      <Text className="mb-1 text-heading font-bold text-ink">{friend.otherDisplayName || friend.otherFriendCode}</Text>
+      <Text className="mb-4 text-caption text-ink-soft">{friend.otherFriendCode}</Text>
 
       {/* `flexShrink: 1` et SURTOUT PAS `flex: 1` — les deux extrêmes cassent,
           chacun à sa façon, et ce composant les a connus tous les deux :
@@ -104,7 +104,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
       <ScrollView style={{ flexShrink: 1 }} contentContainerClassName="pb-6">
         {sharedByFriend && sharedByFriend.length > 0 ? (
           <View className="mb-6">
-            <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>
+            <Text className="mb-3 text-label font-medium text-ink-soft">{t('friends.detail.shared_with_me')}</Text>
             {/* Les MÊMES rangées que la page Habitations, et non plus les
                 tuiles en grille d'avant : une Habitation doit avoir la même
                 tête partout dans l'app, qu'on la croise chez soi ou dans la
@@ -127,7 +127,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
             que les droits d'accès en dessous sont la partie sérieuse. Les
             catégories ne changent RIEN aux accès — les deux blocs sont
             volontairement séparés pour qu'on ne les confonde pas. */}
-        <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.categories.move_title')}</Text>
+        <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.categories.move_title')}</Text>
         <View className="mb-6 flex-row flex-wrap gap-2">
           {(categories ?? []).map((category) => {
             const selected = currentCategoryId === category.id;
@@ -141,7 +141,7 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
                   selected ? 'border-2 border-coral bg-coral-light' : 'border-ink/10 bg-surface'
                 }`}
               >
-                <Text className={selected ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>
+                <Text className={selected ? 'text-label font-semibold text-coral-dark' : 'text-label text-ink-soft'}>
                   {category.name}
                 </Text>
               </Pressable>
@@ -159,19 +159,19 @@ export function FriendDetailSheet({ friend, onClose }: FriendDetailSheetProps) {
               currentCategoryId === null ? 'border-2 border-coral bg-coral-light' : 'border-ink/10 bg-surface'
             }`}
           >
-            <Text className={currentCategoryId === null ? 'text-sm font-semibold text-coral-dark' : 'text-sm text-ink-soft'}>
+            <Text className={currentCategoryId === null ? 'text-label font-semibold text-coral-dark' : 'text-label text-ink-soft'}>
               {t('friends.categories.move_none')}
             </Text>
           </Pressable>
         </View>
 
-        <Text className="mb-3 text-sm font-medium text-ink-soft">{t('friends.detail.shared_habitations')}</Text>
+        <Text className="mb-3 text-label font-medium text-ink-soft">{t('friends.detail.shared_habitations')}</Text>
         {myHabitations.length === 0 ? (
-          <Text className="mb-4 text-sm text-ink-soft">{t('friends.detail.no_habitations')}</Text>
+          <Text className="mb-4 text-label text-ink-soft">{t('friends.detail.no_habitations')}</Text>
         ) : (
           myHabitations.map((h) => (
             <View key={h.id} className="mb-4">
-              <Text className="mb-1.5 text-sm text-ink">{h.name}</Text>
+              <Text className="mb-1.5 text-label text-ink">{h.name}</Text>
               <PermissionPicker value={shareByHabitation.get(h.id)?.permission ?? null} onChange={(perm) => handleChange(h.id, perm)} />
             </View>
           ))

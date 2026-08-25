@@ -109,7 +109,7 @@ export default function ObjetScreen() {
               // grandit avec le reglage de taille, l'image le suit.
               <Image source={{ uri: objet.photo_url }} style={{ width: '100%', height: '100%' }} />
             ) : (
-              <Text className="px-2 text-center text-sm text-ink-soft">{editable ? t('inventory.objet.add_photo') : ''}</Text>
+              <Text className="px-2 text-center text-label text-ink-soft">{editable ? t('inventory.objet.add_photo') : ''}</Text>
             )}
           </Pressable>
           {objet.photo_url && editable ? (
@@ -150,18 +150,18 @@ export default function ObjetScreen() {
           </>
         ) : null}
 
-        <Text className="mb-2 text-base font-bold text-ink">{t('inventory.objet.history_title')}</Text>
+        <Text className="mb-2 text-body font-bold text-ink">{t('inventory.objet.history_title')}</Text>
         {history && history.length > 0 ? (
           history.map((entry) => (
             <View key={entry.id} className="mb-2 rounded-xl border border-ink/10 px-4 py-3">
-              <Text className="text-sm text-ink">
+              <Text className="text-label text-ink">
                 {entry.from_location_label} → {entry.to_location_label}
               </Text>
-              <Text className="text-xs text-ink-soft">{new Date(entry.moved_at).toLocaleString()}</Text>
+              <Text className="text-caption text-ink-soft">{new Date(entry.moved_at).toLocaleString()}</Text>
             </View>
           ))
         ) : (
-          <Text className="text-sm text-ink-soft">{t('inventory.objet.history_empty')}</Text>
+          <Text className="text-label text-ink-soft">{t('inventory.objet.history_empty')}</Text>
         )}
 
         {editable ? (

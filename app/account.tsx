@@ -20,15 +20,15 @@ import { supabase } from '../src/lib/supabase/client';
 function Section({ title, children }: PropsWithChildren<{ title: string }>) {
   return (
     <View className="mb-6 rounded-2xl border border-ink/10 bg-surface p-5">
-      <Text className="mb-4 text-base font-bold text-ink">{title}</Text>
+      <Text className="mb-4 text-body font-bold text-ink">{title}</Text>
       {children}
     </View>
   );
 }
 
 function Feedback({ error, success }: { error: string | null; success: string | null }) {
-  if (error) return <Text className="mb-3 text-sm text-red-600">{error}</Text>;
-  if (success) return <Text className="mb-3 text-sm text-green-600">{success}</Text>;
+  if (error) return <Text className="mb-3 text-label text-red-600">{error}</Text>;
+  if (success) return <Text className="mb-3 text-label text-green-600">{success}</Text>;
   return null;
 }
 
@@ -170,8 +170,8 @@ export default function AccountScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
         <ScrollView className="flex-1" contentContainerClassName="px-5 pb-32 pt-5" keyboardShouldPersistTaps="handled">
           <Section title={t('account.email.title')}>
-            <Text className="mb-1 text-sm text-ink-soft">{t('account.email.current')}</Text>
-            <Text className="mb-4 text-base font-semibold text-ink">{currentEmail}</Text>
+            <Text className="mb-1 text-label text-ink-soft">{t('account.email.current')}</Text>
+            <Text className="mb-4 text-body font-semibold text-ink">{currentEmail}</Text>
 
             <TextField
               label={t('account.email.new')}
@@ -189,7 +189,7 @@ export default function AccountScreen() {
               loading={emailLoading}
               disabled={!newEmail.trim()}
             />
-            <Text className="mt-3 text-xs leading-4 text-ink-soft">{t('account.email.hint')}</Text>
+            <Text className="mt-3 text-caption leading-4 text-ink-soft">{t('account.email.hint')}</Text>
           </Section>
 
           <Section title={t('account.password.title')}>
@@ -229,8 +229,8 @@ export default function AccountScreen() {
               irréversible, elle ne doit pas se lire comme un réglage de
               plus qu'on parcourt distraitement. */}
           <View className="rounded-2xl border border-red-500/40 bg-surface p-5">
-            <Text className="mb-2 text-base font-bold text-ink">{t('account.delete.title')}</Text>
-            <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('account.delete.description')}</Text>
+            <Text className="mb-2 text-body font-bold text-ink">{t('account.delete.title')}</Text>
+            <Text className="mb-4 text-label leading-5 text-ink-soft">{t('account.delete.description')}</Text>
             <Button label={t('account.delete.entry')} variant="danger" onPress={() => setDeleteOpen(true)} />
           </View>
         </ScrollView>
@@ -248,8 +248,8 @@ export default function AccountScreen() {
         }}
         sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-6"
       >
-        <Text className="mb-2 text-xl font-bold text-ink">{t('account.delete.confirm_title')}</Text>
-        <Text className="mb-5 text-sm leading-5 text-ink-soft">{t('account.delete.confirm_body')}</Text>
+        <Text className="mb-2 text-heading font-bold text-ink">{t('account.delete.confirm_title')}</Text>
+        <Text className="mb-5 text-label leading-5 text-ink-soft">{t('account.delete.confirm_body')}</Text>
 
         <TextField
           label={t('account.delete.confirm_password')}
@@ -259,7 +259,7 @@ export default function AccountScreen() {
           textContentType="password"
         />
 
-        {deleteError ? <Text className="mb-3 text-sm text-red-600">{deleteError}</Text> : null}
+        {deleteError ? <Text className="mb-3 text-label text-red-600">{deleteError}</Text> : null}
 
         <View className="mt-1 gap-3">
           <Button

@@ -8,10 +8,12 @@ import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
 import { Icon } from '../src/components/Icon';
 import { QrCode } from '../src/components/QrCode';
+import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { TextField } from '../src/components/TextField';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { syncInviteReminders } from '../src/features/notifications/inviteReminders';
 import { logClientError } from '../src/lib/errorLogging';
+import { STACK_SCALE, useTextScale } from '../src/lib/textScale';
 import { useThemeColors } from '../src/lib/theme';
 import {
   expiryInDays,
@@ -61,31 +63,31 @@ function InviteCard({
     <View className={`mb-3 rounded-2xl border bg-surface p-4 ${dead ? 'border-ink/10 opacity-60' : 'border-ink/10'}`}>
       <View className="mb-2 flex-row items-start justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-base font-bold text-ink">
+          <Text className="text-body font-bold text-ink">
             {entry.label ??
               (entry.habitationNames.length > 0 ? entry.habitationNames.join(', ') : t('invites.untitled'))}
           </Text>
           {entry.label ? (
-            <Text className="mt-0.5 text-xs text-ink-soft">{entry.habitationNames.join(', ')}</Text>
+            <Text className="mt-0.5 text-caption text-ink-soft">{entry.habitationNames.join(', ')}</Text>
           ) : null}
         </View>
         <View className={`rounded-full px-2.5 py-1 ${entry.targetType === 'guest' ? 'bg-coral-light' : 'bg-sand-dark'}`}>
-          <Text className={`text-xs font-semibold ${entry.targetType === 'guest' ? 'text-coral-dark' : 'text-ink-soft'}`}>
+          <Text className={`text-caption font-semibold ${entry.targetType === 'guest' ? 'text-coral-dark' : 'text-ink-soft'}`}>
             {t(entry.targetType === 'guest' ? 'invites.badge_guest' : 'invites.badge_friend')}
           </Text>
         </View>
       </View>
 
-      <Text className="mb-2 text-lg font-bold tracking-widest text-ink">{entry.code}</Text>
+      <Text className="mb-2 text-subheading font-bold tracking-widest text-ink">{entry.code}</Text>
 
       <View className="mb-3 gap-1">
-        <Text className="text-xs text-ink-soft">
+        <Text className="text-caption text-ink-soft">
           {entry.maxUses === null
             ? t('invites.uses_unlimited', { used: entry.useCount })
             : t('invites.uses_limited', { used: entry.useCount, max: entry.maxUses })}
           {exhausted && !expired ? ` — ${t('invites.exhausted')}` : ''}
         </Text>
-        <Text className={`text-xs ${expired ? 'font-semibold text-red-600' : 'text-ink-soft'}`}>
+        <Text className={`text-caption ${expired ? 'font-semibold text-red-600' : 'text-ink-soft'}`}>
           {entry.expiresAt === null
             ? t('invites.never_expires')
             : expired
@@ -104,26 +106,29 @@ function InviteCard({
       <View className="flex-row flex-wrap gap-2">
         <Pressable
           onPress={onShowQr}
+          accessibilityRole="button"
           className="flex-row items-center gap-1.5 rounded-full border border-ink/10 px-3 py-2 active:opacity-70"
         >
           <Icon name="qrcode" size={16} color={colors.inkSoft} />
-          <Text className="text-xs font-medium text-ink-soft">{t('invites.show_qr')}</Text>
+          <Text className="text-label font-medium text-ink-soft">{t('invites.show_qr')}</Text>
         </Pressable>
         {entry.targetType === 'guest' ? (
           <Pressable
             onPress={onRenew}
+            accessibilityRole="button"
             className="flex-row items-center gap-1.5 rounded-full border border-ink/10 px-3 py-2 active:opacity-70"
           >
             <Icon name="history" size={16} color={colors.inkSoft} />
-            <Text className="text-xs font-medium text-ink-soft">{t('invites.renew')}</Text>
+            <Text className="text-label font-medium text-ink-soft">{t('invites.renew')}</Text>
           </Pressable>
         ) : null}
         <Pressable
           onPress={onDelete}
+          accessibilityRole="button"
           className="flex-row items-center gap-1.5 rounded-full border border-red-500/40 px-3 py-2 active:opacity-70"
         >
           <Icon name="delete" size={16} color="#DC2626" />
-          <Text className="text-xs font-medium text-red-600">{t('common.delete')}</Text>
+          <Text className="text-label font-medium text-red-600">{t('common.delete')}</Text>
         </Pressable>
       </View>
     </View>
@@ -134,6 +139,10 @@ export default function InvitesScreen() {
   const colors = useThemeColors();
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
+  const { textScale } = useTextScale();
+  // Deux champs numeriques cote a cote : a x1,3 « Nombre d'utilisations »
+  // n'a plus qu'une demi-largeur et s'y coupe. Empiles, chaque libelle tient.
+  const fieldsStacked = textScale >= STACK_SCALE;
   const { data: invites, isLoading, isError, refetch } = useMyShareInvites();
   const updateInvite = useUpdateShareInvite();
   const deleteInvite = useDeleteShareInvite();
@@ -241,7 +250,7 @@ export default function InvitesScreen() {
         </View>
       ) : (
         <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-5 pb-32 pt-5" refreshControl={refreshControl}>
-          <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('invites.intro')}</Text>
+          <Text className="mb-4 text-label leading-5 text-ink-soft">{t('invites.intro')}</Text>
           {(invites ?? []).map((entry) => (
             <InviteCard
               key={entry.id}
@@ -263,9 +272,9 @@ export default function InvitesScreen() {
       >
         {qrEntry ? (
           <View className="items-center">
-            <Text className="mb-4 text-xl font-bold text-ink">{qrEntry.label ?? t('invites.title')}</Text>
+            <Text className="mb-4 text-heading font-bold text-ink">{qrEntry.label ?? t('invites.title')}</Text>
             <QrCode value={formatInviteQrValue(qrEntry.code)} size={200} />
-            <Text className="mt-4 text-lg font-bold tracking-widest text-ink">{qrEntry.code}</Text>
+            <Text className="mt-4 text-subheading font-bold tracking-widest text-ink">{qrEntry.code}</Text>
             <View className="mt-6 w-full gap-3">
               <Button label={t('friends.share.share_button')} onPress={() => shareEntry(qrEntry)} />
               <Button label={t('common.close')} variant="ghost" onPress={() => setQrEntry(null)} />
@@ -279,31 +288,21 @@ export default function InvitesScreen() {
         onClose={() => setRenewEntry(null)}
         sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
       >
-        <Text className="mb-1 text-xl font-bold text-ink">{t('invites.renew_title')}</Text>
-        <Text className="mb-4 text-sm leading-5 text-ink-soft">{t('invites.renew_body')}</Text>
+        <Text className="mb-1 text-heading font-bold text-ink">{t('invites.renew_title')}</Text>
+        <Text className="mb-4 text-label leading-5 text-ink-soft">{t('invites.renew_body')}</Text>
 
-        <View className="mb-4 flex-row gap-2">
-          <Pressable
-            onPress={() => setRenewPermanent(false)}
-            className={`flex-1 items-center rounded-xl border px-4 py-3 ${!renewPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-          >
-            <Text className={!renewPermanent ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
-              {t('friends.share.validity_limited')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setRenewPermanent(true)}
-            className={`flex-1 items-center rounded-xl border px-4 py-3 ${renewPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-          >
-            <Text className={renewPermanent ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
-              {t('friends.share.validity_permanent')}
-            </Text>
-          </Pressable>
-        </View>
+        <SegmentedTabs
+          value={renewPermanent ? 'permanent' : 'limited'}
+          onChange={(next: 'limited' | 'permanent') => setRenewPermanent(next === 'permanent')}
+          options={[
+            { value: 'limited' as const, label: t('friends.share.validity_limited') },
+            { value: 'permanent' as const, label: t('friends.share.validity_permanent') },
+          ]}
+        />
 
         {renewPermanent ? null : (
-          <View className="flex-row gap-3">
-            <View className="flex-1">
+          <View className={fieldsStacked ? '' : 'flex-row gap-3'}>
+            <View className={fieldsStacked ? '' : 'flex-1'}>
               <TextField
                 label={t('friends.share.max_uses')}
                 value={renewMaxUses}
@@ -312,7 +311,7 @@ export default function InvitesScreen() {
                 maxLength={3}
               />
             </View>
-            <View className="flex-1">
+            <View className={fieldsStacked ? '' : 'flex-1'}>
               <TextField
                 label={t('friends.share.duration_days')}
                 value={renewDays}
@@ -324,9 +323,14 @@ export default function InvitesScreen() {
           </View>
         )}
 
-        <Pressable onPress={() => setRenewReset((v) => !v)} className="mb-4 flex-row items-center gap-2 py-1">
+        <Pressable
+          onPress={() => setRenewReset((v) => !v)}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: renewReset }}
+          className="mb-4 flex-row items-center gap-2 py-1"
+        >
           <Icon name={renewReset ? 'included' : 'excluded'} size={20} color={renewReset ? '#4CAF50' : colors.inkFaint} />
-          <Text className="flex-1 text-sm text-ink-soft">{t('invites.reset_uses')}</Text>
+          <Text className="flex-1 text-label text-ink-soft">{t('invites.reset_uses')}</Text>
         </Pressable>
 
         <View className="gap-3">

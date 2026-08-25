@@ -10,8 +10,8 @@ function ErrorBoundaryFallback() {
   const { t } = useTranslation();
   return (
     <View className="flex-1 items-center justify-center bg-sand px-6">
-      <Text className="text-center text-base font-semibold text-ink">{t('common.error_boundary_title')}</Text>
-      <Text className="mt-2 text-center text-sm text-ink-soft">{t('common.error_boundary_hint')}</Text>
+      <Text className="text-center text-body font-semibold text-ink">{t('common.error_boundary_title')}</Text>
+      <Text className="mt-2 text-center text-label text-ink-soft">{t('common.error_boundary_hint')}</Text>
     </View>
   );
 }

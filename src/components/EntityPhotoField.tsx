@@ -55,7 +55,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
 
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-sm font-medium text-ink-soft">{t('inventory.photo.label')}</Text>
+      <Text className="mb-2 text-label font-medium text-ink-soft">{t('inventory.photo.label')}</Text>
 
       <View className="flex-row items-center gap-4">
         <View
@@ -76,7 +76,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
             className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2.5 active:opacity-70"
           >
             <Icon name="addPhoto" size={18} color="#1591EA" />
-            <Text className="flex-1 text-sm text-ink" numberOfLines={1}>
+            <Text className="flex-1 text-label text-ink" numberOfLines={1}>
               {t('inventory.photo.choose')}
             </Text>
           </Pressable>
@@ -87,7 +87,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
             className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2.5 active:opacity-70"
           >
             <Icon name="camera" size={18} color="#1591EA" />
-            <Text className="flex-1 text-sm text-ink" numberOfLines={1}>
+            <Text className="flex-1 text-label text-ink" numberOfLines={1}>
               {t('inventory.photo.take')}
             </Text>
           </Pressable>
@@ -101,7 +101,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
               className="flex-row items-center gap-2 px-3 py-1.5 active:opacity-70"
             >
               <Icon name="close" size={16} color={colors.inkFaint} />
-              <Text className="flex-1 text-sm text-ink-soft" numberOfLines={1}>
+              <Text className="flex-1 text-label text-ink-soft" numberOfLines={1}>
                 {t('inventory.photo.remove')}
               </Text>
             </Pressable>

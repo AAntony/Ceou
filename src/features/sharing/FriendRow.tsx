@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
-import { useScaled, useTextScale, WRAP_SCALE } from '../../lib/textScale';
+import { STACK_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 // Rangée d'ami.
@@ -55,32 +55,64 @@ export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowP
   const { textScale } = useTextScale();
   const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
 
+  // EN GRAND TEXTE, LE SOUS-TITRE DESCEND SOUS L'AVATAR.
+  //
+  // Le nom et « 3 habitations partagées » vivent aujourd'hui dans la même
+  // colonne, à droite du portrait : cette colonne perd la largeur du
+  // portrait ET celle du chevron. À x1,3 le sous-titre y est le premier
+  // sacrifié, alors que c'est lui qui dit ce que cet ami partage avec vous.
+  // Sur sa propre ligne il retrouve toute la largeur de la carte.
+  const stacked = textScale >= STACK_SCALE;
+
+  const avatar = (
+    <View
+      style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: color }}
+      className="items-center justify-center overflow-hidden"
+    >
+      {avatarUrl ? (
+        <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+      ) : (
+        // Les initiales plutôt qu'une silhouette générique : elles
+        // distinguent réellement deux amis sans photo, ce qu'un même
+        // pictogramme répété ne fait pas.
+        <Text style={{ color: '#FFFFFF', fontSize: initialsSize, fontWeight: '600' }}>{initials(name)}</Text>
+      )}
+    </View>
+  );
+
+  if (stacked) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        className="mb-2 rounded-2xl bg-surface p-2.5 active:opacity-70"
+      >
+        <View className="flex-row items-center">
+          {avatar}
+          <Text numberOfLines={titleLines} className="ml-3 flex-1 text-body font-semibold text-ink">
+            {name}
+          </Text>
+          <Icon name="chevron" size={22} color={colors.inkFaint} />
+        </View>
+        {subtitle ? <Text className="mt-1.5 text-label text-ink-soft">{subtitle}</Text> : null}
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
       className="mb-2 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
-      <View
-        style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: color }}
-        className="items-center justify-center overflow-hidden"
-      >
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-        ) : (
-          // Les initiales plutôt qu'une silhouette générique : elles
-          // distinguent réellement deux amis sans photo, ce qu'un même
-          // pictogramme répété ne fait pas.
-          <Text style={{ color: '#FFFFFF', fontSize: initialsSize, fontWeight: '600' }}>{initials(name)}</Text>
-        )}
-      </View>
+      {avatar}
 
       <View className="ml-3 flex-1">
-        <Text numberOfLines={titleLines} className="text-base font-semibold text-ink">
+        <Text numberOfLines={titleLines} className="text-body font-semibold text-ink">
           {name}
         </Text>
         {subtitle ? (
-          <Text numberOfLines={1} className="mt-0.5 text-sm text-ink-soft">
+          <Text numberOfLines={1} className="mt-0.5 text-label text-ink-soft">
             {subtitle}
           </Text>
         ) : null}

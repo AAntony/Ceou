@@ -275,13 +275,13 @@ export default function PlanScreen() {
               {editing && doorPlacing ? (
                 <View className="flex-row items-center gap-3 rounded-full bg-coral py-2 pl-5 pr-2">
                   <Icon name="porte" size={20} color="#fff" />
-                  <Text className="flex-1 text-sm font-medium text-white">{t('plans.doors.placing_hint')}</Text>
+                  <Text className="flex-1 text-label font-medium text-white">{t('plans.doors.placing_hint')}</Text>
                   <Pressable
                     onPress={() => setDoorPlacing(false)}
                     accessibilityRole="button"
                     className="rounded-full bg-white px-5 py-2.5 active:opacity-80"
                   >
-                    <Text className="text-sm font-semibold text-coral-dark">{t('common.done')}</Text>
+                    <Text className="text-label font-semibold text-coral-dark">{t('common.done')}</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -293,7 +293,7 @@ export default function PlanScreen() {
               {editing && !doorPlacing && selectedDoor ? (
                 <View className="flex-row items-center gap-3 rounded-full border border-ink/10 bg-surface/95 py-2 pl-5 pr-2">
                   <Icon name="porte" size={20} color={colors.accentDark} />
-                  <Text className="flex-1 text-sm font-semibold text-ink">{t('plans.doors.title')}</Text>
+                  <Text className="flex-1 text-label font-semibold text-ink">{t('plans.doors.title')}</Text>
                   <Pressable
                     onPress={() => {
                       deleteDoor.mutate(selectedDoor.id);
@@ -302,7 +302,7 @@ export default function PlanScreen() {
                     accessibilityRole="button"
                     className="rounded-full border border-red-500/40 px-4 py-2 active:opacity-70"
                   >
-                    <Text className="text-sm font-semibold text-red-600">{t('common.delete')}</Text>
+                    <Text className="text-label font-semibold text-red-600">{t('common.delete')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setSelectedDoorId(null)}
@@ -320,7 +320,7 @@ export default function PlanScreen() {
                   plutôt qu'un geste que rien n'annonçait. */}
               {editing && !doorPlacing && !selectedDoor && selectedForme ? (
                 <View className="flex-row items-center gap-3 rounded-full border border-ink/10 bg-surface/95 py-2 pl-5 pr-2">
-                  <Text className="flex-1 text-sm font-semibold text-ink" numberOfLines={1}>
+                  <Text className="flex-1 text-label font-semibold text-ink" numberOfLines={1}>
                     {selectedRoomName}
                   </Text>
                   <Pressable
@@ -440,7 +440,7 @@ function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void 
   return (
     <View className="rounded-2xl border border-ink/10 bg-surface/95 px-4 pb-3 pt-3">
       <View className="mb-2 flex-row items-center">
-        <Text className="flex-1 text-sm font-semibold text-ink">{t('plans.hint.title')}</Text>
+        <Text className="flex-1 text-label font-semibold text-ink">{t('plans.hint.title')}</Text>
         <Pressable
           onPress={onClose}
           accessibilityRole="button"
@@ -459,7 +459,7 @@ function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void 
           {/* Interligne en `rem` et non en pixels : fige, il rognait les
               jambages des que le texte grossissait. 1,21rem = les 17 px
               d'origine a taille normale. */}
-          <Text className="flex-1 text-xs leading-[1.21rem] text-ink-soft">{t(row.key)}</Text>
+          <Text className="flex-1 text-caption leading-[1.21rem] text-ink-soft">{t(row.key)}</Text>
         </View>
       ))}
     </View>
@@ -523,7 +523,7 @@ function ToolButton({
       <Icon name={icon} size={18} color={primary ? '#fff' : colors.ink} />
       <Text
         numberOfLines={1}
-        className={primary ? 'shrink text-sm font-semibold text-white' : 'shrink text-sm font-semibold text-ink'}
+        className={primary ? 'shrink text-label font-semibold text-white' : 'shrink text-label font-semibold text-ink'}
       >
         {label}
       </Text>

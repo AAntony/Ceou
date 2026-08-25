@@ -108,8 +108,8 @@ function HomeHeader({
     <>
       <View className={`mb-6 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
         <View className={stacked ? '' : 'flex-1 pr-4'}>
-          <Text className="text-2xl font-bold text-ink">{greeting}</Text>
-          <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
+          <Text className="text-title font-bold text-ink">{greeting}</Text>
+          <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
         </View>
         {/* Ancien "+" central de la barre d'onglets. Il y annonçait un ajout
             CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des écrans
@@ -131,7 +131,7 @@ function HomeHeader({
           }`}
         >
           <Icon name="add" size={18} color="#FFFFFF" />
-          <Text numberOfLines={1} className="shrink text-sm font-semibold text-white">
+          <Text numberOfLines={1} className="shrink text-label font-semibold text-white">
             {t('home.add_objet')}
           </Text>
         </Pressable>
@@ -161,7 +161,7 @@ function HomeHeader({
             // `min-w-0` : voir TextField — un <input> web ne retrecit pas
             // sous sa largeur naturelle et pousserait la croix d'effacement
             // hors de la barre.
-            className="ml-2 min-w-0 flex-1 text-base text-ink"
+            className="ml-2 min-w-0 flex-1 text-body text-ink"
           />
 
           {/* Seulement quand il y a du texte : toujours visible, ce bouton

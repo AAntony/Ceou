@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
+import { FormActions } from '../../components/FormActions';
 import { TextField } from '../../components/TextField';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { logClientError } from '../../lib/errorLogging';
@@ -66,7 +67,7 @@ export function FriendCategorySheet({ visible, category, onClose }: FriendCatego
 
   return (
     <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6">
-      <Text className="mb-4 text-xl font-bold text-ink">
+      <Text className="mb-4 text-heading font-bold text-ink">
         {category ? t('friends.categories.edit_title') : t('friends.categories.create_title')}
       </Text>
 
@@ -78,18 +79,15 @@ export function FriendCategorySheet({ visible, category, onClose }: FriendCatego
         autoFocus
       />
 
-      <View className="mt-2 flex-row gap-3">
-        <View className="flex-1">
-          <Button label={t('common.cancel')} variant="ghost" onPress={onClose} />
-        </View>
-        <View className="flex-1">
-          <Button
-            label={t('common.save')}
-            onPress={submit}
-            loading={createCategory.isPending || renameCategory.isPending}
-            disabled={!name.trim()}
-          />
-        </View>
+      <View className="mt-2">
+        <FormActions
+          cancelLabel={t('common.cancel')}
+          onCancel={onClose}
+          confirmLabel={t('common.save')}
+          onConfirm={submit}
+          loading={createCategory.isPending || renameCategory.isPending}
+          disabled={!name.trim()}
+        />
       </View>
 
       {category ? (

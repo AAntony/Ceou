@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
-import { useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
+import { ONE_COLUMN_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
@@ -28,6 +28,10 @@ import { Icon, type IconName } from './Icon';
 const THUMB_WIDTH = 84;
 // 4:3, le ratio des illustrations par défaut. Un carré les recadrerait.
 const THUMB_HEIGHT = 63;
+// Hauteur de la vignette quand la rangée passe en colonnes : elle prend
+// alors toute la largeur, et 4:3 en ferait une affiche de 230 points de haut
+// sur un téléphone. Elle est recadrée plutôt qu'étirée.
+const STACKED_THUMB_HEIGHT = 150;
 // Les pastilles crayon/etoile sont posees sur un fond BLANC fixe (elles se
 // superposent a une photo ou a une carte coloree, ou un fond translucide
 // clair reste la seule valeur lisible dans les deux themes). Leur icone doit
@@ -80,8 +84,89 @@ export function EntityRow({
   // timbre-poste a cote d'un nom de 26 points.
   const thumbWidth = useScaled(THUMB_WIDTH);
   const thumbHeight = useScaled(THUMB_HEIGHT);
+  const stackedThumbHeight = useScaled(STACKED_THUMB_HEIGHT);
   const { textScale } = useTextScale();
   const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
+
+  // EN TRÈS GRAND TEXTE, LA RANGÉE SE PLIE EN TROIS.
+  //
+  // Vignette, pictogramme, nom, crayon et chevron se partagent une seule
+  // ligne : à x1,6 il ne reste au nom qu'une quarantaine de points, soit
+  // « Meuble… ». Empilés — la photo, puis le nom, puis les commandes —
+  // chacun retrouve toute la largeur.
+  //
+  // Le PICTOGRAMME DISPARAÎT alors : il redisait le type d'un contenu que la
+  // photo montre déjà, et c'est lui qui coûtait le plus de largeur pour le
+  // moins d'information.
+  //
+  // Même seuil que la grille de l'accueil : c'est le cran où l'app renonce à
+  // poser deux choses côte à côte.
+  const stacked = textScale >= ONE_COLUMN_SCALE;
+
+  const favoriteButton = onToggleFavorite ? (
+    <Pressable
+      onPress={onToggleFavorite}
+      disabled={favoriteDisabled}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isFavorite, disabled: favoriteDisabled }}
+      accessibilityLabel={t(isFavorite ? 'a11y.favorite_remove' : 'a11y.favorite_add', { name: title })}
+      className={`absolute left-1 top-1 rounded-full bg-white/85 p-1 ${favoriteDisabled ? 'opacity-50' : ''}`}
+    >
+      <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />
+    </Pressable>
+  ) : null;
+
+  const media = thumbnail ?? (
+    <Image
+      source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+    />
+  );
+
+  if (stacked) {
+    return (
+      <Pressable
+        onPress={onPress}
+        onLongPress={onLongPress}
+        accessibilityRole="button"
+        className="mb-2.5 rounded-2xl bg-surface p-2.5 active:opacity-70"
+      >
+        <View
+          style={{ width: '100%', height: stackedThumbHeight }}
+          className="overflow-hidden rounded-xl bg-sand"
+        >
+          {media}
+          {favoriteButton}
+        </View>
+
+        <Text className="mt-2 text-body font-semibold text-ink">{title}</Text>
+        {subtitle ? <Text className="mt-0.5 text-label text-ink-soft">{subtitle}</Text> : null}
+
+        {/* Troisième ligne : les commandes, à part et espacées. Le crayon
+            porte enfin son nom écrit — dans la rangée compacte il n'était
+            qu'un pictogramme faute de place. */}
+        <View className="mt-2 flex-row items-center justify-between">
+          {onEdit ? (
+            <Pressable
+              onPress={onEdit}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.edit_named', { name: title })}
+              className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2 active:opacity-60"
+            >
+              <Icon name="pencil" size={18} color={colors.inkSoft} />
+              <Text className="text-label font-semibold text-ink-soft">{t('common.edit')}</Text>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+          <Icon name="chevron" size={22} color={colors.inkFaint} />
+        </View>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -94,31 +179,13 @@ export function EntityRow({
         style={{ width: thumbWidth, height: thumbHeight }}
         className="overflow-hidden rounded-xl bg-sand"
       >
-        {thumbnail ?? (
-          <Image
-            source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-          />
-        )}
+        {media}
 
         {/* L'étoile est posée SUR la vignette et non dans la rangée : à
             droite, elle aurait été le troisième bouton d'affilée après le
             crayon et le chevron, et le nom aurait perdu la place qu'on vient
             justement de lui donner. */}
-        {onToggleFavorite ? (
-          <Pressable
-            onPress={onToggleFavorite}
-            disabled={favoriteDisabled}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isFavorite, disabled: favoriteDisabled }}
-            accessibilityLabel={t(isFavorite ? 'a11y.favorite_remove' : 'a11y.favorite_add', { name: title })}
-            className={`absolute left-1 top-1 rounded-full bg-white/85 p-1 ${favoriteDisabled ? 'opacity-50' : ''}`}
-          >
-            <Icon name={isFavorite ? 'star' : 'starOutline'} size={14} color={isFavorite ? colors.mustard : ON_LIGHT_PILL} />
-          </Pressable>
-        ) : null}
+        {favoriteButton}
       </View>
 
       <View className="ml-3 mr-3">
@@ -126,11 +193,11 @@ export function EntityRow({
       </View>
 
       <View className="flex-1">
-        <Text numberOfLines={titleLines} className="text-base font-semibold text-ink">
+        <Text numberOfLines={titleLines} className="text-body font-semibold text-ink">
           {title}
         </Text>
         {subtitle ? (
-          <Text numberOfLines={1} className="mt-0.5 text-sm text-ink-soft">
+          <Text numberOfLines={1} className="mt-0.5 text-label text-ink-soft">
             {subtitle}
           </Text>
         ) : null}

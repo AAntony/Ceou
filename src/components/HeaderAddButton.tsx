@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text } from 'react-native';
+import { MAX_CHROME_SCALE, useChromeScale } from '../lib/textScale';
 import { Icon } from './Icon';
 
 type HeaderAddButtonProps = {
@@ -34,8 +35,25 @@ const EXTRA_RIGHT_MARGIN = 8;
 // Fond plein désormais : les deux restent distinguables par la forme et la
 // position (pastille libellée en haut / gros rond flottant en bas), pas par
 // l'intensité de la couleur.
+// LA PASTILLE GRANDIT, MAIS PAS AUTANT QUE LE CONTENU.
+//
+// Elle est posee dans l'en-tete NATIF, dont la hauteur est fixee par le
+// systeme (~56 dp sur Android) et ne se regle pas : a x1,6 elle depasserait
+// et serait rognee en haut et en bas. Ses mesures sont donc ecrites en
+// pixels, plafonnees comme le reste du mobilier, au lieu de passer par des
+// classes Tailwind qui suivraient le facteur entier.
+//
+// A x1,3 elle passe quand meme de ~30 a ~42 points de haut et son libelle de
+// 14 a 18 : la cible devient franchement plus facile a viser, ce qui etait
+// le reproche.
+const ICON_SIZE = 16;
+const LABEL_SIZE = 14;
+const PADDING_H = 12;
+const PADDING_V = 6;
+
 export function HeaderAddButton({ onPress, label }: HeaderAddButtonProps) {
   const { t } = useTranslation();
+  const chrome = useChromeScale();
 
   return (
     <Pressable
@@ -43,13 +61,27 @@ export function HeaderAddButton({ onPress, label }: HeaderAddButtonProps) {
       hitSlop={10}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ marginRight: EXTRA_RIGHT_MARGIN }}
-      className="flex-row items-center gap-1 rounded-full bg-coral px-3 py-1.5 active:opacity-80"
+      style={{
+        marginRight: EXTRA_RIGHT_MARGIN,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Math.round(4 * chrome),
+        borderRadius: 999,
+        paddingHorizontal: Math.round(PADDING_H * chrome),
+        paddingVertical: Math.round(PADDING_V * chrome),
+      }}
+      className="bg-coral active:opacity-80"
     >
-      <Icon name="add" size={16} color="#FFFFFF" />
-      {/* L'en-tete natif a une hauteur fixe que `rem` ne controle pas : le
-          libelle y reste sur une ligne. */}
-      <Text numberOfLines={1} className="text-sm font-semibold text-white">
+      {/* `fixedSize` : la taille porte deja le plafond, Icon ne doit pas la
+          remultiplier par le facteur entier. */}
+      <Icon name="add" size={Math.round(ICON_SIZE * chrome)} color="#FFFFFF" fixedSize />
+      {/* Une seule ligne, et le reglage du telephone plafonne lui aussi : la
+          barre native ne peut pas s'agrandir pour accueillir un repli. */}
+      <Text
+        numberOfLines={1}
+        maxFontSizeMultiplier={MAX_CHROME_SCALE}
+        style={{ fontSize: Math.round(LABEL_SIZE * chrome), fontWeight: '600', color: '#FFFFFF' }}
+      >
         {t('common.add')}
       </Text>
     </Pressable>

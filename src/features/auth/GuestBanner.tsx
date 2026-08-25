@@ -46,17 +46,17 @@ export function GuestAccessLostCard() {
     <View className="mb-6 rounded-2xl border border-coral/40 bg-coral-light px-4 py-3">
       <View className="flex-row items-center gap-2">
         <Icon name="alert" size={18} color={colors.danger} />
-        <Text className="flex-1 text-sm font-semibold text-ink">
+        <Text className="flex-1 text-label font-semibold text-ink">
           {expired ? t('guest.access_lost.expired_title') : t('guest.access_lost.revoked_title')}
         </Text>
       </View>
-      <Text className="mt-1.5 text-xs leading-4 text-ink-soft">{message}</Text>
+      <Text className="mt-1.5 text-caption leading-4 text-ink-soft">{message}</Text>
 
       {/* La seule porte de sortie : un visiteur n'a pas d'écran de connexion
           tant qu'il reste sur sa session anonyme, et c'est de là que se
           saisit un nouveau code. */}
       <Pressable accessibilityRole="button" onPress={() => supabase.auth.signOut({ scope: 'local' })} className="mt-2 self-start py-1">
-        <Text className="text-xs font-semibold text-red-600">{t('guest.leave')}</Text>
+        <Text className="text-caption font-semibold text-red-600">{t('guest.leave')}</Text>
       </Pressable>
     </View>
   );
@@ -80,7 +80,7 @@ export function GuestBanner() {
   return (
     <View className="mb-6 flex-row items-center gap-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3">
       <Icon name="profile" size={18} color="#2EC4B6" />
-      <Text className="flex-1 text-xs leading-4 text-ink-soft">{t('guest.banner')}</Text>
+      <Text className="flex-1 text-caption leading-4 text-ink-soft">{t('guest.banner')}</Text>
     </View>
   );
 }

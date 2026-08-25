@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
+import { FormActions } from '../../components/FormActions';
 import { TextField } from '../../components/TextField';
 import { lookupBarcode } from '../../lib/barcode/lookupBarcode';
 import { logClientError } from '../../lib/errorLogging';
@@ -136,7 +137,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
             // le cadre, lui, grandit avec le reglage de taille.
             <Image source={{ uri: localPhotoUri }} style={{ width: '100%', height: '100%' }} />
           ) : (
-            <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
+            <Text className="px-2 text-center text-label text-ink-soft">{t('inventory.objet.add_photo')}</Text>
           )}
         </Pressable>
 
@@ -153,18 +154,15 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           numberOfLines={3}
         />
 
-        <View className="mt-2 flex-row gap-3">
-          <View className="flex-1">
-            <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
-          </View>
-          <View className="flex-1">
-            <Button
-              label={t(onCollected ? 'common.next' : 'common.save')}
-              onPress={handleSubmit}
-              loading={createObjet.isPending}
-              disabled={!name.trim()}
-            />
-          </View>
+        <View className="mt-2">
+          <FormActions
+            cancelLabel={t('common.cancel')}
+            onCancel={onCancel}
+            confirmLabel={t(onCollected ? 'common.next' : 'common.save')}
+            onConfirm={handleSubmit}
+            loading={createObjet.isPending}
+            disabled={!name.trim()}
+          />
         </View>
       </ScrollView>
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScanned={handleBarcodeScanned} />

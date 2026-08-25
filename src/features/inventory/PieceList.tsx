@@ -163,7 +163,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
           onSelect={(key) => handleSelectPreset(key as PieceTypeKey)}
           labelFor={(key) => t(`inventory.pieceTypes.${key}`)}
         />
-        <Text className="mb-2 text-sm font-medium text-ink-soft">{t('inventory.pieces.color_label')}</Text>
+        <Text className="mb-2 text-label font-medium text-ink-soft">{t('inventory.pieces.color_label')}</Text>
         <ColorPicker selectedColor={color} onSelect={setColor} />
         <EntityPhotoField level="piece" photoUri={photoUri} onChange={setPhotoUri} />
       </CreateEntityModal>

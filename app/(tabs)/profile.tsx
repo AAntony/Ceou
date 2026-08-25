@@ -103,21 +103,21 @@ export default function ProfileScreen() {
           ) : profile?.avatar_url ? (
             <Image source={{ uri: profile.avatar_url }} style={{ width: avatarSize, height: avatarSize }} />
           ) : (
-            <Text className="text-3xl font-semibold text-ink-soft">
+            <Text className="text-display font-semibold text-ink-soft">
               {(displayName || session?.user.email || '?').charAt(0).toUpperCase()}
             </Text>
           )}
         </View>
-        <Text className="mt-2 text-sm font-medium text-ink-soft">{t('profile.avatar.change')}</Text>
+        <Text className="mt-2 text-label font-medium text-ink-soft">{t('profile.avatar.change')}</Text>
       </Pressable>
 
       <TextField label={t('profile.display_name')} value={displayName} onChangeText={setDisplayName} />
 
-      {saved ? <Text className="mb-4 text-sm text-green-600">{t('profile.saved')}</Text> : null}
+      {saved ? <Text className="mb-4 text-label text-green-600">{t('profile.saved')}</Text> : null}
 
       <Button label={t('common.save')} onPress={handleSave} loading={updateProfile.isPending} />
 
-      <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('profile.language')}</Text>
+      <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('profile.language')}</Text>
       <View className="flex-row gap-2">
         {SUPPORTED_LANGUAGES.map((language) => (
           <Pressable
@@ -139,19 +139,19 @@ export default function ProfileScreen() {
         <DisplaySettings />
       </View>
 
-      <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
+      <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
       <Pressable
         accessibilityRole="button"
         onPress={() => setMyCodeOpen((current) => !current)}
         className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-sand-dark px-4 py-3"
       >
-        <Text className="text-base font-bold tracking-widest text-ink">{profile?.friend_code}</Text>
+        <Text className="text-body font-bold tracking-widest text-ink">{profile?.friend_code}</Text>
         <Icon name={myCodeOpen ? 'excluded' : 'qrcode'} size={20} color={colors.inkSoft} />
       </Pressable>
       {myCodeOpen && profile ? (
         <View className="mt-3 items-center">
           <QrCode value={formatFriendCodeQrValue(profile.friend_code)} size={160} />
-          <Text className="mt-2 text-center text-xs text-ink-soft">{t('friends.my_code.hint')}</Text>
+          <Text className="mt-2 text-center text-caption text-ink-soft">{t('friends.my_code.hint')}</Text>
         </View>
       ) : null}
 
@@ -167,7 +167,7 @@ export default function ProfileScreen() {
         href="/invites"
         label={t('invites.entry')}
         className="mt-3 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
-        textClassName="text-sm font-semibold text-ink"
+        textClassName="text-label font-semibold text-ink"
       />
 
       {/* Adresse, mot de passe et suppression vivent sur un écran à part :
@@ -177,7 +177,7 @@ export default function ProfileScreen() {
         href="/account"
         label={t('account.entry')}
         className="mt-8 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
-        textClassName="text-sm font-semibold text-ink"
+        textClassName="text-label font-semibold text-ink"
       />
 
       {/* La carte ELLE-MÊME est le bouton : c'était un View inerte dont seul
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
         href="/privacy-policy"
         label={t('profile.privacy_policy')}
         className="mt-3 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
-        textClassName="text-sm font-medium text-ink-soft underline"
+        textClassName="text-label font-medium text-ink-soft underline"
       />
 
       <TextLink
@@ -204,14 +204,14 @@ export default function ProfileScreen() {
         }}
         label={t('profile.sign_out')}
         className="mt-6"
-        textClassName="text-center text-sm font-semibold text-red-600"
+        textClassName="text-center text-label font-semibold text-red-600"
       />
 
       {/* Le numéro "1.0.0" seul ne bouge presque jamais — le hash de commit
           (injecté par app.config.js à chaque bundle/build) est ce qui
           permet réellement de savoir quelle version est en train de tourner
           sur un appareil de test. */}
-      <Text className="mt-10 text-center text-xs text-ink-soft">
+      <Text className="mt-10 text-center text-caption text-ink-soft">
         {t('profile.version_label')} {Constants.expoConfig?.version ?? '?'} ({Constants.expoConfig?.extra?.gitCommit ?? '?'})
       </Text>
 

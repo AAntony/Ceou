@@ -102,12 +102,15 @@ export default function PrivacyPolicyScreen() {
     <>
       <Stack.Screen options={{ headerShown: true, title: content.title }} />
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-16 pt-6">
-        <Text className="mb-1 text-2xl font-bold text-ink">{content.title}</Text>
-        <Text className="mb-6 text-xs text-ink-soft">{content.updated}</Text>
+        <Text className="mb-1 text-title font-bold text-ink">{content.title}</Text>
+        <Text className="mb-6 text-caption text-ink-soft">{content.updated}</Text>
         {content.sections.map((section) => (
           <View key={section.heading} className="mb-5">
-            <Text className="mb-1 text-base font-bold text-ink">{section.heading}</Text>
-            <Text className="text-sm leading-5 text-ink-soft">{section.body}</Text>
+            <Text className="mb-1 text-subheading font-bold text-ink">{section.heading}</Text>
+            {/* `body` et non `label` : c'est le seul ecran de l'app qu'on lit
+                vraiment en continu, sur plusieurs paragraphes. Le corps de
+                texte y a sa place, pas la taille des legendes. */}
+            <Text className="text-body leading-6 text-ink-soft">{section.body}</Text>
           </View>
         ))}
       </ScrollView>

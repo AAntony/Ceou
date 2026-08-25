@@ -52,10 +52,10 @@ export function PlanRoomSheet({
               <Icon name={getPieceIcon(piece.preset_key)} size={22} color="#1591EA" />
             </View>
             <View className="flex-1">
-              <Text className="text-xl font-bold text-ink" numberOfLines={1}>
+              <Text className="text-heading font-bold text-ink" numberOfLines={1}>
                 {piece.name}
               </Text>
-              <Text className="text-sm text-ink-soft">
+              <Text className="text-label text-ink-soft">
                 {objectCount === null
                   ? t('plans.room_sheet.storages', { n: list.length })
                   : `${t('plans.room_sheet.objects', { n: objectCount })} · ${t('plans.room_sheet.storages', { n: list.length })}`}
@@ -65,7 +65,7 @@ export function PlanRoomSheet({
 
           {list.length > 0 ? (
             <>
-              <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+              <Text className="mb-2 text-caption font-semibold uppercase tracking-wide text-ink-soft">
                 {t('plans.room_sheet.storages_title')}
               </Text>
               {/* maxHeight + flexShrink : la recette documentée dans
@@ -84,7 +84,7 @@ export function PlanRoomSheet({
                     className="flex-row items-center gap-3 border-b border-ink/5 py-3 active:opacity-70"
                   >
                     <Icon name={getEmplacementIcon(emplacement.preset_key)} size={20} color={colors.inkSoft} />
-                    <Text className="flex-1 text-base text-ink" numberOfLines={1}>
+                    <Text className="flex-1 text-body text-ink" numberOfLines={1}>
                       {emplacement.name}
                     </Text>
                     <Icon name="chevron" size={18} color={colors.inkFaint} />
@@ -93,7 +93,7 @@ export function PlanRoomSheet({
               </ScrollView>
             </>
           ) : (
-            <Text className="mb-2 text-sm leading-5 text-ink-soft">{t('plans.room_sheet.empty')}</Text>
+            <Text className="mb-2 text-label leading-5 text-ink-soft">{t('plans.room_sheet.empty')}</Text>
           )}
 
           <View className="mt-4">

@@ -30,7 +30,7 @@ export function PlanPinSizeSwitch({ size, onChange }: { size: PinSize; onChange:
               active ? 'bg-coral' : ''
             }`}
           >
-            <Text className={active ? 'text-sm font-semibold text-white' : 'text-sm text-ink-soft'}>{option}</Text>
+            <Text className={active ? 'text-label font-semibold text-white' : 'text-label text-ink-soft'}>{option}</Text>
           </Pressable>
         );
       })}

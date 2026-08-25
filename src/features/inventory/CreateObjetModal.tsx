@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
+import { SegmentedTabs } from '../../components/SegmentedTabs';
 import type { LocationType } from '../../types/database';
 import { AiPhotoScanFlow } from './AiPhotoScanFlow';
 import { ObjetFormBody } from './ObjetFormBody';
@@ -36,33 +37,21 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
       sheetStyle={mode === 'scan' ? { height: '88%' } : undefined}
     >
       <View className="mb-4 px-6">
-        <Text className="mb-4 text-xl font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
+        <Text className="mb-4 text-heading font-bold text-ink">{t('inventory.container.create_objet_title')}</Text>
         {/* Bascule manuel/scan explicite (mêmes pastilles que les onglets
             Personnelles/Partagées, Phase 9c) — une simple icône dans le coin
             s'est révélée trop discrète, la saisie manuelle semblait absente
             (retour utilisateur du 2026-08-18). Indépendante des boutons
             Annuler/Enregistrer de chaque formulaire, qui referment toujours
             toute la feuille. */}
-        <View className="flex-row gap-2">
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setMode('manual')}
-            className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'manual' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-          >
-            <Text className={mode === 'manual' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-              {t('inventory.container.tab_manual')}
-            </Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setMode('scan')}
-            className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'scan' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-          >
-            <Text className={mode === 'scan' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-              {t('inventory.container.tab_scan')}
-            </Text>
-          </Pressable>
-        </View>
+        <SegmentedTabs
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'manual' as const, label: t('inventory.container.tab_manual') },
+            { value: 'scan' as const, label: t('inventory.container.tab_scan') },
+          ]}
+        />
       </View>
       {/* AUCUNE propriété flex ici, volontairement — `display` et rien
           d'autre. La feuille n'a pas de hauteur définie en mode manuel :

@@ -31,7 +31,7 @@ export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProp
           {/* Espaceur de la largeur de la croix d'en face, pour que le titre
               reste centre. Mis a l'echelle comme elle. */}
           <View style={{ width: spacerWidth }} />
-          <Text numberOfLines={1} className="flex-1 px-2 text-center text-lg font-bold text-ink">
+          <Text numberOfLines={1} className="flex-1 px-2 text-center text-subheading font-bold text-ink">
             {t('inventory.objet.move_title')}
           </Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>

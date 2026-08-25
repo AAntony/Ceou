@@ -120,7 +120,7 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
             // titre reste centre. Mis a l'echelle comme elle.
             <View style={{ width: spacerWidth }} />
           )}
-          <Text numberOfLines={1} className="flex-1 px-2 text-center text-lg font-bold text-ink">{title}</Text>
+          <Text numberOfLines={1} className="flex-1 px-2 text-center text-subheading font-bold text-ink">{title}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
@@ -172,16 +172,23 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
 function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () => void; onChooseScan: () => void }) {
   const colors = useThemeColors();
   const { t } = useTranslation();
+  // DEFILANT, et centre seulement s'il reste de la place (`grow` +
+  // `justify-center`). Les deux cartes grandissent avec le reglage de
+  // taille : sur un ecran court et en tres grand texte, un simple View
+  // centre aurait pousse la seconde hors de l'ecran, sans moyen de
+  // l'atteindre.
   return (
-    <View className="flex-1 justify-center gap-4 px-6 pb-16">
+    <ScrollView contentContainerClassName="grow justify-center gap-4 px-6 pb-16 pt-4">
       <Pressable
         accessibilityRole="button"
         onPress={onChooseScan}
         className="items-center gap-2 rounded-2xl border-2 border-coral bg-coral-light px-6 py-6 active:opacity-70"
       >
         <Icon name="scan" size={32} color={colors.accentDark} />
-        <Text className="text-base font-bold text-coral-dark">{t('inventory.aiScan.entry_title')}</Text>
-        <Text className="text-center text-sm text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
+        {/* Le titre de chacune des deux seules options de l'ecran : c'est le
+            texte qu'on lit en premier, il porte donc un role de titre. */}
+        <Text className="text-center text-subheading font-bold text-coral-dark">{t('inventory.aiScan.entry_title')}</Text>
+        <Text className="text-center text-label text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -189,8 +196,8 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         className="items-center gap-2 rounded-2xl border border-ink/10 bg-sand-dark px-6 py-6 active:opacity-70"
       >
         <Icon name="objet" size={32} color={colors.ink} />
-        <Text className="text-base font-bold text-ink">{t('inventory.container.add_objet')}</Text>
+        <Text className="text-center text-subheading font-bold text-ink">{t('inventory.container.add_objet')}</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }

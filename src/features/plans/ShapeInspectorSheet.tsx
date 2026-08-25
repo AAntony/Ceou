@@ -50,14 +50,14 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onChoosePiece, onC
   return (
     <BottomSheetModal visible={!!forme} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-10 pt-6">
       <ScrollView keyboardShouldPersistTaps="handled">
-        <Text className="mb-4 text-xl font-bold text-ink">{t('plans.shape.title')}</Text>
+        <Text className="mb-4 text-heading font-bold text-ink">{t('plans.shape.title')}</Text>
 
-        <Text className="mb-2 text-sm font-medium text-ink-soft">{t('plans.shape.piece_label')}</Text>
+        <Text className="mb-2 text-label font-medium text-ink-soft">{t('plans.shape.piece_label')}</Text>
         <PresetPicker presets={pieceOptions} selectedKey={pieceId ?? NO_PIECE_KEY} onSelect={handleSelectPiece} labelFor={pieceLabel} />
 
         {selectedPiece ? (
           <>
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('plans.shape.color_label')}</Text>
+            <Text className="mb-2 text-label font-medium text-ink-soft">{t('plans.shape.color_label')}</Text>
             <ColorPicker selectedColor={selectedPiece.color} onSelect={(color) => onChooseColor(selectedPiece.id, color)} />
           </>
         ) : null}

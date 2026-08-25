@@ -30,7 +30,7 @@ export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetPr
       {display ? (
         <>
           <IconBadge icon={display.icon} fill={colors.sandDark} size={56} />
-          <Text className="mb-4 mt-3 text-xl font-bold text-ink">{display.name}</Text>
+          <Text className="mb-4 mt-3 text-heading font-bold text-ink">{display.name}</Text>
         </>
       ) : null}
 

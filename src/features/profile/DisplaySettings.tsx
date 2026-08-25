@@ -1,12 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Switch, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
-import {
-  STACK_SCALE,
-  TEXT_SCALE_PREFERENCES,
-  useTextScale,
-  type TextScalePreference,
-} from '../../lib/textScale';
+import { STACK_SCALE, useTextScale, type TextScalePreference } from '../../lib/textScale';
 import { useTheme, useThemeColors } from '../../lib/theme';
 
 // LES DEUX RÉGLAGES D'ÉCRAN, DANS UNE SEULE CARTE.
@@ -21,14 +16,19 @@ import { useTheme, useThemeColors } from '../../lib/theme';
 // Partagée entre le Profil normal et celui d'un visiteur : un visiteur ne
 // possède rien dans l'app, mais il a les mêmes yeux et le même écran.
 
-// Taille du « Aa » de chaque pastille. Les trois tailles sont montrées CÔTE
-// À CÔTE : c'est ce qui permet de choisir sans essayer, alors qu'un libellé
-// seul (« Grande ») ne dit rien tant qu'on ne l'a pas appliqué.
-const SAMPLE_CLASS: Record<TextScalePreference, string> = {
-  normal: 'text-sm',
-  large: 'text-lg',
-  huge: 'text-2xl',
-};
+// Les trois crans, avec la taille de leur échantillon « Aa ». Montrées CÔTE À
+// CÔTE, elles permettent de choisir sans essayer — un libellé seul
+// (« Grande ») ne dit rien tant qu'on ne l'a pas appliqué.
+//
+// Les clés sont écrites en toutes lettres plutôt que composées
+// (`'…sizes.' + option`) : c'est ce qui permet de vérifier mécaniquement
+// qu'elles existent dans les deux langues, une clé assemblée à l'exécution
+// n'étant contrôlable par rien.
+const OPTIONS: { value: TextScalePreference; labelKey: string; sample: string }[] = [
+  { value: 'normal', labelKey: 'profile.display.sizes.normal', sample: 'text-label' },
+  { value: 'large', labelKey: 'profile.display.sizes.large', sample: 'text-subheading' },
+  { value: 'huge', labelKey: 'profile.display.sizes.huge', sample: 'text-title' },
+];
 
 function Divider() {
   return <View className="my-4 h-px bg-ink/10" />;
@@ -48,8 +48,8 @@ function Preview() {
         <Icon name="tiroir" size={22} color={colors.accentDark} />
       </View>
       <View className="flex-1">
-        <Text className="text-base font-semibold text-ink">{t('profile.display.preview_name')}</Text>
-        <Text className="mt-0.5 text-sm text-ink-soft">{t('profile.display.preview_location')}</Text>
+        <Text className="text-body font-semibold text-ink">{t('profile.display.preview_name')}</Text>
+        <Text className="mt-0.5 text-label text-ink-soft">{t('profile.display.preview_location')}</Text>
       </View>
     </View>
   );
@@ -72,7 +72,7 @@ export function DisplaySettings() {
 
   return (
     <View>
-      <Text className="mb-2 text-sm font-medium text-ink-soft">{t('profile.display.title')}</Text>
+      <Text className="mb-2 text-label font-medium text-ink-soft">{t('profile.display.title')}</Text>
 
       <View className="rounded-2xl border border-ink/10 bg-surface p-4">
         {/* UN INTERRUPTEUR ET NON TROIS CHOIX (clair / sombre / système) :
@@ -83,7 +83,7 @@ export function DisplaySettings() {
         <View className="flex-row items-center justify-between gap-3">
           <View className="flex-1 flex-row items-center gap-3">
             <Icon name="theme" size={20} color={colors.inkSoft} />
-            <Text className="flex-1 text-base text-ink">{t('profile.theme.dark_label')}</Text>
+            <Text className="flex-1 text-body text-ink">{t('profile.theme.dark_label')}</Text>
           </View>
           <Switch
             value={isDark}
@@ -99,7 +99,7 @@ export function DisplaySettings() {
             className="mt-2 self-start py-1"
             accessibilityRole="button"
           >
-            <Text className="text-xs font-semibold text-coral">{t('profile.theme.follow_system')}</Text>
+            <Text className="text-caption font-semibold text-coral">{t('profile.theme.follow_system')}</Text>
           </Pressable>
         )}
 
@@ -107,21 +107,21 @@ export function DisplaySettings() {
 
         <View className="flex-row items-center gap-3">
           <Icon name="textSize" size={20} color={colors.inkSoft} />
-          <Text className="flex-1 text-base text-ink">{t('profile.display.text_size')}</Text>
+          <Text className="flex-1 text-body text-ink">{t('profile.display.text_size')}</Text>
         </View>
 
         {/* `radiogroup` et non trois boutons indépendants : le lecteur
             d'écran annonce alors « 2 sur 3 », donc combien de crans restent. */}
         <View accessibilityRole="radiogroup" className={`mt-3 gap-2 ${stacked ? '' : 'flex-row'}`}>
-          {TEXT_SCALE_PREFERENCES.map((option) => {
-            const selected = option === preference;
+          {OPTIONS.map((option) => {
+            const selected = option.value === preference;
             return (
               <Pressable
-                key={option}
-                onPress={() => setPreference(option)}
+                key={option.value}
+                onPress={() => setPreference(option.value)}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: selected }}
-                accessibilityLabel={t('profile.display.sizes.' + option)}
+                accessibilityLabel={t(option.labelKey)}
                 className={`rounded-xl border px-3 py-3 ${
                   stacked ? 'flex-row items-center gap-3' : 'flex-1 items-center justify-end'
                 } ${selected ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
@@ -132,23 +132,23 @@ export function DisplaySettings() {
                 <Text
                   accessibilityElementsHidden
                   importantForAccessibility="no-hide-descendants"
-                  className={`${SAMPLE_CLASS[option]} font-bold ${selected ? 'text-coral-dark' : 'text-ink-faint'}`}
+                  className={`${option.sample} font-bold ${selected ? 'text-coral-dark' : 'text-ink-faint'}`}
                 >
                   Aa
                 </Text>
                 <Text
-                  className={`text-xs ${stacked ? 'flex-1' : 'mt-1 text-center'} ${
+                  className={`text-caption ${stacked ? 'flex-1' : 'mt-1 text-center'} ${
                     selected ? 'font-semibold text-coral-dark' : 'text-ink-soft'
                   }`}
                 >
-                  {t('profile.display.sizes.' + option)}
+                  {t(option.labelKey)}
                 </Text>
               </Pressable>
             );
           })}
         </View>
 
-        <Text className="mt-2 text-xs leading-4 text-ink-soft">{t('profile.display.text_size_hint')}</Text>
+        <Text className="mt-2 text-caption leading-4 text-ink-soft">{t('profile.display.text_size_hint')}</Text>
 
         <Divider />
 
@@ -156,7 +156,7 @@ export function DisplaySettings() {
             en direct, mais on regarde le contrôle qu'on vient de toucher, pas
             la page entière : la rangée est donc posée juste en dessous, à la
             taille qu'auront les listes de l'inventaire. */}
-        <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-faint">
+        <Text className="mb-2 text-caption font-medium uppercase tracking-wide text-ink-faint">
           {t('profile.display.preview_title')}
         </Text>
         <Preview />
@@ -164,7 +164,7 @@ export function DisplaySettings() {
         {/* Dit à quoi le réglage s'ajoute. Sans cette ligne, quelqu'un dont le
             téléphone est déjà à 130 % ne comprend pas pourquoi « Normale »
             n'est pas la taille qu'il connaît ailleurs. */}
-        <Text className="mt-3 text-xs leading-4 text-ink-faint">
+        <Text className="mt-3 text-caption leading-4 text-ink-faint">
           {osPercent === 100
             ? t('profile.display.system_hint')
             : t('profile.display.system_hint_active', { percent: osPercent })}

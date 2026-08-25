@@ -5,8 +5,10 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
 import { QrCode } from '../../components/QrCode';
+import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
+import { STACK_SCALE, useTextScale } from '../../lib/textScale';
 import type { HabitationPermission, ShareInvite } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { useHabitations } from '../inventory/queries';
@@ -29,6 +31,8 @@ type TargetType = 'friend' | 'guest';
 // destinataire.
 export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   const colors = useThemeColors();
+  const { textScale } = useTextScale();
+  const fieldsStacked = textScale >= STACK_SCALE;
   const { t } = useTranslation();
   const { session } = useSession();
   const { data: habitations } = useHabitations();
@@ -162,33 +166,21 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
         // maxHeight de la feuille au lieu de défiler — invisible tant qu'on
         // a peu d'Habitations, bloquant dès qu'on en a beaucoup.
         <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
-          <Text className="mb-4 text-xl font-bold text-ink">{t('friends.share.title')}</Text>
+          <Text className="mb-4 text-heading font-bold text-ink">{t('friends.share.title')}</Text>
 
-          <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.share.target_type')}</Text>
-          <View className="mb-4 flex-row gap-2">
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setTargetType('friend')}
-              className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'friend' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-            >
-              <Text className={targetType === 'friend' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-                {t('friends.share.target_friend')}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setTargetType('guest')}
-              className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'guest' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-            >
-              <Text className={targetType === 'guest' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-                {t('friends.share.target_guest')}
-              </Text>
-            </Pressable>
-          </View>
+          <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.share.target_type')}</Text>
+          <SegmentedTabs
+            value={targetType}
+            onChange={setTargetType}
+            options={[
+              { value: 'friend' as const, label: t('friends.share.target_friend') },
+              { value: 'guest' as const, label: t('friends.share.target_guest') },
+            ]}
+          />
 
-          <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.share.choose_habitations')}</Text>
+          <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.share.choose_habitations')}</Text>
           {myHabitations.length === 0 ? (
-            <Text className="mb-4 text-sm text-ink-soft">{t('friends.detail.no_habitations')}</Text>
+            <Text className="mb-4 text-label text-ink-soft">{t('friends.detail.no_habitations')}</Text>
           ) : (
             myHabitations.map((h) => {
               const selected = selectedHabitationIds.includes(h.id);
@@ -199,7 +191,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   onPress={() => toggleHabitation(h.id)}
                   className="mb-2 flex-row items-center justify-between rounded-xl border border-ink/10 px-4 py-2.5"
                 >
-                  <Text numberOfLines={2} className="flex-1 pr-3 text-sm text-ink">
+                  <Text numberOfLines={2} className="flex-1 pr-3 text-label text-ink">
                     {h.name}
                   </Text>
                   <Icon name={selected ? 'included' : 'excluded'} size={20} color={selected ? '#4CAF50' : colors.inkFaint} />
@@ -210,40 +202,31 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
 
           {targetType === 'friend' ? (
             <>
-              <Text className="mb-2 mt-2 text-sm font-medium text-ink-soft">{t('friends.share.permission')}</Text>
+              <Text className="mb-2 mt-2 text-label font-medium text-ink-soft">{t('friends.share.permission')}</Text>
               <PermissionPicker value={permission} onChange={(p) => p && setPermission(p)} />
             </>
           ) : (
             <>
-              <Text className="mt-2 text-xs text-ink-soft">{t('friends.share.guest_permission_note')}</Text>
+              <Text className="mt-2 text-caption text-ink-soft">{t('friends.share.guest_permission_note')}</Text>
 
-              <Text className="mb-2 mt-4 text-sm font-medium text-ink-soft">{t('friends.share.validity')}</Text>
-              <View className="mb-3 flex-row gap-2">
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setGuestPermanent(false)}
-                  className={`flex-1 items-center rounded-xl border px-4 py-3 ${!guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-                >
-                  <Text className={!guestPermanent ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-                    {t('friends.share.validity_limited')}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setGuestPermanent(true)}
-                  className={`flex-1 items-center rounded-xl border px-4 py-3 ${guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
-                >
-                  <Text className={guestPermanent ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
-                    {t('friends.share.validity_permanent')}
-                  </Text>
-                </Pressable>
-              </View>
+              <Text className="mb-2 mt-4 text-label font-medium text-ink-soft">{t('friends.share.validity')}</Text>
+              <SegmentedTabs
+                value={guestPermanent ? 'permanent' : 'limited'}
+                onChange={(next: 'limited' | 'permanent') => setGuestPermanent(next === 'permanent')}
+                options={[
+                  { value: 'limited' as const, label: t('friends.share.validity_limited') },
+                  { value: 'permanent' as const, label: t('friends.share.validity_permanent') },
+                ]}
+              />
 
               {guestPermanent ? (
-                <Text className="mb-1 text-xs leading-4 text-ink-soft">{t('friends.share.permanent_note')}</Text>
+                <Text className="mb-1 text-caption leading-4 text-ink-soft">{t('friends.share.permanent_note')}</Text>
               ) : (
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
+                /* Deux champs cote a cote, chacun avec son libelle : a x1,3
+                   « Nombre d'utilisations » n'a plus qu'une demi-largeur et
+                   s'y coupe. Empiles, chaque libelle tient sur une ligne. */
+                <View className={fieldsStacked ? '' : 'flex-row gap-3'}>
+                  <View className={fieldsStacked ? '' : 'flex-1'}>
                     <TextField
                       label={t('friends.share.max_uses')}
                       value={guestMaxUses}
@@ -252,7 +235,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                       maxLength={3}
                     />
                   </View>
-                  <View className="flex-1">
+                  <View className={fieldsStacked ? '' : 'flex-1'}>
                     <TextField
                       label={t('friends.share.duration_days')}
                       value={guestDays}
@@ -280,7 +263,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                     keyboardType="number-pad"
                     maxLength={4}
                   />
-                  <Text className="mb-3 -mt-2 text-xs leading-4 text-ink-soft">{t('friends.share.remind_hint')}</Text>
+                  <Text className="mb-3 -mt-2 text-caption leading-4 text-ink-soft">{t('friends.share.remind_hint')}</Text>
                 </>
               )}
 
@@ -308,10 +291,10 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
         </ScrollView>
       ) : resultInvite ? (
         <View className="items-center pb-6">
-          <Text className="mb-4 text-xl font-bold text-ink">{t('friends.share.result_title')}</Text>
+          <Text className="mb-4 text-heading font-bold text-ink">{t('friends.share.result_title')}</Text>
           <QrCode value={formatInviteQrValue(resultInvite.code)} size={200} />
-          <Text className="mt-4 text-lg font-bold tracking-widest text-ink">{resultInvite.code}</Text>
-          <Text className="mt-1 text-center text-xs text-ink-soft">{t('friends.share.expires_hint')}</Text>
+          <Text className="mt-4 text-subheading font-bold tracking-widest text-ink">{resultInvite.code}</Text>
+          <Text className="mt-1 text-center text-caption text-ink-soft">{t('friends.share.expires_hint')}</Text>
           <View className="mt-6 w-full gap-3">
             <Button label={t('friends.share.share_button')} onPress={handleShare} />
             <Button label={t('common.close')} variant="ghost" onPress={onClose} />

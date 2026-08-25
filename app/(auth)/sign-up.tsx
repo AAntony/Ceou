@@ -49,10 +49,10 @@ export default function SignUpScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-8 text-3xl font-bold text-ink">{t('auth.sign_up.title')}</Text>
+        <Text className="mb-8 text-display font-bold text-ink">{t('auth.sign_up.title')}</Text>
 
         {success ? (
-          <Text className="text-base text-ink-soft">{t('auth.sign_up.success')}</Text>
+          <Text className="text-body text-ink-soft">{t('auth.sign_up.success')}</Text>
         ) : (
           <>
             <TextField
@@ -77,11 +77,11 @@ export default function SignUpScreen() {
               textContentType="newPassword"
             />
 
-            {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+            {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
             <Button label={t('auth.sign_up.submit')} onPress={handleSubmit} loading={loading} />
 
-            <Text className="mt-4 text-center text-xs text-ink-soft">
+            <Text className="mt-4 text-center text-caption text-ink-soft">
               {t('auth.sign_up.privacy_notice')}{' '}
               <Link href="/privacy-policy" className="font-semibold text-ink-soft underline">
                 {t('profile.privacy_policy')}
@@ -91,12 +91,12 @@ export default function SignUpScreen() {
         )}
 
         <View className="mt-8 flex-row flex-wrap items-center justify-center gap-1">
-          <Text className="text-sm text-ink-soft">{t('auth.sign_up.has_account')}</Text>
+          <Text className="text-label text-ink-soft">{t('auth.sign_up.has_account')}</Text>
           <TextLink
             href="/(auth)/login"
             label={t('auth.sign_up.login_link')}
             className="px-1"
-            textClassName="text-sm font-semibold text-ink"
+            textClassName="text-label font-semibold text-ink"
           />
         </View>
       </ScrollView>

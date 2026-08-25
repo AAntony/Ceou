@@ -5,8 +5,6 @@ import { AppState, PixelRatio } from 'react-native';
 
 export type TextScalePreference = 'normal' | 'large' | 'huge';
 
-export const TEXT_SCALE_PREFERENCES: TextScalePreference[] = ['normal', 'large', 'huge'];
-
 // TROIS CRANS, pas un curseur continu. Un curseur demande de viser, et c'est
 // justement la personne qui a du mal a lire l'ecran qui devrait le faire.
 //
@@ -105,7 +103,7 @@ export function TextScaleProvider({ children }: PropsWithChildren) {
   // TOUT PASSE PAR CETTE SEULE LIGNE.
   //
   // NativeWind exprime ses tailles Tailwind en `rem` et les resout a
-  // l'execution contre cette valeur observable : `text-base`, mais aussi
+  // l'execution contre cette valeur observable : `text-body`, mais aussi
   // `p-4`, `gap-2`, `h-12`, `rounded-2xl`. La deplacer agrandit donc le
   // texte ET la place qu'on lui a reservee, en une fois et partout.
   //
@@ -151,4 +149,18 @@ export function useTextScale() {
 export function useScaled(size: number): number {
   const { factor } = useTextScale();
   return Math.round(size * factor);
+}
+
+// LE MOBILIER NATIF NE GRANDIT PAS AUTANT QUE LE CONTENU.
+//
+// La barre d'onglets et l'en-tete d'ecran ont une hauteur que le systeme
+// fixe : a x1,6 leur contenu deborderait, et quatre libelles d'onglets ne
+// tiennent de toute facon pas dans la largeur d'un ecran. Ils grandissent
+// donc jusqu'a ce plafond, puis s'arretent — le CONTENU, lui, continue.
+export const MAX_CHROME_SCALE = 1.3;
+
+/** Facteur d'agrandissement du mobilier natif : plafonne, contrairement au contenu. */
+export function useChromeScale(): number {
+  const { factor } = useTextScale();
+  return Math.min(factor, MAX_CHROME_SCALE);
 }

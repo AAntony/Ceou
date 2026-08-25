@@ -87,12 +87,12 @@ export default function UpgradeAccountScreen() {
       <>
         <Stack.Screen options={{ headerShown: true, title: t('guest.upgrade.title') }} />
         <View className="flex-1 justify-center bg-sand px-6">
-          <Text className="mb-3 text-2xl font-bold text-ink">{t('guest.upgrade.sent_title')}</Text>
+          <Text className="mb-3 text-title font-bold text-ink">{t('guest.upgrade.sent_title')}</Text>
           {/* Le compte reste EN MODE VISITEUR tant que l'adresse n'est pas
               confirmée : Supabase ne bascule is_anonymous à false qu'après le
               clic dans l'e-mail. Le dire evite de croire a un echec en voyant
               le bandeau invité toujours présent. */}
-          <Text className="mb-8 text-base leading-6 text-ink-soft">
+          <Text className="mb-8 text-body leading-6 text-ink-soft">
             {t('guest.upgrade.sent_body', { email: email.trim() })}
           </Text>
           <Button label={t('common.close')} onPress={() => router.back()} />
@@ -106,8 +106,8 @@ export default function UpgradeAccountScreen() {
       <Stack.Screen options={{ headerShown: true, title: t('guest.upgrade.title') }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
         <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-          <Text className="mb-2 text-3xl font-bold text-ink">{t('guest.upgrade.title')}</Text>
-          <Text className="mb-8 text-base leading-6 text-ink-soft">{t('guest.upgrade.description')}</Text>
+          <Text className="mb-2 text-display font-bold text-ink">{t('guest.upgrade.title')}</Text>
+          <Text className="mb-8 text-body leading-6 text-ink-soft">{t('guest.upgrade.description')}</Text>
 
           <TextField
             label={t('auth.email')}
@@ -131,7 +131,7 @@ export default function UpgradeAccountScreen() {
             textContentType="newPassword"
           />
 
-          {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+          {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
           <Button
             label={t('guest.upgrade.submit')}
@@ -140,16 +140,16 @@ export default function UpgradeAccountScreen() {
             disabled={!email.trim() || !password || !confirmPassword}
           />
 
-          <Text className="mt-4 text-center text-xs leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
+          <Text className="mt-4 text-center text-caption leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
 
-          <Text className="mt-6 text-center text-xs text-ink-soft">
+          <Text className="mt-6 text-center text-caption text-ink-soft">
             {t('auth.sign_up.privacy_notice')}{' '}
           </Text>
           <TextLink
             href="/privacy-policy"
             label={t('profile.privacy_policy')}
             className="items-center"
-            textClassName="text-center text-xs font-semibold text-ink-soft underline"
+            textClassName="text-center text-caption font-semibold text-ink-soft underline"
           />
         </ScrollView>
       </KeyboardAvoidingView>

@@ -65,8 +65,8 @@ export function PlanTemplatePicker({ planId }: { planId: string }) {
 
   return (
     <ScrollView className="flex-1" contentContainerClassName="px-6 pb-8 pt-2" keyboardShouldPersistTaps="handled">
-      <Text className="text-2xl font-bold leading-8 text-ink">{t('plans.templates.title')}</Text>
-      <Text className="mt-2 text-base leading-6 text-ink-soft">{t('plans.templates.description')}</Text>
+      <Text className="text-title font-bold leading-8 text-ink">{t('plans.templates.title')}</Text>
+      <Text className="mt-2 text-body leading-6 text-ink-soft">{t('plans.templates.description')}</Text>
 
       <View className="mt-5 flex-row flex-wrap justify-between">
         {PLAN_TEMPLATES.map((template) => {
@@ -83,10 +83,10 @@ export function PlanTemplatePicker({ planId }: { planId: string }) {
               style={{ width: '48%' }}
             >
               <TemplatePreview template={template} active={active} />
-              <Text className={`mt-2.5 text-base font-semibold ${active ? 'text-coral-dark' : 'text-ink'}`}>
+              <Text className={`mt-2.5 text-body font-semibold ${active ? 'text-coral-dark' : 'text-ink'}`}>
                 {t(template.labelKey)}
               </Text>
-              <Text className={`text-xs ${active ? 'text-coral-dark' : 'text-ink-soft'}`}>
+              <Text className={`text-caption ${active ? 'text-coral-dark' : 'text-ink-soft'}`}>
                 {t('plans.templates.room_count', { n: template.rooms.length })}
               </Text>
             </Pressable>
@@ -101,7 +101,7 @@ export function PlanTemplatePicker({ planId }: { planId: string }) {
       {/* Les pièces manquantes sont créées dans l'habitation, celles qui
           existent déjà sont réutilisées — le dire évite de croire qu'on va
           se retrouver avec deux « Cuisine ». */}
-      <Text className="mt-3 text-center text-xs leading-4 text-ink-soft">{t('plans.templates.note')}</Text>
+      <Text className="mt-3 text-center text-caption leading-4 text-ink-soft">{t('plans.templates.note')}</Text>
 
       {applyTemplate.isPending ? (
         <View className="mt-4 items-center">

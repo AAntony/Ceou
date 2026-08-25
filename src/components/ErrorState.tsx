@@ -31,8 +31,8 @@ export function ErrorState({ onRetry, title }: ErrorStateProps) {
       <View className="mb-3 h-16 w-16 items-center justify-center rounded-full bg-coral-light">
         <Icon name="alert" size={30} color={colors.accentDark} />
       </View>
-      <Text className="mb-1 text-center text-base font-medium text-ink">{title ?? t('common.error_load_title')}</Text>
-      <Text className="mb-4 text-center text-sm text-ink-soft">{t('common.error_load_hint')}</Text>
+      <Text className="mb-1 text-center text-body font-medium text-ink">{title ?? t('common.error_load_title')}</Text>
+      <Text className="mb-4 text-center text-label text-ink-soft">{t('common.error_load_hint')}</Text>
       {onRetry ? (
         <View className="w-44">
           <Button label={t('common.retry')} variant="outline" onPress={onRetry} />

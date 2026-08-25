@@ -59,7 +59,7 @@ function Option({
       }`}
     >
       <Icon name={icon} size={16} color={active ? '#fff' : colors.inkSoft} />
-      <Text className={active ? 'text-sm font-semibold text-white' : 'text-sm text-ink-soft'}>{label}</Text>
+      <Text className={active ? 'text-label font-semibold text-white' : 'text-label text-ink-soft'}>{label}</Text>
     </Pressable>
   );
 }

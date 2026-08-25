@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, ScrollView, Text, View } from 'react-native';
 import { logClientError } from '../lib/errorLogging';
 import { BottomSheetModal } from './BottomSheetModal';
-import { Button } from './Button';
+import { FormActions } from './FormActions';
 import { TextField } from './TextField';
 
 type CreateEntityModalProps = {
@@ -58,16 +58,18 @@ export function CreateEntityModal({
       sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6"
     >
       <ScrollView keyboardShouldPersistTaps="handled">
-        <Text className="mb-4 text-xl font-bold text-ink">{title}</Text>
+        <Text className="mb-4 text-heading font-bold text-ink">{title}</Text>
         {children}
         <TextField label={nameLabel} value={name} onChangeText={onNameChange} autoFocus={!children} />
-        <View className="mt-2 flex-row gap-3">
-          <View className="flex-1">
-            <Button label={cancelLabel} variant="ghost" onPress={onClose} />
-          </View>
-          <View className="flex-1">
-            <Button label={submitLabel} onPress={handleSubmit} loading={loading} disabled={!name.trim()} />
-          </View>
+        <View className="mt-2">
+          <FormActions
+            cancelLabel={cancelLabel}
+            onCancel={onClose}
+            confirmLabel={submitLabel}
+            onConfirm={handleSubmit}
+            loading={loading}
+            disabled={!name.trim()}
+          />
         </View>
       </ScrollView>
     </BottomSheetModal>

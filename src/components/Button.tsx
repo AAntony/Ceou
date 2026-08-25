@@ -32,7 +32,7 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
         className={`items-center justify-center self-center rounded-full bg-red-500 px-6 py-2.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
         {...pressableProps}
       >
-        {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-sm font-semibold text-white">{label}</Text>}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text className="text-center text-label font-semibold text-white">{label}</Text>}
       </Pressable>
     );
   }
@@ -43,10 +43,10 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
         disabled={disabled || loading}
         accessibilityRole="button"
         accessibilityState={{ disabled: disabled || loading, busy: loading }}
-        className={`items-center justify-center rounded-xl border-2 border-coral bg-coral-light py-3.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
+        className={`items-center justify-center rounded-xl border-2 border-coral bg-coral-light px-4 py-3.5 active:opacity-80 ${disabled || loading ? 'opacity-50' : ''}`}
         {...pressableProps}
       >
-        {loading ? <ActivityIndicator color={colors.accentDark} /> : <Text className="text-base font-semibold text-coral-dark">{label}</Text>}
+        {loading ? <ActivityIndicator color={colors.accentDark} /> : <Text className="text-center text-body font-semibold text-coral-dark">{label}</Text>}
       </Pressable>
     );
   }
@@ -58,7 +58,7 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
       // `busy` fait annoncer « en cours » pendant l'attente : sans lui, un
       // bouton qui tourne est simplement un bouton qui ne répond pas.
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      className={`items-center justify-center rounded-xl py-3.5 active:opacity-80 ${
+      className={`items-center justify-center rounded-xl px-4 py-3.5 active:opacity-80 ${
         isPrimary ? 'bg-coral' : 'bg-transparent'
       } ${disabled || loading ? 'opacity-50' : ''}`}
       {...pressableProps}
@@ -66,7 +66,9 @@ export function Button({ label, loading, variant = 'primary', disabled, ...press
       {loading ? (
         <ActivityIndicator color={isPrimary ? '#fff' : colors.ink} />
       ) : (
-        <Text className={`text-base font-semibold ${isPrimary ? 'text-white' : 'text-ink'}`}>{label}</Text>
+        // Centre : en gros texte un libelle passe sur deux lignes, et un
+        // alignement a gauche desaxerait tout le bouton.
+        <Text className={`text-center text-body font-semibold ${isPrimary ? 'text-white' : 'text-ink'}`}>{label}</Text>
       )}
     </Pressable>
   );

@@ -82,7 +82,7 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
   return (
     <>
       <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6">
-        <Text className="mb-4 text-xl font-bold text-ink">{t('friends.add.title')}</Text>
+        <Text className="mb-4 text-heading font-bold text-ink">{t('friends.add.title')}</Text>
         <TextField label={t('friends.add.code_label')} value={code} onChangeText={setCode} autoCapitalize="characters" autoFocus />
         <View className="mb-4 mt-2">
           <Button
@@ -94,7 +94,7 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
         </View>
         <View className="mb-4 flex-row items-center gap-3">
           <View className="h-px flex-1 bg-ink/10" />
-          <Text className="text-xs text-ink-soft">{t('friends.add.or')}</Text>
+          <Text className="text-caption text-ink-soft">{t('friends.add.or')}</Text>
           <View className="h-px flex-1 bg-ink/10" />
         </View>
         <Button label={t('friends.add.scan')} variant="ghost" onPress={() => setScannerVisible(true)} />

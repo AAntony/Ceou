@@ -35,7 +35,7 @@ export default function ResetPasswordScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-8 text-3xl font-bold text-ink">{t('auth.reset_password.title')}</Text>
+        <Text className="mb-8 text-display font-bold text-ink">{t('auth.reset_password.title')}</Text>
 
         <TextField
           label={t('auth.reset_password.new_password')}
@@ -45,7 +45,7 @@ export default function ResetPasswordScreen() {
           textContentType="newPassword"
         />
 
-        {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+        {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
         <Button label={t('auth.reset_password.submit')} onPress={handleSubmit} loading={loading} />
       </ScrollView>

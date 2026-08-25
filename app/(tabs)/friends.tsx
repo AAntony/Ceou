@@ -105,10 +105,10 @@ export default function FriendsScreen() {
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
         {incoming.length > 0 ? (
           <View className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.requests.incoming_title')}</Text>
+            <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.requests.incoming_title')}</Text>
             {incoming.map((f) => (
               <View key={f.id} className="mb-2 flex-row items-center justify-between rounded-xl border border-coral/30 bg-coral-light px-4 py-3">
-                <Text numberOfLines={1} className="flex-1 pr-2 text-sm font-medium text-ink">
+                <Text numberOfLines={1} className="flex-1 pr-2 text-label font-medium text-ink">
                   {f.otherDisplayName || f.otherFriendCode}
                 </Text>
                 <View className="flex-row gap-3">
@@ -139,14 +139,14 @@ export default function FriendsScreen() {
 
         {outgoing.length > 0 ? (
           <View className="mb-6">
-            <Text className="mb-2 text-sm font-medium text-ink-soft">{t('friends.requests.outgoing_title')}</Text>
+            <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.requests.outgoing_title')}</Text>
             {outgoing.map((f) => (
               <View key={f.id} className="mb-2 flex-row items-center justify-between rounded-xl border border-ink/10 px-4 py-3">
-                <Text numberOfLines={1} className="flex-1 pr-2 text-sm text-ink">
+                <Text numberOfLines={1} className="flex-1 pr-2 text-label text-ink">
                   {f.otherDisplayName || f.otherFriendCode}
                 </Text>
                 <Pressable onPress={() => cancelRequest.mutate(f.id)} hitSlop={8} accessibilityRole="button">
-                  <Text className="text-xs font-semibold text-ink-soft">{t('friends.requests.cancel')}</Text>
+                  <Text className="text-caption font-semibold text-ink-soft">{t('friends.requests.cancel')}</Text>
                 </Pressable>
               </View>
             ))}
@@ -160,11 +160,13 @@ export default function FriendsScreen() {
         {sections.map((section) => (
           <View key={section.category?.id ?? 'unfiled'} className="mb-5">
             <View className="mb-2 flex-row items-center gap-2">
-              <Text numberOfLines={1} className="shrink text-xs font-semibold uppercase tracking-wide text-ink-soft">
+              {/* `label` et non `caption` : c'est le sommaire de l'ecran,
+                  il etait jusqu'ici son texte le plus petit. */}
+              <Text numberOfLines={1} className="shrink text-label font-semibold uppercase tracking-wide text-ink-soft">
                 {section.category?.name ?? t('friends.unfiled')}
               </Text>
               <View className="rounded-full bg-ink/5 px-2 py-0.5">
-                <Text className="text-xs text-ink-soft">{section.friends.length}</Text>
+                <Text className="text-label text-ink-soft">{section.friends.length}</Text>
               </View>
               <View className="flex-1" />
               {/* Pas de menu sur « Sans catégorie » : ce n'est pas une
@@ -176,8 +178,9 @@ export default function FriendsScreen() {
                   hitSlop={10}
                   accessibilityRole="button"
                   accessibilityLabel={t('a11y.category_options', { name: section.category.name })}
+                  className="rounded-full border border-ink/10 p-1.5 active:opacity-60"
                 >
-                  <Icon name="dots" size={20} color={colors.inkFaint} />
+                  <Icon name="dots" size={20} color={colors.inkSoft} />
                 </Pressable>
               ) : null}
             </View>
@@ -185,7 +188,7 @@ export default function FriendsScreen() {
             {/* Une catégorie vide reste affichée : elle vient d'être créée,
                 la faire disparaître ferait croire à un échec. */}
             {section.friends.length === 0 ? (
-              <Text className="mb-1 text-xs text-ink-soft">{t('friends.categories.empty_hint')}</Text>
+              <Text className="mb-1 text-caption text-ink-soft">{t('friends.categories.empty_hint')}</Text>
             ) : (
               section.friends.map((f) => (
                 <FriendRow
@@ -205,10 +208,10 @@ export default function FriendsScreen() {
           <Pressable
             onPress={() => setCategorySheet(null)}
             accessibilityRole="button"
-            className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 py-3 active:opacity-70"
+            className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 px-3 py-3.5 active:opacity-70"
           >
-            <Icon name="add" size={16} color={colors.accent} />
-            <Text className="shrink text-sm text-coral">{t('friends.categories.new')}</Text>
+            <Icon name="add" size={20} color={colors.accent} />
+            <Text className="shrink text-body font-semibold text-coral">{t('friends.categories.new')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

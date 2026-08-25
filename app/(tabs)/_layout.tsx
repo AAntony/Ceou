@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../src/features/auth/SessionProvider';
+import { useChromeScale } from '../../src/lib/textScale';
 import { useThemeColors } from '../../src/lib/theme';
 
 // Les écrans (entities) — Habitations, Pièce, Emplacement — utilisent
@@ -20,12 +21,14 @@ import { useThemeColors } from '../../src/lib/theme';
 //
 // Sur iOS les deux valent déjà 44 : ce correctif ne change rien là-bas.
 const NATIVE_STACK_HEADER_HEIGHT = Platform.OS === 'ios' ? 44 : 56;
+const HEADER_TITLE_SIZE = Platform.OS === 'ios' ? 17 : 20;
 
 export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const colors = useThemeColors();
+  const chrome = useChromeScale();
 
   if (isLoading) return <View className="flex-1 bg-sand" />;
   if (!session) return <Redirect href="/(auth)/login" />;
@@ -57,9 +60,17 @@ export default function TabsLayout() {
         options={{
           headerShown: true,
           title: t('friends.tab_title'),
-          headerStyle: { backgroundColor: colors.sand, height: NATIVE_STACK_HEADER_HEIGHT + insets.top },
+          // Contrairement a l'en-tete natif de (entities), celui-ci est rendu
+          // en JavaScript : sa hauteur suit donc le reglage, elle aussi.
+          headerStyle: {
+            backgroundColor: colors.sand,
+            height: Math.round(NATIVE_STACK_HEADER_HEIGHT * chrome) + insets.top,
+          },
           headerTintColor: colors.accent,
-          headerTitleStyle: { color: colors.ink },
+          headerTitleStyle: {
+            color: colors.ink,
+            ...(chrome > 1 ? { fontSize: Math.round(HEADER_TITLE_SIZE * chrome) } : {}),
+          },
         }}
       />
       <Tabs.Screen name="profile" />

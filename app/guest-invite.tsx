@@ -96,7 +96,7 @@ export default function GuestInviteScreen() {
         <Stack.Screen options={{ headerShown: false }} />
         <View className="flex-1 items-center justify-center bg-sand px-6">
           <ActivityIndicator />
-          <Text className="mt-4 text-center text-base text-ink-soft">{t('guest.joining')}</Text>
+          <Text className="mt-4 text-center text-body text-ink-soft">{t('guest.joining')}</Text>
         </View>
       </>
     );
@@ -107,8 +107,8 @@ export default function GuestInviteScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
         <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-          <Text className="mb-2 text-3xl font-bold text-ink">{t('guest.title')}</Text>
-          <Text className="mb-8 text-base leading-6 text-ink-soft">{t('guest.description')}</Text>
+          <Text className="mb-2 text-display font-bold text-ink">{t('guest.title')}</Text>
+          <Text className="mb-8 text-body leading-6 text-ink-soft">{t('guest.description')}</Text>
 
           <TextField
             label={t('guest.code_label')}
@@ -119,25 +119,25 @@ export default function GuestInviteScreen() {
             maxLength={10}
           />
 
-          {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+          {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
           <Button label={t('guest.submit')} onPress={() => enter(code)} loading={loading} disabled={!code.trim()} />
 
           <View className="my-4 flex-row items-center gap-3">
             <View className="h-px flex-1 bg-ink/10" />
-            <Text className="text-xs text-ink-soft">{t('guest.or')}</Text>
+            <Text className="text-caption text-ink-soft">{t('guest.or')}</Text>
             <View className="h-px flex-1 bg-ink/10" />
           </View>
 
           <Button label={t('guest.scan')} variant="ghost" onPress={() => setScannerVisible(true)} />
 
-          <Text className="mt-6 text-center text-xs leading-4 text-ink-soft">{t('guest.no_account_note')}</Text>
+          <Text className="mt-6 text-center text-caption leading-4 text-ink-soft">{t('guest.no_account_note')}</Text>
 
           <TextLink
             href="/(auth)/login"
             label={t('guest.back_to_login')}
             className="mt-6 items-center"
-            textClassName="text-center text-sm font-semibold text-ink"
+            textClassName="text-center text-label font-semibold text-ink"
           />
         </ScrollView>
       </KeyboardAvoidingView>

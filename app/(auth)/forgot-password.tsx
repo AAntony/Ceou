@@ -37,13 +37,13 @@ export default function ForgotPasswordScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-2 text-3xl font-bold text-ink">{t('auth.forgot_password.title')}</Text>
+        <Text className="mb-2 text-display font-bold text-ink">{t('auth.forgot_password.title')}</Text>
 
         {success ? (
-          <Text className="mt-4 text-base text-ink-soft">{t('auth.forgot_password.success')}</Text>
+          <Text className="mt-4 text-body text-ink-soft">{t('auth.forgot_password.success')}</Text>
         ) : (
           <>
-            <Text className="mb-8 text-base text-ink-soft">{t('auth.forgot_password.description')}</Text>
+            <Text className="mb-8 text-body text-ink-soft">{t('auth.forgot_password.description')}</Text>
 
             <TextField
               label={t('auth.email')}
@@ -53,7 +53,7 @@ export default function ForgotPasswordScreen() {
               textContentType="emailAddress"
             />
 
-            {error ? <Text className="mb-4 text-sm text-red-600">{error}</Text> : null}
+            {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
 
             <Button label={t('auth.forgot_password.submit')} onPress={handleSubmit} loading={loading} />
           </>
@@ -63,7 +63,7 @@ export default function ForgotPasswordScreen() {
           href="/(auth)/login"
           label={t('auth.forgot_password.back_to_login')}
           className="mt-8 items-center"
-          textClassName="text-center text-sm font-semibold text-ink"
+          textClassName="text-center text-label font-semibold text-ink"
         />
       </ScrollView>
     </KeyboardAvoidingView>

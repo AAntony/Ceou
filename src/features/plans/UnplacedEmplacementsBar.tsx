@@ -32,7 +32,7 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
 
   return (
     <View className="rounded-2xl border border-ink/10 bg-surface/95 px-3 py-2">
-      <Text className="mb-1.5 text-xs font-medium text-ink-soft">{t('plans.unplaced_title')}</Text>
+      <Text className="mb-1.5 text-caption font-medium text-ink-soft">{t('plans.unplaced_title')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2">
         {unplaced.map((e) => (
           <Pressable
@@ -42,7 +42,7 @@ export function UnplacedEmplacementsBar({ pieceId, pins, onPlace }: UnplacedEmpl
             className="flex-row items-center gap-2 self-start rounded-full border border-ink/10 bg-sand px-3 py-1.5 active:opacity-70"
           >
             <IconBadge icon={getEmplacementIcon(e.preset_key)} fill={colors.sandDark} size={26} />
-            <Text numberOfLines={1} className="text-sm font-medium text-ink">
+            <Text numberOfLines={1} className="text-label font-medium text-ink">
               {e.name}
             </Text>
           </Pressable>

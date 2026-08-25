@@ -35,8 +35,8 @@ export function GuestProfile() {
         <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-coral-light">
           <Icon name="location" size={40} color="#1591EA" />
         </View>
-        <Text className="text-3xl font-bold text-ink">{t('app_name')}</Text>
-        <Text className="mt-2 text-center text-base leading-6 text-ink-soft">{t('guest.pitch.tagline')}</Text>
+        <Text className="text-display font-bold text-ink">{t('app_name')}</Text>
+        <Text className="mt-2 text-center text-body leading-6 text-ink-soft">{t('guest.pitch.tagline')}</Text>
       </View>
 
       <View className="mt-8 rounded-2xl border border-ink/10 bg-surface p-5">
@@ -45,7 +45,7 @@ export function GuestProfile() {
             <View className="mt-0.5 h-8 w-8 items-center justify-center rounded-full bg-coral-light">
               <Icon name={point.icon} size={18} color="#1591EA" />
             </View>
-            <Text className="flex-1 text-sm leading-5 text-ink-soft">{t(point.key)}</Text>
+            <Text className="flex-1 text-label leading-5 text-ink-soft">{t(point.key)}</Text>
           </View>
         ))}
       </View>
@@ -58,7 +58,7 @@ export function GuestProfile() {
           lors de la conversion, donc les accès reçus par code survivent. Le
           dire ici évite au visiteur de croire qu'il devra redemander le code
           à son hôte. */}
-      <Text className="mt-3 text-center text-xs leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
+      <Text className="mt-3 text-center text-caption leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
 
       <View className="mt-10">
         <DisplaySettings />
@@ -68,13 +68,13 @@ export function GuestProfile() {
         href="/privacy-policy"
         label={t('profile.privacy_policy')}
         className="mt-10 items-center"
-        textClassName="text-center text-sm text-ink-soft underline"
+        textClassName="text-center text-label text-ink-soft underline"
       />
 
       {/* Quitter le mode invité perd l'accès : le libellé le dit, et c'est
           volontairement le lien le plus discret de l'écran. */}
       <Pressable accessibilityRole="button" onPress={() => supabase.auth.signOut({ scope: 'local' })} className="mt-6 py-2">
-        <Text className="text-center text-sm font-semibold text-red-600">{t('guest.leave')}</Text>
+        <Text className="text-center text-label font-semibold text-red-600">{t('guest.leave')}</Text>
       </Pressable>
     </ScrollView>
   );

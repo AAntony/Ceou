@@ -49,7 +49,7 @@ export function LocationBreadcrumb({ objetId }: LocationBreadcrumbProps) {
 
   return (
     <View className="mb-6 rounded-2xl border border-ink/10 bg-surface px-4 py-3">
-      <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft">
+      <Text className="mb-2 text-caption font-semibold uppercase tracking-wide text-ink-soft">
         {t('inventory.objet.location_title')}
       </Text>
       <View className="flex-row flex-wrap items-center">
@@ -72,7 +72,7 @@ export function LocationBreadcrumb({ objetId }: LocationBreadcrumbProps) {
               className="ml-1 flex-row items-center gap-1 rounded-full bg-sand-dark px-2.5 py-1 active:opacity-60"
             >
               <Icon name={iconForNode(node)} size={13} color={LINK} />
-              <Text className="text-xs font-medium" style={{ color: LINK }}>
+              <Text className="text-caption font-medium" style={{ color: LINK }}>
                 {node.name}
               </Text>
             </Pressable>

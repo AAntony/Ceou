@@ -73,7 +73,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 
   return (
     <View className="mb-4">
-      <Text className="mb-1.5 text-sm font-medium text-ink-soft">{label}</Text>
+      <Text className="mb-1.5 text-label font-medium text-ink-soft">{label}</Text>
       {/* La bordure porte sur l'ensemble et non sur le champ seul : c'est ce
           qui met l'œil À L'INTÉRIEUR du cadre plutôt qu'à côté. */}
       <View className="flex-row items-center rounded-xl border border-ink/10 bg-sand-dark">
@@ -84,7 +84,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           // <input>) et pousse l'oeil hors du cadre des que le texte
           // grossit. Sans effet sur mobile, ou c'est deja la valeur par
           // defaut de Yoga.
-          className="min-w-0 flex-1 px-4 py-3 text-base text-ink"
+          className="min-w-0 flex-1 px-4 py-3 text-body text-ink"
           placeholderTextColor={colors.inkFaint}
           autoCapitalize="none"
           autoCorrect={false}
@@ -120,7 +120,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="mt-1 text-sm text-red-600">{error}</Text> : null}
+      {error ? <Text className="mt-1 text-label text-red-600">{error}</Text> : null}
     </View>
   );
 });

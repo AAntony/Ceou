@@ -55,11 +55,11 @@ function ChoiceRow({
         <Icon name={icon} size={18} color={ACCENT} />
       </View>
       <View className="flex-1">
-        <Text className="text-base text-ink" numberOfLines={titleLines}>
+        <Text className="text-body text-ink" numberOfLines={titleLines}>
           {title}
         </Text>
         {subtitle ? (
-          <Text className="text-xs text-ink-soft" numberOfLines={1}>
+          <Text className="text-caption text-ink-soft" numberOfLines={1}>
             {subtitle}
           </Text>
         ) : null}
@@ -125,13 +125,13 @@ export function AssistantSheet({
           <Icon name="microphone" size={20} color={ACCENT} />
         )}
         <View className="flex-1">
-          <Text className="text-sm font-semibold text-coral-dark">{t('assistant.session.title')}</Text>
-          <Text className="text-xs text-ink-soft" numberOfLines={2}>
+          <Text className="text-label font-semibold text-coral-dark">{t('assistant.session.title')}</Text>
+          <Text className="text-caption text-ink-soft" numberOfLines={2}>
             {subtitle}
           </Text>
         </View>
         {state.entries.length > 0 ? (
-          <Text className="text-xs font-semibold text-coral-dark">
+          <Text className="text-caption font-semibold text-coral-dark">
             {t('assistant.session.count', { count: state.entries.length })}
           </Text>
         ) : null}
@@ -143,14 +143,14 @@ export function AssistantSheet({
       {state.transcript ? (
         <View className="mb-3 flex-row items-start gap-2">
           <Icon name="microphone" size={14} color={colors.inkFaint} />
-          <Text className="flex-1 text-xs italic leading-5 text-ink-soft">« {state.transcript} »</Text>
+          <Text className="flex-1 text-caption italic leading-5 text-ink-soft">« {state.transcript} »</Text>
         </View>
       ) : null}
 
       {/* === La seule interruption possible : lever une ambiguïté ========== */}
       {choosing ? (
         <>
-          <Text className="mb-2 text-lg font-semibold leading-7 text-ink">
+          <Text className="mb-2 text-subheading font-semibold leading-7 text-ink">
             {!draft.objetId
               ? t('assistant.move.which_object', { n: draft.objets.length })
               : t('assistant.move.which_destination', { n: draft.destinations.length })}
@@ -186,9 +186,9 @@ export function AssistantSheet({
       ) : (
         <>
           {state.answer ? (
-            <Text className="mb-3 text-base leading-6 text-ink">{state.answer}</Text>
+            <Text className="mb-3 text-body leading-6 text-ink">{state.answer}</Text>
           ) : state.entries.length === 0 && !working ? (
-            <Text className="mb-3 text-base leading-6 text-ink-soft">{t('assistant.session.example')}</Text>
+            <Text className="mb-3 text-body leading-6 text-ink-soft">{t('assistant.session.example')}</Text>
           ) : null}
 
           {/* Les objets trouvés par une question posée en passant (« où sont
@@ -219,10 +219,10 @@ export function AssistantSheet({
                 >
                   <Icon name="validate" size={16} color={colors.inkFaint} />
                   <View className="flex-1">
-                    <Text className="text-sm text-ink" numberOfLines={1}>
+                    <Text className="text-label text-ink" numberOfLines={1}>
                       {entry.objetName}
                     </Text>
-                    <Text className="text-xs text-ink-soft" numberOfLines={1}>
+                    <Text className="text-caption text-ink-soft" numberOfLines={1}>
                       {entry.location}
                     </Text>
                   </View>
@@ -230,7 +230,7 @@ export function AssistantSheet({
                       pas une étape. */}
                   {index === 0 && state.undo ? (
                     <Pressable onPress={onUndoMove} hitSlop={8} accessibilityRole="button" className="active:opacity-60">
-                      <Text className="text-xs font-semibold text-coral">{t('assistant.move.undo')}</Text>
+                      <Text className="text-caption font-semibold text-coral">{t('assistant.move.undo')}</Text>
                     </Pressable>
                   ) : null}
                 </View>

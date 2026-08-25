@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsAnonymous } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/profile/useProfile';
 import { useFriendships } from '../features/sharing/queries';
-import { useTextScale } from '../lib/textScale';
+import { MAX_CHROME_SCALE, useChromeScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
@@ -19,26 +19,23 @@ const LABEL_SIZE = 11;
 // normale.
 const BASE_TAB_BAR_HEIGHT = 64;
 
-// LA BARRE GRANDIT MOINS QUE LE RESTE DE L'APP.
+// LA BARRE GRANDIT MOINS QUE LE RESTE DE L'APP (voir MAX_CHROME_SCALE).
 //
 // Quatre onglets se partagent la largeur de l'écran : « Habitations » ne
 // dispose que d'un quart, soit ~90 points sur un téléphone étroit. À
 // l'échelle pleine (x1,6) le libellé y serait coupé — or c'est LE mot qui
-// distingue cet onglet de l'accueil. Un menu de navigation coupé est moins
-// lisible qu'un menu resté un peu plus petit, donc le grossissement s'arrête
-// ici, une fois la place réellement disponible consommée.
+// distingue cet onglet de l'accueil.
 //
 // Ce n'est pas un refus d'agrandir : à x1,3 les pictogrammes passent de 22 à
 // 29 points et la barre de 64 à 83, ce qui rend les cibles franchement plus
 // faciles à viser. C'est le libellé seul qui plafonne.
-const MAX_CHROME_SCALE = 1.3;
 
 // Même plafond appliqué au réglage de police DU TÉLÉPHONE, que `rem` ne
 // contrôle pas : à 200 % un libellé de 11 points passerait à 22 et serait
 // coupé sans que l'app puisse s'y opposer autrement. Les personnes qui
 // dépendent d'un lecteur d'écran ne perdent rien — chaque onglet porte déjà
 // son `accessibilityLabel` complet.
-const MAX_LABEL_FONT_MULTIPLIER = 1.3;
+const MAX_LABEL_FONT_MULTIPLIER = MAX_CHROME_SCALE;
 
 /**
  * Hauteur réelle de la rangée d'onglets, réglage de taille compris.
@@ -47,8 +44,7 @@ const MAX_LABEL_FONT_MULTIPLIER = 1.3;
  * calculs séparés finiraient par diverger et le feraient chevaucher la barre.
  */
 export function useAppTabBarHeight(): number {
-  const { factor } = useTextScale();
-  return Math.round(BASE_TAB_BAR_HEIGHT * Math.min(factor, MAX_CHROME_SCALE));
+  return Math.round(BASE_TAB_BAR_HEIGHT * useChromeScale());
 }
 
 // Tout le parcours Habitation > Pièce > Emplacement > Conteneur > Objet, plus
@@ -77,9 +73,8 @@ type TabItemProps = {
 
 function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }: TabItemProps) {
   const colors = useThemeColors();
-  const { factor } = useTextScale();
+  const chrome = useChromeScale();
   const color = active ? ACTIVE_COLOR : colors.inkFaint;
-  const chrome = Math.min(factor, MAX_CHROME_SCALE);
   const avatarSize = Math.round(AVATAR_SIZE * chrome);
   // `fixedSize` a l'usage : la taille porte deja le plafond de la barre,
   // Icon ne doit pas la remultiplier par le reglage de l'app.

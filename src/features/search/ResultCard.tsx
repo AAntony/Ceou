@@ -98,10 +98,10 @@ export function ResultCard({ entry, columns }: ResultCardProps) {
           {image}
         </View>
         <View className="flex-1 px-3 py-2">
-          <Text numberOfLines={2} className="text-base font-semibold text-ink">
+          <Text numberOfLines={2} className="text-body font-semibold text-ink">
             {entry.name}
           </Text>
-          <Text numberOfLines={1} className="mt-0.5 text-sm text-ink-soft">
+          <Text numberOfLines={1} className="mt-0.5 text-label text-ink-soft">
             {locationLine(entry)}
           </Text>
         </View>
