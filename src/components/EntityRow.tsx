@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
-import { ONE_COLUMN_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
+import { STACK_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
@@ -88,20 +88,21 @@ export function EntityRow({
   const { textScale } = useTextScale();
   const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
 
-  // EN TRÈS GRAND TEXTE, LA RANGÉE SE PLIE EN TROIS.
+  // EN GRAND TEXTE, LA RANGÉE SE PLIE EN DEUX.
   //
   // Vignette, pictogramme, nom, crayon et chevron se partagent une seule
-  // ligne : à x1,6 il ne reste au nom qu'une quarantaine de points, soit
-  // « Meuble… ». Empilés — la photo, puis le nom, puis les commandes —
-  // chacun retrouve toute la largeur.
+  // ligne : dès x1,3 il ne reste au nom qu'une poignée de points, soit
+  // « Meuble… ». La photo prend donc toute la première ligne, et le nom
+  // partage la seconde avec les commandes — qui, elles, tiennent en deux
+  // pictogrammes.
   //
-  // Le PICTOGRAMME DISPARAÎT alors : il redisait le type d'un contenu que la
-  // photo montre déjà, et c'est lui qui coûtait le plus de largeur pour le
+  // Le PICTOGRAMME D'ENTITÉ DISPARAÎT : il redisait le type d'un contenu que
+  // la photo montre déjà, et c'est lui qui coûtait le plus de largeur pour le
   // moins d'information.
   //
-  // Même seuil que la grille de l'accueil : c'est le cran où l'app renonce à
-  // poser deux choses côte à côte.
-  const stacked = textScale >= ONE_COLUMN_SCALE;
+  // Seuil abaissé de x1,6 à x1,3 après essai sur appareil : à « Grande »
+  // aussi, la rangée compacte ne tenait plus.
+  const stacked = textScale >= STACK_SCALE;
 
   const favoriteButton = onToggleFavorite ? (
     <Pressable
@@ -141,27 +142,25 @@ export function EntityRow({
           {favoriteButton}
         </View>
 
-        <Text className="mt-2 text-body font-semibold text-ink">{title}</Text>
-        {subtitle ? <Text className="mt-0.5 text-label text-ink-soft">{subtitle}</Text> : null}
-
-        {/* Troisième ligne : les commandes, à part et espacées. Le crayon
-            porte enfin son nom écrit — dans la rangée compacte il n'était
-            qu'un pictogramme faute de place. */}
-        <View className="mt-2 flex-row items-center justify-between">
+        {/* Deuxième ligne : le nom, et les commandes à sa droite. Le nom a
+            désormais toute la largeur que lui laissaient la vignette et le
+            pictogramme, soit l'essentiel de la carte. */}
+        <View className="mt-2 flex-row items-center gap-2">
+          <View className="flex-1">
+            <Text className="text-body font-semibold text-ink">{title}</Text>
+            {subtitle ? <Text className="mt-0.5 text-label text-ink-soft">{subtitle}</Text> : null}
+          </View>
           {onEdit ? (
             <Pressable
               onPress={onEdit}
               hitSlop={10}
               accessibilityRole="button"
               accessibilityLabel={t('a11y.edit_named', { name: title })}
-              className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2 active:opacity-60"
+              className="rounded-full border border-ink/10 p-2 active:opacity-60"
             >
               <Icon name="pencil" size={18} color={colors.inkSoft} />
-              <Text className="text-label font-semibold text-ink-soft">{t('common.edit')}</Text>
             </Pressable>
-          ) : (
-            <View />
-          )}
+          ) : null}
           <Icon name="chevron" size={22} color={colors.inkFaint} />
         </View>
       </Pressable>

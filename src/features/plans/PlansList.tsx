@@ -52,7 +52,9 @@ function PlanRow({
   return (
     <EntityRow
       level="habitation"
-      thumbnail={<PlanThumbnail formes={rooms} colorForForme={colorForForme} width={84} height={63} />}
+      // Sans taille : la vignette se mesure sur la case que la rangee lui
+      // donne, qui change avec le reglage d'affichage.
+      thumbnail={<PlanThumbnail formes={rooms} colorForForme={colorForForme} />}
       icon="plan"
       title={plan.name}
       subtitle={rooms.length === 0 ? t('plans.rooms_count_zero') : t('plans.rooms_count', { count: rooms.length })}

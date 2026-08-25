@@ -26,6 +26,7 @@ export function PlanPinSheet({ pin, display, onClose, onRemove }: PlanPinSheetPr
       visible={!!pin && !!display}
       onClose={onClose}
       sheetClassName="items-center rounded-t-3xl bg-surface px-6 pb-10 pt-6"
+      scrollable
     >
       {display ? (
         <>

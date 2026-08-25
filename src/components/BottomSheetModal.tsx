@@ -1,6 +1,15 @@
 import type { PropsWithChildren } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type BottomSheetModalProps = PropsWithChildren<{
@@ -8,7 +17,25 @@ type BottomSheetModalProps = PropsWithChildren<{
   onClose: () => void;
   sheetClassName?: string;
   sheetStyle?: StyleProp<ViewStyle>;
+  /**
+   * Borne la feuille a la hauteur de l'ecran et fait defiler son contenu.
+   *
+   * A poser sur TOUTE feuille dont le contenu grandit avec le reglage de
+   * taille du texte — c'est-a-dire a peu pres toutes. Voir le piege de
+   * hauteur documente plus bas : sans borne, une feuille trop haute sort par
+   * le HAUT et son titre devient invisible.
+   *
+   * Le ScrollView est pose ICI, donc enfant DIRECT de la feuille, ce qui est
+   * la condition pour que le plafond porte sur ce qui defile. Ne pas en
+   * remettre un a l'interieur : deux ScrollViews imbriques verticalement se
+   * disputent le geste.
+   */
+  scrollable?: boolean;
 }>;
+
+// Plafond applique par `scrollable`. Pas 100 % : la bande restante montre le
+// fond assombri, seul indice qu'un appui a cote referme la feuille.
+const SCROLLABLE_MAX_HEIGHT = '88%';
 
 const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 
@@ -42,20 +69,36 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 // est rendu avec une hauteur nulle (contenu invisible, pas d'erreur, pas de
 // warning). Deux recettes selon le besoin :
 // - contenu court, qui doit juste s'afficher en entier → AUCUNE propriété
-//   flex nulle part et pas de `sheetStyle` (cas de CreateEntityModal et de
-//   la branche manuelle de CreateObjetModal). C'est la seule forme dont on
-//   ait la preuve qu'elle fonctionne sur l'appareil de l'utilisateur ;
+//   flex nulle part et pas de `sheetStyle` (branche manuelle de
+//   CreateObjetModal) ;
 // - contenu qui doit remplir un cadre stable → `sheetStyle={{ height }}`
 //   (hauteur DÉFINIE) et là `flex: 1` fonctionne normalement (branche scan
 //   de CreateObjetModal) ;
-// - liste longue qui doit défiler sous un plafond → `maxHeight` +
-//   `flexShrink: 1` sur le ScrollView (FriendDetailSheet, ShareInviteModal).
-//   Attention : cette recette-là a échoué dans CreateObjetModal pour une
-//   raison non élucidée — la vérifier sur téléphone avant de s'y fier.
+// - contenu qui peut dépasser l'écran et doit défiler sous un plafond →
+//   `maxHeight` + `flexShrink: 1` sur le ScrollView (FriendDetailSheet,
+//   ShareInviteModal, et CreateEntityModal depuis le 26/08).
+//   Cette recette exige que le ScrollView soit l'ENFANT DIRECT de la
+//   feuille. Elle a échoué dans CreateObjetModal, où le ScrollView est
+//   enfoui d'un niveau (un View enveloppe ObjetFormBody, qui a le sien) :
+//   le plafond porte alors sur le View, pas sur ce qui défile.
+//
+// ⚠️ LA PREMIÈRE RECETTE N'EST PLUS UN DÉFAUT SÛR depuis que la taille du
+// texte est réglable. « Contenu court » l'est à taille normale ; à x1,6 le
+// même contenu dépasse l'écran, et une feuille sans plafond sort alors par
+// le HAUT — titre invisible, défilement erratique (CreateEntityModal, retour
+// du 2026-08-26). Toute feuille dont le contenu grandit avec le texte veut
+// la troisième recette.
 // À vérifier sur téléphone, pas dans le navigateur : react-native-web
 // retombe sur le dimensionnement max-content du CSS et ne reproduit pas le
 // bug.
-export function BottomSheetModal({ visible, onClose, sheetClassName, sheetStyle, children }: BottomSheetModalProps) {
+export function BottomSheetModal({
+  visible,
+  onClose,
+  sheetClassName,
+  sheetStyle,
+  scrollable,
+  children,
+}: BottomSheetModalProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   return (
@@ -77,9 +120,21 @@ export function BottomSheetModal({ visible, onClose, sheetClassName, sheetStyle,
             onPress={() => {}}
             accessible={false}
             className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
-            style={sheetStyle}
+            // Le style de l'appelant passe EN DERNIER : il peut donc imposer
+            // sa propre hauteur par-dessus le plafond.
+            style={[scrollable ? { maxHeight: SCROLLABLE_MAX_HEIGHT } : null, sheetStyle]}
           >
-            {children}
+            {scrollable ? (
+              // `flexShrink` et surtout pas `flex` : voir le piege ci-dessus.
+              // Le ScrollView garde `flexBasis: auto`, donc il est mesure sur
+              // son contenu et ne retrecit qu'une fois le plafond atteint —
+              // moment ou il se met enfin a defiler.
+              <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
+                {children}
+              </ScrollView>
+            ) : (
+              children
+            )}
             <View style={{ height: insets.bottom }} />
           </Pressable>
         </Pressable>

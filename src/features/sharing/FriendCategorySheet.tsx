@@ -66,7 +66,7 @@ export function FriendCategorySheet({ visible, category, onClose }: FriendCatego
   };
 
   return (
-    <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6">
+    <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6" scrollable>
       <Text className="mb-4 text-heading font-bold text-ink">
         {category ? t('friends.categories.edit_title') : t('friends.categories.create_title')}
       </Text>

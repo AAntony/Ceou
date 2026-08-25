@@ -1,7 +1,7 @@
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ErrorState } from '../../../src/components/ErrorState';
 import { Icon, type IconName } from '../../../src/components/Icon';
@@ -238,7 +238,13 @@ export default function PlanScreen() {
             {/* Toute la colonne du bas, empilée et flottante. `box-none` :
                 seules les cartes elles-mêmes captent le doigt, le reste
                 traverse jusqu'au plan. */}
-            <View pointerEvents="box-none" className="absolute bottom-3 left-3 right-3 gap-2">
+            {/* BORNÉ EN HAUT AUSSI (`top-3`), et empilé vers le bas
+                (`justify-end`). Ancré au seul bas d'écran, ce calque
+                grandissait vers le haut sans limite : en gros texte la fiche
+                d'aide sortait par le haut du plan et on n'en voyait plus le
+                titre (retour du 2026-08-26). Borné, c'est elle qui cède —
+                voir son `flexShrink` et son ScrollView. */}
+            <View pointerEvents="box-none" className="absolute bottom-3 left-3 right-3 top-3 justify-end gap-2">
               {hintOpen ? <HintCard editing={editing} onClose={() => setHintOpen(false)} /> : null}
 
               <View pointerEvents="box-none" className="flex-row justify-end gap-2">
@@ -438,7 +444,9 @@ function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void 
   const rows = editing ? HINT_EDIT : HINT_READ;
 
   return (
-    <View className="rounded-2xl border border-ink/10 bg-surface/95 px-4 pb-3 pt-3">
+    // `flexShrink` : la fiche est le seul élément du calque qui puisse
+    // rétrécir, donc celui qui absorbe le manque de place.
+    <View style={{ flexShrink: 1 }} className="rounded-2xl border border-ink/10 bg-surface/95 px-4 pb-3 pt-3">
       <View className="mb-2 flex-row items-center">
         <Text className="flex-1 text-label font-semibold text-ink">{t('plans.hint.title')}</Text>
         <Pressable
@@ -451,17 +459,22 @@ function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void 
           <Icon name="close" size={18} color={colors.inkFaint} />
         </Pressable>
       </View>
-      {rows.map((row) => (
-        <View key={row.key} className="mb-1.5 flex-row gap-2.5">
-          <View className="mt-0.5 w-4 items-center">
-            <Icon name={row.icon} size={14} color={colors.accentDark} />
+      {/* Les conseils défilent plutôt que de pousser le titre hors du
+          plan : le titre et sa croix de fermeture restent visibles quoi
+          qu'il arrive. */}
+      <ScrollView style={{ flexShrink: 1 }}>
+        {rows.map((row) => (
+          <View key={row.key} className="mb-1.5 flex-row gap-2.5">
+            <View className="mt-0.5 w-4 items-center">
+              <Icon name={row.icon} size={14} color={colors.accentDark} />
+            </View>
+            {/* Interligne en `rem` et non en pixels : fige, il rognait les
+                jambages des que le texte grossissait. 1,21rem = les 17 px
+                d'origine a taille normale. */}
+            <Text className="flex-1 text-caption leading-[1.21rem] text-ink-soft">{t(row.key)}</Text>
           </View>
-          {/* Interligne en `rem` et non en pixels : fige, il rognait les
-              jambages des que le texte grossissait. 1,21rem = les 17 px
-              d'origine a taille normale. */}
-          <Text className="flex-1 text-caption leading-[1.21rem] text-ink-soft">{t(row.key)}</Text>
-        </View>
-      ))}
+        ))}
+      </ScrollView>
     </View>
   );
 }

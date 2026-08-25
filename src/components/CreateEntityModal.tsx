@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { logClientError } from '../lib/errorLogging';
 import { BottomSheetModal } from './BottomSheetModal';
 import { FormActions } from './FormActions';
@@ -56,22 +56,26 @@ export function CreateEntityModal({
       visible={visible}
       onClose={onClose}
       sheetClassName="rounded-t-3xl bg-surface px-6 pb-6 pt-6"
+      // INDISPENSABLE DEPUIS QUE LE TEXTE PEUT GROSSIR : sans borne, la
+      // feuille se mesure sur son contenu, et en gros texte photo + champ +
+      // boutons dépassaient la hauteur de l'écran — elle sortait alors par le
+      // HAUT, le titre disparaissait et rien ne défilait vraiment (retour
+      // utilisateur du 2026-08-26).
+      scrollable
     >
-      <ScrollView keyboardShouldPersistTaps="handled">
-        <Text className="mb-4 text-heading font-bold text-ink">{title}</Text>
-        {children}
-        <TextField label={nameLabel} value={name} onChangeText={onNameChange} autoFocus={!children} />
-        <View className="mt-2">
-          <FormActions
-            cancelLabel={cancelLabel}
-            onCancel={onClose}
-            confirmLabel={submitLabel}
-            onConfirm={handleSubmit}
-            loading={loading}
-            disabled={!name.trim()}
-          />
-        </View>
-      </ScrollView>
+      <Text className="mb-4 text-heading font-bold text-ink">{title}</Text>
+      {children}
+      <TextField label={nameLabel} value={name} onChangeText={onNameChange} autoFocus={!children} />
+      <View className="mt-2">
+        <FormActions
+          cancelLabel={cancelLabel}
+          onCancel={onClose}
+          confirmLabel={submitLabel}
+          onConfirm={handleSubmit}
+          loading={loading}
+          disabled={!name.trim()}
+        />
+      </View>
     </BottomSheetModal>
   );
 }

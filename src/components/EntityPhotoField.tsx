@@ -4,7 +4,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { logClientError } from '../lib/errorLogging';
 import { pickImage, takePhoto } from '../lib/images/pickAndUploadImage';
-import { useScaled } from '../lib/textScale';
+import { STACK_SCALE, useScaled, useTextScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon } from './Icon';
 
@@ -39,6 +39,15 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
   const previewHeight = useScaled(PREVIEW_HEIGHT);
   const colors = useThemeColors();
   const { t } = useTranslation();
+  const { textScale } = useTextScale();
+
+  // EN GRAND TEXTE, LES TROIS BOUTONS PASSENT SOUS LA PHOTO.
+  //
+  // A cote d'elle, ils n'ont que la largeur restante : « Choisir une photo »
+  // et « Prendre une photo » y etaient tronques des x1,3, et la photo elle-
+  // meme grandissant avec le reglage, la place ne faisait que se reduire.
+  // Sous elle, chaque bouton a toute la largeur de la feuille.
+  const below = textScale >= STACK_SCALE;
 
   const choose = async (source: 'library' | 'camera') => {
     try {
@@ -57,9 +66,9 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
     <View className="mb-4">
       <Text className="mb-2 text-label font-medium text-ink-soft">{t('inventory.photo.label')}</Text>
 
-      <View className="flex-row items-center gap-4">
+      <View className={below ? 'gap-3' : 'flex-row items-center gap-4'}>
         <View
-          style={{ width: previewWidth, height: previewHeight }}
+          style={below ? { width: '100%', height: previewHeight } : { width: previewWidth, height: previewHeight }}
           className="overflow-hidden rounded-xl bg-sand"
         >
           <Image
@@ -69,14 +78,14 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
           />
         </View>
 
-        <View className="flex-1 gap-2">
+        <View className={below ? 'gap-2' : 'flex-1 gap-2'}>
           <Pressable
             onPress={() => choose('library')}
             accessibilityRole="button"
             className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2.5 active:opacity-70"
           >
             <Icon name="addPhoto" size={18} color="#1591EA" />
-            <Text className="flex-1 text-label text-ink" numberOfLines={1}>
+            <Text className="flex-1 text-label text-ink" numberOfLines={below ? 2 : 1}>
               {t('inventory.photo.choose')}
             </Text>
           </Pressable>
@@ -87,7 +96,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
             className="flex-row items-center gap-2 rounded-xl border border-ink/10 px-3 py-2.5 active:opacity-70"
           >
             <Icon name="camera" size={18} color="#1591EA" />
-            <Text className="flex-1 text-label text-ink" numberOfLines={1}>
+            <Text className="flex-1 text-label text-ink" numberOfLines={below ? 2 : 1}>
               {t('inventory.photo.take')}
             </Text>
           </Pressable>
@@ -101,7 +110,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
               className="flex-row items-center gap-2 px-3 py-1.5 active:opacity-70"
             >
               <Icon name="close" size={16} color={colors.inkFaint} />
-              <Text className="flex-1 text-label text-ink-soft" numberOfLines={1}>
+              <Text className="flex-1 text-label text-ink-soft" numberOfLines={below ? 2 : 1}>
                 {t('inventory.photo.remove')}
               </Text>
             </Pressable>

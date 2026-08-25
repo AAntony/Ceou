@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { ColorPicker } from '../../components/ColorPicker';
@@ -48,8 +48,13 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onChoosePiece, onC
   const selectedPiece = pieceId ? (pieces.find((p) => p.id === pieceId) ?? null) : null;
 
   return (
-    <BottomSheetModal visible={!!forme} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-10 pt-6">
-      <ScrollView keyboardShouldPersistTaps="handled">
+    <BottomSheetModal
+      visible={!!forme}
+      onClose={onClose}
+      sheetClassName="rounded-t-3xl bg-surface px-6 pb-10 pt-6"
+      scrollable
+    >
+      <>
         <Text className="mb-4 text-heading font-bold text-ink">{t('plans.shape.title')}</Text>
 
         <Text className="mb-2 text-label font-medium text-ink-soft">{t('plans.shape.piece_label')}</Text>
@@ -66,7 +71,7 @@ export function ShapeInspectorSheet({ forme, pieces, onClose, onChoosePiece, onC
           <Button label={t('common.delete')} variant="danger" onPress={onDelete} />
         </View>
         <Button label={t('common.close')} variant="ghost" onPress={onClose} />
-      </ScrollView>
+      </>
     </BottomSheetModal>
   );
 }

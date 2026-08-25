@@ -236,9 +236,8 @@ export default function AccountScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Contenu court : aucune propriété flex et pas de `sheetStyle` — la
-          seule forme dont BottomSheetModal documente qu'elle se mesure
-          correctement sur l'appareil. */}
+      {/* `scrollable` : avertissement, champ de mot de passe et deux boutons
+          tiennent à taille normale, plus du tout en gros texte. */}
       <BottomSheetModal
         visible={deleteOpen}
         onClose={() => {
@@ -247,6 +246,7 @@ export default function AccountScreen() {
           setDeleteError(null);
         }}
         sheetClassName="rounded-t-3xl bg-surface px-5 pb-4 pt-6"
+        scrollable
       >
         <Text className="mb-2 text-heading font-bold text-ink">{t('account.delete.confirm_title')}</Text>
         <Text className="mb-5 text-label leading-5 text-ink-soft">{t('account.delete.confirm_body')}</Text>

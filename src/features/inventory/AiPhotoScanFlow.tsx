@@ -186,7 +186,12 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
           <Button label={t('common.cancel')} variant="ghost" onPress={onCancel} />
         </View>
 
-        <BottomSheetModal visible={pendingSource !== null} onClose={handleConsentCancel} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6">
+        <BottomSheetModal
+          visible={pendingSource !== null}
+          onClose={handleConsentCancel}
+          sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6"
+          scrollable
+        >
           <Text className="mb-3 text-subheading font-bold text-ink">{t('inventory.aiScan.consent_title')}</Text>
           <Text className="mb-4 text-label leading-5 text-ink-soft">{t('inventory.aiScan.consent_body')}</Text>
           <TextLink

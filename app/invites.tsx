@@ -263,12 +263,14 @@ export default function InvitesScreen() {
         </ScrollView>
       )}
 
-      {/* Contenu court : aucune propriété flex et pas de sheetStyle — la
-          seule forme dont BottomSheetModal garantit la mesure correcte. */}
+      {/* `scrollable` : le QR mesure 200 points et ne rétrécit pas, le reste
+          grandit avec le réglage de taille — sans borne, la feuille finissait
+          par sortir de l'écran par le haut. */}
       <BottomSheetModal
         visible={qrEntry !== null}
         onClose={() => setQrEntry(null)}
         sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
+        scrollable
       >
         {qrEntry ? (
           <View className="items-center">
@@ -287,6 +289,7 @@ export default function InvitesScreen() {
         visible={renewEntry !== null}
         onClose={() => setRenewEntry(null)}
         sheetClassName="rounded-t-3xl bg-surface px-6 pb-4 pt-6"
+        scrollable
       >
         <Text className="mb-1 text-heading font-bold text-ink">{t('invites.renew_title')}</Text>
         <Text className="mb-4 text-label leading-5 text-ink-soft">{t('invites.renew_body')}</Text>
