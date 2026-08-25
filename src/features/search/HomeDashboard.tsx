@@ -90,6 +90,25 @@ const COLUMN_WRAPPER = { gap: 9 };
 const GREETING_COLLAPSE_OFFSET = 24;
 const GREETING_EXPAND_OFFSET = 4;
 
+// ⚠️ COURSE DE DÉFILEMENT MINIMALE POUR SE REPLIER — c'est ce qui empêche le
+// bloc de clignoter, et ça n'a rien d'un réglage esthétique.
+//
+// Le bloc vit AU-DESSUS de la liste : le replier rend sa hauteur à la liste,
+// qui devient donc plus haute et peut d'un coup moins descendre. Sur une
+// liste courte, cette hauteur rendue suffit à ramener le défilement tout en
+// haut — le système ramène l'offset à zéro, on repasse sous le seuil
+// d'ouverture, le bloc revient, la liste redevient courte, et le doigt qui
+// tire relance le cycle. Repli, ouverture, repli, plusieurs fois par seconde
+// (retour utilisateur du 2026-08-26 : « ça s'affiche et disparaît
+// constamment »).
+//
+// La boucle n'existe QUE si la course restante est de l'ordre de la hauteur
+// du bloc. On exige donc une réserve confortablement supérieure : en dessous,
+// on ne replie pas du tout — ce qui est de toute façon le bon comportement,
+// il n'y a rien à gagner à libérer de la place sur une liste qui tient déjà
+// à l'écran.
+const MIN_SCROLLABLE_TO_COLLAPSE = 180;
+
 /**
  * Le bloc d'accueil, replié au défilement.
  *
@@ -296,14 +315,26 @@ export function HomeDashboard() {
   // decider sans lire un etat perime a chaque evenement de defilement.
   const [greetingCollapsed, setGreetingCollapsed] = useState(false);
   const greetingCollapsedRef = useRef(false);
+  // Mise à l'échelle : la salutation occupe d'autant plus de hauteur que le
+  // texte est réglé grand, donc la course de défilement qu'il faut avoir en
+  // réserve grandit avec elle.
+  const minScrollableToCollapse = useScaled(MIN_SCROLLABLE_TO_COLLAPSE);
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = event.nativeEvent.contentOffset.y;
-    const next = greetingCollapsedRef.current ? y > GREETING_EXPAND_OFFSET : y > GREETING_COLLAPSE_OFFSET;
-    if (next === greetingCollapsedRef.current) return;
-    greetingCollapsedRef.current = next;
-    setGreetingCollapsed(next);
-  }, []);
+  const handleScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+      const y = contentOffset.y;
+      // De combien la liste peut encore descendre, dans son état courant.
+      const scrollable = contentSize.height - layoutMeasurement.height;
+      const next = greetingCollapsedRef.current
+        ? y > GREETING_EXPAND_OFFSET
+        : y > GREETING_COLLAPSE_OFFSET && scrollable >= minScrollableToCollapse;
+      if (next === greetingCollapsedRef.current) return;
+      greetingCollapsedRef.current = next;
+      setGreetingCollapsed(next);
+    },
+    [minScrollableToCollapse],
+  );
 
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
