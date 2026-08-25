@@ -11,13 +11,18 @@ export type RelPosition = { relX: number; relY: number };
 // désormais appelé depuis la couche de données (useCreateStarterPlan pose la
 // première puce d'un plan sans qu'aucune vue n'existe encore). L'y laisser
 // aurait fait remonter React Native et gesture-handler dans queries.ts.
+//
+// LE HAUT DE LA PIÈCE EST RÉSERVÉ AU NOM (voir RoomLabel) : la rangée
+// médiane est descendue de 0,28 à 0,45 pour lui laisser le bandeau. Les
+// puces déjà posées gardent la position où on les a glissées — ce tableau ne
+// décide que de l'endroit où arrive une NOUVELLE puce.
 const PIN_SLOTS: RelPosition[] = [
   { relX: 0.5, relY: 0.7 },
   { relX: 0.25, relY: 0.7 },
   { relX: 0.75, relY: 0.7 },
-  { relX: 0.25, relY: 0.28 },
-  { relX: 0.75, relY: 0.28 },
-  { relX: 0.5, relY: 0.28 },
+  { relX: 0.25, relY: 0.45 },
+  { relX: 0.75, relY: 0.45 },
+  { relX: 0.5, relY: 0.45 },
   { relX: 0.25, relY: 0.92 },
   { relX: 0.5, relY: 0.92 },
   { relX: 0.75, relY: 0.92 },

@@ -1,6 +1,7 @@
 import {
   Canvas,
   DashPathEffect,
+  Group,
   Line,
   matchFont,
   Rect,
@@ -34,9 +35,19 @@ import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSeg
 import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
 import type { HandleId, ShapeGeometry } from './types';
+import { useTextScale } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+
+// Taille du nom d'une pièce et de son compteur, EN PIXELS D'ÉCRAN (voir
+// RoomLabel : le bloc est contre-mis à l'échelle, il ne rétrécit donc pas
+// avec le plan). Multipliées par le réglage d'affichage du Profil, comme le
+// reste des textes de l'app.
+const LABEL_FONT_SIZE = 14;
+const COUNT_FONT_SIZE = 11;
+/** Espace laissé entre le mur du haut et le sommet des lettres, en pixels d'écran. */
+const LABEL_TOP_CLEARANCE = 8;
 
 // Le bleu d'action de l'app. Constante ici plutôt que via le thème : ces
 // traits se posent sur la feuille du plan, qui garde le même fond clair dans
@@ -185,6 +196,10 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   ref,
 ) {
   const colors = useThemeColors();
+  // Le nom des pièces suit le réglage d'affichage, maintenant qu'il a une
+  // taille d'écran à lui (avant, il était dans le monde zoomé, où le seul
+  // réglage qui comptait était le zoom).
+  const { textScale } = useTextScale();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
@@ -219,12 +234,12 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     try {
       return matchFont({
         fontFamily: Platform.select({ android: 'sans-serif-medium', ios: 'Helvetica', default: 'sans-serif' }),
-        fontSize: 12,
+        fontSize: Math.round(LABEL_FONT_SIZE * textScale),
       });
     } catch {
       return null;
     }
-  }, []);
+  }, [textScale]);
 
   // Seconde police pour le nombre d'objets : plus petite et plus discrète que
   // le nom, pour que la hiérarchie se lise sans couleur supplémentaire.
@@ -232,12 +247,12 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     try {
       return matchFont({
         fontFamily: Platform.select({ android: 'sans-serif', ios: 'Helvetica', default: 'sans-serif' }),
-        fontSize: 9,
+        fontSize: Math.round(COUNT_FONT_SIZE * textScale),
       });
     } catch {
       return null;
     }
-  }, []);
+  }, [textScale]);
 
   useEffect(() => {
     setShapes((current) => {
@@ -1108,6 +1123,10 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   count={room.count}
                   font={font}
                   countFont={countFont}
+                  zoomScale={zoom.scale}
+                  textScale={textScale}
+                  nameColor={colors.ink}
+                  countColor={colors.inkSoft}
                 />
               ))}
             </Canvas>
@@ -1196,12 +1215,49 @@ function measureWidth(font: SkFont, text: string): number {
 }
 
 /**
- * Nom de la pièce + nombre d'objets, centrés dans la pièce.
+ * Raccourcit un texte jusqu'à ce qu'il tienne dans la largeur donnée.
  *
- * ⚠️ Skia place le `y` d'un Text sur sa LIGNE DE BASE, pas sur son centre.
- * L'ancien rendu passait le centre vertical de la pièce directement, ce qui
- * faisait flotter tous les noms trop bas. On remonte donc d'environ un tiers
- * de la taille de police pour retrouver un centrage optique.
+ * Renvoie `null` quand même une version raccourcie ne tient pas : mieux vaut
+ * pas d'étiquette du tout qu'un « … » solitaire au milieu d'une pièce.
+ */
+function fitText(font: SkFont, text: string, maxWidth: number): string | null {
+  if (measureWidth(font, text) <= maxWidth) return text;
+  for (let length = text.length - 1; length > 0; length--) {
+    const candidate = `${text.slice(0, length).trimEnd()}…`;
+    if (measureWidth(font, candidate) <= maxWidth) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Nom de la pièce + nombre d'objets, écrits EN HAUT de la pièce et à taille
+ * d'écran CONSTANTE.
+ *
+ * DEUX DÉFAUTS, UNE SEULE CAUSE : le bloc était posé au centre de la pièce,
+ * dans le monde zoomé.
+ *
+ * Au centre, les puces d'Emplacement passaient par-dessus — et rien ne
+ * pouvait le corriger depuis Skia : les puces sont des vues natives rendues
+ * APRÈS le canevas, donc toujours au-dessus de tout ce qu'il peint. Le nom
+ * monte donc contre le mur du haut, là où aucune puce nouvellement posée
+ * n'atterrit (voir pinSlots).
+ *
+ * Dans le monde zoomé, il rétrécissait avec le plan : il devenait donc
+ * illisible exactement quand on prend du recul pour voir tout l'étage,
+ * c'est-à-dire au moment où le nom d'une pièce sert le plus. Le bloc est
+ * maintenant CONTRE-MIS À L'ÉCHELLE — un groupe Skia d'échelle 1/zoom ancré
+ * sur le haut de la pièce annule exactement le zoom du calque. Conséquence à
+ * garder en tête en le modifiant : tout ce qui est écrit à l'intérieur est
+ * exprimé en PIXELS D'ÉCRAN, plus en unités du monde.
+ *
+ * Une étiquette plus large que sa pièce est raccourcie, puis effacée quand
+ * même trois lettres ne tiennent plus. Sans cette règle, un nom débordait
+ * chez la voisine — le défaut existait déjà, un texte plus grand l'aurait
+ * rendu criant.
+ *
+ * ⚠️ Skia place le `y` d'un Text sur sa LIGNE DE BASE, pas sur son sommet :
+ * les deux lignes sont donc descendues d'une hauteur de police, pas posées
+ * au ras du mur.
  */
 function RoomLabel({
   geo,
@@ -1209,42 +1265,78 @@ function RoomLabel({
   count,
   font,
   countFont,
+  zoomScale,
+  textScale,
+  nameColor,
+  countColor,
 }: {
   geo: ShapeGeometry;
   label: string;
   count: number | null;
   font: SkFont | null;
   countFont: SkFont | null;
+  zoomScale: number;
+  textScale: number;
+  /**
+   * Pris dans le THÈME et non écrits en dur comme avant.
+   *
+   * La feuille du plan est peinte en `surface`, qui est presque noire en mode
+   * sombre ; la teinte de la pièce par-dessus reste sombre elle aussi. Une
+   * encre foncée fixe y devenait illisible — un défaut qui existait déjà,
+   * mais qui n'était pas tenable en faisant du nom l'élément principal.
+   */
+  nameColor: string;
+  countColor: string;
 }) {
   if (!label || !font) return null;
 
-  const centerX = geo.x + geo.width / 2;
-  const centerY = geo.y + geo.height / 2;
-  const hasCount = count !== null && countFont !== null;
+  const anchorX = geo.x + geo.width / 2;
+  const anchorY = geo.y;
 
-  // Avec un compte, le bloc fait deux lignes : on remonte le nom pour que
-  // l'ENSEMBLE reste centré, plutôt que le nom seul.
-  const nameBaseline = hasCount ? centerY : centerY + 4;
+  const nameSize = Math.round(LABEL_FONT_SIZE * textScale);
+  const countSize = Math.round(COUNT_FONT_SIZE * textScale);
+  // Le dégagement passe SOUS le mur du haut : celui-ci fait 5 unités de monde
+  // centrées sur la limite, donc 2,5 unités mordent à l'intérieur — soit 7,5
+  // pixels d'écran au zoom maximal. Huit pixels suffisent à ce que le haut
+  // des lettres ne touche jamais le trait.
+  const nameBaseline = anchorY + LABEL_TOP_CLEARANCE + nameSize;
+  const countBaseline = nameBaseline + countSize * 1.35;
+
+  // La place réellement disponible, à l'écran : c'est la seule mesure qui
+  // vaille, puisque le texte, lui, ne rétrécit plus avec la pièce.
+  const roomScreenWidth = geo.width * zoomScale;
+  const roomScreenHeight = geo.height * zoomScale;
+  const available = roomScreenWidth - nameSize * 0.7;
+  if (available < nameSize * 1.6) return null;
+  if (roomScreenHeight < nameBaseline - anchorY + 4) return null;
+
+  const name = fitText(font, label, available);
+  if (!name) return null;
+
+  const countText =
+    count !== null && countFont && roomScreenHeight >= countBaseline - anchorY + countSize * 0.4
+      ? fitText(countFont, formatCount(count), available)
+      : null;
 
   return (
-    <>
+    <Group transform={[{ scale: 1 / zoomScale }]} origin={vec(anchorX, anchorY)}>
       <SkiaText
-        x={centerX - measureWidth(font, label) / 2}
+        x={anchorX - measureWidth(font, name) / 2}
         y={nameBaseline}
-        text={label}
+        text={name}
         font={font}
-        color="#2D2A26"
+        color={nameColor}
       />
-      {hasCount && countFont ? (
+      {countText && countFont ? (
         <SkiaText
-          x={centerX - measureWidth(countFont, formatCount(count)) / 2}
-          y={centerY + 13}
-          text={formatCount(count)}
+          x={anchorX - measureWidth(countFont, countText) / 2}
+          y={countBaseline}
+          text={countText}
           font={countFont}
-          color="#6B6459"
+          color={countColor}
         />
       ) : null}
-    </>
+    </Group>
   );
 }
 
