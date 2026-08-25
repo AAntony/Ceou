@@ -1,6 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  Animated,
+  Easing,
+  FlatList,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
@@ -49,6 +61,10 @@ const NO_ENTRIES: SearchIndexEntry[] = [];
 //
 // Le rembourrage haut passe donc de la liste a l'en-tete, et la liste ne
 // garde qu'une marge de respiration sous lui.
+//
+// UNE EXCEPTION : la salutation. Ce n'est pas une commande, elle ne sert a
+// rien pendant qu'on cherche, et elle se replie donc au defilement (voir
+// CollapsibleGreeting). Les trois commandes, elles, restent.
 const HEADER_PADDING = { paddingHorizontal: 24, paddingTop: 64 };
 // Le rembourrage bas degage la barre d'onglets ET le bouton de l'assistant,
 // qui grandissent tous deux avec le reglage de taille : une valeur figee
@@ -65,8 +81,81 @@ const CONTENT_BOTTOM_PADDING = 160;
 // comme les autres.
 const COLUMN_WRAPPER = { gap: 9 };
 
+// LA SALUTATION S'EFFACE DÈS QU'ON PARCOURT L'INVENTAIRE.
+//
+// Elle accueille, elle n'aide pas à chercher : une fois qu'on fait défiler
+// des objets, elle ne fait plus qu'occuper le haut de l'écran — d'autant plus
+// haut que le texte est réglé grand, là où la place manque le plus. Elle
+// revient quand on remonte tout en haut, c'est-à-dire quand on recommence.
+//
+// Deux seuils et non un seul : refermer et rouvrir au même point ferait
+// clignoter le bloc dès qu'un doigt s'arrête pile dessus.
+const GREETING_COLLAPSE_OFFSET = 24;
+const GREETING_EXPAND_OFFSET = 4;
+const GREETING_DURATION_MS = 180;
+
+/**
+ * Le bloc d'accueil, replié au défilement.
+ *
+ * Sa hauteur est MESURÉE et non écrite : elle dépend du réglage de taille du
+ * texte, de la longueur du prénom, du repli de la phrase sur deux lignes.
+ * La mesure vient d'un View intérieur, jamais comprimé — prise sur le bloc
+ * animé lui-même, elle tomberait à zéro à la première fermeture et le bloc ne
+ * reviendrait plus.
+ */
+function CollapsibleGreeting({ greeting, collapsed }: { greeting: string; collapsed: boolean }) {
+  const { t } = useTranslation();
+  const [height, setHeight] = useState<number | null>(null);
+  const progress = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: collapsed ? 0 : 1,
+      duration: GREETING_DURATION_MS,
+      easing: Easing.out(Easing.quad),
+      // `height` est une propriété de mise en page : le pilote natif ne sait
+      // pas l'animer, elle passe par le fil JS. Sans conséquence ici, cette
+      // animation ne joue qu'aux deux transitions, pas à chaque image du
+      // défilement.
+      useNativeDriver: false,
+    }).start();
+  }, [collapsed, progress]);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const next = event.nativeEvent.layout.height;
+    setHeight((current) => (current === next ? current : next));
+  };
+
+  return (
+    <Animated.View
+      style={{
+        overflow: 'hidden',
+        opacity: progress,
+        // Tant que rien n'est mesuré, aucune hauteur imposée : le bloc prend
+        // la sienne, et l'écran s'affiche correctement au premier rendu.
+        height:
+          height === null
+            ? undefined
+            : progress.interpolate({ inputRange: [0, 1], outputRange: [0, height] }),
+      }}
+      // Invisible veut dire absent : sans ça, un lecteur d'écran continuerait
+      // d'annoncer une salutation que personne ne voit.
+      accessibilityElementsHidden={collapsed}
+      importantForAccessibility={collapsed ? 'no-hide-descendants' : 'auto'}
+      pointerEvents={collapsed ? 'none' : 'auto'}
+    >
+      <View onLayout={handleLayout}>
+        <Text className="text-title font-bold text-ink">{greeting}</Text>
+        <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
 type HomeHeaderProps = {
   greeting: string;
+  /** Vrai des qu'on s'est eloigne du haut de la liste. */
+  greetingCollapsed: boolean;
   /** Vrai quand le texte est assez gros pour que salutation et bouton
       d'ajout cessent de tenir cote a cote. */
   stacked: boolean;
@@ -91,6 +180,7 @@ type HomeHeaderProps = {
 // necessaire pour la raison ci-dessus, independamment de cette histoire.
 function HomeHeader({
   greeting,
+  greetingCollapsed,
   stacked,
   isGuest,
   searchText,
@@ -108,8 +198,7 @@ function HomeHeader({
     <>
       <View className={`mb-6 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
         <View className={stacked ? '' : 'flex-1 pr-4'}>
-          <Text className="text-title font-bold text-ink">{greeting}</Text>
-          <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
+          <CollapsibleGreeting greeting={greeting} collapsed={greetingCollapsed} />
         </View>
         {/* Ancien "+" central de la barre d'onglets. Il y annonçait un ajout
             CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des écrans
@@ -232,6 +321,19 @@ export function HomeDashboard() {
   const { data: profile } = useProfile();
   const { data: entries, isLoading, isError, refetch } = useSearchIndex();
 
+  // Deux formes du meme etat : le booleen declenche le rendu, la ref sert a
+  // decider sans lire un etat perime a chaque evenement de defilement.
+  const [greetingCollapsed, setGreetingCollapsed] = useState(false);
+  const greetingCollapsedRef = useRef(false);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const y = event.nativeEvent.contentOffset.y;
+    const next = greetingCollapsedRef.current ? y > GREETING_EXPAND_OFFSET : y > GREETING_COLLAPSE_OFFSET;
+    if (next === greetingCollapsedRef.current) return;
+    greetingCollapsedRef.current = next;
+    setGreetingCollapsed(next);
+  }, []);
+
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
   const [addObjetOpen, setAddObjetOpen] = useState(false);
@@ -307,6 +409,7 @@ export function HomeDashboard() {
       <View style={HEADER_PADDING}>
         <HomeHeader
           greeting={greeting}
+          greetingCollapsed={greetingCollapsed}
           stacked={textScale >= STACK_SCALE}
           isGuest={isGuest}
           searchText={searchText}
@@ -334,6 +437,10 @@ export function HomeDashboard() {
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
+        onScroll={handleScroll}
+        // iOS n'emet un evenement que tous les N ms ; Android ignore la
+        // valeur et emet en continu. 16 ms = une image sur soixante.
+        scrollEventThrottle={16}
         numColumns={columns}
         // Interdit sur une liste a une seule colonne, et pas seulement
         // inutile : la FlatList leve une erreur si les deux coexistent.
