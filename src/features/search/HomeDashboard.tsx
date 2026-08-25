@@ -1,15 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-} from 'react-native';
+import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
@@ -51,17 +42,17 @@ function searchTermsFor(query: string): string[] {
 // tableau a chaque rendu et ferait retravailler la FlatList pour rien.
 const NO_ENTRIES: SearchIndexEntry[] = [];
 
-// L'EN-TETE EST FIGE, LA GRILLE SEULE DEFILE. Recherche, filtres par Piece
-// et bouton d'ajout sont les trois commandes de l'ecran : les faire partir
-// vers le haut des qu'on parcourt l'inventaire obligeait a remonter toute la
-// liste pour changer de filtre ou lancer une recherche.
+// L'EN-TETE EST FIGE, LE RESTE DEFILE. Recherche et filtres par Piece sont
+// les commandes de l'ecran : les faire partir vers le haut des qu'on parcourt
+// l'inventaire obligeait a remonter toute la liste pour changer de filtre ou
+// lancer une recherche.
 //
 // Le rembourrage haut passe donc de la liste a l'en-tete, et la liste ne
 // garde qu'une marge de respiration sous lui.
 //
-// UNE EXCEPTION : la salutation. Ce n'est pas une commande, elle ne sert a
-// rien pendant qu'on cherche, et elle se replie donc au defilement (voir
-// CollapsibleGreeting). Les trois commandes, elles, restent.
+// La salutation et le bouton d'ajout, eux, DEFILENT : ce ne sont pas des
+// commandes de recherche. Ils sont passes dans l'en-tete de la LISTE — voir
+// GreetingRow.
 const HEADER_PADDING = { paddingHorizontal: 24, paddingTop: 64 };
 // Le rembourrage bas degage la barre d'onglets ET le bouton de l'assistant,
 // qui grandissent tous deux avec le reglage de taille : une valeur figee
@@ -78,82 +69,81 @@ const CONTENT_BOTTOM_PADDING = 160;
 // comme les autres.
 const COLUMN_WRAPPER = { gap: 9 };
 
-// LA SALUTATION S'EFFACE DÈS QU'ON PARCOURT L'INVENTAIRE.
+// LA SALUTATION DEFILE AVEC LA LISTE.
 //
-// Elle accueille, elle n'aide pas à chercher : une fois qu'on fait défiler
-// des objets, elle ne fait plus qu'occuper le haut de l'écran — d'autant plus
-// haut que le texte est réglé grand, là où la place manque le plus. Elle
-// revient quand on remonte tout en haut, c'est-à-dire quand on recommence.
+// Elle a d'abord ete repliee par un etat pilote au defilement : deux tours de
+// correctifs plus tard, elle clignotait encore. La cause etait structurelle —
+// posee AU-DESSUS de la liste, la replier rendait sa hauteur a la liste, ce
+// qui deplacait le defilement, ce qui rouvrait le bloc. Une mise en page qui
+// se repond a elle-meme ne se rattrape pas au seuil pres.
 //
-// Deux seuils et non un seul : refermer et rouvrir au même point ferait
-// clignoter le bloc dès qu'un doigt s'arrête pile dessus.
-const GREETING_COLLAPSE_OFFSET = 24;
-const GREETING_EXPAND_OFFSET = 4;
+// Elle est donc devenue l'en-tete de la LISTE elle-meme : le systeme la fait
+// glisser vers le haut avec les cartes et la ramene quand on revient en
+// haut. Aucun etat, aucun evenement de defilement, aucune mesure — donc rien
+// qui puisse osciller, et un mouvement parfaitement lie au doigt quelle que
+// soit la taille du texte.
+//
+// CE QUI RESTE FIGE : la recherche et les filtres par Piece. Ce sont les
+// commandes de l'ecran, les faire partir obligerait a remonter toute la
+// liste pour changer de filtre. La salutation, elle, n'est pas une commande.
+// Elle passe donc SOUS elles, ce qui est le prix assume de ce choix.
+//
+// Le bouton d'ajout SUIT la salutation plutot que de rester seul en haut :
+// separes, l'un defilerait pendant que l'autre resterait, et la rangee se
+// disloquerait a l'ecran.
 
-// ⚠️ COURSE DE DÉFILEMENT MINIMALE POUR SE REPLIER — c'est ce qui empêche le
-// bloc de clignoter, et ça n'a rien d'un réglage esthétique.
-//
-// Le bloc vit AU-DESSUS de la liste : le replier rend sa hauteur à la liste,
-// qui devient donc plus haute et peut d'un coup moins descendre. Sur une
-// liste courte, cette hauteur rendue suffit à ramener le défilement tout en
-// haut — le système ramène l'offset à zéro, on repasse sous le seuil
-// d'ouverture, le bloc revient, la liste redevient courte, et le doigt qui
-// tire relance le cycle. Repli, ouverture, repli, plusieurs fois par seconde
-// (retour utilisateur du 2026-08-26 : « ça s'affiche et disparaît
-// constamment »).
-//
-// La boucle n'existe QUE si la course restante est de l'ordre de la hauteur
-// du bloc. On exige donc une réserve confortablement supérieure : en dessous,
-// on ne replie pas du tout — ce qui est de toute façon le bon comportement,
-// il n'y a rien à gagner à libérer de la place sur une liste qui tient déjà
-// à l'écran.
-const MIN_SCROLLABLE_TO_COLLAPSE = 180;
-
-/**
- * Le bloc d'accueil, replié au défilement.
- *
- * PAS D'ANIMATION, ET PAS DE MESURE. La première version fondait la hauteur
- * d'une valeur mesurée à zéro : elle se repliait bien, et ne revenait jamais
- * (retour utilisateur du 2026-08-26). La mesure était prise pendant que le
- * bloc était déjà replié, donc valait zéro, et l'interpolation « de 0 à 0 »
- * n'avait plus rien à rouvrir.
- *
- * `height: undefined` quand il est ouvert, c'est-à-dire AUCUNE contrainte :
- * le bloc prend sa hauteur naturelle, quelle que soit la taille du texte ou
- * la longueur du prénom. Rien à mesurer, donc rien à corrompre. Le repli est
- * net plutôt que fondu — un fondu supposait justement de connaître la hauteur
- * d'arrivée, et ce n'est pas un prix qui valait ce risque.
- */
-function CollapsibleGreeting({ greeting, collapsed }: { greeting: string; collapsed: boolean }) {
+function GreetingRow({
+  greeting,
+  stacked,
+  isGuest,
+  onAddObjet,
+}: {
+  greeting: string;
+  stacked: boolean;
+  isGuest: boolean;
+  onAddObjet: () => void;
+}) {
   const { t } = useTranslation();
 
   return (
-    <View
-      style={{ height: collapsed ? 0 : undefined, overflow: 'hidden' }}
-      // Invisible veut dire absent : sans ça, un lecteur d'écran continuerait
-      // d'annoncer une salutation que personne ne voit.
-      accessibilityElementsHidden={collapsed}
-      importantForAccessibility={collapsed ? 'no-hide-descendants' : 'auto'}
-      pointerEvents={collapsed ? 'none' : 'auto'}
-    >
-      <Text className="text-title font-bold text-ink">{greeting}</Text>
-      <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
+    <View className={`mb-4 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
+      <View className={stacked ? '' : 'flex-1 pr-4'}>
+        <Text className="text-title font-bold text-ink">{greeting}</Text>
+        <Text className="mt-1 text-label text-ink-soft">{t('home.tagline')}</Text>
+      </View>
+      {/* Ancien "+" central de la barre d'onglets. Il y annoncait un ajout
+          CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des ecrans
+          qui ont deja leur propre bouton "Ajouter" dans l'en-tete natif —
+          d'ou la confusion signalee par les testeurs. L'Accueil est le seul
+          ecran SANS contexte, donc le seul ou le geste n'a qu'un sens
+          possible ; le libelle leve le reste du doute. `shrink-0` : c'est la
+          salutation qui se replie sur deux lignes si la place manque, jamais
+          la pastille — jusqu'a ce que le texte grossisse assez pour que les
+          deux ne tiennent plus cote a cote, auquel cas le bouton passe
+          dessous et prend toute la largeur. */}
+      {isGuest ? null : (
+        <Pressable
+          onPress={onAddObjet}
+          accessibilityRole="button"
+          className={`flex-row items-center justify-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80 ${
+            stacked ? 'mt-3 self-stretch' : 'shrink-0'
+          }`}
+        >
+          <Icon name="add" size={18} color="#FFFFFF" />
+          <Text numberOfLines={1} className="shrink text-label font-semibold text-white">
+            {t('home.add_objet')}
+          </Text>
+        </Pressable>
+      )}
     </View>
   );
 }
 
 type HomeHeaderProps = {
-  greeting: string;
-  /** Vrai des qu'on s'est eloigne du haut de la liste. */
-  greetingCollapsed: boolean;
-  /** Vrai quand le texte est assez gros pour que salutation et bouton
-      d'ajout cessent de tenir cote a cote. */
-  stacked: boolean;
   isGuest: boolean;
   searchText: string;
   onSearchTextChange: (text: string) => void;
   voiceSearch: ReturnType<typeof useAssistant>;
-  onAddObjet: () => void;
   pieceOptions: string[];
   selectedPiece: string | null;
   onSelectPiece: (piece: string | null) => void;
@@ -169,14 +159,10 @@ type HomeHeaderProps = {
 // est sorti pour rester fige pendant le defilement. Le garder ici reste
 // necessaire pour la raison ci-dessus, independamment de cette histoire.
 function HomeHeader({
-  greeting,
-  greetingCollapsed,
-  stacked,
   isGuest,
   searchText,
   onSearchTextChange,
   voiceSearch,
-  onAddObjet,
   pieceOptions,
   selectedPiece,
   onSelectPiece,
@@ -186,37 +172,6 @@ function HomeHeader({
 
   return (
     <>
-      <View className={`mb-6 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
-        <View className={stacked ? '' : 'flex-1 pr-4'}>
-          <CollapsibleGreeting greeting={greeting} collapsed={greetingCollapsed} />
-        </View>
-        {/* Ancien "+" central de la barre d'onglets. Il y annonçait un ajout
-            CONTEXTUEL alors qu'il ajoutait toujours un Objet, sur des écrans
-            qui ont déjà leur propre bouton "Ajouter" dans l'en-tête natif —
-            d'où la confusion signalée par les testeurs. L'Accueil est le seul
-            écran SANS contexte, donc le seul où le geste n'a qu'un sens
-            possible ; le libellé lève le reste du doute. Profil est parti
-            dans la barre d'onglets. `shrink-0` : c'est la salutation qui se
-            replie sur deux lignes si la place manque, jamais la pastille —
-            jusqu'à ce que le texte grossisse assez pour que les deux ne
-            tiennent plus côte à côte, auquel cas le bouton passe dessous et
-            prend toute la largeur. */}
-        {isGuest ? null : (
-        <Pressable
-          onPress={onAddObjet}
-          accessibilityRole="button"
-          className={`flex-row items-center justify-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80 ${
-            stacked ? 'mt-3 self-stretch' : 'shrink-0'
-          }`}
-        >
-          <Icon name="add" size={18} color="#FFFFFF" />
-          <Text numberOfLines={1} className="shrink text-label font-semibold text-white">
-            {t('home.add_objet')}
-          </Text>
-        </Pressable>
-        )}
-      </View>
-
       {isGuest ? <GuestBanner /> : null}
 
       {/* Halo coloré autour du champ plutôt qu'un flou diffus : l'ombre
@@ -311,31 +266,6 @@ export function HomeDashboard() {
   const { data: profile } = useProfile();
   const { data: entries, isLoading, isError, refetch } = useSearchIndex();
 
-  // Deux formes du meme etat : le booleen declenche le rendu, la ref sert a
-  // decider sans lire un etat perime a chaque evenement de defilement.
-  const [greetingCollapsed, setGreetingCollapsed] = useState(false);
-  const greetingCollapsedRef = useRef(false);
-  // Mise à l'échelle : la salutation occupe d'autant plus de hauteur que le
-  // texte est réglé grand, donc la course de défilement qu'il faut avoir en
-  // réserve grandit avec elle.
-  const minScrollableToCollapse = useScaled(MIN_SCROLLABLE_TO_COLLAPSE);
-
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-      const y = contentOffset.y;
-      // De combien la liste peut encore descendre, dans son état courant.
-      const scrollable = contentSize.height - layoutMeasurement.height;
-      const next = greetingCollapsedRef.current
-        ? y > GREETING_EXPAND_OFFSET
-        : y > GREETING_COLLAPSE_OFFSET && scrollable >= minScrollableToCollapse;
-      if (next === greetingCollapsedRef.current) return;
-      greetingCollapsedRef.current = next;
-      setGreetingCollapsed(next);
-    },
-    [minScrollableToCollapse],
-  );
-
   const [searchText, setSearchText] = useState('');
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
   const [addObjetOpen, setAddObjetOpen] = useState(false);
@@ -410,14 +340,10 @@ export function HomeDashboard() {
           cartes. */}
       <View style={HEADER_PADDING}>
         <HomeHeader
-          greeting={greeting}
-          greetingCollapsed={greetingCollapsed}
-          stacked={textScale >= STACK_SCALE}
           isGuest={isGuest}
           searchText={searchText}
           onSearchTextChange={setSearchText}
           voiceSearch={voiceSearch}
-          onAddObjet={() => setAddObjetOpen(true)}
           pieceOptions={pieceOptions}
           selectedPiece={selectedPiece}
           onSelectPiece={setSelectedPiece}
@@ -439,10 +365,17 @@ export function HomeDashboard() {
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
-        onScroll={handleScroll}
-        // iOS n'emet un evenement que tous les N ms ; Android ignore la
-        // valeur et emet en continu. 16 ms = une image sur soixante.
-        scrollEventThrottle={16}
+        // Element et non fonction anonyme : une fonction redefinie a chaque
+        // rendu change de TYPE, et la FlatList remonterait son en-tete a
+        // chaque frappe dans le champ de recherche.
+        ListHeaderComponent={
+          <GreetingRow
+            greeting={greeting}
+            stacked={textScale >= STACK_SCALE}
+            isGuest={isGuest}
+            onAddObjet={() => setAddObjetOpen(true)}
+          />
+        }
         numColumns={columns}
         // Interdit sur une liste a une seule colonne, et pas seulement
         // inutile : la FlatList leve une erreur si les deux coexistent.
