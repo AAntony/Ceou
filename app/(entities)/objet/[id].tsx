@@ -105,7 +105,9 @@ export default function ObjetScreen() {
             {photoUploading ? (
               <ActivityIndicator />
             ) : objet.photo_url ? (
-              <Image source={{ uri: objet.photo_url }} style={{ width: 160, height: 160 }} />
+              // Remplit son cadre plutot que d'imposer sa taille : le cadre
+              // grandit avec le reglage de taille, l'image le suit.
+              <Image source={{ uri: objet.photo_url }} style={{ width: '100%', height: '100%' }} />
             ) : (
               <Text className="px-2 text-center text-sm text-ink-soft">{editable ? t('inventory.objet.add_photo') : ''}</Text>
             )}

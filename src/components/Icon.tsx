@@ -1,4 +1,5 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useScaled } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 
 // Emoji-as-icon rendering isn't reliable across Android OEMs/versions (showed
@@ -89,7 +90,9 @@ export type IconName =
   | 'help'
   | 'dots'
   | 'eye'
-  | 'eyeOff';
+  | 'eyeOff'
+  | 'theme'
+  | 'textSize';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -185,6 +188,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   friends: 'account-group',
   addFriend: 'account-plus',
   qrcode: 'qrcode',
+  // Reglages d'affichage du Profil.
+  theme: 'theme-light-dark',
+  textSize: 'format-size',
   share: 'share-variant',
   star: 'star',
   starOutline: 'star-outline',
@@ -205,11 +211,31 @@ type IconProps = {
   name: IconName;
   size?: number;
   color?: string;
+  /**
+   * Laisse `size` tel quel, sans le reglage de taille de l'app.
+   *
+   * Reserve aux icones qui vivent dans un espace deja mis a l'echelle par
+   * autre chose : les puces du Plan, dessinees en unites de la feuille et
+   * zoomees avec elle. Les agrandir une seconde fois les ferait deborder de
+   * leur carte. Partout ailleurs, ne pas l'utiliser.
+   */
+  fixedSize?: boolean;
 };
 
-export function Icon({ name, size = 22, color }: IconProps) {
+export function Icon({ name, size = 22, color, fixedSize }: IconProps) {
   // Sans couleur imposee, une icone suit l'encre du theme courant : c'est ce
   // qui evite d'avoir a repasser sur chaque appel qui n'en precise pas.
   const colors = useThemeColors();
-  return <MaterialCommunityIcons name={GLYPHS[name]} size={size} color={color ?? colors.ink} />;
+  // MISE A L'ECHELLE ICI, une fois, plutot qu'au ~250 endroits qui ecrivent
+  // `size={18}`. Une taille d'icone est un nombre de pixels : elle echappe a
+  // `rem`, donc au zoom de l'app, et une icone restee a 18 px a cote d'un
+  // texte passe a 22 laisse une rangee bancale — surtout quand l'icone EST le
+  // bouton (crayon, etoile, croix), auquel cas c'est la cible qui ne grandit
+  // pas.
+  //
+  // Indexee sur le zoom de l'app et pas sur le reglage du telephone : voir
+  // useScaled, c'est ce qui garde l'icone et le rembourrage qui l'entoure
+  // synchrones.
+  const scaled = useScaled(size);
+  return <MaterialCommunityIcons name={GLYPHS[name]} size={fixedSize ? size : scaled} color={color ?? colors.ink} />;
 }

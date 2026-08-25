@@ -456,7 +456,10 @@ function HintCard({ editing, onClose }: { editing: boolean; onClose: () => void 
           <View className="mt-0.5 w-4 items-center">
             <Icon name={row.icon} size={14} color={colors.accentDark} />
           </View>
-          <Text className="flex-1 text-xs leading-[17px] text-ink-soft">{t(row.key)}</Text>
+          {/* Interligne en `rem` et non en pixels : fige, il rognait les
+              jambages des que le texte grossissait. 1,21rem = les 17 px
+              d'origine a taille normale. */}
+          <Text className="flex-1 text-xs leading-[1.21rem] text-ink-soft">{t(row.key)}</Text>
         </View>
       ))}
     </View>
@@ -513,12 +516,17 @@ function ToolButton({
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      className={`h-11 flex-1 flex-row items-center justify-center gap-2 rounded-full active:opacity-80 ${
+      className={`min-h-[2.75rem] flex-1 flex-row items-center justify-center gap-2 rounded-full px-2 py-2 active:opacity-80 ${
         primary ? 'bg-coral' : ''
       }`}
     >
       <Icon name={icon} size={18} color={primary ? '#fff' : colors.ink} />
-      <Text className={primary ? 'text-sm font-semibold text-white' : 'text-sm font-semibold text-ink'}>{label}</Text>
+      <Text
+        numberOfLines={1}
+        className={primary ? 'shrink text-sm font-semibold text-white' : 'shrink text-sm font-semibold text-ink'}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

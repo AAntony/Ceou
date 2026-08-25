@@ -9,9 +9,9 @@ import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
-import { ThemeToggle } from '../../src/components/ThemeToggle';
 import { usePullToRefresh } from '../../src/components/usePullToRefresh';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
+import { DisplaySettings } from '../../src/features/profile/DisplaySettings';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
 import { unregisterPushToken } from '../../src/features/notifications/push';
@@ -20,12 +20,17 @@ import { useProfile, useUpdateProfile } from '../../src/features/profile/useProf
 import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
 import { ShareInviteModal } from '../../src/features/sharing/ShareInviteModal';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../src/lib/i18n';
+import { useScaled } from '../../src/lib/textScale';
 import { supabase } from '../../src/lib/supabase/client';
 import { useThemeColors } from '../../src/lib/theme';
 
 export default function ProfileScreen() {
   const refreshControl = usePullToRefresh();
   const colors = useThemeColors();
+  // La pastille d'avatar est dessinee en pixels (image ronde recadree), donc
+  // hors de portee de `rem` : elle est mise a l'echelle a la main pour ne pas
+  // rester une vignette au milieu d'un ecran agrandi.
+  const avatarSize = useScaled(96);
   const { t, i18n } = useTranslation();
   const { session } = useSession();
   const isGuest = useIsAnonymous();
@@ -89,11 +94,14 @@ export default function ProfileScreen() {
   return (
     <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40" refreshControl={refreshControl}>
       <Pressable accessibilityRole="button" onPress={handleAvatarPress} className="mb-8 items-center">
-        <View className="h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-sand-dark">
+        <View
+          className="items-center justify-center overflow-hidden rounded-full bg-sand-dark"
+          style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
+        >
           {avatarUploading ? (
             <ActivityIndicator />
           ) : profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={{ width: 96, height: 96 }} />
+            <Image source={{ uri: profile.avatar_url }} style={{ width: avatarSize, height: avatarSize }} />
           ) : (
             <Text className="text-3xl font-semibold text-ink-soft">
               {(displayName || session?.user.email || '?').charAt(0).toUpperCase()}
@@ -128,7 +136,7 @@ export default function ProfileScreen() {
       </View>
 
       <View className="mt-8">
-        <ThemeToggle />
+        <DisplaySettings />
       </View>
 
       <Text className="mb-2 mt-8 text-sm font-medium text-ink-soft">{t('friends.my_code.title')}</Text>

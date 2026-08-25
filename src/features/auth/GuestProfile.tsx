@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { Icon, type IconName } from '../../components/Icon';
 import { TextLink } from '../../components/TextLink';
-import { ThemeToggle } from '../../components/ThemeToggle';
+import { DisplaySettings } from '../profile/DisplaySettings';
 import { supabase } from '../../lib/supabase/client';
 
 // Écran Profil d'un VISITEUR (session anonyme).
@@ -61,7 +61,7 @@ export function GuestProfile() {
       <Text className="mt-3 text-center text-xs leading-4 text-ink-soft">{t('guest.upgrade.keeps_access')}</Text>
 
       <View className="mt-10">
-        <ThemeToggle />
+        <DisplaySettings />
       </View>
 
       <TextLink

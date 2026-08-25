@@ -79,7 +79,12 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <View className="flex-row items-center rounded-xl border border-ink/10 bg-sand-dark">
         <TextInput
           ref={ref}
-          className="flex-1 px-4 py-3 text-base text-ink"
+          // `min-w-0` : sans lui, la version web du champ refuse de
+          // retrecir sous sa largeur naturelle (min-width: auto sur un
+          // <input>) et pousse l'oeil hors du cadre des que le texte
+          // grossit. Sans effet sur mobile, ou c'est deja la valeur par
+          // defaut de Yoga.
+          className="min-w-0 flex-1 px-4 py-3 text-base text-ink"
           placeholderTextColor={colors.inkFaint}
           autoCapitalize="none"
           autoCorrect={false}

@@ -171,7 +171,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
               onPress={() => setTargetType('friend')}
               className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'friend' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
             >
-              <Text className={targetType === 'friend' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+              <Text className={targetType === 'friend' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
                 {t('friends.share.target_friend')}
               </Text>
             </Pressable>
@@ -180,7 +180,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
               onPress={() => setTargetType('guest')}
               className={`flex-1 items-center rounded-xl border px-4 py-3 ${targetType === 'guest' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
             >
-              <Text className={targetType === 'guest' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+              <Text className={targetType === 'guest' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
                 {t('friends.share.target_guest')}
               </Text>
             </Pressable>
@@ -199,7 +199,9 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   onPress={() => toggleHabitation(h.id)}
                   className="mb-2 flex-row items-center justify-between rounded-xl border border-ink/10 px-4 py-2.5"
                 >
-                  <Text className="text-sm text-ink">{h.name}</Text>
+                  <Text numberOfLines={2} className="flex-1 pr-3 text-sm text-ink">
+                    {h.name}
+                  </Text>
                   <Icon name={selected ? 'included' : 'excluded'} size={20} color={selected ? '#4CAF50' : colors.inkFaint} />
                 </Pressable>
               );
@@ -222,7 +224,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   onPress={() => setGuestPermanent(false)}
                   className={`flex-1 items-center rounded-xl border px-4 py-3 ${!guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
                 >
-                  <Text className={!guestPermanent ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+                  <Text className={!guestPermanent ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
                     {t('friends.share.validity_limited')}
                   </Text>
                 </Pressable>
@@ -231,7 +233,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
                   onPress={() => setGuestPermanent(true)}
                   className={`flex-1 items-center rounded-xl border px-4 py-3 ${guestPermanent ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
                 >
-                  <Text className={guestPermanent ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+                  <Text className={guestPermanent ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
                     {t('friends.share.validity_permanent')}
                   </Text>
                 </Pressable>

@@ -90,7 +90,7 @@ export default function SignUpScreen() {
           </>
         )}
 
-        <View className="mt-8 flex-row items-center justify-center gap-1">
+        <View className="mt-8 flex-row flex-wrap items-center justify-center gap-1">
           <Text className="text-sm text-ink-soft">{t('auth.sign_up.has_account')}</Text>
           <TextLink
             href="/(auth)/login"

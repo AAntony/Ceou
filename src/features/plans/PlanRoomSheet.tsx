@@ -7,6 +7,7 @@ import { Icon } from '../../components/Icon';
 import { getEmplacementIcon, getPieceIcon } from '../inventory/constants';
 import { useEmplacements } from '../inventory/queries';
 import type { Piece } from '../../types/database';
+import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 // Fiche d'une pièce, ouverte au tap depuis le mode Explorer.
@@ -30,6 +31,9 @@ export function PlanRoomSheet({
 }) {
   const { t } = useTranslation();
   const colors = useThemeColors();
+  // Plafond mis a l'echelle : fige, il ne laissait plus qu'un emplacement et
+  // demi visible une fois le texte agrandi.
+  const listMaxHeight = useScaled(260);
   const { data: emplacements } = useEmplacements(piece?.id ?? '');
 
   const list = emplacements ?? [];
@@ -68,7 +72,7 @@ export function PlanRoomSheet({
                   BottomSheetModal pour une liste qui doit défiler sous un
                   plafond. Une pièce très rangée peut avoir beaucoup
                   d'emplacements. */}
-              <ScrollView style={{ maxHeight: 260, flexShrink: 1 }}>
+              <ScrollView style={{ maxHeight: listMaxHeight, flexShrink: 1 }}>
                 {list.map((emplacement) => (
                   <Pressable
                     accessibilityRole="button"

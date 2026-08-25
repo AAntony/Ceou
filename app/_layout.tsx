@@ -15,6 +15,7 @@ import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
 import { queryClient } from '../src/lib/queryClient';
+import { TextScaleProvider } from '../src/lib/textScale';
 import { ThemeProvider } from '../src/lib/theme';
 import '../global.css';
 
@@ -110,9 +111,14 @@ export default function RootLayout() {
           {/* Au-dessus de tout ce qui peint : le theme choisi doit etre
               applique avant le premier rendu colore, pas apres. */}
           <ThemeProvider>
-            <SessionProvider>
-              <AppShell />
-            </SessionProvider>
+            {/* Sous le theme et au-dessus de tout le reste : il deplace la
+                valeur de `rem`, dont depend la taille de CHAQUE classe
+                Tailwind de l'app. */}
+            <TextScaleProvider>
+              <SessionProvider>
+                <AppShell />
+              </SessionProvider>
+            </TextScaleProvider>
           </ThemeProvider>
         </QueryClientProvider>
       </GestureHandlerRootView>

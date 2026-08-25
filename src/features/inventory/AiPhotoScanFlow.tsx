@@ -13,6 +13,7 @@ import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useProfile, useSetAiPhotoConsent } from '../profile/useProfile';
 import { useCreateObjetsBulk } from './queries';
+import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 export type CollectedScanItem = { name: string; localPhotoUri: string };
@@ -46,6 +47,9 @@ type Step = 'capture' | 'analyzing' | 'review';
 // dans CreateObjetModal/AddObjetModal selon le mode choisi par l'utilisateur.
 export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel, onCollected }: AiPhotoScanFlowProps) {
   const colors = useThemeColors();
+  // La vignette d'un objet detecte : elle sert a reconnaitre ce que l'IA a
+  // decoupe, donc elle doit grandir avec le nom qu'on relit a cote.
+  const thumbSize = useScaled(56);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const createObjetsBulk = useCreateObjetsBulk();
@@ -218,12 +222,13 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
         <Text className="mb-4 text-sm text-ink-soft">{t('inventory.aiScan.review_hint')}</Text>
         {items.map((item) => (
           <View key={item.key} className={`mb-3 flex-row items-center gap-3 rounded-xl bg-sand-dark p-2 ${item.selected ? '' : 'opacity-40'}`}>
-            <Image source={{ uri: item.thumbUri }} style={{ width: 56, height: 56, borderRadius: 10 }} />
+            <Image source={{ uri: item.thumbUri }} style={{ width: thumbSize, height: thumbSize, borderRadius: 10 }} />
             <TextInput
               value={item.label}
               onChangeText={(text) => updateLabel(item.key, text)}
               editable={item.selected}
-              className="flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-base text-ink"
+              // `min-w-0` : voir TextField, meme raison cote web.
+              className="min-w-0 flex-1 rounded-xl border border-ink/10 bg-surface px-3 py-2.5 text-base text-ink"
             />
             {/* Coche verte contre croix grise : la couleur seule
                 distinguait « je garde » de « j'écarte ». Le libellé nomme

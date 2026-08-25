@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../inventory/placeholders';
+import { useScaled } from '../../lib/textScale';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
 const ROUTE_BY_KIND: Record<SearchKind, string> = {
@@ -20,6 +21,17 @@ const LEVEL_BY_KIND: Record<SearchKind, EntityLevel> = {
   piece: 'piece',
 };
 
+// Largeur d'une tuile selon le nombre de colonnes. Les écarts de 9 px sont
+// posés par la rangée (COLUMN_WRAPPER, HomeDashboard) : les pourcentages
+// laissent juste la place qu'ils occupent.
+const TILE_WIDTH: Record<number, `${number}%`> = {
+  3: '31.5%',
+  2: '48.5%',
+};
+
+// Largeur de la vignette en disposition RANGÉE, avant mise à l'échelle.
+const ROW_THUMB_WIDTH = 96;
+
 function locationLine(entry: SearchIndexEntry): string {
   if (entry.kind === 'piece') return entry.habitation_name;
   if (entry.kind === 'emplacement') return entry.piece_name;
@@ -28,6 +40,8 @@ function locationLine(entry: SearchIndexEntry): string {
 
 type ResultCardProps = {
   entry: SearchIndexEntry;
+  /** 3, 2 ou 1 — décidé par l'écran selon la taille de texte en cours. */
+  columns: number;
 };
 
 // Tuile de résultat de l'accueil.
@@ -52,36 +66,72 @@ type ResultCardProps = {
 // largement à reconnaître un objet — c'est le PARCOURS qui coûtait cher, pas
 // la reconnaissance.
 //
-// Le nom descend de 16 à 13 px et se coupe quand il dépasse ; l'emplacement
-// de 12 à 10 px. Il RESTE, malgré la place gagnée : dès qu'une recherche est
-// tapée, la grille mêle objets, conteneurs, emplacements et pièces, et
-// « Boîte à outils » ne se distingue de « Boîte à couture » que par cette
-// seconde ligne.
-export function ResultCard({ entry }: ResultCardProps) {
+// EN GROS TEXTE, LA TUILE DEVIENT UNE RANGÉE (`columns === 1`). Une tuile
+// pleine largeur aurait porté une photo de 240 px de haut : un objet et demi
+// par écran, soit le contraire du service rendu. Couchée, la même carte garde
+// une vignette lisible et laisse au nom toute la largeur — c'est le passage
+// que font les listes du système quand le texte grossit.
+//
+// Deux lignes pour le nom, une pour l'emplacement : à x1,6 « Chargeur
+// d'ordinateur portable » tenait sur une ligne de tuile étroite comme
+// « Charg… », ce qui ne distingue plus rien.
+export function ResultCard({ entry, columns }: ResultCardProps) {
+  const rowThumbWidth = useScaled(ROW_THUMB_WIDTH);
+  const asRow = columns <= 1;
+
+  const image = (
+    <Image
+      source={entry.photo_url ? { uri: entry.photo_url } : PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+    />
+  );
+
+  if (asRow) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
+        className="mb-2.5 w-full flex-row items-center overflow-hidden rounded-[14px] bg-surface active:opacity-70"
+      >
+        <View style={{ width: rowThumbWidth, aspectRatio: 4 / 3 }} className="bg-sand">
+          {image}
+        </View>
+        <View className="flex-1 px-3 py-2">
+          <Text numberOfLines={2} className="text-base font-semibold text-ink">
+            {entry.name}
+          </Text>
+          <Text numberOfLines={1} className="mt-0.5 text-sm text-ink-soft">
+            {locationLine(entry)}
+          </Text>
+        </View>
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
-      // 31.5 % : trois tuiles plus les deux écarts de 9 px posés par la
-      // rangée (COLUMN_WRAPPER, HomeDashboard) remplissent la largeur utile.
-      className="mb-2.5 w-[31.5%] overflow-hidden rounded-[14px] bg-surface active:opacity-70"
+      style={{ width: TILE_WIDTH[columns] ?? TILE_WIDTH[3] }}
+      className="mb-2.5 overflow-hidden rounded-[14px] bg-surface active:opacity-70"
     >
       {/* `aspectRatio` plutôt qu'une hauteur fixe : la largeur d'une tuile
           dépend de celle de l'écran, une hauteur en dur déformerait le
           cadrage sur les petits comme sur les grands. */}
       <View style={{ width: '100%', aspectRatio: 4 / 3 }} className="bg-sand">
-        <Image
-          source={entry.photo_url ? { uri: entry.photo_url } : PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-        />
+        {image}
       </View>
 
       <View className="px-2 pb-2 pt-1.5">
-        <Text numberOfLines={1} className="text-[13px] font-semibold text-ink">
+        {/* Tailles en `rem` et non en pixels : c'est ce qui les fait suivre le
+            réglage de taille de l'app, comme le reste des classes Tailwind.
+            0,93rem et 0,71rem valent 13 px et 10 px à taille normale — les
+            valeurs d'origine, au dixième près. */}
+        <Text numberOfLines={2} className="text-[0.93rem] font-semibold text-ink">
           {entry.name}
         </Text>
-        <Text numberOfLines={1} className="mt-px text-[10px] text-ink-soft">
+        <Text numberOfLines={1} className="mt-px text-[0.71rem] text-ink-soft">
           {locationLine(entry)}
         </Text>
       </View>

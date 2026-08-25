@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon, type IconName } from './Icon';
+import { useTextScale, WRAP_SCALE } from '../lib/textScale';
 import { useEntityTints, useThemeColors } from '../lib/theme';
 import { IconBadge } from './IconBadge';
 
@@ -58,6 +59,14 @@ export function EntityCard({
   const colors = useThemeColors();
   const { surfaceTint } = useEntityTints();
   const { t } = useTranslation();
+  // Deux lignes SEULEMENT en gros texte. Ces tuiles vivent dans une grille
+  // qui s'enroule : a taille normale, laisser deux lignes rendrait les
+  // rangees dentelees (une carte haute a cote d'une basse) pour un gain nul,
+  // la plupart des noms tenant deja. Une fois le texte agrandi, c'est
+  // l'inverse : presque tous depassent, et une rangee dentelee coute moins
+  // cher qu'un nom coupe.
+  const { textScale } = useTextScale();
+  const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
 
   return (
     <Pressable
@@ -96,7 +105,7 @@ export function EntityCard({
       <View className="mb-3">
         <IconBadge icon={icon} fill={badgeColor} photoUri={imageUri} size={52} />
       </View>
-      <Text numberOfLines={1} className="text-base font-semibold text-ink">
+      <Text numberOfLines={titleLines} className="text-base font-semibold text-ink">
         {title}
       </Text>
       {subtitle ? (

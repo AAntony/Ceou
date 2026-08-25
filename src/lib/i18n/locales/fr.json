@@ -163,7 +163,22 @@
       "follow_system": "Suivre le réglage du téléphone"
     },
     "version_label": "Version",
-    "privacy_policy": "Politique de confidentialité"
+    "privacy_policy": "Politique de confidentialité",
+    "display": {
+      "title": "Affichage",
+      "text_size": "Taille du texte",
+      "text_size_hint": "Agrandit le texte et, avec lui, les boutons et les images.",
+      "sizes": {
+        "normal": "Normale",
+        "large": "Grande",
+        "huge": "Très grande"
+      },
+      "preview_title": "Aperçu",
+      "preview_name": "Clés de voiture",
+      "preview_location": "Tiroir du buffet · Cuisine",
+      "system_hint": "Céoù suit aussi la taille de police réglée sur votre téléphone.",
+      "system_hint_active": "Votre téléphone est réglé sur une taille de police de {{percent}} %. Céoù s’y ajoute."
+    }
   },
   "home": {
     "greeting": "Bonjour, {{name}}",

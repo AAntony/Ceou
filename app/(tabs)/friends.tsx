@@ -160,7 +160,7 @@ export default function FriendsScreen() {
         {sections.map((section) => (
           <View key={section.category?.id ?? 'unfiled'} className="mb-5">
             <View className="mb-2 flex-row items-center gap-2">
-              <Text className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+              <Text numberOfLines={1} className="shrink text-xs font-semibold uppercase tracking-wide text-ink-soft">
                 {section.category?.name ?? t('friends.unfiled')}
               </Text>
               <View className="rounded-full bg-ink/5 px-2 py-0.5">
@@ -208,7 +208,7 @@ export default function FriendsScreen() {
             className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 py-3 active:opacity-70"
           >
             <Icon name="add" size={16} color={colors.accent} />
-            <Text className="text-sm text-coral">{t('friends.categories.new')}</Text>
+            <Text className="shrink text-sm text-coral">{t('friends.categories.new')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

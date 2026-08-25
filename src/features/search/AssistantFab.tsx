@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Easing, Pressable, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { APP_TAB_BAR_HEIGHT } from '../../components/AppTabBar';
+import { useAppTabBarHeight } from '../../components/AppTabBar';
 import { Icon } from '../../components/Icon';
+import { useTextScale } from '../../lib/textScale';
 
 // Bouton d'appel à l'assistant vocal.
 //
@@ -44,9 +45,25 @@ const PADDING_HORIZONTAL = 18;
 const LABEL_SIZE = 15;
 const GAP = 8;
 const GAP_ABOVE_TAB_BAR = 16;
+const FAB_MARGIN = 20;
+
+// Le bouton est dessiné en pixels bruts (ombre, anneau animé, rayon), donc
+// hors de portée de `rem` : ses cinq mesures sont mises à l'échelle à la
+// main. Il le mérite plus que tout autre contrôle de l'app — c'est la porte
+// d'entrée de la commande vocale, celle qui sert d'abord à qui lit mal
+// l'écran.
+function useFabMetrics() {
+  const { factor } = useTextScale();
+  return {
+    height: Math.round(BUTTON_HEIGHT * factor),
+    paddingHorizontal: Math.round(PADDING_HORIZONTAL * factor),
+    labelSize: Math.round(LABEL_SIZE * factor),
+    gap: Math.round(GAP * factor),
+  };
+}
 
 /** Anneau qui s'écarte en boucle pendant l'écoute. */
-function ListeningRing({ active }: { active: boolean }) {
+function ListeningRing({ active, height }: { active: boolean; height: number }) {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -80,7 +97,7 @@ function ListeningRing({ active }: { active: boolean }) {
         left: 0,
         right: 0,
         bottom: 0,
-        borderRadius: BUTTON_HEIGHT / 2,
+        borderRadius: height / 2,
         backgroundColor: ACCENT,
         opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0] }),
         transform: [{ scale: progress.interpolate({ inputRange: [0, 1], outputRange: [1, 1.35] }) }],
@@ -92,6 +109,9 @@ function ListeningRing({ active }: { active: boolean }) {
 export function AssistantFab({ active, onPress }: { active: boolean; onPress: () => void }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useAppTabBarHeight();
+  const { height, paddingHorizontal, labelSize, gap } = useFabMetrics();
+  const { width: screenWidth } = useWindowDimensions();
 
   return (
     <View
@@ -100,23 +120,27 @@ export function AssistantFab({ active, onPress }: { active: boolean; onPress: ()
       pointerEvents="box-none"
       style={{
         position: 'absolute',
-        right: 20,
-        bottom: insets.bottom + APP_TAB_BAR_HEIGHT + GAP_ABOVE_TAB_BAR,
+        right: FAB_MARGIN,
+        bottom: insets.bottom + tabBarHeight + GAP_ABOVE_TAB_BAR,
       }}
     >
-      <ListeningRing active={active} />
+      <ListeningRing active={active} height={height} />
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
         accessibilityState={{ selected: active }}
         accessibilityLabel={t(active ? 'assistant.session.title' : 'home.assistant_a11y')}
         style={{
-          height: BUTTON_HEIGHT,
+          height,
+          // Le conteneur n'est ancre qu'a DROITE : sans plafond, un bouton
+          // devenu plus large que l'ecran depasserait par la gauche au lieu
+          // de se replier. Le libelle en `shrink` cede a la place.
+          maxWidth: screenWidth - 2 * FAB_MARGIN,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: GAP,
-          paddingHorizontal: PADDING_HORIZONTAL,
-          borderRadius: BUTTON_HEIGHT / 2,
+          gap,
+          paddingHorizontal,
+          borderRadius: height / 2,
           backgroundColor: ACCENT,
           // Ombre portée : c'est ce qui décolle le bouton de la grille de
           // cartes et le fait lire comme flottant. `elevation` pour Android,
@@ -128,8 +152,12 @@ export function AssistantFab({ active, onPress }: { active: boolean; onPress: ()
           shadowOffset: { width: 0, height: 4 },
         }}
       >
+        {/* Icon met deja `size` a l'echelle : la taille de base lui suffit. */}
         <Icon name="microphone" size={ICON_SIZE} color="#FFFFFF" />
-        <Text numberOfLines={1} style={{ color: '#FFFFFF', fontSize: LABEL_SIZE, fontWeight: '600' }}>
+        {/* `shrink` : le libelle cede avant que le bouton ne sorte de
+            l'ecran — a x1,6 « Demande a Ceou » approche de la largeur utile
+            d'un telephone etroit. */}
+        <Text numberOfLines={1} className="shrink" style={{ color: '#FFFFFF', fontSize: labelSize, fontWeight: '600' }}>
           {active ? t('assistant.session.title') : t('home.assistant_cta')}
         </Text>
       </Pressable>

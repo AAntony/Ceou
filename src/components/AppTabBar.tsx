@@ -6,17 +6,50 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsAnonymous } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/profile/useProfile';
 import { useFriendships } from '../features/sharing/queries';
+import { useTextScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
 const ACTIVE_COLOR = '#1591EA';
 const AVATAR_SIZE = 24;
+const ICON_SIZE = 22;
+const LABEL_SIZE = 11;
 
-// Hauteur de la rangée d'onglets, hors zone système. Exportée parce que
-// le bouton flottant de l'assistant doit se poser juste au-dessus : deux
-// valeurs séparées finiraient par diverger et le feraient chevaucher la
-// barre.
-export const APP_TAB_BAR_HEIGHT = 64;
+// Hauteur de la rangée d'onglets, hors zone système, à taille de texte
+// normale.
+const BASE_TAB_BAR_HEIGHT = 64;
+
+// LA BARRE GRANDIT MOINS QUE LE RESTE DE L'APP.
+//
+// Quatre onglets se partagent la largeur de l'écran : « Habitations » ne
+// dispose que d'un quart, soit ~90 points sur un téléphone étroit. À
+// l'échelle pleine (x1,6) le libellé y serait coupé — or c'est LE mot qui
+// distingue cet onglet de l'accueil. Un menu de navigation coupé est moins
+// lisible qu'un menu resté un peu plus petit, donc le grossissement s'arrête
+// ici, une fois la place réellement disponible consommée.
+//
+// Ce n'est pas un refus d'agrandir : à x1,3 les pictogrammes passent de 22 à
+// 29 points et la barre de 64 à 83, ce qui rend les cibles franchement plus
+// faciles à viser. C'est le libellé seul qui plafonne.
+const MAX_CHROME_SCALE = 1.3;
+
+// Même plafond appliqué au réglage de police DU TÉLÉPHONE, que `rem` ne
+// contrôle pas : à 200 % un libellé de 11 points passerait à 22 et serait
+// coupé sans que l'app puisse s'y opposer autrement. Les personnes qui
+// dépendent d'un lecteur d'écran ne perdent rien — chaque onglet porte déjà
+// son `accessibilityLabel` complet.
+const MAX_LABEL_FONT_MULTIPLIER = 1.3;
+
+/**
+ * Hauteur réelle de la rangée d'onglets, réglage de taille compris.
+ *
+ * Le bouton flottant de l'assistant doit se poser juste au-dessus : deux
+ * calculs séparés finiraient par diverger et le feraient chevaucher la barre.
+ */
+export function useAppTabBarHeight(): number {
+  const { factor } = useTextScale();
+  return Math.round(BASE_TAB_BAR_HEIGHT * Math.min(factor, MAX_CHROME_SCALE));
+}
 
 // Tout le parcours Habitation > Pièce > Emplacement > Conteneur > Objet, plus
 // les plans et les habitations partagées par un ami : on met en évidence la
@@ -44,7 +77,13 @@ type TabItemProps = {
 
 function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }: TabItemProps) {
   const colors = useThemeColors();
+  const { factor } = useTextScale();
   const color = active ? ACTIVE_COLOR : colors.inkFaint;
+  const chrome = Math.min(factor, MAX_CHROME_SCALE);
+  const avatarSize = Math.round(AVATAR_SIZE * chrome);
+  // `fixedSize` a l'usage : la taille porte deja le plafond de la barre,
+  // Icon ne doit pas la remultiplier par le reglage de l'app.
+  const iconSize = Math.round(ICON_SIZE * chrome);
 
   return (
     <Pressable
@@ -62,9 +101,9 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
           // à cette taille.
           <View
             style={{
-              width: AVATAR_SIZE,
-              height: AVATAR_SIZE,
-              borderRadius: AVATAR_SIZE / 2,
+              width: avatarSize,
+              height: avatarSize,
+              borderRadius: avatarSize / 2,
               overflow: 'hidden',
               borderWidth: active ? 2 : 0,
               borderColor: ACTIVE_COLOR,
@@ -73,7 +112,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
             <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
           </View>
         ) : (
-          <Icon name={iconName} size={22} color={color} />
+          <Icon name={iconName} size={iconSize} color={color} fixedSize />
         )}
 
         {badgeCount > 0 ? (
@@ -82,25 +121,38 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
               position: 'absolute',
               top: -4,
               right: -8,
-              minWidth: 16,
-              height: 16,
-              borderRadius: 8,
+              minWidth: Math.round(16 * chrome),
+              height: Math.round(16 * chrome),
+              borderRadius: Math.round(8 * chrome),
               paddingHorizontal: 3,
               backgroundColor: '#E5484D',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{badgeCount > 9 ? '9+' : badgeCount}</Text>
+            {/* Le chiffre est plafonne comme le libelle : la pastille est
+                ronde et dimensionnee en dur, un 2 passe a 20 points y serait
+                rogne. */}
+            <Text
+              maxFontSizeMultiplier={MAX_LABEL_FONT_MULTIPLIER}
+              style={{ color: '#fff', fontSize: Math.round(10 * chrome), fontWeight: '700' }}
+            >
+              {badgeCount > 9 ? '9+' : badgeCount}
+            </Text>
           </View>
         ) : null}
       </View>
 
-      {/* 11px et une seule ligne : "Habitations" est le plus long des quatre
-          libellés et doit tenir dans un quart de la largeur sur un écran
-          étroit. Taille en style plutôt qu'en className — une classe
-          NativeWind erronée échoue en silence, sans erreur de typage. */}
-      <Text numberOfLines={1} className="mt-0.5 font-medium" style={{ color, fontSize: 11 }}>
+      {/* Une seule ligne : "Habitations" est le plus long des quatre libellés
+          et doit tenir dans un quart de la largeur sur un écran étroit.
+          Taille en style plutôt qu'en className — une classe NativeWind
+          erronée échoue en silence, sans erreur de typage. */}
+      <Text
+        numberOfLines={1}
+        maxFontSizeMultiplier={MAX_LABEL_FONT_MULTIPLIER}
+        className="mt-0.5 font-medium"
+        style={{ color, fontSize: Math.round(LABEL_SIZE * chrome) }}
+      >
         {label}
       </Text>
     </Pressable>
@@ -124,6 +176,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
 export function AppTabBar() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
+  const height = useAppTabBarHeight();
   const { t } = useTranslation();
   // Pastille de demandes d'ami en attente — pas de notification push (voir
   // Phase 8, hors scope explicite), mais au moins un signal visible dès que
@@ -165,7 +218,7 @@ export function AppTabBar() {
       className="absolute bottom-0 left-0 right-0 border-t border-ink/10 bg-surface"
       style={{ paddingBottom: insets.bottom }}
     >
-      <View className="flex-row items-center px-1" style={{ height: APP_TAB_BAR_HEIGHT }}>
+      <View className="flex-row items-center px-1" style={{ height }}>
         {/* Le pin reprend le "o" du logo Céoù — clin d'œil au nom, et
             surtout la seule façon de ne pas mettre deux maisons côte à côte
             dans une app qui parle justement d'habitations. */}

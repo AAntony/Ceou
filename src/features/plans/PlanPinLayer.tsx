@@ -244,7 +244,10 @@ function PinBadge({
             backgroundColor: highlighted ? ACCENT : colors.surface,
           }}
         >
-          <Icon name={display.icon} size={metrics.icon} color={highlighted ? '#FFFFFF' : ACCENT} />
+          {/* `fixedSize` : la puce est dessinee en unites de la feuille et
+              zoome deja avec le plan. Le reglage de taille de l'app la ferait
+              deborder de sa carte — le Plan a son propre selecteur S/M/XL. */}
+          <Icon name={display.icon} size={metrics.icon} color={highlighted ? '#FFFFFF' : ACCENT} fixedSize />
           <Text
             numberOfLines={metrics.lines}
             style={{
@@ -281,7 +284,7 @@ function PinBadge({
               justifyContent: 'center',
             }}
           >
-            <Icon name="location" size={metrics.marker * 0.62} color={ACCENT} />
+            <Icon name="location" size={metrics.marker * 0.62} color={ACCENT} fixedSize />
           </View>
         ) : null}
       </View>

@@ -163,7 +163,22 @@
       "follow_system": "Follow the phone setting"
     },
     "version_label": "Version",
-    "privacy_policy": "Privacy Policy"
+    "privacy_policy": "Privacy Policy",
+    "display": {
+      "title": "Display",
+      "text_size": "Text size",
+      "text_size_hint": "Enlarges the text and, with it, the buttons and pictures.",
+      "sizes": {
+        "normal": "Normal",
+        "large": "Large",
+        "huge": "Extra large"
+      },
+      "preview_title": "Preview",
+      "preview_name": "Car keys",
+      "preview_location": "Sideboard drawer · Kitchen",
+      "system_hint": "Ceou also follows the text size set on your phone.",
+      "system_hint_active": "Your phone is set to a text size of {{percent}}%. Ceou adds to that."
+    }
   },
   "home": {
     "greeting": "Hi, {{name}}",

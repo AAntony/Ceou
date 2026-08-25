@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
+import { useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
@@ -74,6 +75,13 @@ export function EntityRow({
 }: EntityRowProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
+  // La vignette est dessinee en pixels (ratio 4:3 impose), donc hors de
+  // portee de `rem` : elle grandit avec le texte pour ne pas devenir un
+  // timbre-poste a cote d'un nom de 26 points.
+  const thumbWidth = useScaled(THUMB_WIDTH);
+  const thumbHeight = useScaled(THUMB_HEIGHT);
+  const { textScale } = useTextScale();
+  const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
 
   return (
     <Pressable
@@ -83,7 +91,7 @@ export function EntityRow({
       className="mb-2.5 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
       <View
-        style={{ width: THUMB_WIDTH, height: THUMB_HEIGHT }}
+        style={{ width: thumbWidth, height: thumbHeight }}
         className="overflow-hidden rounded-xl bg-sand"
       >
         {thumbnail ?? (
@@ -118,7 +126,7 @@ export function EntityRow({
       </View>
 
       <View className="flex-1">
-        <Text numberOfLines={1} className="text-base font-semibold text-ink">
+        <Text numberOfLines={titleLines} className="text-base font-semibold text-ink">
           {title}
         </Text>
         {subtitle ? (

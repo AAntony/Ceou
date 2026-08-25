@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import type { LocationType } from '../../types/database';
 import { LocationTreePicker } from './LocationTreePicker';
 import { useMoveObjet } from './queries';
+import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 type MoveObjetModalProps = {
@@ -14,6 +15,7 @@ type MoveObjetModalProps = {
 
 export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProps) {
   const colors = useThemeColors();
+  const spacerWidth = useScaled(22);
   const { t } = useTranslation();
   const moveObjet = useMoveObjet(objetId);
 
@@ -26,8 +28,12 @@ export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProp
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 bg-sand pt-16">
         <View className="mb-2 flex-row items-center justify-between px-6">
-          <View style={{ width: 22 }} />
-          <Text className="text-lg font-bold text-ink">{t('inventory.objet.move_title')}</Text>
+          {/* Espaceur de la largeur de la croix d'en face, pour que le titre
+              reste centre. Mis a l'echelle comme elle. */}
+          <View style={{ width: spacerWidth }} />
+          <Text numberOfLines={1} className="flex-1 px-2 text-center text-lg font-bold text-ink">
+            {t('inventory.objet.move_title')}
+          </Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>

@@ -8,6 +8,7 @@ import { getEmplacementIcon } from '../inventory/constants';
 import type { MoveDestination } from './move';
 import { locationLabel } from './resolve';
 import type { AssistantState } from './useAssistant';
+import { useScaled, useTextScale, WRAP_SCALE } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 // La feuille d'une SESSION vocale.
@@ -39,6 +40,10 @@ function ChoiceRow({
   onPress: () => void;
 }) {
   const colors = useThemeColors();
+  // Deux lignes en gros texte : c'est la SEULE question que l'assistant
+  // pose, et un nom coupe (« Charg... ») n'y repond plus.
+  const { textScale } = useTextScale();
+  const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
   return (
     <Pressable
       onPress={onPress}
@@ -50,7 +55,7 @@ function ChoiceRow({
         <Icon name={icon} size={18} color={ACCENT} />
       </View>
       <View className="flex-1">
-        <Text className="text-base text-ink" numberOfLines={1}>
+        <Text className="text-base text-ink" numberOfLines={titleLines}>
           {title}
         </Text>
         {subtitle ? (
@@ -81,6 +86,9 @@ export function AssistantSheet({
 }) {
   const { t } = useTranslation();
   const colors = useThemeColors();
+  const choiceMaxHeight = useScaled(300);
+  const resultMaxHeight = useScaled(200);
+  const recentMaxHeight = useScaled(240);
 
   const draft = state.move;
   const choosing = state.status === 'choosing' && draft;
@@ -147,7 +155,10 @@ export function AssistantSheet({
               ? t('assistant.move.which_object', { n: draft.objets.length })
               : t('assistant.move.which_destination', { n: draft.destinations.length })}
           </Text>
-          <ScrollView style={{ maxHeight: 300, flexShrink: 1 }}>
+          {/* Plafonds mis a l'echelle : figes, ils auraient laisse une seule
+              proposition et demie visible des que le texte grossit, sur la
+              seule question que l'assistant pose jamais. */}
+          <ScrollView style={{ maxHeight: choiceMaxHeight, flexShrink: 1 }}>
             {!draft.objetId
               ? draft.objets.map((objet) => (
                   <ChoiceRow
@@ -183,7 +194,7 @@ export function AssistantSheet({
           {/* Les objets trouvés par une question posée en passant (« où sont
               mes clés ») restent cliquables, sans interrompre la session. */}
           {state.result && state.result.entries.length > 0 ? (
-            <ScrollView style={{ maxHeight: 200, flexShrink: 1 }}>
+            <ScrollView style={{ maxHeight: resultMaxHeight, flexShrink: 1 }}>
               {state.result.entries.map((entry) => (
                 <ChoiceRow
                   key={entry.id}
@@ -200,7 +211,7 @@ export function AssistantSheet({
           ) : null}
 
           {recent.length > 0 ? (
-            <ScrollView style={{ maxHeight: 240, flexShrink: 1 }}>
+            <ScrollView style={{ maxHeight: recentMaxHeight, flexShrink: 1 }}>
               {recent.map((entry, index) => (
                 <View
                   key={`${entry.objetName}-${recent.length - index}`}

@@ -132,7 +132,9 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           {lookupLoading ? (
             <ActivityIndicator />
           ) : localPhotoUri ? (
-            <Image source={{ uri: localPhotoUri }} style={{ width: 128, height: 128 }} />
+            // La photo remplit son cadre plutot que d'imposer sa taille :
+            // le cadre, lui, grandit avec le reglage de taille.
+            <Image source={{ uri: localPhotoUri }} style={{ width: '100%', height: '100%' }} />
           ) : (
             <Text className="px-2 text-center text-sm text-ink-soft">{t('inventory.objet.add_photo')}</Text>
           )}

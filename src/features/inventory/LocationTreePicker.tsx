@@ -152,7 +152,7 @@ function AddInlineCard({ label, onPress }: { label: string; onPress: () => void 
       className="mb-2 flex-row items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-coral bg-coral-light px-4 py-3 active:opacity-70"
     >
       <Icon name="add" size={18} color={colors.accentDark} />
-      <Text className="text-base font-semibold text-coral-dark">{label}</Text>
+      <Text className="shrink text-base font-semibold text-coral-dark">{label}</Text>
     </Pressable>
   );
 }

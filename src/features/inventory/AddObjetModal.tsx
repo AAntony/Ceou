@@ -10,6 +10,7 @@ import { AiPhotoScanFlow, type CollectedScanItem } from './AiPhotoScanFlow';
 import { LocationTreePicker } from './LocationTreePicker';
 import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
 import { useCreateObjet, useCreateObjetsBulk, useSetObjetPhoto } from './queries';
+import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 type AddObjetModalProps = {
@@ -29,6 +30,7 @@ type Step = 'choice' | 'manual' | 'scan' | 'destination';
 
 export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
   const colors = useThemeColors();
+  const spacerWidth = useScaled(22);
   const { t } = useTranslation();
   const { session } = useSession();
   const createObjet = useCreateObjet();
@@ -114,9 +116,11 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
               <Icon name="back" size={22} color={colors.ink} />
             </Pressable>
           ) : (
-            <View style={{ width: 22 }} />
+            // Espaceur de la largeur de l'icone qu'il remplace, pour que le
+            // titre reste centre. Mis a l'echelle comme elle.
+            <View style={{ width: spacerWidth }} />
           )}
-          <Text className="text-lg font-bold text-ink">{title}</Text>
+          <Text numberOfLines={1} className="flex-1 px-2 text-center text-lg font-bold text-ink">{title}</Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>

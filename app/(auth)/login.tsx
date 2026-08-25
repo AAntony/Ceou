@@ -65,7 +65,7 @@ export default function LoginScreen() {
 
         {/* items-center : le lien a désormais une hauteur de cible minimale,
             sans quoi le texte voisin s'étirerait et se décalerait vers le haut. */}
-        <View className="mt-6 flex-row items-center justify-center gap-1">
+        <View className="mt-6 flex-row flex-wrap items-center justify-center gap-1">
           <Text className="text-sm text-ink-soft">{t('auth.login.no_account')}</Text>
           <TextLink
             href="/(auth)/sign-up"

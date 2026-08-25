@@ -49,7 +49,7 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
             onPress={() => setMode('manual')}
             className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'manual' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
           >
-            <Text className={mode === 'manual' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+            <Text className={mode === 'manual' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
               {t('inventory.container.tab_manual')}
             </Text>
           </Pressable>
@@ -58,7 +58,7 @@ export function CreateObjetModal({ visible, onClose, parentType, parentId }: Cre
             onPress={() => setMode('scan')}
             className={`flex-1 items-center rounded-xl border px-4 py-3 ${mode === 'scan' ? 'border-coral bg-coral-light' : 'border-ink/10'}`}
           >
-            <Text className={mode === 'scan' ? 'font-semibold text-coral-dark' : 'text-ink-soft'}>
+            <Text className={mode === 'scan' ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
               {t('inventory.container.tab_scan')}
             </Text>
           </Pressable>

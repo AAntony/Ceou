@@ -15,6 +15,13 @@ import { AssistantFab } from './AssistantFab';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
 import { normalizeForMatch } from '../../lib/text/match';
+import {
+  ONE_COLUMN_SCALE,
+  STACK_SCALE,
+  TWO_COLUMN_SCALE,
+  useScaled,
+  useTextScale,
+} from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
@@ -43,7 +50,10 @@ const NO_ENTRIES: SearchIndexEntry[] = [];
 // Le rembourrage haut passe donc de la liste a l'en-tete, et la liste ne
 // garde qu'une marge de respiration sous lui.
 const HEADER_PADDING = { paddingHorizontal: 24, paddingTop: 64 };
-const CONTENT_PADDING = { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 160 };
+// Le rembourrage bas degage la barre d'onglets ET le bouton de l'assistant,
+// qui grandissent tous deux avec le reglage de taille : une valeur figee
+// laisserait les dernieres cartes dessous des qu'on agrandit.
+const CONTENT_BOTTOM_PADDING = 160;
 
 // TROIS COLONNES, et un ecart FIXE plutot qu'un `justify-between`.
 //
@@ -57,6 +67,9 @@ const COLUMN_WRAPPER = { gap: 9 };
 
 type HomeHeaderProps = {
   greeting: string;
+  /** Vrai quand le texte est assez gros pour que salutation et bouton
+      d'ajout cessent de tenir cote a cote. */
+  stacked: boolean;
   isGuest: boolean;
   searchText: string;
   onSearchTextChange: (text: string) => void;
@@ -78,6 +91,7 @@ type HomeHeaderProps = {
 // necessaire pour la raison ci-dessus, independamment de cette histoire.
 function HomeHeader({
   greeting,
+  stacked,
   isGuest,
   searchText,
   onSearchTextChange,
@@ -92,8 +106,8 @@ function HomeHeader({
 
   return (
     <>
-      <View className="mb-6 flex-row items-start justify-between">
-        <View className="flex-1 pr-4">
+      <View className={`mb-6 ${stacked ? '' : 'flex-row items-start justify-between'}`}>
+        <View className={stacked ? '' : 'flex-1 pr-4'}>
           <Text className="text-2xl font-bold text-ink">{greeting}</Text>
           <Text className="mt-1 text-sm text-ink-soft">{t('home.tagline')}</Text>
         </View>
@@ -104,15 +118,22 @@ function HomeHeader({
             écran SANS contexte, donc le seul où le geste n'a qu'un sens
             possible ; le libellé lève le reste du doute. Profil est parti
             dans la barre d'onglets. `shrink-0` : c'est la salutation qui se
-            replie sur deux lignes si la place manque, jamais la pastille. */}
+            replie sur deux lignes si la place manque, jamais la pastille —
+            jusqu'à ce que le texte grossisse assez pour que les deux ne
+            tiennent plus côte à côte, auquel cas le bouton passe dessous et
+            prend toute la largeur. */}
         {isGuest ? null : (
         <Pressable
           onPress={onAddObjet}
           accessibilityRole="button"
-          className="shrink-0 flex-row items-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80"
+          className={`flex-row items-center justify-center gap-1.5 rounded-full bg-coral px-3.5 py-2.5 active:opacity-80 ${
+            stacked ? 'mt-3 self-stretch' : 'shrink-0'
+          }`}
         >
           <Icon name="add" size={18} color="#FFFFFF" />
-          <Text className="text-sm font-semibold text-white">{t('home.add_objet')}</Text>
+          <Text numberOfLines={1} className="shrink text-sm font-semibold text-white">
+            {t('home.add_objet')}
+          </Text>
         </Pressable>
         )}
       </View>
@@ -124,11 +145,11 @@ function HomeHeader({
           ne rend qu'une ombre grise), ce cerne fait l'effet sans lib
           supplémentaire ni rendu différent iOS/Android. */}
       <View className="mb-4 rounded-full bg-teal/15 p-[3px]">
-        {/* Hauteur FIXE plutôt qu'un rembourrage : elle était jusqu'ici portée
-            par la pastille micro, partie dans le bouton flottant du bas
-            d'écran. Sans valeur explicite, la barre se serait rétractée en
-            perdant son seul élément haut. */}
-        <View className="h-12 flex-row items-center rounded-full border border-teal/30 bg-surface pl-4 pr-2">
+        {/* Hauteur MINIMALE et non fixe : le reglage de police du telephone
+            grossit le texte du champ sans passer par `rem`, et une hauteur
+            en dur l'aurait rogne. Elle vaut toujours 3rem au repos, donc la
+            barre ne bouge pas tant qu'on n'agrandit rien. */}
+        <View className="min-h-[3rem] flex-row items-center rounded-full border border-teal/30 bg-surface pl-4 pr-2">
           <Icon name="search" size={20} color={colors.inkFaint} />
           <TextInput
             value={searchText}
@@ -137,7 +158,10 @@ function HomeHeader({
             placeholderTextColor={colors.inkFaint}
             autoCapitalize="none"
             autoCorrect={false}
-            className="ml-2 flex-1 text-base text-ink"
+            // `min-w-0` : voir TextField — un <input> web ne retrecit pas
+            // sous sa largeur naturelle et pousserait la croix d'effacement
+            // hors de la barre.
+            className="ml-2 min-w-0 flex-1 text-base text-ink"
           />
 
           {/* Seulement quand il y a du texte : toujours visible, ce bouton
@@ -199,6 +223,12 @@ function HomeHeader({
 export function HomeDashboard() {
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
+  // Grossissement REEL du texte : choix dans l'app x reglage du telephone.
+  // Trois tuiles par rangee ne tiennent pas davantage parce que c'est Android
+  // qui a grossi le texte plutot que nous.
+  const { textScale } = useTextScale();
+  const columns = textScale >= ONE_COLUMN_SCALE ? 1 : textScale >= TWO_COLUMN_SCALE ? 2 : 3;
+  const contentPadding = useScaled(CONTENT_BOTTOM_PADDING);
   const { data: profile } = useProfile();
   const { data: entries, isLoading, isError, refetch } = useSearchIndex();
 
@@ -265,8 +295,8 @@ export function HomeDashboard() {
     : t('home.greeting_anonymous');
 
   const renderItem = useCallback(
-    ({ item }: { item: SearchIndexEntry }) => <ResultCard entry={item} />,
-    [],
+    ({ item }: { item: SearchIndexEntry }) => <ResultCard entry={item} columns={columns} />,
+    [columns],
   );
 
   return (
@@ -277,6 +307,7 @@ export function HomeDashboard() {
       <View style={HEADER_PADDING}>
         <HomeHeader
           greeting={greeting}
+          stacked={textScale >= STACK_SCALE}
           isGuest={isGuest}
           searchText={searchText}
           onSearchTextChange={setSearchText}
@@ -295,16 +326,22 @@ export function HomeDashboard() {
           qu'elle ne rapporte). Avant, chaque objet était monté d'emblée :
           ~7 vues natives et une requête d'image par carte. */}
       <FlatList
+        // REMONTAGE VOLONTAIRE quand le nombre de colonnes change : une
+        // FlatList refuse de changer `numColumns` en cours de route (elle
+        // leve « Changing numColumns on the fly is not supported »).
+        key={columns}
         refreshControl={refreshControl}
         data={isError ? NO_ENTRIES : filtered}
         renderItem={renderItem}
         keyExtractor={(entry) => `${entry.kind}-${entry.id}`}
-        numColumns={3}
-        columnWrapperStyle={COLUMN_WRAPPER}
-        contentContainerStyle={CONTENT_PADDING}
-        // Une rangee de trois : il en faut plus qu'avant pour remplir le
-        // premier ecran sans laisser un blanc au premier rendu.
-        initialNumToRender={15}
+        numColumns={columns}
+        // Interdit sur une liste a une seule colonne, et pas seulement
+        // inutile : la FlatList leve une erreur si les deux coexistent.
+        columnWrapperStyle={columns > 1 ? COLUMN_WRAPPER : undefined}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 4, paddingBottom: contentPadding }}
+        // Assez pour remplir le premier ecran sans laisser un blanc au
+        // premier rendu — donc proportionnel au nombre de colonnes.
+        initialNumToRender={columns * 5}
         windowSize={5}
         ListEmptyComponent={
           isError ? (

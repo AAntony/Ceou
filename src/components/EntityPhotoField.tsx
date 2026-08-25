@@ -4,6 +4,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { logClientError } from '../lib/errorLogging';
 import { pickImage, takePhoto } from '../lib/images/pickAndUploadImage';
+import { useScaled } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon } from './Icon';
 
@@ -32,6 +33,10 @@ type EntityPhotoFieldProps = {
 };
 
 export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoFieldProps) {
+  // L'apercu est dessine en pixels (ratio 4:3 impose), donc hors de portee de
+  // `rem` : il grandit avec le texte plutot que de rester une vignette.
+  const previewWidth = useScaled(PREVIEW_WIDTH);
+  const previewHeight = useScaled(PREVIEW_HEIGHT);
   const colors = useThemeColors();
   const { t } = useTranslation();
 
@@ -54,7 +59,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
 
       <View className="flex-row items-center gap-4">
         <View
-          style={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }}
+          style={{ width: previewWidth, height: previewHeight }}
           className="overflow-hidden rounded-xl bg-sand"
         >
           <Image

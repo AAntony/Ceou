@@ -47,7 +47,11 @@ export function HeaderAddButton({ onPress, label }: HeaderAddButtonProps) {
       className="flex-row items-center gap-1 rounded-full bg-coral px-3 py-1.5 active:opacity-80"
     >
       <Icon name="add" size={16} color="#FFFFFF" />
-      <Text className="text-sm font-semibold text-white">{t('common.add')}</Text>
+      {/* L'en-tete natif a une hauteur fixe que `rem` ne controle pas : le
+          libelle y reste sur une ligne. */}
+      <Text numberOfLines={1} className="text-sm font-semibold text-white">
+        {t('common.add')}
+      </Text>
     </Pressable>
   );
 }

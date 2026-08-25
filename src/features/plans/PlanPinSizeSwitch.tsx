@@ -26,7 +26,7 @@ export function PlanPinSizeSwitch({ size, onChange }: { size: PinSize; onChange:
             onPress={() => onChange(option)}
             accessibilityRole="button"
             accessibilityState={{ selected: active }}
-            className={`h-8 min-w-11 items-center justify-center rounded-full px-3 active:opacity-80 ${
+            className={`min-h-[2rem] min-w-11 items-center justify-center rounded-full px-3 py-1 active:opacity-80 ${
               active ? 'bg-coral' : ''
             }`}
           >
