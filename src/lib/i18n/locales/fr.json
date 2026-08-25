@@ -512,7 +512,7 @@
     },
     "aiScan": {
       "title": "Scanner des objets",
-      "mode_choice_title": "Comment veux-tu ajouter ?",
+      "mode_choice_title": "Comment veux-tu ajouter un objet ?",
       "entry_title": "Scanner une photo",
       "entry_hint": "Photographie une étagère, un tiroir... l'IA détecte chaque objet automatiquement.",
       "capture_title": "Scanner une photo",
@@ -528,7 +528,9 @@
       "consent_title": "Avant de scanner une photo",
       "consent_body": "Cette photo sera envoyée à l'API Gemini de Google pour détecter automatiquement les objets qu'elle contient. Elle n'est utilisée que pour répondre à cette demande ponctuelle.",
       "consent_accept": "J'accepte et je continue",
-      "rate_limited": "Tu as déjà scanné une photo il y a moins de {{seconds}} secondes — réessaie dans quelques instants."
+      "rate_limited": "Tu as déjà scanné une photo il y a moins de {{seconds}} secondes — réessaie dans quelques instants.",
+      "manual_entry_title": "Manuellement",
+      "manual_entry_hint": "Prends une photo, écris le nom — tu gardes la main sur tout."
     },
     "photo": {
       "label": "Photo (facultative)",

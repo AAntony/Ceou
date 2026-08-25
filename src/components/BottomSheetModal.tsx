@@ -6,6 +6,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   View,
   type StyleProp,
   type ViewStyle,
@@ -42,11 +43,23 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 // Squelette commun à TOUTE feuille de bas d'écran de l'app (fiche de forme
 // du Plan, création/édition d'entité, formulaire Objet...) : fond
 // semi-transparent qui ferme au tap, comportement par défaut plutôt qu'une
-// exception ajoutée écran par écran — un tap sur la feuille elle-même ne doit
-// PAS fermer, d'où le second Pressable qui absorbe son propre tap (onPress
-// vide) avant qu'il ne remonte jusqu'au fond. `sheetClassName`/`sheetStyle`
-// laissent chaque appelant garder son padding propre (le formulaire Objet,
-// par exemple, n'a pas le même que la fiche de forme du Plan).
+// exception ajoutée écran par écran. `sheetClassName`/`sheetStyle` laissent
+// chaque appelant garder son padding propre (le formulaire Objet, par
+// exemple, n'a pas le même que la fiche de forme du Plan).
+//
+// ⚠️ LE FOND EST UN FRÈRE DE LA FEUILLE, PAS SON PARENT. Il l'a enveloppée
+// jusqu'au 2026-08-26, et la feuille devait alors être elle-même un
+// `Pressable` au `onPress` vide pour empêcher qu'un tap sur son contenu ne
+// remonte jusqu'au fond et la referme. Ce Pressable-là entrait en
+// concurrence avec le ScrollView pour le geste : sur Android, un ancêtre
+// pressable réclame le responder au premier contact, si bien que le
+// défilement ne démarrait que là où le ScrollView gagnait la course — d'où
+// un scroll « capricieux, qui ne fonctionne pas toujours » (retour
+// utilisateur). Posé en frère absolu DERRIÈRE la feuille, le fond garde
+// exactement le même comportement (un tap à côté ferme) sans qu'aucun
+// pressable ne surplombe le contenu : un toucher sur la feuille remonte
+// jusqu'à elle et s'y arrête, les frères en dessous ne sont jamais
+// consultés. NE PAS revenir à un fond enveloppant.
 //
 // Deux comportements posés ICI, une seule fois pour toutes les feuilles
 // (retour utilisateur du 2026-08-17 : plusieurs boutons "Générer"/
@@ -67,7 +80,7 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 // `flex: 1` y passe donc à `flexBasis: 0` et ne compte pour RIEN dans
 // cette mesure — la feuille se réduit à ses éléments non-flex et l'enfant
 // est rendu avec une hauteur nulle (contenu invisible, pas d'erreur, pas de
-// warning). Deux recettes selon le besoin :
+// warning). Trois recettes selon le besoin :
 // - contenu court, qui doit juste s'afficher en entier → AUCUNE propriété
 //   flex nulle part et pas de `sheetStyle` (branche manuelle de
 //   CreateObjetModal) ;
@@ -75,8 +88,8 @@ const DEFAULT_SHEET_CLASSNAME = 'rounded-t-3xl bg-surface';
 //   (hauteur DÉFINIE) et là `flex: 1` fonctionne normalement (branche scan
 //   de CreateObjetModal) ;
 // - contenu qui peut dépasser l'écran et doit défiler sous un plafond →
-//   `maxHeight` + `flexShrink: 1` sur le ScrollView (FriendDetailSheet,
-//   ShareInviteModal, et CreateEntityModal depuis le 26/08).
+//   `scrollable`, qui pose `maxHeight` + `flexShrink: 1` sur le ScrollView
+//   (FriendDetailSheet, ShareInviteModal, CreateEntityModal et cinq autres).
 //   Cette recette exige que le ScrollView soit l'ENFANT DIRECT de la
 //   feuille. Elle a échoué dans CreateObjetModal, où le ScrollView est
 //   enfoui d'un niveau (un View enveloppe ObjetFormBody, qui a le sien) :
@@ -103,41 +116,40 @@ export function BottomSheetModal({
   const { t } = useTranslation();
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1, justifyContent: 'flex-end' }}
+      >
         {/* Le fond ferme la feuille : c'est la seule sortie pour qui ne
-            voit pas le bouton du bas, donc il doit s'annoncer. */}
+            voit pas le bouton du bas, donc il doit s'annoncer. Déclaré en
+            premier, donc peint DERRIÈRE la feuille. */}
         <Pressable
-          className="flex-1 justify-end bg-black/40"
+          style={StyleSheet.absoluteFill}
+          className="bg-black/40"
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
+        />
+
+        <View
+          className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
+          // Le style de l'appelant passe EN DERNIER : il peut donc imposer
+          // sa propre hauteur par-dessus le plafond.
+          style={[scrollable ? { maxHeight: SCROLLABLE_MAX_HEIGHT } : null, sheetStyle]}
         >
-          {/* Celui-ci n'existe que pour avaler le tap et empêcher la feuille
-              de se fermer quand on touche son contenu. Ce n'est pas une
-              commande : `accessible={false}` évite qu'un lecteur d'écran
-              l'annonce comme tel et laisse lire les enfants un par un. */}
-          <Pressable
-            onPress={() => {}}
-            accessible={false}
-            className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
-            // Le style de l'appelant passe EN DERNIER : il peut donc imposer
-            // sa propre hauteur par-dessus le plafond.
-            style={[scrollable ? { maxHeight: SCROLLABLE_MAX_HEIGHT } : null, sheetStyle]}
-          >
-            {scrollable ? (
-              // `flexShrink` et surtout pas `flex` : voir le piege ci-dessus.
-              // Le ScrollView garde `flexBasis: auto`, donc il est mesure sur
-              // son contenu et ne retrecit qu'une fois le plafond atteint —
-              // moment ou il se met enfin a defiler.
-              <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
-                {children}
-              </ScrollView>
-            ) : (
-              children
-            )}
-            <View style={{ height: insets.bottom }} />
-          </Pressable>
-        </Pressable>
+          {scrollable ? (
+            // `flexShrink` et surtout pas `flex` : voir le piege ci-dessus.
+            // Le ScrollView garde `flexBasis: auto`, donc il est mesure sur
+            // son contenu et ne retrecit qu'une fois le plafond atteint —
+            // moment ou il se met enfin a defiler.
+            <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
+              {children}
+            </ScrollView>
+          ) : (
+            children
+          )}
+          <View style={{ height: insets.bottom }} />
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );

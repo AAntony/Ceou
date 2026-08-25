@@ -120,7 +120,11 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
             // titre reste centre. Mis a l'echelle comme elle.
             <View style={{ width: spacerWidth }} />
           )}
-          <Text numberOfLines={1} className="flex-1 px-2 text-center text-subheading font-bold text-ink">{title}</Text>
+          {/* Deux lignes : « Comment veux-tu ajouter un objet ? » ne tient
+              pas sur une, et un titre coupe ne pose plus de question. */}
+          <Text numberOfLines={2} className="flex-1 px-2 text-center text-subheading font-bold text-ink">
+            {title}
+          </Text>
           <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
@@ -196,7 +200,15 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         className="items-center gap-2 rounded-2xl border border-ink/10 bg-sand-dark px-6 py-6 active:opacity-70"
       >
         <Icon name="objet" size={32} color={colors.ink} />
-        <Text className="text-center text-subheading font-bold text-ink">{t('inventory.container.add_objet')}</Text>
+        {/* « Manuellement » et non « Ajouter un objet » : les deux options
+            ajoutent un objet, ce n'est donc pas ce qui les distingue. Ce qui
+            les distingue, c'est QUI fait le travail — d'ou un sous-texte de
+            part et d'autre, pour qu'on choisisse entre deux methodes
+            decrites plutot qu'entre une methode et un intitule d'ecran. */}
+        <Text className="text-center text-subheading font-bold text-ink">
+          {t('inventory.aiScan.manual_entry_title')}
+        </Text>
+        <Text className="text-center text-label text-ink-soft">{t('inventory.aiScan.manual_entry_hint')}</Text>
       </Pressable>
     </ScrollView>
   );
