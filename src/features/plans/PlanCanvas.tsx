@@ -1,16 +1,7 @@
-import {
-  Canvas,
-  DashPathEffect,
-  Group,
-  Line,
-  matchFont,
-  Rect,
-  Text as SkiaText,
-  vec,
-  type SkFont,
-} from '@shopify/react-native-skia';
+import { Canvas, DashPathEffect, Line, Rect, vec } from '@shopify/react-native-skia';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Platform, View, type LayoutChangeEvent } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { IconName } from '../../components/Icon';
 import { DEFAULT_PIECE_COLOR } from '../inventory/constants';
@@ -30,7 +21,7 @@ import {
 import { DoorLayer } from './DoorLayer';
 import { hitTestPlan, type PlanTarget, type PlanTargets } from './hitTest';
 import { PlanPinLayer } from './PlanPinLayer';
-import { PIN_METRICS, type PinSize } from './pinSize';
+import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
 import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSegments, wallWidth } from './walls';
 import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
@@ -40,14 +31,14 @@ import { useThemeColors } from '../../lib/theme';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
-// Taille du nom d'une pièce et de son compteur, EN PIXELS D'ÉCRAN (voir
-// RoomLabel : le bloc est contre-mis à l'échelle, il ne rétrécit donc pas
-// avec le plan). Multipliées par le réglage d'affichage du Profil, comme le
-// reste des textes de l'app.
+// Taille du nom d'une pièce et de son compteur, EN PIXELS D'ÉCRAN : le calque
+// des étiquettes vit hors du monde zoomé (voir RoomLabelLayer), ces valeurs ne
+// dépendent donc pas du zoom. Multipliées par le réglage d'affichage du
+// Profil, comme le reste des textes de l'app.
 const LABEL_FONT_SIZE = 14;
 const COUNT_FONT_SIZE = 11;
 /** Espace laissé entre le mur du haut et le sommet des lettres, en pixels d'écran. */
-const LABEL_TOP_CLEARANCE = 8;
+const LABEL_TOP_CLEARANCE = 6;
 
 // Le bleu d'action de l'app. Constante ici plutôt que via le thème : ces
 // traits se posent sur la feuille du plan, qui garde le même fond clair dans
@@ -198,8 +189,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   const colors = useThemeColors();
   // Le nom des pièces suit le réglage d'affichage, maintenant qu'il a une
   // taille d'écran à lui (avant, il était dans le monde zoomé, où le seul
-  // réglage qui comptait était le zoom).
-  const { textScale } = useTextScale();
+  // réglage qui comptait était le zoom). C'est `factor` et non `textScale` :
+  // le nom est rendu par un `Text` de React Native, qui applique déjà de son
+  // côté le réglage de police du téléphone — utiliser `textScale`, qui
+  // contient les deux, le compterait deux fois.
+  const { factor: textFactor } = useTextScale();
   // Position ET taille vivent dans le même state, mises à jour en direct par
   // le déplacement (x/y) et les poignées de redimensionnement (x/y/width/
   // height) — un seul aller-retour réseau à la fin du geste, pas à chaque
@@ -225,34 +219,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   const initializedRef = useRef(false);
   const [framed, setFramed] = useState(false);
   const centeredHighlightRef = useRef<string | null>(null);
-  // matchFont() can throw if Skia's CanvasKit/WASM backend (web only —
-  // native Skia has no such async init delay) isn't ready yet, which would
-  // otherwise crash this whole screen. Labels are a nice-to-have on top of
-  // the shapes themselves, so degrade to no labels rather than a blank
-  // screen if font matching isn't available yet.
-  const font = useMemo(() => {
-    try {
-      return matchFont({
-        fontFamily: Platform.select({ android: 'sans-serif-medium', ios: 'Helvetica', default: 'sans-serif' }),
-        fontSize: Math.round(LABEL_FONT_SIZE * textScale),
-      });
-    } catch {
-      return null;
-    }
-  }, [textScale]);
-
-  // Seconde police pour le nombre d'objets : plus petite et plus discrète que
-  // le nom, pour que la hiérarchie se lise sans couleur supplémentaire.
-  const countFont = useMemo(() => {
-    try {
-      return matchFont({
-        fontFamily: Platform.select({ android: 'sans-serif', ios: 'Helvetica', default: 'sans-serif' }),
-        fontSize: Math.round(COUNT_FONT_SIZE * textScale),
-      });
-    } catch {
-      return null;
-    }
-  }, [textScale]);
 
   useEffect(() => {
     setShapes((current) => {
@@ -1114,21 +1080,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                 />
               ) : null}
 
-              {/* Passe 4 — les libellés, toujours au-dessus */}
-              {roomVisuals.map((room) => (
-                <RoomLabel
-                  key={`label-${room.id}`}
-                  geo={room.geo}
-                  label={room.label}
-                  count={room.count}
-                  font={font}
-                  countFont={countFont}
-                  zoomScale={zoom.scale}
-                  textScale={textScale}
-                  nameColor={colors.ink}
-                  countColor={colors.inkSoft}
-                />
-              ))}
+              {/* Les noms de pièces ne sont plus peints ici : le canevas ne
+                  peut RIEN faire passer devant les puces d'Emplacement, qui
+                  sont des vues natives rendues après lui. Ils vivent
+                  maintenant dans un calque à part, tout en bas de ce fichier
+                  (RoomLabelLayer). */}
             </Canvas>
 
             {/* Pendant la pose d'une porte, le corps des pièces et les
@@ -1183,6 +1139,16 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
               onTap={onPinTap}
             />
           </View>
+
+          {/* HORS du conteneur zoomé, et rendu APRÈS lui : c'est ce qui rend
+              le nom des pièces définitivement visible. Voir RoomLabelLayer. */}
+          <RoomLabelLayer
+            rooms={roomVisuals}
+            pins={pins}
+            pinMetrics={PIN_METRICS[pinSize]}
+            zoom={zoom}
+            textFactor={textFactor}
+          />
           </>
           ) : null}
         </View>
@@ -1198,150 +1164,153 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
 // vert et plus épais. `selected` (édition en cours) prend le pas en corail
 // si les deux sont vrais en même temps (cas rare : la pièce surlignée est
 // aussi celle qu'on édite).
-/**
- * Largeur réelle d'un texte, pour le centrer POUR DE VRAI.
- *
- * L'ancien rendu approximait avec `x = centre - longueur * 3`, ce qui décalait
- * chaque nom d'autant plus qu'il était long ou court ("Salle de bain" et "WC"
- * ne tombaient pas au même endroit). Le repli sur cette approximation ne sert
- * qu'au cas où la police n'expose pas de mesure.
- */
-function measureWidth(font: SkFont, text: string): number {
-  try {
-    return font.measureText(text).width;
-  } catch {
-    return text.length * 6;
-  }
-}
 
-/**
- * Raccourcit un texte jusqu'à ce qu'il tienne dans la largeur donnée.
- *
- * Renvoie `null` quand même une version raccourcie ne tient pas : mieux vaut
- * pas d'étiquette du tout qu'un « … » solitaire au milieu d'une pièce.
- */
-function fitText(font: SkFont, text: string, maxWidth: number): string | null {
-  if (measureWidth(font, text) <= maxWidth) return text;
-  for (let length = text.length - 1; length > 0; length--) {
-    const candidate = `${text.slice(0, length).trimEnd()}…`;
-    if (measureWidth(font, candidate) <= maxWidth) return candidate;
-  }
-  return null;
-}
-
-/**
- * Nom de la pièce + nombre d'objets, écrits EN HAUT de la pièce et à taille
- * d'écran CONSTANTE.
- *
- * DEUX DÉFAUTS, UNE SEULE CAUSE : le bloc était posé au centre de la pièce,
- * dans le monde zoomé.
- *
- * Au centre, les puces d'Emplacement passaient par-dessus — et rien ne
- * pouvait le corriger depuis Skia : les puces sont des vues natives rendues
- * APRÈS le canevas, donc toujours au-dessus de tout ce qu'il peint. Le nom
- * monte donc contre le mur du haut, là où aucune puce nouvellement posée
- * n'atterrit (voir pinSlots).
- *
- * Dans le monde zoomé, il rétrécissait avec le plan : il devenait donc
- * illisible exactement quand on prend du recul pour voir tout l'étage,
- * c'est-à-dire au moment où le nom d'une pièce sert le plus. Le bloc est
- * maintenant CONTRE-MIS À L'ÉCHELLE — un groupe Skia d'échelle 1/zoom ancré
- * sur le haut de la pièce annule exactement le zoom du calque. Conséquence à
- * garder en tête en le modifiant : tout ce qui est écrit à l'intérieur est
- * exprimé en PIXELS D'ÉCRAN, plus en unités du monde.
- *
- * Une étiquette plus large que sa pièce est raccourcie, puis effacée quand
- * même trois lettres ne tiennent plus. Sans cette règle, un nom débordait
- * chez la voisine — le défaut existait déjà, un texte plus grand l'aurait
- * rendu criant.
- *
- * ⚠️ Skia place le `y` d'un Text sur sa LIGNE DE BASE, pas sur son sommet :
- * les deux lignes sont donc descendues d'une hauteur de police, pas posées
- * au ras du mur.
- */
-function RoomLabel({
-  geo,
-  label,
-  count,
-  font,
-  countFont,
-  zoomScale,
-  textScale,
-  nameColor,
-  countColor,
+// LE NOM DES PIÈCES, HORS DU MONDE ZOOMÉ.
+//
+// Trois emplacements essayés, et c'est le troisième qui règle la question
+// pour de bon — l'histoire mérite d'être écrite, elle explique la forme du
+// code.
+//
+// Au CENTRE de la pièce et peint par le canevas : les puces d'Emplacement
+// passaient par-dessus. Ce n'était pas un ordre de dessin à corriger : les
+// puces sont des vues natives rendues APRÈS le canevas, donc RIEN de ce que
+// Skia peint ne peut passer devant elles.
+//
+// EN HAUT de la pièce, toujours peint par le canevas : sur un vrai plan, les
+// rangements sont contre les murs — celui du haut compris. Les puces
+// recouvraient les noms de plus belle (retour utilisateur, capture à l'appui).
+//
+// Le nom est donc désormais rendu APRÈS les puces ET EN DEHORS du conteneur
+// zoomé. Chaque étiquette est posée à la position ÉCRAN de sa pièce, calculée
+// à la main : `translation + zoom × coordonnée du monde` — la même formule
+// que celle qu'appliquerait le conteneur, faite ici parce qu'on refuse
+// justement d'être dedans. Le `transformOrigin: '0 0'` du conteneur est ce
+// qui rend cette formule exacte.
+//
+// Quatre bénéfices, tous acquis d'un coup : plus rien ne peut recouvrir un
+// nom ; il garde sa taille sans aucune contre-mise à l'échelle ; c'est React
+// Native qui coupe un nom trop long avec ses points de suspension, au lieu
+// d'une mesure faite à la main ; et Skia n'a plus besoin de charger de
+// police, ce qui retire au passage un mode de panne (matchFont échouait tant
+// que CanvasKit n'était pas prêt).
+//
+// Un halo de la couleur du fond entoure les lettres : c'est ce qui garde le
+// nom lisible quand il tombe sur une puce, sans poser un cartouche opaque au
+// milieu de chaque pièce.
+//
+// Rien n'est écrit dans une pièce trop petite pour l'accueillir : mieux vaut
+// pas d'étiquette qu'un « … » solitaire.
+function RoomLabelLayer({
+  rooms,
+  pins,
+  pinMetrics,
+  zoom,
+  textFactor,
 }: {
-  geo: ShapeGeometry;
-  label: string;
-  count: number | null;
-  font: SkFont | null;
-  countFont: SkFont | null;
-  zoomScale: number;
-  textScale: number;
-  /**
-   * Pris dans le THÈME et non écrits en dur comme avant.
-   *
-   * La feuille du plan est peinte en `surface`, qui est presque noire en mode
-   * sombre ; la teinte de la pièce par-dessus reste sombre elle aussi. Une
-   * encre foncée fixe y devenait illisible — un défaut qui existait déjà,
-   * mais qui n'était pas tenable en faisant du nom l'élément principal.
-   */
-  nameColor: string;
-  countColor: string;
+  rooms: { id: string; geo: ShapeGeometry; label: string; count: number | null }[];
+  pins: PlanPin[];
+  pinMetrics: PinMetrics;
+  zoom: ZoomState;
+  textFactor: number;
 }) {
-  if (!label || !font) return null;
-
-  const anchorX = geo.x + geo.width / 2;
-  const anchorY = geo.y;
-
-  const nameSize = Math.round(LABEL_FONT_SIZE * textScale);
-  const countSize = Math.round(COUNT_FONT_SIZE * textScale);
-  // Le dégagement passe SOUS le mur du haut : celui-ci fait 5 unités de monde
-  // centrées sur la limite, donc 2,5 unités mordent à l'intérieur — soit 7,5
-  // pixels d'écran au zoom maximal. Huit pixels suffisent à ce que le haut
-  // des lettres ne touche jamais le trait.
-  const nameBaseline = anchorY + LABEL_TOP_CLEARANCE + nameSize;
-  const countBaseline = nameBaseline + countSize * 1.35;
-
-  // La place réellement disponible, à l'écran : c'est la seule mesure qui
-  // vaille, puisque le texte, lui, ne rétrécit plus avec la pièce.
-  const roomScreenWidth = geo.width * zoomScale;
-  const roomScreenHeight = geo.height * zoomScale;
-  const available = roomScreenWidth - nameSize * 0.7;
-  if (available < nameSize * 1.6) return null;
-  if (roomScreenHeight < nameBaseline - anchorY + 4) return null;
-
-  const name = fitText(font, label, available);
-  if (!name) return null;
-
-  const countText =
-    count !== null && countFont && roomScreenHeight >= countBaseline - anchorY + countSize * 0.4
-      ? fitText(countFont, formatCount(count), available)
-      : null;
+  const colors = useThemeColors();
+  const { t } = useTranslation();
+  const nameSize = Math.round(LABEL_FONT_SIZE * textFactor);
+  const countSize = Math.round(COUNT_FONT_SIZE * textFactor);
 
   return (
-    <Group transform={[{ scale: 1 / zoomScale }]} origin={vec(anchorX, anchorY)}>
-      <SkiaText
-        x={anchorX - measureWidth(font, name) / 2}
-        y={nameBaseline}
-        text={name}
-        font={font}
-        color={nameColor}
-      />
-      {countText && countFont ? (
-        <SkiaText
-          x={anchorX - measureWidth(countFont, countText) / 2}
-          y={countBaseline}
-          text={countText}
-          font={countFont}
-          color={countColor}
-        />
-      ) : null}
-    </Group>
-  );
-}
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {rooms.map((room) => {
+        if (!room.label) return null;
+        const width = room.geo.width * zoom.scale;
+        const height = room.geo.height * zoom.scale;
+        if (width < nameSize * 3 || height < nameSize * 2) return null;
 
-function formatCount(count: number): string {
-  return count === 1 ? '1 objet' : `${count} objets`;
+        const showCount = room.count !== null && height >= nameSize * 2 + countSize * 2;
+        // Hauteur du bloc à l'écran. Elle sert deux fois : à tester si une
+        // puce est déjà là, et à poser le bloc en bas quand il faut.
+        const band = LABEL_TOP_CLEARANCE + nameSize * 1.25 + (showCount ? countSize * 1.35 : 0) + 4;
+
+        // EN HAUT SI C'EST LIBRE, SINON EN BAS.
+        //
+        // Le nom est peint par-dessus tout, donc il ne peut plus disparaître —
+        // mais deux textes superposés ne se lisent pas mieux qu'un texte
+        // caché. Plutôt que de déplacer les puces, qui sont là où les meubles
+        // sont vraiment, c'est l'étiquette qui va se poser là où il reste de
+        // la place.
+        //
+        // Largeur estimée et non mesurée : React Native ne rendra le texte
+        // qu'après. L'approximation suffit — se tromper d'un caractère change
+        // au pire le choix d'un bandeau pour une étiquette qui frôlait une
+        // puce de toute façon.
+        const labelWidth = Math.min(width, room.label.length * nameSize * 0.6);
+        const left = zoom.translateX + room.geo.x * zoom.scale;
+        const top = zoom.translateY + room.geo.y * zoom.scale;
+        const boxLeft = left + (width - labelWidth) / 2;
+        const boxRight = boxLeft + labelWidth;
+
+        const occupied = (bandTop: number) =>
+          pins.some((pin) => {
+            if (pin.forme_id !== room.id) return false;
+            const centreX = left + pin.rel_x * width;
+            const centreY = top + pin.rel_y * height;
+            const halfW = (pinMetrics.cardWidth * zoom.scale) / 2;
+            const halfH = (pinMetrics.cardHeight * zoom.scale) / 2;
+            return (
+              centreX + halfW > boxLeft &&
+              centreX - halfW < boxRight &&
+              centreY + halfH > bandTop &&
+              centreY - halfH < bandTop + band
+            );
+          });
+
+        const bottomBandTop = top + height - band;
+        const atBottom = occupied(top) && !occupied(bottomBandTop);
+
+        return (
+          <View
+            key={room.id}
+            style={{
+              position: 'absolute',
+              left,
+              top: atBottom ? bottomBandTop + LABEL_TOP_CLEARANCE : top + LABEL_TOP_CLEARANCE,
+              width,
+              alignItems: 'center',
+              paddingHorizontal: 6,
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: nameSize,
+                fontWeight: '700',
+                color: colors.ink,
+                textShadowColor: colors.surface,
+                textShadowRadius: 4,
+              }}
+            >
+              {room.label}
+            </Text>
+            {showCount && room.count !== null ? (
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontSize: countSize,
+                  color: colors.inkSoft,
+                  textShadowColor: colors.surface,
+                  textShadowRadius: 4,
+                }}
+              >
+                {room.count === 0
+                  ? t('inventory.objet_count_zero')
+                  : t('inventory.objet_count', { count: room.count })}
+              </Text>
+            ) : null}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 // Le corps d'une pièce. Un tap la sélectionne, toujours — y compris pendant

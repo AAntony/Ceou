@@ -12,10 +12,14 @@ export type RelPosition = { relX: number; relY: number };
 // première puce d'un plan sans qu'aucune vue n'existe encore). L'y laisser
 // aurait fait remonter React Native et gesture-handler dans queries.ts.
 //
-// LE HAUT DE LA PIÈCE EST RÉSERVÉ AU NOM (voir RoomLabel) : la rangée
-// médiane est descendue de 0,28 à 0,45 pour lui laisser le bandeau. Les
-// puces déjà posées gardent la position où on les a glissées — ce tableau ne
-// décide que de l'endroit où arrive une NOUVELLE puce.
+// LE HAUT DE LA PIÈCE PORTE SON NOM (voir RoomLabelLayer) : la rangée médiane
+// est descendue de 0,28 à 0,45 pour ne pas y déposer une puce d'emblée. Ce
+// n'est plus une question de lisibilité — le nom est peint par-dessus tout et
+// reste lisible quoi qu'il arrive — mais de propreté : une puce neuve qui
+// arrive pile sous le nom fait désordre pour rien.
+//
+// Les puces déjà posées gardent la position où on les a glissées : ce tableau
+// ne décide que de l'endroit où arrive une NOUVELLE puce.
 const PIN_SLOTS: RelPosition[] = [
   { relX: 0.5, relY: 0.7 },
   { relX: 0.25, relY: 0.7 },
