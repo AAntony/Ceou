@@ -23,9 +23,8 @@ import { hitTestPlan, type PlanTarget, type PlanTargets } from './hitTest';
 import { PlanPinLayer } from './PlanPinLayer';
 import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
 import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSegments, wallWidth } from './walls';
-import type { DoorEdge } from './types';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
-import type { HandleId, ShapeGeometry } from './types';
+import type { DoorEdge, HandleId, ShapeGeometry } from './types';
 import { useTextScale } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
@@ -678,8 +677,8 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
       aimed.position,
       // Sans s'exclure elle-même, la porte se bloquerait sur sa propre place
       // dès le premier millimètre de glissé.
-      (doorsByForme[door.forme_id] ?? [])
-        .filter((candidate) => candidate.id !== door.id)
+      doors
+        .filter((candidate) => candidate.forme_id === door.forme_id && candidate.id !== door.id)
         .map((candidate) => ({ edge: candidate.edge as DoorEdge, position: candidate.position })),
       // Les voisines comptent : sur un mur mitoyen, les deux pièces tracent
       // le même trait.
@@ -687,7 +686,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
         .filter((f) => f.id !== door.forme_id)
         .map((f) => ({
           geo: geoById[f.id],
-          doors: (doorsByForme[f.id] ?? []).map((d) => ({ edge: d.edge as DoorEdge, position: d.position })),
+          doors: doorSpansByForme[f.id] ?? [],
         })),
     );
     if (free === null) return;
@@ -802,21 +801,30 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // — c est un attribut de la Piece, pas du Plan). Une forme non associee n a
   // pas de Piece dont heriter : elle garde son repli par hash pour rester
   // visuellement distincte de ses voisines.
-  const doorsByForme = useMemo(() => {
-    const map: Record<string, PlanDoor[]> = {};
-    for (const door of doors) (map[door.forme_id] ??= []).push(door);
-    return map;
-  }, [doors]);
-
+  // UN SEUL regroupement des portes. Il y en avait deux enchaînés :
+  // `doorsByForme` (les lignes entières) puis celui-ci, dérivé du premier.
+  // `doorsByForme` n'avait que deux lecteurs, tous deux dans le glissé d'une
+  // porte et jamais dans un rendu — donc rien à mémoïser — et l'un des deux
+  // refaisait à la main la conversion que cette table-ci fournit déjà. Ils
+  // lisent maintenant `doors` directement, ou cette table.
+  //
+  // À NE PAS PRENDRE POUR UNE CORRECTION DU COMPILATEUR REACT : il continue de
+  // renoncer à optimiser ce composant, et la cause est ailleurs (vérifié — même
+  // réécrit sans aucune mutation, en `reduce` pur, il renonce toujours). C'est
+  // une simplification, pas un déblocage.
+  //
   // La colonne `edge` est un `text` contraint par un CHECK a quatre valeurs :
   // le type genere, lui, ne connait que `string`.
   const doorSpansByForme = useMemo(() => {
     const map: Record<string, { edge: DoorEdge; position: number }[]> = {};
-    for (const [formeId, list] of Object.entries(doorsByForme)) {
-      map[formeId] = list.map((door) => ({ edge: door.edge as DoorEdge, position: door.position }));
+    for (const door of doors) {
+      const span = { edge: door.edge as DoorEdge, position: door.position };
+      const list = map[door.forme_id];
+      if (list) list.push(span);
+      else map[door.forme_id] = [span];
     }
     return map;
-  }, [doorsByForme]);
+  }, [doors]);
 
   const roomVisuals = useMemo(
     () =>

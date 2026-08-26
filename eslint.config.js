@@ -84,6 +84,27 @@ module.exports = defineConfig([
       // est correct. À traiter comme un chantier à part si on veut s'en
       // débarrasser — ça touche l'état de modales qui fonctionnent aujourd'hui.
       'react-hooks/set-state-in-effect': 'warn',
+
+      // Rétrogradée le 26/08, comme les deux ci-dessus, et pour une raison
+      // qu'il faut connaître avant de la remonter : cette règle ne signale PAS
+      // un bug. Elle dit « si tu activais le React Compiler, il renoncerait à
+      // optimiser ce composant ». Or il n'est pas activé — c'est une option
+      // d'`experiments` en SDK 57, absente d'app.config.js, et le bundle
+      // exporté ne contient aucun composant compilé (zéro site `_c(n)`,
+      // vérifié). Elle n'a donc aucun effet à l'exécution aujourd'hui.
+      //
+      // Graduée en ERREUR, elle rendait `npm run verify` rouge en permanence :
+      // un garde-fou toujours rouge ne distingue plus une faute nouvelle d'une
+      // faute connue, donc on cesse de le lire. C'était son seul coût réel, et
+      // il dépassait son bénéfice.
+      //
+      // Les occurrences sont toutes dans PlanCanvas, et elles NE SONT PAS
+      // corrigeables en retouchant les mémoïsations signalées : vérifié en
+      // réécrivant doorSpansByForme sans aucune mutation (`reduce` pur) — le
+      // compilateur renonce toujours. La cause est ailleurs dans ce composant
+      // de 1370 lignes. À reprendre le jour où activer le compilateur devient
+      // un objectif : ce sera un chantier, pas un réglage.
+      'react-hooks/preserve-manual-memoization': 'warn',
     },
   },
 ]);
