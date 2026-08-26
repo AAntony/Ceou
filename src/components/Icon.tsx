@@ -98,7 +98,9 @@ export type IconName =
   | 'theme'
   | 'textSize'
   | 'moveUp'
-  | 'moveDown';
+  | 'moveDown'
+  // Prêts et emprunts
+  | 'pret';
 
 const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   maison: 'home-variant',
@@ -219,6 +221,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   wave: 'hand-wave',
   guide: 'compass-outline',
   celebrate: 'party-popper',
+  // La main tendue, pas une poignée de main : on tend un objet, on ne conclut
+  // pas un accord.
+  pret: 'hand-extended',
 };
 
 type IconProps = {

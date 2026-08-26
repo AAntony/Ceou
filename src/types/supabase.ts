@@ -399,6 +399,53 @@ export type Database = {
           },
         ]
       }
+      objet_prets: {
+        Row: {
+          counterpart_label: string
+          counterpart_user_id: string | null
+          created_at: string
+          direction: string
+          due_at: string | null
+          id: string
+          note: string | null
+          objet_id: string
+          returned_at: string | null
+          started_at: string
+        }
+        Insert: {
+          counterpart_label: string
+          counterpart_user_id?: string | null
+          created_at?: string
+          direction: string
+          due_at?: string | null
+          id?: string
+          note?: string | null
+          objet_id: string
+          returned_at?: string | null
+          started_at?: string
+        }
+        Update: {
+          counterpart_label?: string
+          counterpart_user_id?: string | null
+          created_at?: string
+          direction?: string
+          due_at?: string | null
+          id?: string
+          note?: string | null
+          objet_id?: string
+          returned_at?: string | null
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objet_prets_objet_id_fkey"
+            columns: ["objet_id"]
+            isOneToOne: false
+            referencedRelation: "objets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       objets: {
         Row: {
           barcode: string | null
@@ -921,6 +968,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_accepted_friend: {
+        Args: { p_a: string; p_b: string }
+        Returns: boolean
+      }
       is_anonymous: { Args: never; Returns: boolean }
       list_friendships: {
         Args: never
@@ -962,6 +1013,23 @@ export type Database = {
           remind_days_before: number
           target_type: string
           use_count: number
+        }[]
+      }
+      list_objet_prets: {
+        Args: { p_include_closed?: boolean }
+        Returns: {
+          counterpart_avatar_url: string
+          counterpart_label: string
+          counterpart_user_id: string
+          direction: string
+          due_at: string
+          id: string
+          note: string
+          objet_id: string
+          objet_name: string
+          objet_photo_url: string
+          returned_at: string
+          started_at: string
         }[]
       }
       location_habitation: {

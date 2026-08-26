@@ -9,6 +9,9 @@ import { Icon } from '../../../src/components/Icon';
 import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
 import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
+import { LoanBanner } from '../../../src/features/loans/LoanBanner';
+import { LoanSheet } from '../../../src/features/loans/LoanSheet';
+import { useClosePret, useObjetPret } from '../../../src/features/loans/queries';
 import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
 import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useUpdateObjet } from '../../../src/features/inventory/queries';
@@ -38,6 +41,9 @@ export default function ObjetScreen() {
   const editable = canModify(permission);
   const updateObjet = useUpdateObjet(id);
   const deleteObjet = useDeleteObjet();
+  const { pret } = useObjetPret(id);
+  const closePret = useClosePret();
+  const [loanSheetOpen, setLoanSheetOpen] = useState(false);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -129,6 +135,15 @@ export default function ObjetScreen() {
           ) : null}
         </View>
 
+        {pret ? (
+          <LoanBanner
+            pret={pret}
+            onReturn={() => closePret.mutate(pret.id)}
+            returning={closePret.isPending}
+            editable={editable}
+          />
+        ) : null}
+
         <LocationBreadcrumb objetId={id} />
         <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} emphasis={!!highlightPlanLink} />
 
@@ -147,9 +162,17 @@ export default function ObjetScreen() {
             <View className="mb-6">
               <Button label={t('common.save')} onPress={handleSave} loading={updateObjet.isPending} />
             </View>
-            <View className="mb-8">
+            <View className="mb-2">
               <Button label={t('inventory.objet.move')} variant="ghost" onPress={() => setMoveModalOpen(true)} />
             </View>
+            {/* Masqué quand un prêt est déjà en cours : la base refuse un
+                second prêt ouvert sur le même objet, autant ne pas proposer
+                un bouton qui ne peut qu'échouer. */}
+            {pret ? null : (
+              <View className="mb-8">
+                <Button label={t('loans.entry')} variant="ghost" onPress={() => setLoanSheetOpen(true)} />
+              </View>
+            )}
           </>
         ) : null}
 
@@ -175,6 +198,7 @@ export default function ObjetScreen() {
       </ScrollView>
 
       <MoveObjetModal visible={moveModalOpen} onClose={() => setMoveModalOpen(false)} objetId={id} />
+      <LoanSheet visible={loanSheetOpen} onClose={() => setLoanSheetOpen(false)} objetId={id} objetName={objet.name} />
       <PhotoViewerModal visible={photoViewerOpen} uri={objet.photo_url} onClose={() => setPhotoViewerOpen(false)} />
     </>
   );

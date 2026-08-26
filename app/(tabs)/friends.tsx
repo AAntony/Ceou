@@ -7,6 +7,7 @@ import { ErrorState } from '../../src/components/ErrorState';
 import { HeaderAddButton } from '../../src/components/HeaderAddButton';
 import { Icon } from '../../src/components/Icon';
 import { usePullToRefresh } from '../../src/components/usePullToRefresh';
+import { LoansEntryCard } from '../../src/features/loans/LoansEntryCard';
 import { AddFriendModal } from '../../src/features/sharing/AddFriendModal';
 import {
   buildFriendSections,
@@ -103,6 +104,10 @@ export default function FriendsScreen() {
           et le bouton d'ajout vivent maintenant dans l'en-tête natif, donc
           plus de pt-16 pour compenser son absence. */}
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
+        {/* En tête, et au-dessus des demandes reçues : un retard de
+            restitution est la seule chose de cet écran qui se périme. */}
+        <LoansEntryCard />
+
         {incoming.length > 0 ? (
           <View className="mb-6">
             <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.requests.incoming_title')}</Text>

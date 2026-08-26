@@ -712,5 +712,54 @@
     "select_named": "Sélectionner {{name}}",
     "move_up_named": "Monter {{name}}",
     "move_down_named": "Descendre {{name}}"
+  },
+  "loans": {
+    "title": "Prêts",
+    "entry": "Prêter ou emprunter",
+    "intro": "Ce qui est sorti de chez toi, et ce que tu dois rendre. Un objet prêté garde sa place dans l'inventaire : c'est là qu'il retournera.",
+    "tab_open": "En cours",
+    "tab_history": "Historique",
+    "empty_open": "Rien ne circule",
+    "empty_open_hint": "Depuis la fiche d'un objet, indique à qui tu l'as prêté — ou à qui tu l'as emprunté.",
+    "empty_history": "Aucun prêt terminé",
+    "direction": {
+      "lent": "Je le prête",
+      "borrowed": "Je l'ai emprunté"
+    },
+    "sheet": {
+      "title": "Prêt ou emprunt",
+      "who_lent": "À qui le prêtes-tu ?",
+      "who_borrowed": "À qui appartient-il ?",
+      "name_label": "Nom",
+      "name_placeholder": "Marc, le voisin",
+      "name_hint": "Choisis un ami ci-dessus, ou tape simplement un nom : la personne n'a pas besoin d'avoir Céoù.",
+      "due": "Retour prévu",
+      "due_set": "À une date",
+      "due_none": "Sans date",
+      "due_days": "Dans (jours)",
+      "due_none_hint": "Le prêt restera dans la liste jusqu'à ce que tu le clôtures.",
+      "note": "Note (facultatif)",
+      "note_placeholder": "Avec les deux embouts",
+      "submit": "Enregistrer"
+    },
+    "banner": {
+      "lent_to": "Prêté à {{name}}",
+      "borrowed_from": "Emprunté à {{name}}",
+      "due_on": "Retour prévu le {{date}}",
+      "overdue": "En retard depuis le {{date}}",
+      "no_due": "Sans date de retour",
+      "mark_returned": "Il m'a été rendu",
+      "mark_given_back": "Je l'ai rendu"
+    },
+    "row": {
+      "returned_on": "Rendu le {{date}}"
+    },
+    "card": {
+      "none": "Rien ne circule en ce moment",
+      "open_one": "{{count}} objet en circulation",
+      "open_other": "{{count}} objets en circulation",
+      "late_one": "{{count}} retard",
+      "late_other": "{{count}} retards"
+    }
   }
 }

@@ -712,5 +712,54 @@
     "select_named": "Select {{name}}",
     "move_up_named": "Move {{name}} up",
     "move_down_named": "Move {{name}} down"
+  },
+  "loans": {
+    "title": "Loans",
+    "entry": "Lend or borrow",
+    "intro": "What has left your home, and what you owe. A lent item keeps its place in the inventory — that's where it will go back.",
+    "tab_open": "Open",
+    "tab_history": "History",
+    "empty_open": "Nothing is out",
+    "empty_open_hint": "From an item's page, record who you lent it to — or who you borrowed it from.",
+    "empty_history": "No closed loans yet",
+    "direction": {
+      "lent": "I'm lending it",
+      "borrowed": "I borrowed it"
+    },
+    "sheet": {
+      "title": "Lend or borrow",
+      "who_lent": "Who are you lending it to?",
+      "who_borrowed": "Who does it belong to?",
+      "name_label": "Name",
+      "name_placeholder": "Marc, next door",
+      "name_hint": "Pick a friend above, or just type a name: they don't need to have Céoù.",
+      "due": "Due back",
+      "due_set": "On a date",
+      "due_none": "No date",
+      "due_days": "In (days)",
+      "due_none_hint": "The loan stays in the list until you close it.",
+      "note": "Note (optional)",
+      "note_placeholder": "With both bits",
+      "submit": "Save"
+    },
+    "banner": {
+      "lent_to": "Lent to {{name}}",
+      "borrowed_from": "Borrowed from {{name}}",
+      "due_on": "Due back on {{date}}",
+      "overdue": "Overdue since {{date}}",
+      "no_due": "No return date",
+      "mark_returned": "It came back",
+      "mark_given_back": "I gave it back"
+    },
+    "row": {
+      "returned_on": "Returned on {{date}}"
+    },
+    "card": {
+      "none": "Nothing is out right now",
+      "open_one": "{{count}} item out",
+      "open_other": "{{count}} items out",
+      "late_one": "{{count}} overdue",
+      "late_other": "{{count}} overdue"
+    }
   }
 }
