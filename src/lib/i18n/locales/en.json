@@ -9,9 +9,7 @@
     "back": "Back",
     "close": "Close",
     "done": "Done",
-    "loading": "Loading...",
     "error_generic": "Something went wrong. Please try again.",
-    "other": "Other",
     "error_boundary_title": "Something went wrong.",
     "error_boundary_hint": "Restart the app. If the problem persists, contact us.",
     "error_load_title": "Couldn't load this page.",
@@ -51,8 +49,7 @@
     "reset_password": {
       "title": "New password",
       "new_password": "New password",
-      "submit": "Update",
-      "success": "Password updated."
+      "submit": "Update"
     },
     "errors": {
       "passwords_mismatch": "Passwords don't match",
@@ -158,7 +155,6 @@
     },
     "saved": "Profile saved",
     "theme": {
-      "title": "Appearance",
       "dark_label": "Dark mode",
       "follow_system": "Follow the phone setting"
     },
@@ -294,7 +290,6 @@
   },
   "assistant": {
     "thinking": "Looking…",
-    "replay": "Play again",
     "error": "I could not handle your request. Try again in a moment.",
     "error_busy": "Too many questions at once. Ask me again in a few seconds.",
     "answer": {
@@ -356,7 +351,6 @@
   "friends": {
     "tab_title": "Friends",
     "empty": "No friends yet — add one to start sharing your Homes.",
-    "list_title": "My friends",
     "my_code": {
       "title": "My friend code",
       "subtitle": "It never changes. It's the only way to add you as a friend.",
@@ -396,7 +390,6 @@
       "shared_with_me": "Shared with me",
       "shared_habitations": "Shared homes",
       "no_habitations": "You don't have a home to share yet.",
-      "friend_no_shared": "This friend hasn't shared any home with you yet.",
       "remove": "Remove this friend",
       "remove_confirm_title": "Remove this friend?",
       "remove_confirm_message": "The homes you share with them (and the ones they share with you) will no longer be accessible."
@@ -408,8 +401,8 @@
       "proprietaire": "Owner"
     },
     "share": {
-      "entry": "Invite a guest",
-      "title": "Invite a guest",
+      "entry": "Generate an access code",
+      "title": "Generate guest access",
       "intro": "This code gives view-only access to the homes you pick, with no account to create. To add a friend, share your friend code instead.",
       "section_title": "Guest access",
       "section_hint": "A view-only code, with no account to create — for a tenant or a house sitter.",
@@ -473,7 +466,7 @@
     "delete_body_used": "{{used}} person(s) came in with this code. Deleting it cuts their access immediately. This cannot be undone.",
     "delete_body_unused": "This code has never been used. This cannot be undone.",
     "empty_title": "No codes yet",
-    "empty_subtitle": "Generate one from \"Invite a guest\" to give access to a home.",
+    "empty_subtitle": "Generate one from \"Guest access\" in your profile to give access to a home.",
     "reminder": {
       "title": "An invite code expires soon",
       "body_one": "\"{{name}}\" expires in {{count}} day.",
@@ -490,7 +483,6 @@
       "create_title": "New home",
       "edit_title": "Edit home",
       "name_label": "Name",
-      "type_label": "Type",
       "delete_confirm_title": "Delete this home?",
       "delete_confirm_message": "All the rooms, spots and items it contains will be deleted.",
       "tab_pieces": "Rooms",
@@ -547,7 +539,6 @@
       "create_title": "New spot",
       "edit_title": "Edit spot",
       "name_label": "Name",
-      "type_label": "Type",
       "delete_confirm_title": "Delete this spot?",
       "delete_confirm_message": "All the containers and items it contains will be deleted."
     },
@@ -594,7 +585,6 @@
       "name_label": "Name",
       "description_label": "Information",
       "add_photo": "Add a photo",
-      "change_photo": "Change photo",
       "scan_barcode": "Scan a barcode",
       "scan_hint": "Point at the product's barcode",
       "scan_permission_message": "Allow camera access to scan a barcode.",
@@ -604,7 +594,6 @@
       "move": "Move",
       "move_title": "Move item",
       "move_choose_here": "Choose this spot",
-      "move_success": "Item moved",
       "history_title": "Move history",
       "history_empty": "No move yet.",
       "delete_confirm_title": "Delete this item?",
@@ -645,8 +634,6 @@
     "objet_count_other": "{{count}} items"
   },
   "plans": {
-    "header_button": "Plan",
-    "title": "{{name}}'s plan",
     "empty": "No plan yet.",
     "add": "Add a plan",
     "create_title": "New plan",

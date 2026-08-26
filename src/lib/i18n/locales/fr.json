@@ -9,9 +9,7 @@
     "back": "Retour",
     "close": "Fermer",
     "done": "Terminé",
-    "loading": "Chargement...",
     "error_generic": "Une erreur est survenue. Réessaie.",
-    "other": "Autre",
     "error_boundary_title": "Une erreur est survenue.",
     "error_boundary_hint": "Redémarre l'application. Si le problème persiste, contacte-nous.",
     "error_load_title": "Impossible de charger cette page.",
@@ -51,8 +49,7 @@
     "reset_password": {
       "title": "Nouveau mot de passe",
       "new_password": "Nouveau mot de passe",
-      "submit": "Mettre à jour",
-      "success": "Mot de passe mis à jour."
+      "submit": "Mettre à jour"
     },
     "errors": {
       "passwords_mismatch": "Les mots de passe ne correspondent pas",
@@ -158,7 +155,6 @@
     },
     "saved": "Profil enregistré",
     "theme": {
-      "title": "Apparence",
       "dark_label": "Mode sombre",
       "follow_system": "Suivre le réglage du téléphone"
     },
@@ -294,7 +290,6 @@
   },
   "assistant": {
     "thinking": "Je cherche…",
-    "replay": "Réécouter",
     "error": "Je n'ai pas pu traiter ta demande. Réessaie dans un instant.",
     "error_busy": "Trop de questions coup sur coup. Redemande-moi dans quelques secondes.",
     "answer": {
@@ -356,7 +351,6 @@
   "friends": {
     "tab_title": "Amis",
     "empty": "Aucun ami pour l'instant — ajoute-en un pour commencer à partager tes Habitations.",
-    "list_title": "Mes amis",
     "my_code": {
       "title": "Mon code ami",
       "subtitle": "Il ne change jamais. C'est le seul moyen de t'ajouter en ami.",
@@ -396,7 +390,6 @@
       "shared_with_me": "Partagé avec moi",
       "shared_habitations": "Habitations partagées",
       "no_habitations": "Tu n'as pas encore d'Habitation à partager.",
-      "friend_no_shared": "Cet ami n'a partagé aucune Habitation avec toi.",
       "remove": "Retirer cet ami",
       "remove_confirm_title": "Retirer cet ami ?",
       "remove_confirm_message": "Les Habitations que tu partages avec lui (et celles qu'il partage avec toi) ne seront plus accessibles."
@@ -408,8 +401,8 @@
       "proprietaire": "Propriétaire"
     },
     "share": {
-      "entry": "Inviter un invité",
-      "title": "Inviter un invité",
+      "entry": "Générer un code d’accès",
+      "title": "Générer un accès invité",
       "intro": "Ce code donne un accès en consultation aux habitations choisies, sans compte à créer. Pour ajouter un ami, partage plutôt ton code ami.",
       "section_title": "Accès invité",
       "section_hint": "Un code de consultation, sans compte à créer — pour un locataire ou quelqu'un qui garde la maison.",
@@ -473,7 +466,7 @@
     "delete_body_used": "{{used}} personne(s) sont entrées avec ce code. Les supprimer leur coupe l’accès immédiatement. Cette action est définitive.",
     "delete_body_unused": "Ce code n’a jamais été utilisé. Cette action est définitive.",
     "empty_title": "Aucun code pour l’instant",
-    "empty_subtitle": "Génère un code depuis « Inviter un invité » pour donner accès à une habitation.",
+    "empty_subtitle": "Génère un code depuis « Accès invité », dans ton profil, pour donner accès à une habitation.",
     "reminder": {
       "title": "Un code d’invitation expire bientôt",
       "body_one": "« {{name}} » expire dans {{count}} jour.",
@@ -490,7 +483,6 @@
       "create_title": "Nouvelle habitation",
       "edit_title": "Modifier l'habitation",
       "name_label": "Nom",
-      "type_label": "Type",
       "delete_confirm_title": "Supprimer cette habitation ?",
       "delete_confirm_message": "Toutes les pièces, emplacements et objets qu'elle contient seront supprimés.",
       "tab_pieces": "Pièces",
@@ -547,7 +539,6 @@
       "create_title": "Nouvel emplacement",
       "edit_title": "Modifier l'emplacement",
       "name_label": "Nom",
-      "type_label": "Type",
       "delete_confirm_title": "Supprimer cet emplacement ?",
       "delete_confirm_message": "Tous les conteneurs et objets qu'il contient seront supprimés."
     },
@@ -594,7 +585,6 @@
       "name_label": "Nom",
       "description_label": "Informations",
       "add_photo": "Ajouter une photo",
-      "change_photo": "Changer la photo",
       "scan_barcode": "Scanner un code-barre",
       "scan_hint": "Vise le code-barre du produit",
       "scan_permission_message": "Autorise l'accès à l'appareil photo pour scanner un code-barre.",
@@ -604,7 +594,6 @@
       "move": "Déplacer",
       "move_title": "Déplacer l'objet",
       "move_choose_here": "Choisir cet emplacement",
-      "move_success": "Objet déplacé",
       "history_title": "Historique des déplacements",
       "history_empty": "Aucun déplacement pour l'instant.",
       "delete_confirm_title": "Supprimer cet objet ?",
@@ -645,8 +634,6 @@
     "objet_count_other": "{{count}} objets"
   },
   "plans": {
-    "header_button": "Plan",
-    "title": "Plan de {{name}}",
     "empty": "Aucun plan pour l'instant.",
     "add": "Ajouter un plan",
     "create_title": "Nouveau plan",

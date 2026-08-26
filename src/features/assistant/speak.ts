@@ -62,11 +62,6 @@ function speechModule(): SpeechModule | null {
   return cached;
 }
 
-/** Vrai si l'appareil peut réellement parler (build récent). */
-export function isSpeechAvailable(): boolean {
-  return speechModule() !== null;
-}
-
 /**
  * Classe une voix pour une langue donnée. -1 = mauvaise langue, à écarter.
  *

@@ -26,7 +26,7 @@ export default function ObjetScreen() {
   // dessiner le plan et dépose la personne ici : c'est elle qui doit faire le
   // dernier geste du cycle, encore faut-il qu'elle voie où.
   const { id, highlightPlanLink } = useLocalSearchParams<{ id: string; highlightPlanLink?: string }>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { session } = useSession();
   const { data: objet, isLoading, isError, refetch } = useObjet(id);
   const { data: history } = useObjetHistory(id);
@@ -160,7 +160,7 @@ export default function ObjetScreen() {
               <Text className="text-label text-ink">
                 {entry.from_location_label} → {entry.to_location_label}
               </Text>
-              <Text className="text-caption text-ink-soft">{new Date(entry.moved_at).toLocaleString()}</Text>
+              <Text className="text-caption text-ink-soft">{new Date(entry.moved_at).toLocaleString(i18n.language)}</Text>
             </View>
           ))
         ) : (

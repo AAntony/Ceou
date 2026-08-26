@@ -92,7 +92,7 @@ export const ROOM_FILL_OPACITY = 0.5;
 // la puce de l'Emplacement se met en avant désormais (voir PlanPinLayer).
 
 // Palette pastel — volontairement distincte de celle des résultats de
-// recherche (src/features/search/palette.ts, 4 teintes par TYPE D'ENTITÉ) :
+// recherche (retirée depuis, faute d'appelant) :
 // ici on distingue des PIÈCES entre elles sur un même plan. 15 teintes pour
 // plus de variété. Les 5 dernières ont été ajoutées APRÈS les 10 premières
 // (jamais insérées au milieu) : roomColorForForme() indexe dans ce tableau

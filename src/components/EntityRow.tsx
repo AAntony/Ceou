@@ -21,9 +21,10 @@ import { Icon, type IconName } from './Icon';
 //   un endroit est vraiment renseigné ou seulement déclaré — impossible à
 //   loger dans une tuile déjà occupée par le nom.
 //
-// EntityCard n'est PAS supprimée : les amis (des personnes) restent en
-// grille, où le portrait carré a du sens. Les Plans, eux, sont passés en
-// rangée le 23/08 avec une vignette de leur propre tracé.
+// C'est désormais la SEULE forme de liste de l'app : les amis sont passés à
+// FriendRow, les Plans à cette rangée-ci (le 23/08, avec une vignette de leur
+// propre tracé), et la grille EntityCard qu'on avait gardée « pour les amis »
+// est morte de cette façon, sans appelant, jusqu'à sa suppression le 26/08.
 
 const THUMB_WIDTH = 84;
 // 4:3, le ratio des illustrations par défaut. Un carré les recadrerait.

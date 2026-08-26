@@ -32,13 +32,13 @@ export function useGuestAccessLost() {
  * ressemble beaucoup plus à une panne qu'à une fin d'accès.
  */
 export function GuestAccessLostCard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const colors = useThemeColors();
   const { expired, expiresAt } = useGuestAccessLost();
 
   const message = expired
     ? t('guest.access_lost.expired_message', {
-        date: expiresAt ? new Date(expiresAt).toLocaleDateString() : '',
+        date: expiresAt ? new Date(expiresAt).toLocaleDateString(i18n.language) : '',
       })
     : t('guest.access_lost.revoked_message');
 
