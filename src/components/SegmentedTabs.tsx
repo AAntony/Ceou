@@ -9,8 +9,9 @@ type SegmentedTabsProps<T extends string> = {
 
 // Sélecteur à deux ou trois pastilles, déjà employé trois fois dans l'app
 // avant d'être factorisé ici (Personnelles/Partagées des Habitations,
-// Ami/Invité du partage de code, Saisie manuelle/Scan IA de la création
-// d'objet) — même balisage recopié à chaque fois. Un seul endroit désormais.
+// Limité/Permanent d'un code d'invité, Saisie manuelle/Scan IA de la
+// création d'objet) — même balisage recopié à chaque fois. Un seul endroit
+// désormais.
 //
 // Deux vues interchangeables d'une même chose, pas une navigation : le
 // contenu change sous les pastilles, on ne quitte pas l'écran.

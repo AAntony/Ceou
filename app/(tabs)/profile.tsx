@@ -2,7 +2,7 @@ import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { ErrorState } from '../../src/components/ErrorState';
 import { Icon } from '../../src/components/Icon';
@@ -58,6 +58,18 @@ export default function ProfileScreen() {
   const handleLanguageChange = async (language: SupportedLanguage) => {
     await i18n.changeLanguage(language);
     updateProfile.mutate({ locale: language });
+  };
+
+  // Le code ami se dicte aussi bien qu'il se scanne : quelqu'un qui n'est pas
+  // dans la pièce a besoin de le recevoir par message. C'est ce que promettait
+  // « Partager mon code », qui envoyait en réalité un tout autre code.
+  const handleShareFriendCode = async () => {
+    if (!profile?.friend_code) return;
+    try {
+      await Share.share({ message: t('friends.my_code.share_message', { code: profile.friend_code }) });
+    } catch {
+      // Feuille de partage simplement refermée — rien à faire.
+    }
   };
 
   const handleAvatarPress = async () => {
@@ -158,7 +170,12 @@ export default function ProfileScreen() {
         <Icon name="chevron" size={20} color={colors.inkFaint} />
       </Pressable>
 
-      <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
+      {/* Le code ami et le code d'invité sont deux choses différentes, donc
+          deux sections distinctes. Réunis sous un même bouton « Partager mon
+          code », ils produisaient un code d'ami que personne ne pouvait
+          saisir à la main — le défaut corrigé le 26/08. */}
+      <Text className="mb-1 mt-8 text-label font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
+      <Text className="mb-2 text-caption leading-4 text-ink-soft">{t('friends.my_code.subtitle')}</Text>
       <Pressable
         accessibilityRole="button"
         onPress={() => setMyCodeOpen((current) => !current)}
@@ -175,8 +192,12 @@ export default function ProfileScreen() {
       ) : null}
 
       <View className="mt-3">
-        <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
+        <Button label={t('friends.my_code.share')} variant="outline" onPress={handleShareFriendCode} />
       </View>
+
+      <Text className="mb-1 mt-8 text-label font-medium text-ink-soft">{t('friends.share.section_title')}</Text>
+      <Text className="mb-2 text-caption leading-4 text-ink-soft">{t('friends.share.section_hint')}</Text>
+      <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
 
       {/* Nécessaire dès lors qu'un code peut être permanent et multi-usage :
           un code éphémère à usage unique se gérait tout seul en expirant, un

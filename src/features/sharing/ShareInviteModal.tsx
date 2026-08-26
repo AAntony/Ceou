@@ -9,11 +9,10 @@ import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
 import { STACK_SCALE, useTextScale } from '../../lib/textScale';
-import type { HabitationPermission, ShareInvite } from '../../types/database';
+import type { ShareInvite } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { useHabitations } from '../inventory/queries';
 import { defaultReminderDays, scheduleInviteReminder } from '../notifications/inviteReminders';
-import { PermissionPicker } from './PermissionPicker';
 import { expiryInDays, formatInviteQrValue, useCreateShareInvite } from './queries';
 import { useThemeColors } from '../../lib/theme';
 
@@ -23,52 +22,53 @@ type ShareInviteModalProps = {
 };
 
 type Step = 'configure' | 'result';
-type TargetType = 'friend' | 'guest';
 
-// "Partager mon code" (Profil) : choisir Habitation(s) + droit AVANT de
-// générer le code — l'offre est figée au moment de la génération (voir
-// share_invites/create_share_invite), pas négociée après coup par le
-// destinataire.
+// « Inviter un invité » (Profil) : un code d'accès sans compte, façon
+// location — choisir Habitation(s) et durée AVANT de générer, l'offre étant
+// figée au moment de la génération (voir share_invites/create_share_invite),
+// pas négociée après coup par le destinataire.
+//
+// CET ÉCRAN NE FABRIQUE PLUS DE CODE D'AMI. Il en proposait un, qui n'était
+// pas le friend_code permanent du Profil : tapé à la main, il ne menait nulle
+// part (voir la migration 20260826100000). Devenir ami passe désormais
+// uniquement par le code ami, et les droits se règlent après acceptation,
+// depuis la fiche de l'ami.
 export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   const colors = useThemeColors();
   const { textScale } = useTextScale();
   const fieldsStacked = textScale >= STACK_SCALE;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { session } = useSession();
   const { data: habitations } = useHabitations();
   const createInvite = useCreateShareInvite();
 
   const [step, setStep] = useState<Step>('configure');
-  const [targetType, setTargetType] = useState<TargetType>('friend');
   const [selectedHabitationIds, setSelectedHabitationIds] = useState<string[]>([]);
-  const [permission, setPermission] = useState<HabitationPermission>('consultation');
   const [resultInvite, setResultInvite] = useState<ShareInvite | null>(null);
 
-  // Options propres au mode invité. Un code permanent est illimité en usages
-  // ET sans expiration : les deux réglages disparaissent ensemble, plutôt que
-  // de laisser cocher « permanent » puis saisir une durée contradictoire.
-  const [guestPermanent, setGuestPermanent] = useState(false);
-  const [guestMaxUses, setGuestMaxUses] = useState('1');
-  const [guestDays, setGuestDays] = useState('7');
-  const [guestLabel, setGuestLabel] = useState('');
+  // Un code permanent est illimité en usages ET sans expiration : les deux
+  // réglages disparaissent ensemble, plutôt que de laisser cocher
+  // « permanent » puis saisir une durée contradictoire.
+  const [permanent, setPermanent] = useState(false);
+  const [maxUses, setMaxUses] = useState('1');
+  const [days, setDays] = useState('7');
+  const [label, setLabel] = useState('');
   // Le champ de rappel suit la durée tant que personne n'y a touché, et se
   // fige dès la première frappe. Un simple booléen plutôt qu'un effet : la
   // valeur affichée se calcule au rendu, il n'y a aucun état à synchroniser.
-  const [guestRemindDays, setGuestRemindDays] = useState('');
+  const [remindDays, setRemindDays] = useState('');
   const [remindTouched, setRemindTouched] = useState(false);
 
   useEffect(() => {
     if (visible) {
       setStep('configure');
-      setTargetType('friend');
       setSelectedHabitationIds([]);
-      setPermission('consultation');
       setResultInvite(null);
-      setGuestPermanent(false);
-      setGuestMaxUses('1');
-      setGuestDays('7');
-      setGuestLabel('');
-      setGuestRemindDays('');
+      setPermanent(false);
+      setMaxUses('1');
+      setDays('7');
+      setLabel('');
+      setRemindDays('');
       setRemindTouched(false);
     }
   }, [visible]);
@@ -76,9 +76,9 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   // Saisie libre : on ne fait jamais confiance au texte tapé. Le serveur
   // revalide de son côté (invalid_max_uses / invalid_expiry), ces bornes
   // servent à ne pas lui envoyer d'emblée quelque chose d'absurde.
-  const parsedMaxUses = Math.max(1, Math.min(999, parseInt(guestMaxUses, 10) || 1));
-  const parsedDays = Math.max(1, Math.min(3650, parseInt(guestDays, 10) || 1));
-  const remindValue = remindTouched ? guestRemindDays : String(defaultReminderDays(parsedDays));
+  const parsedMaxUses = Math.max(1, Math.min(999, parseInt(maxUses, 10) || 1));
+  const parsedDays = Math.max(1, Math.min(3650, parseInt(days, 10) || 1));
+  const remindValue = remindTouched ? remindDays : String(defaultReminderDays(parsedDays));
   const parsedRemindDays = Math.max(1, Math.min(3650, parseInt(remindValue, 10) || 1));
 
   const myHabitations = (habitations ?? []).filter((h) => h.user_id === session?.user.id);
@@ -90,23 +90,15 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
   const handleGenerate = async () => {
     if (selectedHabitationIds.length === 0) return;
     try {
-      // Un invité n'a jamais que la consultation, quel que soit le sélecteur
-      // affiché (masqué pour ce mode, voir le rendu) — le droit "invité" en
-      // texte libre côté formulaire n'existe volontairement pas.
-      const isGuest = targetType === 'guest';
       const invite = await createInvite.mutateAsync({
         habitationIds: selectedHabitationIds,
-        permission: isGuest ? 'consultation' : permission,
-        targetType,
-        // Une invitation d'ami reste à usage unique et à durée courte : le
-        // serveur force ces valeurs de son côté, on lui envoie simplement des
-        // valeurs cohérentes plutôt que celles du formulaire invité.
-        maxUses: isGuest ? (guestPermanent ? null : parsedMaxUses) : 1,
-        expiresAt: isGuest && guestPermanent ? null : expiryInDays(isGuest ? parsedDays : 7),
-        label: isGuest ? guestLabel.trim() || null : null,
-        // Un code d'ami dure toujours 7 jours sans réglage exposé : le
-        // serveur lui impose un rappel à la veille, on ne lui envoie rien.
-        remindDaysBefore: isGuest && !guestPermanent ? parsedRemindDays : null,
+        // Le serveur force la même valeur : un invité consulte, jamais plus.
+        // Le sélecteur de droit n'existe volontairement pas ici.
+        permission: 'consultation',
+        maxUses: permanent ? null : parsedMaxUses,
+        expiresAt: permanent ? null : expiryInDays(parsedDays),
+        label: label.trim() || null,
+        remindDaysBefore: permanent ? null : parsedRemindDays,
       });
       setResultInvite(invite);
       setStep('result');
@@ -127,7 +119,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
         t,
       );
     } catch (err) {
-      logClientError(err, { source: 'share_invite', targetType, habitationCount: selectedHabitationIds.length });
+      logClientError(err, { source: 'share_invite', habitationCount: selectedHabitationIds.length });
       Alert.alert(t('common.error_generic'));
     }
   };
@@ -138,13 +130,10 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
       // Un invité n'a pas l'app : lui envoyer un code sec ne lui dit ni où
       // le saisir ni quoi installer. Le lien web porte les deux.
       await Share.share({
-        message:
-          resultInvite.target_type === 'guest'
-            ? t('friends.share.share_message_guest', {
-                url: formatInviteQrValue(resultInvite.code),
-                code: resultInvite.code,
-              })
-            : t('friends.share.share_message', { code: resultInvite.code }),
+        message: t('friends.share.share_message_guest', {
+          url: formatInviteQrValue(resultInvite.code),
+          code: resultInvite.code,
+        }),
       });
     } catch {
       // L'utilisateur a simplement fermé la feuille de partage — rien à faire.
@@ -166,17 +155,11 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
         // maxHeight de la feuille au lieu de défiler — invisible tant qu'on
         // a peu d'Habitations, bloquant dès qu'on en a beaucoup.
         <ScrollView style={{ flexShrink: 1 }} keyboardShouldPersistTaps="handled">
-          <Text className="mb-4 text-heading font-bold text-ink">{t('friends.share.title')}</Text>
-
-          <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.share.target_type')}</Text>
-          <SegmentedTabs
-            value={targetType}
-            onChange={setTargetType}
-            options={[
-              { value: 'friend' as const, label: t('friends.share.target_friend') },
-              { value: 'guest' as const, label: t('friends.share.target_guest') },
-            ]}
-          />
+          <Text className="mb-2 text-heading font-bold text-ink">{t('friends.share.title')}</Text>
+          {/* Dit à quoi sert ce code, et surtout à quoi il ne sert pas :
+              c'est exactement la confusion qui rendait l'ancien écran
+              trompeur. */}
+          <Text className="mb-5 text-label leading-5 text-ink-soft">{t('friends.share.intro')}</Text>
 
           <Text className="mb-2 text-label font-medium text-ink-soft">{t('friends.share.choose_habitations')}</Text>
           {myHabitations.length === 0 ? (
@@ -200,85 +183,76 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
             })
           )}
 
-          {targetType === 'friend' ? (
-            <>
-              <Text className="mb-2 mt-2 text-label font-medium text-ink-soft">{t('friends.share.permission')}</Text>
-              <PermissionPicker value={permission} onChange={(p) => p && setPermission(p)} />
-            </>
+          <Text className="mt-2 text-caption text-ink-soft">{t('friends.share.guest_permission_note')}</Text>
+
+          <Text className="mb-2 mt-4 text-label font-medium text-ink-soft">{t('friends.share.validity')}</Text>
+          <SegmentedTabs
+            value={permanent ? 'permanent' : 'limited'}
+            onChange={(next: 'limited' | 'permanent') => setPermanent(next === 'permanent')}
+            options={[
+              { value: 'limited' as const, label: t('friends.share.validity_limited') },
+              { value: 'permanent' as const, label: t('friends.share.validity_permanent') },
+            ]}
+          />
+
+          {permanent ? (
+            <Text className="mb-1 text-caption leading-4 text-ink-soft">{t('friends.share.permanent_note')}</Text>
           ) : (
+            /* Deux champs cote a cote, chacun avec son libelle : a x1,3
+               « Nombre d'utilisations » n'a plus qu'une demi-largeur et
+               s'y coupe. Empiles, chaque libelle tient sur une ligne. */
+            <View className={fieldsStacked ? '' : 'flex-row gap-3'}>
+              <View className={fieldsStacked ? '' : 'flex-1'}>
+                <TextField
+                  label={t('friends.share.max_uses')}
+                  value={maxUses}
+                  onChangeText={setMaxUses}
+                  keyboardType="number-pad"
+                  maxLength={3}
+                />
+              </View>
+              <View className={fieldsStacked ? '' : 'flex-1'}>
+                <TextField
+                  label={t('friends.share.duration_days')}
+                  value={days}
+                  onChangeText={setDays}
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Le préavis vit avec le code, et pas dans un réglage global :
+              il n'existe pas de bonne valeur unique entre un code de 2
+              jours et un code d'un an. Pré-rempli proportionnellement
+              pour que ceux que ça n'intéresse pas passent à travers. */}
+          {permanent ? null : (
             <>
-              <Text className="mt-2 text-caption text-ink-soft">{t('friends.share.guest_permission_note')}</Text>
-
-              <Text className="mb-2 mt-4 text-label font-medium text-ink-soft">{t('friends.share.validity')}</Text>
-              <SegmentedTabs
-                value={guestPermanent ? 'permanent' : 'limited'}
-                onChange={(next: 'limited' | 'permanent') => setGuestPermanent(next === 'permanent')}
-                options={[
-                  { value: 'limited' as const, label: t('friends.share.validity_limited') },
-                  { value: 'permanent' as const, label: t('friends.share.validity_permanent') },
-                ]}
-              />
-
-              {guestPermanent ? (
-                <Text className="mb-1 text-caption leading-4 text-ink-soft">{t('friends.share.permanent_note')}</Text>
-              ) : (
-                /* Deux champs cote a cote, chacun avec son libelle : a x1,3
-                   « Nombre d'utilisations » n'a plus qu'une demi-largeur et
-                   s'y coupe. Empiles, chaque libelle tient sur une ligne. */
-                <View className={fieldsStacked ? '' : 'flex-row gap-3'}>
-                  <View className={fieldsStacked ? '' : 'flex-1'}>
-                    <TextField
-                      label={t('friends.share.max_uses')}
-                      value={guestMaxUses}
-                      onChangeText={setGuestMaxUses}
-                      keyboardType="number-pad"
-                      maxLength={3}
-                    />
-                  </View>
-                  <View className={fieldsStacked ? '' : 'flex-1'}>
-                    <TextField
-                      label={t('friends.share.duration_days')}
-                      value={guestDays}
-                      onChangeText={setGuestDays}
-                      keyboardType="number-pad"
-                      maxLength={4}
-                    />
-                  </View>
-                </View>
-              )}
-
-              {/* Le préavis vit avec le code, et pas dans un réglage global :
-                  il n'existe pas de bonne valeur unique entre un code de 2
-                  jours et un code d'un an. Pré-rempli proportionnellement
-                  pour que ceux que ça n'intéresse pas passent à travers. */}
-              {guestPermanent ? null : (
-                <>
-                  <TextField
-                    label={t('friends.share.remind_days')}
-                    value={remindValue}
-                    onChangeText={(value) => {
-                      setRemindTouched(true);
-                      setGuestRemindDays(value);
-                    }}
-                    keyboardType="number-pad"
-                    maxLength={4}
-                  />
-                  <Text className="mb-3 -mt-2 text-caption leading-4 text-ink-soft">{t('friends.share.remind_hint')}</Text>
-                </>
-              )}
-
-              {/* Sert uniquement au propriétaire, dans l'écran de gestion :
-                  plusieurs codes sur la même Habitation sont indiscernables
-                  sans un nom (« Locataires juillet », « Voisins »). */}
               <TextField
-                label={t('friends.share.label_optional')}
-                value={guestLabel}
-                onChangeText={setGuestLabel}
-                placeholder={t('friends.share.label_placeholder')}
-                maxLength={40}
+                label={t('friends.share.remind_days')}
+                value={remindValue}
+                onChangeText={(value) => {
+                  setRemindTouched(true);
+                  setRemindDays(value);
+                }}
+                keyboardType="number-pad"
+                maxLength={4}
               />
+              <Text className="mb-3 -mt-2 text-caption leading-4 text-ink-soft">{t('friends.share.remind_hint')}</Text>
             </>
           )}
+
+          {/* Sert uniquement au propriétaire, dans l'écran de gestion :
+              plusieurs codes sur la même Habitation sont indiscernables
+              sans un nom (« Locataires juillet », « Voisins »). */}
+          <TextField
+            label={t('friends.share.label_optional')}
+            value={label}
+            onChangeText={setLabel}
+            placeholder={t('friends.share.label_placeholder')}
+            maxLength={40}
+          />
 
           <View className="mt-5 mb-2">
             <Button
@@ -294,7 +268,20 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
           <Text className="mb-4 text-heading font-bold text-ink">{t('friends.share.result_title')}</Text>
           <QrCode value={formatInviteQrValue(resultInvite.code)} size={200} />
           <Text className="mt-4 text-subheading font-bold tracking-widest text-ink">{resultInvite.code}</Text>
-          <Text className="mt-1 text-center text-caption text-ink-soft">{t('friends.share.expires_hint')}</Text>
+          {/* La durée réelle du code, et non un « 7 jours » écrit en dur :
+              elle se règle librement, et un code permanent n'expire pas. */}
+          <Text className="mt-1 text-center text-caption text-ink-soft">
+            {resultInvite.expires_at === null
+              ? t('friends.share.result_permanent')
+              : t('friends.share.result_expires', {
+                  date: new Date(resultInvite.expires_at).toLocaleDateString(i18n.language, {
+                    day: 'numeric',
+                    month: 'long',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }),
+                })}
+          </Text>
           <View className="mt-6 w-full gap-3">
             <Button label={t('friends.share.share_button')} onPress={handleShare} />
             <Button label={t('common.close')} variant="ghost" onPress={onClose} />

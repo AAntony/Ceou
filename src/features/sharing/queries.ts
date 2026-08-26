@@ -139,6 +139,19 @@ export function inviteCodeFromUrl(raw: string): string | null {
   }
 }
 
+// Les deux codes de l'app se ressemblent (même alphabet sans caractères
+// ambigus) mais n'ont pas la même longueur : un code ami en fait 8
+// (generate_friend_code), un code d'invitation 10 (generate_invite_code).
+// C'est ce qui permet de dire à quelqu'un qui tape un code d'accès invité
+// dans « Ajouter un ami » qu'il s'est trompé d'endroit, au lieu de lui
+// renvoyer « aucun compte ne correspond à ce code » — le message exact qui a
+// rendu l'ancien partage d'ami incompréhensible.
+const INVITE_CODE_LENGTH = 10;
+
+export function looksLikeInviteCode(code: string): boolean {
+  return code.trim().length === INVITE_CODE_LENGTH;
+}
+
 // === Amis =================================================================
 
 export type FriendshipEntry = {
@@ -429,15 +442,13 @@ export function expiryInDays(days: number): string {
 export type ShareInviteOptions = {
   habitationIds: string[];
   permission: HabitationPermission;
-  targetType: 'friend' | 'guest';
-  // null = illimité / n'expire jamais. Le serveur force ces deux valeurs à
-  // (1, +7 jours) pour une invitation d'ami, quoi qu'envoie le client.
+  // null = illimité / n'expire jamais.
   maxUses: number | null;
   expiresAt: string | null;
   label: string | null;
   // Jours avant expiration où l'appareil du créateur programme un rappel
-  // local. Le serveur force 1 pour un code d'ami et null pour un code
-  // permanent, quoi qu'envoie le client.
+  // local. Le serveur force null pour un code permanent, quoi qu'envoie le
+  // client.
   remindDaysBefore: number | null;
 };
 
@@ -448,7 +459,10 @@ export function useCreateShareInvite() {
       const { data, error } = await supabase.rpc('create_share_invite', {
         p_habitation_ids: input.habitationIds,
         p_permission: input.permission,
-        p_target_type: input.targetType,
+        // Seul type encore accepté par le serveur (migration 20260826100000) :
+        // un code généré ne sert plus qu'à l'accès invité. Le paramètre n'a pas
+        // de valeur par défaut côté SQL, il reste donc à envoyer.
+        p_target_type: 'guest',
         // supabase gen types ne modélise pas la nullabilité des PARAMÈTRES
         // de fonction : il les déclare non-nullables alors que NULL est
         // précisément ce qui encode « illimité » et « n’expire jamais » côté
@@ -473,6 +487,9 @@ export type ShareInviteEntry = {
   id: string;
   code: string;
   label: string | null;
+  // 'friend' n'est plus produit : seuls d'anciens codes en portent encore, le
+  // temps qu'ils expirent (migration 20260826100000). L'écran « Mes codes »
+  // doit continuer à les afficher correctement jusque-là.
   targetType: 'friend' | 'guest';
   permission: HabitationPermission;
   habitationIds: string[];

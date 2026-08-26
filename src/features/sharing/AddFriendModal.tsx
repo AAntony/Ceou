@@ -4,7 +4,7 @@ import { Alert, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import { parseScannedCode, useRedeemShareInvite, useSendFriendRequest } from './queries';
+import { looksLikeInviteCode, parseScannedCode, useRedeemShareInvite, useSendFriendRequest } from './queries';
 import { rpcErrorCode } from './rpcError';
 import { QrScanner } from './QrScanner';
 
@@ -34,12 +34,16 @@ function friendlyErrorKey(error: unknown): string {
   return ERROR_KEYS[rpcErrorCode(error)] ?? 'common.error_generic';
 }
 
-// Deux chemins d'ajout, comme demandé : taper le code ami permanent
-// (contact simple, sans partage) ou scanner un QR — qui peut être soit le
-// même code ami (formatFriendCodeQrValue), soit une invitation éphémère
-// avec Habitations/droit déjà configurés (formatInviteQrValue) — le préfixe
-// encodé dans le QR (voir parseScannedCode) dit laquelle des deux RPC
-// appeler, sans ambiguïté possible.
+// Deux chemins d'ajout, et un seul code : taper le code ami permanent, ou
+// scanner le QR qui porte ce même code. C'est désormais la SEULE façon de
+// devenir ami — les codes générés ne servent plus qu'à l'accès invité (voir
+// ShareInviteModal et la migration 20260826100000). On ne choisit rien ici :
+// ce qu'on partage à l'autre se règle depuis sa fiche, une fois la demande
+// acceptée.
+//
+// Le scanner accepte quand même un QR d'invitation, parce qu'un invité peut
+// très bien avoir un compte : il entre alors en consultation, ce que l'on
+// annonce explicitement plutôt que de refermer la feuille sans un mot.
 export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
   const { t } = useTranslation();
   const [code, setCode] = useState('');
@@ -53,6 +57,13 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
 
   const handleSubmitCode = async () => {
     if (!code.trim()) return;
+    // Un code d'invitation tapé ici ne trouverait aucun profil : le dire
+    // avant l'aller-retour, et surtout le dire précisément — « aucun compte
+    // ne correspond » laisserait croire à une faute de frappe.
+    if (looksLikeInviteCode(code)) {
+      Alert.alert(t('friends.add.error_guest_code'));
+      return;
+    }
     try {
       await sendRequest.mutateAsync(code.trim());
       onClose();
@@ -68,7 +79,11 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
       if (parsed.type === 'friend') {
         await sendRequest.mutateAsync(parsed.code);
       } else if (parsed.type === 'invite') {
-        await redeemInvite.mutateAsync(parsed.code);
+        const result = await redeemInvite.mutateAsync(parsed.code);
+        // Aucun ami n'a été ajouté : ce QR ouvrait un accès invité. Sans ce
+        // message, la feuille se refermait et une habitation inconnue
+        // apparaissait sur l'accueil sans explication.
+        if (result.type === 'guest') Alert.alert(t('friends.add.guest_redeemed'));
       } else {
         Alert.alert(t('friends.add.invalid_qr'));
         return;
@@ -83,7 +98,16 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
     <>
       <BottomSheetModal visible={visible} onClose={onClose} sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6" scrollable>
         <Text className="mb-4 text-heading font-bold text-ink">{t('friends.add.title')}</Text>
-        <TextField label={t('friends.add.code_label')} value={code} onChangeText={setCode} autoCapitalize="characters" autoFocus />
+        <Text className="mb-4 -mt-2 text-label leading-5 text-ink-soft">{t('friends.add.intro')}</Text>
+        <TextField
+          label={t('friends.add.code_label')}
+          value={code}
+          onChangeText={(value) => setCode(value.toUpperCase())}
+          autoCapitalize="characters"
+          placeholder={t('friends.add.code_placeholder')}
+          maxLength={10}
+          autoFocus
+        />
         <View className="mb-4 mt-2">
           <Button
             label={t('friends.add.submit')}
