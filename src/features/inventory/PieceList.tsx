@@ -113,7 +113,6 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
               // le fond blanc de la rangée.
               iconColor={iconTint(piece.color ?? DEFAULT_PIECE_COLOR)}
               onPress={() => router.push(`/piece/${piece.id}`)}
-              onLongPress={editable ? () => handleDelete(piece.id) : undefined}
               onEdit={editable ? () => openEdit(piece) : undefined}
             />
           ))
@@ -130,6 +129,7 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
         onNameChange={setName}
         loading={createPiece.isPending || updatePiece.isPending}
         onClose={() => setModalOpen(false)}
+        onDelete={editingPiece ? () => handleDelete(editingPiece.id) : undefined}
         onSubmit={async (submittedName) => {
           const userId = session!.user.id;
           if (editingPiece) {

@@ -24,7 +24,6 @@ import {
   useContainerContents,
   useCreateConteneur,
   useDeleteConteneur,
-  useDeleteObjet,
   useHabitationIdForNode,
   useHabitationNodeCounts,
   useUpdateConteneur,
@@ -51,7 +50,6 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
   const createConteneur = useCreateConteneur(parentType, parentId);
   const updateConteneur = useUpdateConteneur();
   const deleteConteneur = useDeleteConteneur();
-  const deleteObjet = useDeleteObjet();
   const [conteneurModalOpen, setConteneurModalOpen] = useState(false);
   const [editingConteneur, setEditingConteneur] = useState<Conteneur | null>(null);
   const [conteneurName, setConteneurName] = useState('');
@@ -71,10 +69,6 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
     setConteneurPresetKey((conteneur.preset_key as ConteneurPresetKey) ?? null);
     setConteneurPhotoUri(conteneur.photo_url);
     setConteneurModalOpen(true);
-  };
-
-  const handleDeleteObjet = (id: string) => {
-    confirmDelete(t, 'inventory.objet.delete_confirm_title', 'inventory.objet.delete_confirm_message', () => deleteObjet.mutate(id));
   };
 
   // Seul ecran a proposer DEUX ajouts (un Emplacement contient a la fois des
@@ -106,7 +100,6 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
                 subtitle={objetCountLabel(t, counts, nodeCountKey('conteneur', conteneur.id))}
                 photoUri={conteneur.photo_url}
                 onPress={() => router.push(`/conteneur/${conteneur.id}`)}
-                onLongPress={editable ? () => handleDeleteConteneur(conteneur.id) : undefined}
                 onEdit={editable ? () => openEditConteneur(conteneur) : undefined}
               />
             ))}
@@ -122,7 +115,6 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
                 photoUri={objet.photo_url}
                 iconColor="#D85A30"
                 onPress={() => router.push(`/objet/${objet.id}`)}
-                onLongPress={editable ? () => handleDeleteObjet(objet.id) : undefined}
               />
             ))}
           </>
@@ -169,6 +161,7 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
         onNameChange={setConteneurName}
         loading={createConteneur.isPending || updateConteneur.isPending}
         onClose={() => setConteneurModalOpen(false)}
+        onDelete={editingConteneur ? () => handleDeleteConteneur(editingConteneur.id) : undefined}
         onSubmit={async (submittedName) => {
           const userId = session!.user.id;
           if (editingConteneur) {

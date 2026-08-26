@@ -111,7 +111,6 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
               subtitle={objetCountLabel(t, counts, nodeCountKey('emplacement', emplacement.id))}
               photoUri={emplacement.photo_url}
               onPress={() => router.push(`/emplacement/${emplacement.id}`)}
-              onLongPress={editable ? () => handleDelete(emplacement.id) : undefined}
               onEdit={editable ? () => openEdit(emplacement) : undefined}
             />
           ))
@@ -136,6 +135,7 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
         onNameChange={setName}
         loading={createEmplacement.isPending || updateEmplacement.isPending}
         onClose={() => setModalOpen(false)}
+        onDelete={editingEmplacement ? () => handleDelete(editingEmplacement.id) : undefined}
         onSubmit={async (submittedName) => {
           const userId = session!.user.id;
           if (editingEmplacement) {

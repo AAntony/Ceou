@@ -197,7 +197,6 @@ export default function HabitationsScreen() {
                   subtitle={rowSubtitle(t(`inventory.habitationTypes.${habitation.type}`), habitation.id)}
                   photoUri={habitation.photo_url}
                   onPress={() => router.push(`/habitation/${habitation.id}`)}
-                  onLongPress={() => handleDelete(habitation.id)}
                   onEdit={() => openEdit(habitation)}
                   isFavorite={favoriteIds.has(habitation.id)}
                   onToggleFavorite={() => toggleFavorite.mutate({ habitationId: habitation.id, isFavorite: favoriteIds.has(habitation.id) })}
@@ -248,6 +247,7 @@ export default function HabitationsScreen() {
           onNameChange={setName}
           loading={createHabitation.isPending || updateHabitation.isPending}
           onClose={() => setModalOpen(false)}
+          onDelete={editingHabitation ? () => handleDelete(editingHabitation.id) : undefined}
           onSubmit={async (submittedName) => {
             const definition = HABITATION_TYPES.find((h) => h.key === type)!;
             const userId = session!.user.id;

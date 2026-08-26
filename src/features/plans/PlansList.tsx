@@ -30,7 +30,6 @@ function PlanRow({
   editable,
   onOpen,
   onEdit,
-  onDelete,
   onMoveUp,
   onMoveDown,
 }: {
@@ -39,7 +38,6 @@ function PlanRow({
   editable: boolean;
   onOpen: () => void;
   onEdit: () => void;
-  onDelete: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
 }) {
@@ -64,7 +62,6 @@ function PlanRow({
       subtitle={rooms.length === 0 ? t('plans.rooms_count_zero') : t('plans.rooms_count', { count: rooms.length })}
       onPress={onOpen}
       onEdit={editable ? onEdit : undefined}
-      onLongPress={editable ? onDelete : undefined}
       onMoveUp={onMoveUp}
       onMoveDown={onMoveDown}
     />
@@ -145,7 +142,6 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
                 setName(plan.name);
                 setModalOpen(true);
               }}
-              onDelete={() => handleDelete(plan.id)}
               // L'ORDRE DE CETTE LISTE EST CELUI DES ÉTAGES : c'est lui que
               // reprend, tel quel et de haut en bas, le sélecteur de niveau
               // posé sur le plan. La personne range donc ses étages ici comme
@@ -167,6 +163,7 @@ export function PlansList({ habitationId, addSignal }: PlansListProps) {
         onNameChange={setName}
         loading={createPlan.isPending || updatePlan.isPending}
         onClose={() => setModalOpen(false)}
+        onDelete={editingPlan ? () => handleDelete(editingPlan.id) : undefined}
         onSubmit={async (submittedName) => {
           if (editingPlan) {
             await updatePlan.mutateAsync({ id: editingPlan.id, name: submittedName });

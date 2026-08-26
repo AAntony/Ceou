@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Text, View } from 'react-native';
 import { logClientError } from '../lib/errorLogging';
 import { BottomSheetModal } from './BottomSheetModal';
+import { Button } from './Button';
 import { FormActions } from './FormActions';
 import { TextField } from './TextField';
 
@@ -21,6 +22,9 @@ type CreateEntityModalProps = {
   onClose: () => void;
   onSubmit: (name: string) => void | Promise<void>;
   loading?: boolean;
+  // Fourni en MODIFICATION seulement (jamais à la création : il n'y a rien
+  // à supprimer). C'est la seule porte vers la suppression de cet élément.
+  onDelete?: () => void;
   children?: ReactNode;
 };
 
@@ -37,9 +41,20 @@ export function CreateEntityModal({
   onClose,
   onSubmit,
   loading,
+  onDelete,
   children,
 }: CreateEntityModalProps) {
   const { t } = useTranslation();
+
+  // LA FEUILLE SE REFERME AVANT LA DEMANDE DE CONFIRMATION. Deux raisons :
+  // une boîte de dialogue posée par-dessus une Modal React Native dépend de
+  // la plateforme pour s'afficher au bon endroit, et surtout « Supprimer la
+  // pièce ? » n'a pas à se lire à travers un formulaire d'édition resté
+  // ouvert derrière elle.
+  const handleDeletePress = () => {
+    onClose();
+    onDelete?.();
+  };
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
@@ -76,6 +91,13 @@ export function CreateEntityModal({
           disabled={!name.trim()}
         />
       </View>
+      {/* Sous un trait, à l'écart d'« Enregistrer » : c'est la même feuille,
+          mais pas le même genre de geste. */}
+      {onDelete ? (
+        <View className="mt-5 border-t border-ink/10 pt-4">
+          <Button label={t('common.delete')} variant="danger" onPress={handleDeletePress} />
+        </View>
+      ) : null}
     </BottomSheetModal>
   );
 }

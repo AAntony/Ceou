@@ -13,7 +13,6 @@ type EntityCardProps = {
   bgColor?: string;
   badgeColor?: string;
   onPress: () => void;
-  onLongPress?: () => void;
   onEdit?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
@@ -50,7 +49,6 @@ export function EntityCard({
   bgColor = DEFAULT_BG,
   badgeColor = DEFAULT_BADGE,
   onPress,
-  onLongPress,
   onEdit,
   isFavorite,
   onToggleFavorite,
@@ -71,7 +69,6 @@ export function EntityCard({
   return (
     <Pressable
       onPress={onPress}
-      onLongPress={onLongPress}
       accessibilityRole="button"
       style={{ backgroundColor: surfaceTint(bgColor) }}
       className="mb-3 w-[48%] rounded-2xl p-4 active:opacity-70"

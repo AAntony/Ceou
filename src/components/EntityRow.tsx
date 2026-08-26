@@ -55,7 +55,6 @@ type EntityRowProps = {
   photoUri?: string | null;
   iconColor?: string;
   onPress: () => void;
-  onLongPress?: () => void;
   onEdit?: () => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
@@ -82,7 +81,6 @@ export function EntityRow({
   photoUri,
   iconColor = ACCENT,
   onPress,
-  onLongPress,
   onEdit,
   isFavorite,
   onToggleFavorite,
@@ -174,7 +172,6 @@ export function EntityRow({
     return (
       <Pressable
         onPress={onPress}
-        onLongPress={onLongPress}
         accessibilityRole="button"
         className="mb-2.5 rounded-2xl bg-surface p-2.5 active:opacity-70"
       >
@@ -215,7 +212,6 @@ export function EntityRow({
   return (
     <Pressable
       onPress={onPress}
-      onLongPress={onLongPress}
       accessibilityRole="button"
       className="mb-2.5 flex-row items-center rounded-2xl bg-surface p-2.5 active:opacity-70"
     >
