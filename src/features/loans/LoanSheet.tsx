@@ -7,6 +7,7 @@ import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
 import { useThemeColors } from '../../lib/theme';
+import { scheduleLoanReminder } from '../notifications/loanReminders';
 import { useFriendships } from '../sharing/queries';
 import { dueInDays, useCreatePret, type PretDirection } from './queries';
 
@@ -82,7 +83,7 @@ export function LoanSheet({ visible, onClose, objetId, objetName }: LoanSheetPro
   const handleSubmit = async () => {
     if (!canSubmit) return;
     try {
-      await createPret.mutateAsync({
+      const created = await createPret.mutateAsync({
         objetId,
         direction,
         counterpartLabel: label,
@@ -90,6 +91,20 @@ export function LoanSheet({ visible, onClose, objetId, objetName }: LoanSheetPro
         dueAt: withDue ? dueInDays(parsedDays) : null,
         note: note.trim() || null,
       });
+      // Le nom de l'objet ne vient pas de la ligne insérée (elle ne porte que
+      // son identifiant) mais des props de cette feuille — c'est le seul
+      // endroit où les deux sont réunis.
+      void scheduleLoanReminder(
+        {
+          id: created.id,
+          objetName,
+          direction: created.direction as PretDirection,
+          counterpartLabel: created.counterpart_label,
+          dueAt: created.due_at,
+          returnedAt: created.returned_at,
+        },
+        t,
+      );
       onClose();
     } catch (err) {
       logClientError(err, { source: 'loan_create', direction });

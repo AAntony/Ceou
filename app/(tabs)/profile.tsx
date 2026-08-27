@@ -14,6 +14,7 @@ import { GuestProfile } from '../../src/features/auth/GuestProfile';
 import { DisplaySettings } from '../../src/features/profile/DisplaySettings';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
+import { cancelAllLoanReminders } from '../../src/features/notifications/loanReminders';
 import { OnboardingGuide } from '../../src/features/onboarding/OnboardingGuide';
 import { unregisterPushToken } from '../../src/features/notifications/push';
 import { pickAndUploadAvatar } from '../../src/features/profile/uploadAvatar';
@@ -240,6 +241,7 @@ export default function ProfileScreen() {
           // celui d'un code du compte précédent surgirait chez la personne
           // suivante, en nommant une Habitation qui ne la concerne pas.
           await cancelAllInviteReminders();
+          await cancelAllLoanReminders();
           await supabase.auth.signOut();
         }}
         label={t('profile.sign_out')}

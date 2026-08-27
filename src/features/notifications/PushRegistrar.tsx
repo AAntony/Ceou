@@ -13,7 +13,11 @@ import { registerPushToken } from './push';
 // La destination arrive dans la charge utile de la notification, donc du
 // réseau. Même si le serveur est le nôtre, on ne pousse QUE des routes
 // connues : une charge utile n'est pas une instruction de navigation.
-const ALLOWED_ROUTES = new Set(['/friends']);
+// Liste blanche : la cible vient du contenu de la notification, on ne
+// navigue donc que vers ce que l'app a elle-même posé. '/prets' est ajouté
+// pour les rappels d'échéance — sans lui, l'appui ouvrait l'accueil et
+// laissait chercher.
+const ALLOWED_ROUTES = new Set(['/friends', '/prets']);
 
 // Le web n'implémente pas la lecture de la dernière notification ouverte :
 // appeler le hook y lève une erreur qui remonte jusqu'à l'ErrorBoundary et
@@ -65,6 +69,7 @@ function NotificationRouter({ userId }: { userId: string | undefined }) {
     // cas, mais pas quand l'app était DÉJÀ ouverte au moment de l'appui.
     queryClient.invalidateQueries({ queryKey: ['friendships'] });
     queryClient.invalidateQueries({ queryKey: ['habitationShares'] });
+    queryClient.invalidateQueries({ queryKey: ['prets'] });
 
     const url = lastResponse.notification.request.content.data?.url;
     if (typeof url === 'string' && ALLOWED_ROUTES.has(url)) router.push(url);

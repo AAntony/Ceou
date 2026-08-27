@@ -1,5 +1,5 @@
 import { router, Stack } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { EmptyState } from '../src/components/EmptyState';
@@ -9,6 +9,7 @@ import { IconBadge } from '../src/components/IconBadge';
 import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { isOverdue, useClosePret, usePrets, type PretEntry } from '../src/features/loans/queries';
+import { syncLoanReminders } from '../src/features/notifications/loanReminders';
 import { useThemeColors } from '../src/lib/theme';
 
 // L'écran « Prêts » : ce qui est sorti de chez soi, et ce qu'on doit rendre.
@@ -96,6 +97,15 @@ export default function PretsScreen() {
   const [showClosed, setShowClosed] = useState(false);
   const { data, isLoading, isError, refetch } = usePrets(showClosed);
   const closePret = useClosePret();
+
+  // Remet les rappels de l'appareil en phase avec la réalité : un prêt peut
+  // avoir été rendu depuis un autre téléphone, ou l'app réinstallée — ce qui
+  // efface tout ce qui était programmé. Volontairement sur la liste OUVERTE
+  // seulement : l'onglet Historique n'a aucun rappel à poser.
+  useEffect(() => {
+    if (!data || showClosed) return;
+    void syncLoanReminders(data, t);
+  }, [data, showClosed, t]);
 
   // L'historique arrive dans la même requête que les prêts en cours (le
   // serveur ne filtre que sur `returned_at`) : l'onglet « Historique » ne

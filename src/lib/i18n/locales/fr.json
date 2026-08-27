@@ -760,6 +760,12 @@
       "open_other": "{{count}} objets en circulation",
       "late_one": "{{count}} retard",
       "late_other": "{{count}} retards"
+    },
+    "reminder": {
+      "title_lent": "Un objet doit te revenir",
+      "title_borrowed": "Un objet est à rendre",
+      "body_lent": "« {{objet}} » devait revenir aujourd'hui — c'est {{name}} qui l'a.",
+      "body_borrowed": "« {{objet}} » est à rendre à {{name}} aujourd'hui."
     }
   }
 }

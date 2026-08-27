@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../lib/supabase/client';
+import { cancelLoanReminder } from '../notifications/loanReminders';
 import { useSession } from '../auth/SessionProvider';
 
 // Prêts et emprunts d'objets.
@@ -148,8 +149,15 @@ export function useClosePret() {
         .update({ returned_at: new Date().toISOString() })
         .eq('id', pretId);
       if (error) throw error;
+      return pretId;
     },
-    onSuccess: () => invalidatePrets(queryClient),
+    // Le rappel est retiré ICI et non dans l'écran : on clôt un prêt aussi
+    // bien depuis la fiche de l'objet que depuis la liste, et le téléphone ne
+    // doit pas annoncer le retour d'un objet déjà revenu.
+    onSuccess: (pretId) => {
+      void cancelLoanReminder(pretId);
+      invalidatePrets(queryClient);
+    },
   });
 }
 
@@ -160,7 +168,11 @@ export function useDeletePret() {
     mutationFn: async (pretId: string) => {
       const { error } = await supabase.from('objet_prets').delete().eq('id', pretId);
       if (error) throw error;
+      return pretId;
     },
-    onSuccess: () => invalidatePrets(queryClient),
+    onSuccess: (pretId) => {
+      void cancelLoanReminder(pretId);
+      invalidatePrets(queryClient);
+    },
   });
 }

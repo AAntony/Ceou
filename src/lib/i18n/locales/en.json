@@ -760,6 +760,12 @@
       "open_other": "{{count}} items out",
       "late_one": "{{count}} overdue",
       "late_other": "{{count}} overdue"
+    },
+    "reminder": {
+      "title_lent": "Something should come back",
+      "title_borrowed": "Something is due back",
+      "body_lent": "\"{{objet}}\" was due back today — {{name}} has it.",
+      "body_borrowed": "\"{{objet}}\" is due back to {{name}} today."
     }
   }
 }
