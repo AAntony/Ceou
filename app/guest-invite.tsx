@@ -119,7 +119,7 @@ export default function GuestInviteScreen() {
             maxLength={10}
           />
 
-          {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
+          {error ? <Text className="mb-4 text-label text-danger">{error}</Text> : null}
 
           <Button label={t('guest.submit')} onPress={() => enter(code)} loading={loading} disabled={!code.trim()} />
 

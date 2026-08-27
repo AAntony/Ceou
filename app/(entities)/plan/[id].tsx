@@ -380,7 +380,7 @@ export default function PlanScreen() {
                     accessibilityRole="button"
                     className="rounded-full border border-red-500/40 px-4 py-2 active:opacity-70"
                   >
-                    <Text className="text-label font-semibold text-red-600">{t('common.delete')}</Text>
+                    <Text className="text-label font-semibold text-danger">{t('common.delete')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setSelectedDoorId(null)}

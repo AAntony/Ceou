@@ -120,7 +120,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="mt-1 text-label text-red-600">{error}</Text> : null}
+      {error ? <Text className="mt-1 text-label text-danger">{error}</Text> : null}
     </View>
   );
 });

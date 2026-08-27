@@ -87,7 +87,7 @@ function InviteCard({
             : t('invites.uses_limited', { used: entry.useCount, max: entry.maxUses })}
           {exhausted && !expired ? ` — ${t('invites.exhausted')}` : ''}
         </Text>
-        <Text className={`text-caption ${expired ? 'font-semibold text-red-600' : 'text-ink-soft'}`}>
+        <Text className={`text-caption ${expired ? 'font-semibold text-danger' : 'text-ink-soft'}`}>
           {entry.expiresAt === null
             ? t('invites.never_expires')
             : expired
@@ -127,8 +127,8 @@ function InviteCard({
           accessibilityRole="button"
           className="flex-row items-center gap-1.5 rounded-full border border-red-500/40 px-3 py-2 active:opacity-70"
         >
-          <Icon name="delete" size={16} color="#DC2626" />
-          <Text className="text-label font-medium text-red-600">{t('common.delete')}</Text>
+          <Icon name="delete" size={16} color={colors.danger} />
+          <Text className="text-label font-medium text-danger">{t('common.delete')}</Text>
         </Pressable>
       </View>
     </View>

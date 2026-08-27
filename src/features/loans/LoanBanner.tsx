@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { Button } from '../../components/Button';
-import { useThemeColors } from '../../lib/theme';
 import type { PretEntry } from './queries';
 import { isOverdue } from './queries';
 
@@ -24,7 +23,6 @@ type LoanBannerProps = {
 // relance.
 export function LoanBanner({ pret, onReturn, returning, editable }: LoanBannerProps) {
   const { t, i18n } = useTranslation();
-  const colors = useThemeColors();
   const overdue = isOverdue(pret);
   const date = pret.dueAt ? new Date(pret.dueAt).toLocaleDateString(i18n.language) : '';
 
@@ -40,10 +38,7 @@ export function LoanBanner({ pret, onReturn, returning, editable }: LoanBannerPr
           : t('loans.banner.borrowed_from', { name: pret.counterpartLabel })}
       </Text>
 
-      <Text
-        className={`mt-0.5 text-caption ${overdue ? 'font-semibold' : 'text-ink-soft'}`}
-        style={overdue ? { color: colors.danger } : undefined}
-      >
+      <Text className={`mt-0.5 text-caption ${overdue ? 'font-semibold text-danger' : 'text-ink-soft'}`}>
         {pret.dueAt === null
           ? t('loans.banner.no_due')
           : overdue

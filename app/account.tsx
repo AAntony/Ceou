@@ -27,7 +27,7 @@ function Section({ title, children }: PropsWithChildren<{ title: string }>) {
 }
 
 function Feedback({ error, success }: { error: string | null; success: string | null }) {
-  if (error) return <Text className="mb-3 text-label text-red-600">{error}</Text>;
+  if (error) return <Text className="mb-3 text-label text-danger">{error}</Text>;
   if (success) return <Text className="mb-3 text-label text-green-600">{success}</Text>;
   return null;
 }
@@ -259,7 +259,7 @@ export default function AccountScreen() {
           textContentType="password"
         />
 
-        {deleteError ? <Text className="mb-3 text-label text-red-600">{deleteError}</Text> : null}
+        {deleteError ? <Text className="mb-3 text-label text-danger">{deleteError}</Text> : null}
 
         <View className="mt-1 gap-3">
           <Button

@@ -57,6 +57,14 @@
   --color-sky: 91 155 224;
   --color-sky-dark: 63 123 192;
   --color-sky-light: 220 235 251;
+
+  /* ROUGE D'ALERTE, ET C'EST UNE COULEUR DE TEXTE AVANT TOUT.
+     Mesure : #DC2626 (l'ancien text-red-600) ne donne que 3,45:1 sur la
+     surface SOMBRE — sous le seuil de 4,5 exige pour du texte. Et le
+     #E2571F qui servait de danger cote clair n'y donnait que 3,74.
+     Les deux valeurs ci-dessous passent partout, y compris sur le lavis
+     rouge du bandeau de retard : 6,47 en clair, 7,16 en sombre. */
+  --color-danger: 185 28 28;
 }
 
 .dark:root {
@@ -85,5 +93,7 @@
   --color-mustard-dark: 240 194 102;
 
   --color-sky-light: 22 40 61;
+
+  --color-danger: 255 138 92;
   --color-sky-dark: 156 196 240;
 }

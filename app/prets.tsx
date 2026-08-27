@@ -55,10 +55,7 @@ function PretRow({ entry, onReturn, returning }: { entry: PretEntry; onReturn: (
         <Icon name="chevron" size={20} color={colors.inkFaint} />
       </Pressable>
 
-      <Text
-        className={`mt-2 text-caption ${overdue ? 'font-semibold' : 'text-ink-soft'}`}
-        style={overdue ? { color: colors.danger } : undefined}
-      >
+      <Text className={`mt-2 text-caption ${overdue ? 'font-semibold text-danger' : 'text-ink-soft'}`}>
         {closed
           ? t('loans.row.returned_on', {
               date: new Date(entry.returnedAt as string).toLocaleDateString(i18n.language),

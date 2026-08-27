@@ -32,11 +32,7 @@ export function LoansEntryCard() {
       <Icon name="pret" size={22} color={late > 0 ? colors.danger : colors.accentDark} />
       <View className="flex-1">
         <Text className="text-label font-semibold text-ink">{t('loans.title')}</Text>
-        <Text
-          numberOfLines={1}
-          className={`mt-0.5 text-caption ${late > 0 ? 'font-semibold' : 'text-ink-soft'}`}
-          style={late > 0 ? { color: colors.danger } : undefined}
-        >
+        <Text numberOfLines={1} className={`mt-0.5 text-caption ${late > 0 ? 'font-semibold text-danger' : 'text-ink-soft'}`}>
           {late > 0
             ? t('loans.card.late', { count: late })
             : open.length === 0

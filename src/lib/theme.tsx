@@ -129,7 +129,9 @@ const LIGHT: ThemeColors = {
   mustard: '#FFC857',
   mustardDark: '#927028',
   skyDark: '#3F7BC0',
-  danger: '#E2571F',
+  // Aligne sur --color-danger (global.css) : l'orange precedent ne donnait
+  // que 3,63:1 sur le fond clair, insuffisant des qu'il porte du texte.
+  danger: '#B91C1C',
   ripple: 'rgba(45,42,38,0.08)',
 };
 

@@ -246,7 +246,7 @@ export default function ProfileScreen() {
         }}
         label={t('profile.sign_out')}
         className="mt-6"
-        textClassName="text-center text-label font-semibold text-red-600"
+        textClassName="text-center text-label font-semibold text-danger"
       />
 
       {/* Le numéro "1.0.0" seul ne bouge presque jamais — le hash de commit

@@ -60,6 +60,10 @@ module.exports = {
           dark: token('mustard-dark'),
           light: token('mustard-light'),
         },
+        // Une seule nuance : c'est une couleur de TEXTE, elle doit tenir le
+        // seuil de contraste dans les deux themes, et une variante plus
+        // claire ou plus sombre ne le tiendrait plus.
+        danger: token('danger'),
         sky: {
           DEFAULT: token('sky'),
           dark: token('sky-dark'),

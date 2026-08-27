@@ -45,7 +45,7 @@ export default function ResetPasswordScreen() {
           textContentType="newPassword"
         />
 
-        {error ? <Text className="mb-4 text-label text-red-600">{error}</Text> : null}
+        {error ? <Text className="mb-4 text-label text-danger">{error}</Text> : null}
 
         <Button label={t('auth.reset_password.submit')} onPress={handleSubmit} loading={loading} />
       </ScrollView>

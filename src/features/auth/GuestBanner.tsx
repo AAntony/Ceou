@@ -56,7 +56,7 @@ export function GuestAccessLostCard() {
           tant qu'il reste sur sa session anonyme, et c'est de là que se
           saisit un nouveau code. */}
       <Pressable accessibilityRole="button" onPress={() => supabase.auth.signOut({ scope: 'local' })} className="mt-2 self-start py-1">
-        <Text className="text-caption font-semibold text-red-600">{t('guest.leave')}</Text>
+        <Text className="text-caption font-semibold text-danger">{t('guest.leave')}</Text>
       </Pressable>
     </View>
   );
