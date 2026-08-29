@@ -33,47 +33,51 @@ export default function TabsLayout() {
   if (isLoading) return <View className="flex-1 bg-sand" />;
   if (!session) return <Redirect href="/(auth)/login" />;
 
+  // Mêmes valeurs de style qu'app/(entities)/_layout.tsx, sans quoi le fond
+  // et la teinte différeraient d'un écran à l'autre. Écrites UNE fois pour
+  // les deux onglets qui portent un en-tête : recopiées, elles finiraient par
+  // diverger, et c'est exactement le genre d'écart de 8 dp qu'on a déjà passé
+  // du temps à traquer ici.
+  //
+  // Attention : ce n'est PAS le même composant d'en-tête que celui des écrans
+  // (entities) — eux ont l'en-tête natif du Stack, celui-ci est l'en-tête JS
+  // du navigateur d'onglets. D'où la hauteur forcée ci-dessus ; toute autre
+  // différence de rendu entre les deux se règlera ici, pas dans l'écran.
+  const headerOptions = {
+    headerShown: true,
+    // Contrairement a l'en-tete natif de (entities), celui-ci est rendu
+    // en JavaScript : sa hauteur suit donc le reglage, elle aussi.
+    headerStyle: {
+      backgroundColor: colors.sand,
+      height: Math.round(NATIVE_STACK_HEADER_HEIGHT * chrome) + insets.top,
+    },
+    headerTintColor: colors.accent,
+    headerTitleStyle: {
+      color: colors.ink,
+      ...(chrome > 1 ? { fontSize: Math.round(HEADER_TITLE_SIZE * chrome) } : {}),
+    },
+  };
+
   // La barre d'onglets visible est AppTabBar, rendue depuis app/_layout.tsx
   // (persistante au-delà de ce groupe de routes) — la barre native de Tabs
   // reste montée pour l'animation de bascule instantanée entre écrans mais
   // n'est jamais affichée.
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' } }}>
+      {/* Seul onglet SANS en-tête, et c'est délibéré : le tableau de bord
+          ouvre sur sa propre salutation, qui tient déjà lieu de titre. */}
       <Tabs.Screen name="index" />
-      {/* Seul onglet à porter un en-tête, et c'est délibéré : Amis liste des
-          entités qu'on ajoute (comme Habitations/Pièces/Emplacements), il
-          doit donc se présenter comme eux — titre à gauche, bouton
-          "Ajouter" à droite, trait de séparation sous l'en-tête. Mêmes
-          valeurs de style qu'app/(entities)/_layout.tsx, sans quoi le fond
-          et la teinte différeraient d'un écran à l'autre.
-          Attention : ce n'est PAS le même composant d'en-tête que celui des
-          écrans (entities) — eux ont l'en-tête natif du Stack, celui-ci est
-          l'en-tête JS du navigateur d'onglets. D'où la hauteur forcée
-          ci-dessus ; toute autre différence de rendu entre les deux se
-          règlera ici, pas dans l'écran.
-          L'Accueil (tableau de bord avec sa propre salutation) et le Profil
-          n'ont rien à ajouter et gardent leur pleine hauteur.
+      {/* Amis liste des entités qu'on ajoute (comme Habitations/Pièces/
+          Emplacements), il doit donc se présenter comme eux — titre à gauche,
+          bouton "Ajouter" à droite, trait de séparation sous l'en-tête.
           Le bouton lui-même est posé par l'écran via setOptions : c'est lui
           qui porte l'état de la modale d'ajout. */}
-      <Tabs.Screen
-        name="friends"
-        options={{
-          headerShown: true,
-          title: t('friends.tab_title'),
-          // Contrairement a l'en-tete natif de (entities), celui-ci est rendu
-          // en JavaScript : sa hauteur suit donc le reglage, elle aussi.
-          headerStyle: {
-            backgroundColor: colors.sand,
-            height: Math.round(NATIVE_STACK_HEADER_HEIGHT * chrome) + insets.top,
-          },
-          headerTintColor: colors.accent,
-          headerTitleStyle: {
-            color: colors.ink,
-            ...(chrome > 1 ? { fontSize: Math.round(HEADER_TITLE_SIZE * chrome) } : {}),
-          },
-        }}
-      />
-      <Tabs.Screen name="profile" />
+      <Tabs.Screen name="friends" options={{ ...headerOptions, title: t('friends.tab_title') }} />
+      {/* Le Profil n'avait rien à mettre dans un en-tête tant que son
+          « Enregistrer » vivait au milieu du formulaire. Il porte maintenant
+          la disquette, posée par l'écran via setOptions comme le "Ajouter"
+          d'Amis — l'état de saisie appartient à l'écran, pas au layout. */}
+      <Tabs.Screen name="profile" options={{ ...headerOptions, title: t('profile.title') }} />
     </Tabs>
   );
 }

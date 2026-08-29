@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
+import { ButtonRow } from '../../../src/components/ButtonRow';
 import { ErrorState } from '../../../src/components/ErrorState';
+import { HeaderSaveButton } from '../../../src/components/HeaderSaveButton';
 import { Icon } from '../../../src/components/Icon';
 import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
 import { TextField } from '../../../src/components/TextField';
@@ -58,6 +60,16 @@ export default function ObjetScreen() {
     }
   }, [objet]);
 
+  // CE QUI REND LA DISQUETTE DE L'EN-TETE ACTIVE. Elle ne compare que les deux
+  // champs de TEXTE : la photo, elle, part en base des qu'elle est choisie
+  // (voir handleChangePhoto), il n'y a rien a confirmer apres coup.
+  //
+  // `?? ''` des deux cotes : la base stocke une description absente en `null`
+  // et le champ de saisie ne connait que la chaine vide — sans cette
+  // normalisation, ouvrir un objet sans description suffirait a allumer la
+  // disquette, ce qui est exactement le defaut qu'on corrige.
+  const dirty = !!objet && (name !== objet.name || description !== (objet.description ?? ''));
+
   const handleSave = () => {
     updateObjet.mutate({ name, description: description || null });
   };
@@ -102,7 +114,29 @@ export default function ObjetScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: objet.name }} />
+      <Stack.Screen
+        options={{
+          title: objet.name,
+          // La disquette remplace le « Enregistrer » corail qui coupait la
+          // fiche en deux entre les champs et les actions. Elle n'est posee
+          // que si la personne a le droit de modifier : sur une habitation
+          // partagee en lecture seule, un bouton grise en permanence ne
+          // dirait rien de plus que les champs deja non modifiables.
+          headerRight: editable
+            ? () => (
+                <HeaderSaveButton
+                  onPress={handleSave}
+                  dirty={dirty}
+                  // Croisé avec `dirty` : la même mutation sert à écrire la
+                  // photo, et la disquette n'a pas à se mettre à tourner
+                  // pour un téléversement qui ne la concerne pas.
+                  loading={updateObjet.isPending && dirty}
+                  label={t('a11y.save_changes')}
+                />
+              )
+            : undefined,
+        }}
+      />
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6" refreshControl={refreshControl}>
         <View className="mb-6 self-center">
           <Pressable
@@ -157,23 +191,31 @@ export default function ObjetScreen() {
           editable={editable}
         />
 
+        {/* LES DEUX GESTES QU'ON FAIT SUR UN OBJET, cote a cote et sur le
+            meme rang. Ils etaient l'un sous l'autre, en `ghost` : deux
+            libelles sans fond ni contour, qu'on ne distinguait du texte de la
+            fiche qu'en essayant d'appuyer dessus. La pastille d'icone les
+            designe comme des ACTIONS, et la rangee dit qu'il s'agit d'un
+            choix entre deux, pas d'une liste de reglages. */}
         {editable ? (
-          <>
-            <View className="mb-6">
-              <Button label={t('common.save')} onPress={handleSave} loading={updateObjet.isPending} />
-            </View>
-            <View className="mb-2">
-              <Button label={t('inventory.objet.move')} variant="ghost" onPress={() => setMoveModalOpen(true)} />
-            </View>
-            {/* Masqué quand un prêt est déjà en cours : la base refuse un
-                second prêt ouvert sur le même objet, autant ne pas proposer
-                un bouton qui ne peut qu'échouer. */}
-            {pret ? null : (
-              <View className="mb-8">
-                <Button label={t('loans.entry')} variant="ghost" onPress={() => setLoanSheetOpen(true)} />
-              </View>
-            )}
-          </>
+          <View className="mb-8">
+            <ButtonRow>
+              <Button
+                variant="tile"
+                icon="move"
+                label={t('inventory.objet.move')}
+                onPress={() => setMoveModalOpen(true)}
+              />
+              {/* Masqué quand un prêt est déjà en cours : la base refuse un
+                  second prêt ouvert sur le même objet, autant ne pas proposer
+                  un bouton qui ne peut qu'échouer. La rangée n'en garde pas
+                  la place vide — le « Déplacer » restant prend toute la
+                  largeur. */}
+              {pret ? null : (
+                <Button variant="tile" icon="pret" label={t('loans.entry')} onPress={() => setLoanSheetOpen(true)} />
+              )}
+            </ButtonRow>
+          </View>
         ) : null}
 
         <Text className="mb-2 text-body font-bold text-ink">{t('inventory.objet.history_title')}</Text>

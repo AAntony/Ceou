@@ -30,7 +30,11 @@ export function GuestProfile() {
   const { t } = useTranslation();
 
   return (
-    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-32 pt-12">
+    // `pt-6` et non plus `pt-12` : l'onglet Profil porte désormais un
+    // en-tête (voir (tabs)/_layout.tsx), qui dégage déjà le haut de l'écran.
+    // Les 48 px d'avant compensaient son absence, ils feraient maintenant un
+    // trou entre la barre et le logo.
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-32 pt-6">
       <View className="items-center">
         <View className="mb-4 h-20 w-20 items-center justify-center rounded-full bg-coral-light">
           <Icon name="location" size={40} color="#1591EA" />

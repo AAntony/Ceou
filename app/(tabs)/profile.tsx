@@ -1,10 +1,12 @@
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useNavigation } from 'expo-router';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { Button } from '../../src/components/Button';
 import { ErrorState } from '../../src/components/ErrorState';
+import { HeaderSaveButton } from '../../src/components/HeaderSaveButton';
 import { Icon } from '../../src/components/Icon';
 import { QrCode } from '../../src/components/QrCode';
 import { TextField } from '../../src/components/TextField';
@@ -50,11 +52,50 @@ export default function ProfileScreen() {
     if (profile) setDisplayName(profile.display_name ?? '');
   }, [profile]);
 
-  const handleSave = async () => {
-    setSaved(false);
-    await updateProfile.mutateAsync({ display_name: displayName });
+  // CE QUI REND LA DISQUETTE DE L'EN-TETE ACTIVE. Le nom affiche est le seul
+  // champ de cet ecran qu'on ENREGISTRE : l'avatar, la langue et les reglages
+  // d'affichage partent en base des qu'on y touche, il n'y a rien a confirmer
+  // apres coup. La disquette ne parle donc que du nom.
+  const dirty = displayName !== (profile?.display_name ?? '');
+
+  // `mutateAsync` est une reference stable (React Query v5) : la sortir de
+  // l'objet de mutation est ce qui permet a handleSave de ne pas changer a
+  // chaque rendu, et donc a l'effet ci-dessous de ne pas reposer le bouton
+  // d'en-tete en boucle.
+  const { mutateAsync: saveProfile } = updateProfile;
+  const handleSave = useCallback(async () => {
+    await saveProfile({ display_name: displayName });
     setSaved(true);
-  };
+  }, [saveProfile, displayName]);
+
+  const navigation = useNavigation();
+  // Le bouton est posé sur l'en-tête déclaré par (tabs)/_layout.tsx. Il ne
+  // peut pas l'être depuis le layout, qui n'a pas accès à l'état de saisie ;
+  // useLayoutEffect plutôt que useEffect pour qu'il soit peint dans la même
+  // frame que l'écran, sans apparition différée. Même montage que le bouton
+  // "Ajouter" de l'onglet Amis.
+  //
+  // Rien pour un VISITEUR : il n'a pas de fiche à enregistrer (voir plus bas,
+  // GuestProfile prend toute la place de cet écran). L'effet doit quand même
+  // s'exécuter — il est au-dessus du retour anticipé, comme tous les hooks.
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: isGuest
+        ? undefined
+        : () => (
+            <HeaderSaveButton
+              onPress={handleSave}
+              dirty={dirty}
+              // `isPending` est partagé avec les autres écritures du profil
+              // (avatar, langue) : le croiser avec `dirty` évite que la
+              // disquette se mette à tourner quand on change de langue, ce
+              // qui n'a rien à voir avec elle.
+              loading={updateProfile.isPending && dirty}
+              label={t('a11y.save_changes')}
+            />
+          ),
+    });
+  }, [navigation, isGuest, handleSave, dirty, updateProfile.isPending, t]);
 
   const handleLanguageChange = async (language: SupportedLanguage) => {
     await i18n.changeLanguage(language);
@@ -107,7 +148,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-16 pb-40" refreshControl={refreshControl}>
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-6 pb-40" refreshControl={refreshControl}>
       <Pressable accessibilityRole="button" onPress={handleAvatarPress} className="mb-8 items-center">
         <View
           className="items-center justify-center overflow-hidden rounded-full bg-sand-dark"
@@ -126,11 +167,20 @@ export default function ProfileScreen() {
         <Text className="mt-2 text-label font-medium text-ink-soft">{t('profile.avatar.change')}</Text>
       </Pressable>
 
-      <TextField label={t('profile.display_name')} value={displayName} onChangeText={setDisplayName} />
+      {/* La confirmation d'enregistrement s'efface DES LA FRAPPE SUIVANTE :
+          affichée en permanence après un premier enregistrement, elle
+          finissait par annoncer « Profil enregistré » au-dessus d'un nom qui
+          ne l'était justement plus. */}
+      <TextField
+        label={t('profile.display_name')}
+        value={displayName}
+        onChangeText={(value) => {
+          setDisplayName(value);
+          setSaved(false);
+        }}
+      />
 
       {saved ? <Text className="mb-4 text-label text-green-600">{t('profile.saved')}</Text> : null}
-
-      <Button label={t('common.save')} onPress={handleSave} loading={updateProfile.isPending} />
 
       <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('profile.language')}</Text>
       <View className="flex-row gap-2">

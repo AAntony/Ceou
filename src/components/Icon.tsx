@@ -73,6 +73,7 @@ export type IconName =
   | 'search'
   | 'profile'
   | 'validate'
+  | 'save'
   | 'microphone'
   | 'arrowDown'
   | 'scan'
@@ -184,6 +185,10 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   search: 'magnify',
   profile: 'account-circle-outline',
   validate: 'check',
+  // La disquette d'enregistrement des en-tetes. Le glyphe PLEIN et non son
+  // contour : c'est une commande, pas une decoration, et sa couleur porte
+  // deja l'etat (grisee tant qu'il n'y a rien a enregistrer).
+  save: 'content-save',
   microphone: 'microphone',
   dots: 'dots-horizontal',
   // Dévoiler / masquer un mot de passe (voir TextField).

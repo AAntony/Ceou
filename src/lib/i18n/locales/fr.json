@@ -711,7 +711,8 @@
     "view_photo": "Voir la photo en grand",
     "select_named": "Sélectionner {{name}}",
     "move_up_named": "Monter {{name}}",
-    "move_down_named": "Descendre {{name}}"
+    "move_down_named": "Descendre {{name}}",
+    "save_changes": "Enregistrer les modifications"
   },
   "loans": {
     "title": "Prêts",
