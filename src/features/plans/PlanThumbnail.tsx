@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
 import { Icon } from '../../components/Icon';
-import { useThemeColors } from '../../lib/theme';
+import { tintForDark } from '../../lib/color';
+import { useTheme, useThemeColors } from '../../lib/theme';
 import type { PlanForme } from '../../types/database';
-import { WALL_COLOR } from './constants';
 
 // Miniature d'un plan : ses pièces, dessinées en petit.
 //
@@ -38,6 +38,7 @@ const PADDING = 4;
 
 export function PlanThumbnail({ formes, colorForForme }: PlanThumbnailProps) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   const [box, setBox] = useState({ width: 0, height: 0 });
 
   const handleLayout = (event: LayoutChangeEvent) => {
@@ -85,13 +86,19 @@ export function PlanThumbnail({ formes, colorForForme }: PlanThumbnailProps) {
                 top: offsetY + (forme.y - minY) * scale,
                 width: Math.max(forme.width * scale, 2),
                 height: Math.max(forme.height * scale, 2),
-                backgroundColor: colorForForme(forme),
+                // MEMES DEUX REGLES QUE LE CANEVAS, et pour la seule raison
+                // qui vaille : la miniature doit ressembler au plan qu'elle
+                // annonce. Le pastel est traduit pour le theme sombre, et le
+                // trait est l'encre du theme — sombre en clair, claire en
+                // sombre.
+                //
+                // Le commentaire precedent disait l'inverse (« les pieces
+                // gardent leurs pastels dans les deux themes, leur trait doit
+                // donc rester sombre ») : c'etait vrai de la miniature, faux
+                // du canevas, et c'est de cet ecart que venait le defaut.
+                backgroundColor: isDark ? tintForDark(colorForForme(forme)) : colorForForme(forme),
                 borderWidth: 0.5,
-                // Le MUR du canevas, valeur fixe et non jeton de theme : les
-                // pieces gardent leurs pastels dans les deux themes, leur trait
-                // doit donc rester sombre lui aussi — sinon la miniature ne
-                // ressemble plus au plan qu'elle annonce.
-                borderColor: WALL_COLOR,
+                borderColor: colors.ink,
               }}
             />
           ))

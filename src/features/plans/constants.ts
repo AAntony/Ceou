@@ -46,7 +46,13 @@ export const MAX_ZOOM = 3;
 // pieces, et dessine EN DERNIER (voir les trois passes de PlanCanvas). Deux
 // pieces accolees posent leur trait exactement au meme endroit : les deux se
 // superposent et se lisent comme un mur unique.
-export const WALL_COLOR = '#2D2A26';
+//
+// A L'ENCRE VEUT DIRE colors.ink, ET PLUS UN #2D2A26 EN DUR. La valeur fixe
+// etait exactement l'encre du theme CLAIR ; sur la feuille sombre elle ne
+// donnait plus que 1,17:1 — un mur invisible, et le « voile noir » signale a
+// l'usage. Le mur est donc lu depuis le theme la ou il est dessine
+// (PlanCanvas, PlanThumbnail) : rien ne change en clair, et il passe en clair
+// sur fond sombre.
 
 // DEUX epaisseurs, et c'est la convention des plans d'architecte : le mur qui
 // ferme le logement est porteur, on le trace epais ; une cloison entre deux

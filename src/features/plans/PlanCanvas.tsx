@@ -13,7 +13,6 @@ import {
   MIN_ZOOM,
   roomColorForForme,
   ROOM_FILL_OPACITY,
-  WALL_COLOR,
   WALL_WIDTH,
   WORLD_HEIGHT,
   WORLD_WIDTH,
@@ -25,8 +24,9 @@ import { PIN_METRICS, type PinMetrics, type PinSize } from './pinSize';
 import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSegments, wallWidth } from './walls';
 import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
 import type { DoorEdge, HandleId, ShapeGeometry } from './types';
+import { tintForDark } from '../../lib/color';
 import { useTextScale } from '../../lib/textScale';
-import { useThemeColors } from '../../lib/theme';
+import { useTheme, useThemeColors } from '../../lib/theme';
 
 const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 
@@ -39,10 +39,14 @@ const COUNT_FONT_SIZE = 11;
 /** Espace laissé entre le mur du haut et le sommet des lettres, en pixels d'écran. */
 const LABEL_TOP_CLEARANCE = 6;
 
-// Le bleu d'action de l'app. Constante ici plutôt que via le thème : ces
-// traits se posent sur la feuille du plan, qui garde le même fond clair dans
-// les deux thèmes — une couleur qui s'adapterait au thème perdrait justement
-// son contraste sur cette feuille.
+// Le bleu d'action de l'app. Constante ici plutôt que via le thème, et cette
+// fois pour la bonne raison : `accent` vaut #1591EA dans les DEUX thèmes (voir
+// lib/theme), il n'y a donc rien à adapter.
+//
+// La justification précédente — « la feuille garde le même fond clair dans les
+// deux thèmes » — était fausse, et c'est elle qui a laissé passer le défaut
+// corrigé ici : la feuille suit le thème depuis l'arrivée du sombre, seule
+// l'encre posée dessus ne suivait pas.
 const ACCENT = '#1591EA';
 
 function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
@@ -186,6 +190,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   ref,
 ) {
   const colors = useThemeColors();
+  const { isDark } = useTheme();
   // Le nom des pièces suit le réglage d'affichage, maintenant qu'il a une
   // taille d'écran à lui (avant, il était dans le monde zoomé, où le seul
   // réglage qui comptait était le zoom). C'est `factor` et non `textScale` :
@@ -830,6 +835,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     () =>
       sortedFormes.map((forme) => {
         const info = forme.piece_id ? pieceInfo[forme.piece_id] : undefined;
+        // La couleur STOCKÉE est toujours le pastel clair : c'est celle que
+        // la personne a choisie, et elle ne change pas parce qu'on regarde
+        // l'écran de nuit. Sa traduction pour le thème sombre se fait ici,
+        // au dessin (voir tintForDark dans lib/color).
+        const pastel = forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
         const roomDoors = doorSpansByForme[forme.id] ?? [];
         // Les voisines disent deux choses : quels pans de mur sont mitoyens
         // (donc fins), et où le mur commun est déjà percé par elles.
@@ -839,7 +849,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
         return {
           id: forme.id,
           geo: geoById[forme.id],
-          color: forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id),
+          color: isDark ? tintForDark(pastel) : pastel,
           label: info?.name ?? "",
           count: forme.piece_id ? (roomCounts?.[forme.piece_id] ?? null) : null,
           selected: forme.id === selectedFormeId,
@@ -850,7 +860,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           jambs: doorJambs(geoById[forme.id], roomDoors, neighbours),
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, doorSpansByForme],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, doorSpansByForme, isDark],
   );
 
   const selectedDoorGeometry = useMemo(() => {
@@ -953,7 +963,14 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                   width={room.geo.width}
                   height={room.geo.height}
                   color={room.color}
-                  opacity={ROOM_FILL_OPACITY}
+                  // PLEINE OPACITÉ EN SOMBRE, et ce n'est pas un oubli : en
+                  // clair, diluer le pastel de moitié sur une feuille BLANCHE
+                  // l'éclaircit encore, ce qui est bien l'effet voulu — une
+                  // teinte, pas un aplat. Sur une feuille presque noire, la
+                  // même dilution ne l'éclaircit pas, elle le décolore. La
+                  // teinte sombre est donc calculée à l'avance (tintForDark)
+                  // et posée telle quelle.
+                  opacity={isDark ? 1 : ROOM_FILL_OPACITY}
                   style="fill"
                 />
               ))}
@@ -969,7 +986,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     key={`wall-${room.id}-${index}`}
                     p1={vec(wall.x1, wall.y1)}
                     p2={vec(wall.x2, wall.y2)}
-                    color={WALL_COLOR}
+                    color={colors.ink}
                     style="stroke"
                     strokeWidth={wallWidth(wall.interior)}
                   />
@@ -986,7 +1003,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
                     key={`jamb-${room.id}-${index}`}
                     p1={vec(jamb.x1, jamb.y1)}
                     p2={vec(jamb.x2, jamb.y2)}
-                    color={WALL_COLOR}
+                    color={colors.ink}
                     style="stroke"
                     strokeWidth={DOOR_JAMB_WIDTH}
                   />
