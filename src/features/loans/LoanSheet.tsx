@@ -6,7 +6,6 @@ import { FormActions } from '../../components/FormActions';
 import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
-import { useThemeColors } from '../../lib/theme';
 import { scheduleLoanReminder } from '../notifications/loanReminders';
 import { useFriendships } from '../sharing/queries';
 import { dueInDays, useCreatePret, type PretDirection } from './queries';
@@ -33,7 +32,6 @@ type LoanSheetProps = {
 // pense un prêt.
 export function LoanSheet({ visible, onClose, objetId, objetName }: LoanSheetProps) {
   const { t } = useTranslation();
-  const colors = useThemeColors();
   const createPret = useCreatePret();
   const { data: friendships } = useFriendships();
 
@@ -149,8 +147,10 @@ export function LoanSheet({ visible, onClose, objetId, objetName }: LoanSheetPro
                 onPress={() => pickFriend(friend.otherUserId, name)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                android_ripple={{ color: colors.ripple, borderless: false }}
-                className={`self-start overflow-hidden rounded-full border px-3 py-2 ${
+                // Même pastille arrondie, même défaut, même correctif que les
+                // filtres de l'accueil : le ripple d'Android y dessinait un
+                // rectangle (voir le commentaire de HomeDashboard).
+                className={`self-start rounded-full border px-3 py-2 active:opacity-70 ${
                   selected ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'
                 }`}
               >

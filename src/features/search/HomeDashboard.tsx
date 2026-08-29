@@ -202,13 +202,22 @@ function HomeHeader({
         )}
       </View>
 
+      {/* PAS DE RIPPLE ANDROID SUR CES PASTILLES, et ce n'est pas un oubli.
+          Le ripple non-« borderless » de React Native est masqué par un
+          ColorDrawable, c'est-à-dire par le RECTANGLE englobant de la vue
+          (ReactDrawableHelper.kt, getMask) : sur une pastille arrondie, on
+          voyait apparaître ses quatre coins à chaque appui — signalé à
+          l'usage. Aucun réglage ne l'arrondit, RN n'expose pas le masque.
+          Le `overflow-hidden` qui était posé ici n'y pouvait rien : une vue
+          découpe ses ENFANTS, pas son propre fond.
+          L'atténuation à l'appui est de toute façon ce qu'emploient les 53
+          autres zones pressables de l'app. */}
       {pieceOptions.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5 -mx-1" contentContainerClassName="px-1">
           <Pressable
             accessibilityRole="button"
             onPress={() => onSelectPiece(null)}
-            android_ripple={{ color: colors.ripple, borderless: false }}
-            className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
+            className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start rounded-full border px-4 py-2 active:opacity-70 ${
               selectedPiece === null ? 'border-teal bg-teal-light' : 'border-ink/10 bg-surface'
             }`}
           >
@@ -224,8 +233,7 @@ function HomeHeader({
                 accessibilityRole="button"
                 key={pieceName}
                 onPress={() => onSelectPiece(selected ? null : pieceName)}
-                android_ripple={{ color: colors.ripple, borderless: false }}
-                className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-4 py-2 ${
+                className={`mr-2 shrink-0 flex-row items-center gap-1.5 self-start rounded-full border px-4 py-2 active:opacity-70 ${
                   selected ? 'border-teal bg-teal-light' : 'border-ink/10 bg-surface'
                 }`}
               >

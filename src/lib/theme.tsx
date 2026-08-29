@@ -109,7 +109,11 @@ export type ThemeColors = {
   mustardDark: string;
   skyDark: string;
   danger: string;
-  ripple: string;
+  // `ripple` retiré le 2026-08-29 : ses trois seuls appelants étaient les
+  // pastilles arrondies (filtres de l'accueil, sélecteurs de type, amis d'un
+  // prêt), qui n'utilisent plus le ripple d'Android — il y dessinait un
+  // rectangle, voir le commentaire de HomeDashboard. Deux lignes à réécrire
+  // si un jour une surface RECTANGULAIRE veut ce retour tactile-là.
 };
 
 const LIGHT: ThemeColors = {
@@ -132,7 +136,6 @@ const LIGHT: ThemeColors = {
   // Aligne sur --color-danger (global.css) : l'orange precedent ne donnait
   // que 3,63:1 sur le fond clair, insuffisant des qu'il porte du texte.
   danger: '#B91C1C',
-  ripple: 'rgba(45,42,38,0.08)',
 };
 
 const DARK: ThemeColors = {
@@ -151,7 +154,6 @@ const DARK: ThemeColors = {
   mustardDark: '#F0C266',
   skyDark: '#9CC4F0',
   danger: '#FF8A5C',
-  ripple: 'rgba(244,240,233,0.10)',
 };
 
 export function useThemeColors(): ThemeColors {

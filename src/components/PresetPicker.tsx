@@ -23,8 +23,10 @@ export function PresetPicker<T extends Preset>({ presets, selectedKey, onSelect,
             onPress={() => onSelect(preset.key)}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            android_ripple={{ color: colors.ripple, borderless: false }}
-            className={`flex-row items-center gap-1.5 self-start overflow-hidden rounded-full border px-3 py-2 ${
+            // Même pastille arrondie, même défaut, même correctif que les
+            // filtres de l'accueil : le ripple d'Android y dessinait un
+            // rectangle (voir le commentaire de HomeDashboard).
+            className={`flex-row items-center gap-1.5 self-start rounded-full border px-3 py-2 active:opacity-70 ${
               selected ? 'border-coral bg-coral' : 'border-ink/10 bg-surface'
             }`}
           >
