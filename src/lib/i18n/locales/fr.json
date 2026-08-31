@@ -768,5 +768,9 @@
       "body_lent": "« {{objet}} » devait revenir aujourd'hui — c'est {{name}} qui l'a.",
       "body_borrowed": "« {{objet}} » est à rendre à {{name}} aujourd'hui."
     }
+  },
+  "network": {
+    "offline": "Hors connexion",
+    "offline_hint": "Tu vois les dernières données chargées."
   }
 }

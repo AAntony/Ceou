@@ -768,5 +768,9 @@
       "body_lent": "\"{{objet}}\" was due back today — {{name}} has it.",
       "body_borrowed": "\"{{objet}}\" is due back to {{name}} today."
     }
+  },
+  "network": {
+    "offline": "Offline",
+    "offline_hint": "You are seeing the last data loaded."
   }
 }

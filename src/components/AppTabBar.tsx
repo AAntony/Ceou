@@ -47,6 +47,23 @@ export function useAppTabBarHeight(): number {
   return Math.round(BASE_TAB_BAR_HEIGHT * useChromeScale());
 }
 
+/**
+ * Vrai sur les écrans où la barre d'onglets est réellement affichée.
+ *
+ * Extrait du rendu de AppTabBar plutôt que recopié : le bandeau « hors
+ * connexion » doit se poser JUSTE AU-DESSUS d'elle quand elle est là, et au
+ * ras de l'écran quand elle ne l'est pas. Deux listes d'écrans à tenir en
+ * parallèle divergeraient au premier écran ajouté — et le bandeau se
+ * retrouverait à flotter au milieu de l'éditeur de plan.
+ *
+ * Les raisons de masquer la barre sur ces trois écrans-là sont détaillées
+ * plus bas, sur son propre rendu.
+ */
+export function useAppTabBarVisible(): boolean {
+  const pathname = usePathname();
+  return !(pathname === '/privacy-policy' || pathname === '/guest-invite' || pathname.startsWith('/plan/'));
+}
+
 // Tout le parcours Habitation > Pièce > Emplacement > Conteneur > Objet, plus
 // les plans et les habitations partagées par un ami : on met en évidence la
 // SECTION où l'on se trouve, pas l'écran exact. Sans ça, aucun onglet ne
@@ -170,6 +187,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
 // contexte, donc le seul où un "+" n'a qu'un sens possible.
 export function AppTabBar() {
   const pathname = usePathname();
+  const visible = useAppTabBarVisible();
   const insets = useSafeAreaInsets();
   const height = useAppTabBarHeight();
   const { t } = useTranslation();
@@ -195,7 +213,10 @@ export function AppTabBar() {
   // `/guest-invite` s'ajoute à la liste : l'écran ouvre une session anonyme
   // en cours de route, si bien que la barre apparaîtrait par-dessus un écran
   // encore en train de décider où envoyer le visiteur.
-  if (pathname === '/privacy-policy' || pathname === '/guest-invite' || pathname.startsWith('/plan/')) return null;
+  //
+  // La condition elle-même vit dans useAppTabBarVisible ci-dessus : le
+  // bandeau « hors connexion » a besoin de la même réponse.
+  if (!visible) return null;
 
   const onHome = pathname === '/';
   const onHabitations = HABITATION_PREFIXES.some((prefix) => pathname.startsWith(prefix));

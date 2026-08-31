@@ -1,4 +1,5 @@
-import { focusManager, QueryClientProvider } from '@tanstack/react-query';
+import { focusManager } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +8,7 @@ import { AppState, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
 import { AppTabBar } from '../src/components/AppTabBar';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SessionProvider, useSession } from '../src/features/auth/SessionProvider';
 import { useAuthDeepLinks } from '../src/features/auth/useAuthDeepLinks';
@@ -14,7 +16,8 @@ import { PushRegistrar } from '../src/features/notifications/PushRegistrar';
 import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
-import { queryClient } from '../src/lib/queryClient';
+import { installOnlineManager } from '../src/lib/network';
+import { persistOptions, queryClient } from '../src/lib/queryClient';
 import { SplashGateProvider, useSplashGate } from '../src/lib/splashGate';
 import { TextScaleProvider } from '../src/lib/textScale';
 import { ThemeProvider } from '../src/lib/theme';
@@ -24,6 +27,12 @@ installGlobalErrorHandler();
 // Doit être posé avant tout rendu : une notification reçue app ouverte n'est
 // affichée que si ce gestionnaire est déjà en place à ce moment-là.
 installNotificationHandler();
+// Avant le premier rendu également, et pour une raison voisine : les requêtes
+// montées par le premier écran consultent l'état du réseau au moment où elles
+// démarrent. Branché plus tard, TanStack se croirait en ligne le temps de
+// quelques requêtes — celles-là partiraient et échoueraient au lieu d'être
+// mises en attente.
+installOnlineManager();
 
 // Retient le splash NATIF (l'aplat bleu affiché par le système avant même que
 // le JavaScript ne soit chargé). Sans ça, il disparaîtrait dès le premier
@@ -96,6 +105,11 @@ function AppShell() {
           batterie s'écrivent en sombre sur fond soutenu. */}
       <StatusBar style={splashDone ? 'auto' : 'light'} />
       <Stack screenOptions={{ headerShown: false }} />
+      {/* Avant la barre d'onglets dans l'arbre, donc peint dessous : le
+          bandeau se cale au-dessus d'elle par sa position, pas par l'ordre
+          de rendu, et un chevauchement d'un pixel doit se résoudre en faveur
+          de la barre — elle est cliquable, lui non. */}
+      <OfflineBanner />
       <AuthedTabBar />
 
       {/* En dernier : c'est un calque, il doit passer au-dessus du reste. */}
@@ -110,7 +124,7 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           {/* Au-dessus de tout ce qui peint : le theme choisi doit etre
               applique avant le premier rendu colore, pas apres. */}
           <ThemeProvider>
@@ -127,7 +141,7 @@ export default function RootLayout() {
               </SessionProvider>
             </TextScaleProvider>
           </ThemeProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </GestureHandlerRootView>
     </ErrorBoundary>
   );

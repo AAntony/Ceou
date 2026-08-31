@@ -1,6 +1,6 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
-import { queryClient } from '../../lib/queryClient';
+import { clearPersistedCache } from '../../lib/queryClient';
 import { supabase } from '../../lib/supabase/client';
 
 type SessionContextValue = {
@@ -38,10 +38,15 @@ export function SessionProvider({ children }: PropsWithChildren) {
   // jeton en produit une nouvelle sans que la personne ait changé. Un
   // visiteur qui se crée un compte garde d'ailleurs le même ID (c'est ce qui
   // lui conserve ses accès) — son cache reste donc valide, à raison.
+  //
+  // LE DISQUE AUSSI, DEPUIS QUE LE CACHE Y SURVIT. Vider la seule mémoire ne
+  // suffisait plus : le cache persisté serait relu au prochain démarrage et
+  // rendrait à la personne suivante l'inventaire de la précédente — et sans
+  // réseau, sans même le rafraîchissement qui finissait par le corriger.
   const previousUserId = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     const userId = session?.user.id ?? null;
-    if (previousUserId.current !== undefined && previousUserId.current !== userId) queryClient.clear();
+    if (previousUserId.current !== undefined && previousUserId.current !== userId) void clearPersistedCache();
     previousUserId.current = userId;
   }, [session]);
 
