@@ -2,10 +2,32 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../../features/auth/SessionProvider';
 import { logClientError } from '../../lib/errorLogging';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
-import { deleteRow, selectMany, selectOne } from '../../lib/supabase/crud';
+import { selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
+import { newId } from '../../lib/uuid';
+import { deleteOp, insertOp, rpcOp, updateOp, useLocalFirstWrite } from '../../lib/writeQueue';
 import { isSingleSpaceHabitation } from './constants';
+
+// L'INVENTAIRE S'ÉCRIT À TRAVERS LA FILE, ET PLUS DIRECTEMENT.
+//
+// Toutes les mutations ci-dessous passent par `useLocalFirstWrite` : elles
+// construisent la ligne localement (l'identifiant vient de `newId`, plus de la
+// base), l'appliquent au cache, et confient l'écriture à la file — qui la
+// garde tant qu'il n'y a pas de réseau, la persiste sur le disque et la rejoue
+// au retour. Voir lib/writeQueue pour le mécanisme.
+//
+// CE QUI RESTE EN LIGNE, et pourquoi : tout ce qui suppose un TÉLÉVERSEMENT.
+// Une photo n'est pas une ligne de base, c'est un fichier à envoyer vers le
+// stockage ; la mettre en file demanderait de garder le fichier sur l'appareil
+// et de le rejouer séparément — une seconde file, avec ses propres échecs.
+// `useCreateObjetsBulk` et `useSetObjetPhoto` gardent donc l'ancien
+// fonctionnement et échouent sans réseau, comme avant.
+//
+// L'HORODATAGE DES LIGNES LOCALES est posé ici et non laissé au défaut de la
+// base : la ligne optimiste est affichée AVANT d'être écrite, et les listes
+// sont triées par `created_at`. Sans valeur, une création apparaîtrait au
+// mauvais endroit puis sauterait à sa place au retour du réseau.
 
 // Toute mutation qui change un nom/une position dans la hiérarchie doit
 // aussi invalider le cache de recherche globale (search_index()) — sinon le
@@ -41,73 +63,50 @@ export function useHabitation(id: string) {
 
 export function useCreateHabitation() {
   const { session } = useSession();
-  const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (input: { name: string; type: string; icon: string; photoUrl?: string | null }): Promise<Habitation> => {
-      const { data: habitation, error } = await supabase
-        .from('habitations')
-        .insert({
-          user_id: session!.user.id,
-          name: input.name,
-          type: input.type,
-          icon: input.icon,
-          photo_url: input.photoUrl ?? null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
+  return useLocalFirstWrite((input: { name: string; type: string; icon: string; photoUrl?: string | null }) => {
+    const habitation: Habitation = {
+      id: newId(),
+      user_id: session!.user.id,
+      name: input.name,
+      type: input.type,
+      icon: input.icon,
+      photo_url: input.photoUrl ?? null,
+      created_at: new Date().toISOString(),
+    };
 
-      if (isSingleSpaceHabitation(input.type)) {
-        const { error: pieceError } = await supabase
-          .from('pieces')
-          .insert({ habitation_id: habitation.id, name: input.name, is_default: true });
-        if (pieceError) throw pieceError;
-      }
+    const ops = [insertOp('habitations', [habitation])];
+    // LES DEUX DANS LE MÊME LOT, donc dans la même mutation : la Pièce
+    // référence l'Habitation, elles doivent partir dans cet ordre et
+    // échouer ensemble. C'est possible parce que l'identifiant du parent
+    // est connu AVANT l'écriture.
+    if (isSingleSpaceHabitation(input.type)) {
+      ops.push(insertOp('pieces', [{ id: newId(), habitation_id: habitation.id, name: input.name, is_default: true }]));
+    }
 
-      return habitation;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habitations'] });
-      invalidateSearchIndex(queryClient);
-    },
+    return { ops, appends: [{ key: ['habitations'], row: habitation }], result: habitation };
   });
 }
 
 export function useUpdateHabitation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => {
-      const { error } = await supabase
-        .from('habitations')
-        // `photoUrl` absent = photo inchangée ; `null` explicite = photo
-        // retirée. Sans cette distinction, ouvrir la fiche pour renommer
-        // effacerait la photo au passage.
-        .update({
-          name: input.name,
-          type: input.type,
-          icon: input.icon,
-          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-        })
-        .eq('id', input.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habitations'] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+  return useLocalFirstWrite((input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => ({
+    ops: [
+      // `photoUrl` absent = photo inchangée ; `null` explicite = photo
+      // retirée. Sans cette distinction, ouvrir la fiche pour renommer
+      // effacerait la photo au passage.
+      updateOp('habitations', input.id, {
+        name: input.name,
+        type: input.type,
+        icon: input.icon,
+        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+      }),
+    ],
+    result: undefined,
+  }));
 }
 
 export function useDeleteHabitation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteRow('habitations', id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['habitations'] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('habitations', id)], result: undefined }));
 }
 
 // === Favoris d'Habitation (Phase 9b) ==================================
@@ -192,72 +191,52 @@ export function usePiece(id: string) {
 }
 
 export function useCreatePiece(habitationId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      name: string;
-      presetKey: string | null;
-      color?: string | null;
-      photoUrl?: string | null;
-    }): Promise<Piece> => {
-      const { data, error } = await supabase
-        .from('pieces')
-        .insert({
-          habitation_id: habitationId,
-          name: input.name,
-          preset_key: input.presetKey,
-          color: input.color ?? null,
-          photo_url: input.photoUrl ?? null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+  return useLocalFirstWrite(
+    (input: { name: string; presetKey: string | null; color?: string | null; photoUrl?: string | null }) => {
+      const piece: Piece = {
+        id: newId(),
+        habitation_id: habitationId,
+        name: input.name,
+        preset_key: input.presetKey,
+        color: input.color ?? null,
+        photo_url: input.photoUrl ?? null,
+        is_default: false,
+        created_at: new Date().toISOString(),
+      };
+
+      return {
+        ops: [insertOp('pieces', [piece])],
+        appends: [{ key: ['pieces', habitationId], row: piece }],
+        result: piece,
+      };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+  );
 }
 
-export function useUpdatePiece(habitationId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      id: string;
-      name?: string;
-      presetKey?: string | null;
-      color?: string | null;
-      photoUrl?: string | null;
-    }) => {
-      const { error } = await supabase
-        .from('pieces')
-        .update({
+// L'IDENTIFIANT DU PARENT N'EST PLUS UTILISÉ ICI, et le paramètre reste
+// pourtant. Il servait à invalider `['pieces', habitationId]` après coup ;
+// c'est désormais la règle globale de queryClient qui s'en charge, au moment
+// où l'écriture aboutit réellement. Le garder évite de retoucher les cinq
+// écrans qui appellent ces hooks — et le jour où une mise à jour optimiste
+// plus fine sera nécessaire, il sera déjà là.
+export function useUpdatePiece(_habitationId: string) {
+  return useLocalFirstWrite(
+    (input: { id: string; name?: string; presetKey?: string | null; color?: string | null; photoUrl?: string | null }) => ({
+      ops: [
+        updateOp('pieces', input.id, {
           ...(input.name !== undefined && { name: input.name }),
           ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
           ...(input.color !== undefined && { color: input.color }),
           ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-        })
-        .eq('id', input.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+        }),
+      ],
+      result: undefined,
+    }),
+  );
 }
 
-export function useDeletePiece(habitationId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteRow('pieces', id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pieces', habitationId] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+export function useDeletePiece(_habitationId: string) {
+  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('pieces', id)], result: undefined }));
 }
 
 // === Emplacements ======================================================
@@ -295,54 +274,39 @@ export function useEmplacement(id: string) {
 }
 
 export function useCreateEmplacement(pieceId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { name: string; presetKey: string | null; photoUrl?: string | null }): Promise<Emplacement> => {
-      const { data, error } = await supabase
-        .from('emplacements')
-        .insert({ piece_id: pieceId, name: input.name, preset_key: input.presetKey, photo_url: input.photoUrl ?? null })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
-      invalidateSearchIndex(queryClient);
-    },
+  return useLocalFirstWrite((input: { name: string; presetKey: string | null; photoUrl?: string | null }) => {
+    const emplacement: Emplacement = {
+      id: newId(),
+      piece_id: pieceId,
+      name: input.name,
+      preset_key: input.presetKey,
+      photo_url: input.photoUrl ?? null,
+      created_at: new Date().toISOString(),
+    };
+
+    return {
+      ops: [insertOp('emplacements', [emplacement])],
+      appends: [{ key: ['emplacements', pieceId], row: emplacement }],
+      result: emplacement,
+    };
   });
 }
 
-export function useUpdateEmplacement(pieceId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => {
-      const { error } = await supabase
-        .from('emplacements')
-        .update({
-          name: input.name,
-          preset_key: input.presetKey,
-          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-        })
-        .eq('id', input.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+export function useUpdateEmplacement(_pieceId: string) {
+  return useLocalFirstWrite((input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => ({
+    ops: [
+      updateOp('emplacements', input.id, {
+        name: input.name,
+        preset_key: input.presetKey,
+        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+      }),
+    ],
+    result: undefined,
+  }));
 }
 
-export function useDeleteEmplacement(pieceId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteRow('emplacements', id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['emplacements', pieceId] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+export function useDeleteEmplacement(_pieceId: string) {
+  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('emplacements', id)], result: undefined }));
 }
 
 // === Conteneurs + Objets (contenu d'un Emplacement ou d'un Conteneur) ===
@@ -396,57 +360,40 @@ export function useConteneur(id: string) {
 }
 
 export function useCreateConteneur(parentType: LocationType, parentId: string) {
-  const queryClient = useQueryClient();
+  return useLocalFirstWrite((input: { name: string; presetKey: string | null; photoUrl?: string | null }) => {
+    const conteneur: Conteneur = {
+      id: newId(),
+      name: input.name,
+      preset_key: input.presetKey,
+      photo_url: input.photoUrl ?? null,
+      parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
+      parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
+      created_at: new Date().toISOString(),
+    };
 
-  return useMutation({
-    mutationFn: async (input: { name: string; presetKey: string | null; photoUrl?: string | null }): Promise<Conteneur> => {
-      const { data, error } = await supabase
-        .from('conteneurs')
-        .insert({
-          name: input.name,
-          preset_key: input.presetKey,
-          photo_url: input.photoUrl ?? null,
-          parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
-          parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => invalidateContainerContents(queryClient),
+    return {
+      ops: [insertOp('conteneurs', [conteneur])],
+      appends: [{ key: ['containerContents', 'conteneurs', parentType, parentId], row: conteneur }],
+      result: conteneur,
+    };
   });
 }
 
 export function useUpdateConteneur() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: {
-      id: string;
-      name: string;
-      presetKey?: string | null;
-      photoUrl?: string | null;
-    }) => {
-      const { error } = await supabase
-        .from('conteneurs')
-        .update({
-          name: input.name,
-          ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
-          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-        })
-        .eq('id', input.id);
-      if (error) throw error;
-    },
-    onSuccess: () => invalidateContainerContents(queryClient),
-  });
+  return useLocalFirstWrite((input: { id: string; name: string; presetKey?: string | null; photoUrl?: string | null }) => ({
+    ops: [
+      updateOp('conteneurs', input.id, {
+        name: input.name,
+        ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
+        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
+      }),
+    ],
+    result: undefined,
+  }));
 }
 
 export function useDeleteConteneur() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteRow('conteneurs', id),
-    onSuccess: () => invalidateContainerContents(queryClient),
-  });
+  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('conteneurs', id)], result: undefined }));
 }
 
 // === Objets ============================================================
@@ -466,34 +413,37 @@ export function useObjet(id: string) {
 // moment du clic. CreateObjetModal (destination déjà connue dès l'ouverture)
 // passe simplement les mêmes valeurs à chaque appel, sans rien y perdre.
 export function useCreateObjet() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (input: {
+  return useLocalFirstWrite(
+    (input: {
       parentType: LocationType;
       parentId: string;
       name: string;
       description: string | null;
       photoUrl: string | null;
       barcode?: string | null;
-    }): Promise<Objet> => {
-      const { data, error } = await supabase
-        .from('objets')
-        .insert({
-          name: input.name,
-          description: input.description,
-          photo_url: input.photoUrl,
-          barcode: input.barcode ?? null,
-          parent_emplacement_id: input.parentType === 'emplacement' ? input.parentId : null,
-          parent_conteneur_id: input.parentType === 'conteneur' ? input.parentId : null,
-        })
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+    }) => {
+      const objet: Objet = {
+        id: newId(),
+        name: input.name,
+        description: input.description,
+        photo_url: input.photoUrl,
+        barcode: input.barcode ?? null,
+        parent_emplacement_id: input.parentType === 'emplacement' ? input.parentId : null,
+        parent_conteneur_id: input.parentType === 'conteneur' ? input.parentId : null,
+        created_at: new Date().toISOString(),
+      };
+
+      return {
+        ops: [insertOp('objets', [objet])],
+        appends: [{ key: ['containerContents', 'objets', input.parentType, input.parentId], row: objet }],
+        // RENDU TOUT DE SUITE, et c'est ce qui permet aux écrans d'enchaîner :
+        // ils font `await mutateAsync(...)` puis naviguent vers l'objet créé,
+        // ou lui attachent une photo. L'identifiant étant déjà connu, il n'y a
+        // rien à attendre du serveur.
+        result: objet,
+      };
     },
-    onSuccess: () => invalidateContainerContents(queryClient),
-  });
+  );
 }
 
 // Utilisé par le scan photo IA (AiPhotoScanFlow) : une détection par
@@ -553,17 +503,10 @@ export function useCreateObjetsBulk() {
 }
 
 export function useUpdateObjet(id: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (patch: Partial<Pick<Objet, 'name' | 'description' | 'photo_url'>>) => {
-      const { error } = await supabase.from('objets').update(patch).eq('id', id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['objet', id] });
-      invalidateSearchIndex(queryClient);
-    },
-  });
+  return useLocalFirstWrite((patch: Partial<Pick<Objet, 'name' | 'description' | 'photo_url'>>) => ({
+    ops: [updateOp('objets', id, patch)],
+    result: undefined,
+  }));
 }
 
 // La photo d'un objet qu'on vient de créer : elle est téléversée APRÈS la
@@ -582,11 +525,7 @@ export function useSetObjetPhoto() {
 }
 
 export function useDeleteObjet() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => deleteRow('objets', id),
-    onSuccess: () => invalidateContainerContents(queryClient),
-  });
+  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('objets', id)], result: undefined }));
 }
 
 export type ObjetLocationNode = {
@@ -685,11 +624,27 @@ export function invalidateAfterMove(queryClient: ReturnType<typeof useQueryClien
 }
 
 export function useMoveObjet(objetId: string) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (destination: { type: LocationType; id: string }) => moveObjet(objetId, destination),
-    onSuccess: () => invalidateAfterMove(queryClient, objetId),
-  });
+  return useLocalFirstWrite((destination: { type: LocationType; id: string }) => ({
+    // UNE FONCTION SQL ET NON DEUX ÉCRITURES : `move_objet` change le parent
+    // ET journalise le déplacement, dans la même transaction. La décomposer
+    // côté client pour la faire tenir dans la file perdrait cette garantie —
+    // un objet déplacé sans trace, ou une trace sans déplacement.
+    ops: [rpcOp('move_objet', { p_objet_id: objetId, p_to_type: destination.type, p_to_id: destination.id })],
+    // Un `rpc` ne dit pas quelles lignes il touche : l'affichage optimiste
+    // doit donc être déclaré ici. L'HISTORIQUE, lui, n'est pas simulé — il
+    // apparaîtra au retour du réseau. Inventer une ligne d'historique
+    // reviendrait à écrire dans le journal ce qui n'a pas encore eu lieu.
+    patches: [
+      {
+        id: objetId,
+        patch: {
+          parent_emplacement_id: destination.type === 'emplacement' ? destination.id : null,
+          parent_conteneur_id: destination.type === 'conteneur' ? destination.id : null,
+        },
+      },
+    ],
+    result: undefined,
+  }));
 }
 
 /**

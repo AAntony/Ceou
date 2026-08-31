@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { MutationCache, QueryClient } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
+import { logClientError } from './errorLogging';
 
 // `skipGlobalRefresh` : la seule échappatoire à la règle ci-dessous, pour
 // les mutations à haute fréquence (un glissé de forme sur un plan en émet
@@ -53,6 +54,21 @@ export const queryClient = new QueryClient({
     onSettled: (_data, _error, _variables, _context, mutation) => {
       if (mutation.meta?.skipGlobalRefresh) return;
       queryClient.invalidateQueries();
+    },
+    // UNE ÉCRITURE DIFFÉRÉE QUI ÉCHOUE NE DOIT PAS DISPARAÎTRE EN SILENCE.
+    //
+    // Le cas est nouveau depuis la file hors-ligne, et il est vicieux : une
+    // modification part en attente, la personne voit son écran changer et
+    // passe à autre chose, puis le rejeu se solde par un refus — un accès
+    // partagé retiré entre-temps, par exemple. L'invalidation qui suit efface
+    // alors l'affichage optimiste, et la modification s'évapore sans que
+    // personne ne l'ait vue échouer.
+    //
+    // Le prévenir SUR LE COUP demanderait une file de notifications qui
+    // n'existe pas encore. En attendant, l'échec laisse au moins une trace
+    // exploitable côté diagnostic plutôt que rien du tout.
+    onError: (error, _variables, _context, mutation) => {
+      logClientError(error, { source: 'mutation', mutationKey: JSON.stringify(mutation.options.mutationKey ?? null) });
     },
   }),
 });

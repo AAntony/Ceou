@@ -1,7 +1,8 @@
-import { useMutation, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from './supabase/client';
 import type { Database } from '../types/supabase';
+import { applyOpsToCache, type AppendTarget } from './optimisticCache';
 
 /**
  * Les tables réellement existantes, et pas `string`.
@@ -56,7 +57,13 @@ export type WriteOp =
   // Suppression par correspondance et non par identifiant : les tables
   // d'existence (favoris, membres d'une catégorie) n'ont pas d'id qu'on
   // connaisse au moment de retirer la ligne.
-  | { kind: 'deleteWhere'; table: WriteTable; match: Record<string, string> };
+  | { kind: 'deleteWhere'; table: WriteTable; match: Record<string, string> }
+  // Déplacer un objet n'est pas une écriture de table mais une fonction SQL :
+  // elle met à jour le parent ET journalise le déplacement, en une
+  // transaction. La refaire en deux opérations côté client perdrait cette
+  // garantie — et c'est exactement l'action qu'on fait le plus souvent sans
+  // réseau, une caisse à la main devant une étagère.
+  | { kind: 'rpc'; fn: keyof Database['public']['Functions']; args: Record<string, unknown> };
 
 export type WriteBatch = {
   ops: WriteOp[];
@@ -100,6 +107,12 @@ async function runBatch({ ops }: WriteBatch): Promise<void> {
   // échec écrirait un enfant orphelin. L'erreur remonte, la mutation est
   // marquée en échec, et le lot entier sera à rejouer.
   for (const op of ops) {
+    if (op.kind === 'rpc') {
+      const { error } = await supabase.rpc(op.fn, op.args as never);
+      if (error) throw error;
+      continue;
+    }
+
     const table = supabase.from(op.table) as unknown as UntypedTable;
 
     if (op.kind === 'insert') {
@@ -172,6 +185,63 @@ export function deleteOp<T extends WriteTable>(table: T, id: string): WriteOp {
   return { kind: 'delete', table, id };
 }
 
+export function rpcOp(fn: keyof Database['public']['Functions'], args: Record<string, unknown>): WriteOp {
+  return { kind: 'rpc', fn, args };
+}
+
 export function deleteWhereOp<T extends WriteTable>(table: T, match: Record<string, string>): WriteOp {
   return { kind: 'deleteWhere', table, match };
+}
+
+// L'ÉCRITURE VUE PAR UN ÉCRAN : locale d'abord, réseau ensuite.
+//
+// LE PIÈGE QUE CE HOOK ÉVITE. Hors-ligne, la mutation de la file est mise en
+// PAUSE — sa promesse ne se résout donc jamais tant que le réseau n'est pas
+// revenu. Or les écrans font `await createObjet.mutateAsync(...)` puis
+// naviguent vers l'objet créé. Branchés directement sur la file, ils
+// resteraient bloqués indéfiniment sur un bouton qui tourne : le hors-ligne
+// aurait remplacé un échec franc par une attente sans fin, ce qui est pire.
+//
+// D'où deux mutations superposées, et c'est le point à comprendre avant de
+// toucher à ce fichier :
+//
+//   - CELLE-CI se résout TOUT DE SUITE. Elle construit la ligne localement
+//     (l'identifiant est déjà connu, voir lib/uuid), l'applique au cache, et
+//     rend le résultat. L'écran continue son chemin comme si c'était fait.
+//   - CELLE DE LA FILE est lancée sans être attendue. C'est elle qui porte
+//     l'attente, la persistance et le rejeu.
+//
+// `skipGlobalRefresh` sur celle-ci, et c'est indispensable : la règle globale
+// de queryClient rafraîchit tout à la fin de CHAQUE mutation. Appliquée ici,
+// elle rechargerait depuis le serveur dans la seconde qui suit — effaçant
+// l'affichage optimiste par des données qui ne portent pas encore la
+// modification. Le rafraîchissement doit venir de la mutation de la FILE,
+// c'est-à-dire quand l'écriture a réellement abouti.
+export type LocalFirstWrite<TResult> = {
+  ops: WriteOp[];
+  appends?: AppendTarget[];
+  /**
+   * Modifications a reporter dans le cache que les operations ne permettent
+   * PAS de deduire — le cas d'un ` + '`rpc`' + `, qui ne dit pas quelles lignes il
+   * touche. Un deplacement d'objet passe par la.
+   */
+  patches?: { id: string; patch: Record<string, unknown> }[];
+  result: TResult;
+};
+
+export function useLocalFirstWrite<TInput, TResult>(build: (input: TInput) => LocalFirstWrite<TResult>) {
+  const write = useWrite();
+  const client = useQueryClient();
+
+  return useMutation<TResult, Error, TInput>({
+    meta: { skipGlobalRefresh: true },
+    mutationFn: async (input) => {
+      const { ops, appends, patches, result } = build(input);
+      applyOpsToCache(client, ops, appends, patches);
+      // VOLONTAIREMENT PAS ATTENDU. Voir le commentaire ci-dessus : hors-ligne
+      // cette promesse ne se résoudrait jamais.
+      write.mutate({ ops });
+      return result;
+    },
+  });
 }
