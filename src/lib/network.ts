@@ -41,23 +41,38 @@ function isOnline(state: Network.NetworkState): boolean {
  */
 export function installOnlineManager(): void {
   onlineManager.setEventListener((setOnline) => {
-    // L'état INITIAL, et il compte autant que les suivants : l'écouteur ne
-    // se déclenche qu'au prochain CHANGEMENT. Sans cette lecture, une app
-    // ouverte en mode avion se croirait en ligne jusqu'à ce que le réseau
-    // bouge — c'est-à-dire précisément quand on a le plus besoin qu'elle le
-    // sache.
-    Network.getNetworkStateAsync()
-      .then((state) => setOnline(isOnline(state)))
-      .catch(() => {
-        // Module natif absent (OTA posée sur un build antérieur) : on reste
-        // sur l'hypothèse « en ligne », c'est-à-dire le comportement d'avant
-        // ce fichier. Mieux vaut une app qui tente et échoue proprement
-        // qu'une app qui se croit hors-ligne et ne tente rien.
-        setOnline(true);
-      });
+    // TOUT LE BLOC EST GARDÉ, et pas seulement l'appel asynchrone.
+    //
+    // C'était un vrai défaut de la première version : seul
+    // `getNetworkStateAsync` était protégé, par un `.catch()` qui ne rattrape
+    // que les promesses. `addNetworkStateListener`, lui, lève
+    // SYNCHRONEMENT quand le module natif est absent — l'exception
+    // traversait donc `setEventListener` et faisait tomber l'application au
+    // démarrage.
+    //
+    // Le cas n'a rien de théorique : les appareils qui n'ont pas encore
+    // réinstallé l'application n'embarquent pas expo-network, et une mise à
+    // jour OTA leur arrive quand même. Ce fichier aurait planté chez eux.
+    try {
+      // L'état INITIAL, et il compte autant que les suivants : l'écouteur ne
+      // se déclenche qu'au prochain CHANGEMENT. Sans cette lecture, une app
+      // ouverte en mode avion se croirait en ligne jusqu'à ce que le réseau
+      // bouge — c'est-à-dire précisément quand on a le plus besoin qu'elle le
+      // sache.
+      Network.getNetworkStateAsync()
+        .then((state) => setOnline(isOnline(state)))
+        .catch(() => setOnline(true));
 
-    const subscription = Network.addNetworkStateListener((state) => setOnline(isOnline(state)));
-    return () => subscription.remove();
+      const subscription = Network.addNetworkStateListener((state) => setOnline(isOnline(state)));
+      return () => subscription.remove();
+    } catch {
+      // On reste sur l'hypothèse « en ligne », c'est-à-dire le comportement
+      // d'avant ce fichier : l'app tente ses requêtes et échoue proprement.
+      // Mieux que de se croire hors-ligne et de ne rien tenter — et
+      // infiniment mieux que de ne pas démarrer.
+      setOnline(true);
+      return () => {};
+    }
   });
 }
 
