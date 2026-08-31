@@ -18,6 +18,7 @@ import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
 import { installOnlineManager } from '../src/lib/network';
 import { persistOptions, queryClient } from '../src/lib/queryClient';
+import { registerWriteMutation } from '../src/lib/writeQueue';
 import { SplashGateProvider, useSplashGate } from '../src/lib/splashGate';
 import { TextScaleProvider } from '../src/lib/textScale';
 import { ThemeProvider } from '../src/lib/theme';
@@ -33,6 +34,12 @@ installNotificationHandler();
 // quelques requêtes — celles-là partiraient et échoueraient au lieu d'être
 // mises en attente.
 installOnlineManager();
+// AVANT LA RELECTURE DU CACHE, impérativement. Une mutation en attente relue
+// du disque cherche sa fonction par sa clé : si les défauts ne sont pas encore
+// posés, elle ne la trouve pas et la modification reste en attente pour
+// toujours. Au niveau du module, donc avant le premier rendu — et donc avant
+// que PersistQueryClientProvider ne restaure quoi que ce soit.
+registerWriteMutation(queryClient);
 
 // Retient le splash NATIF (l'aplat bleu affiché par le système avant même que
 // le JavaScript ne soit chargé). Sans ça, il disparaîtrait dès le premier
@@ -124,7 +131,18 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={persistOptions}
+          // Les modifications faites hors-ligne au lancement PRECEDENT sont
+          // relues ici. TanStack reprend tout seul celles mises en pause quand
+          // le reseau revient PENDANT une session ; celles qui viennent du
+          // disque, elles, n'ont jamais ete mises en pause dans CETTE session,
+          // personne ne les reprendrait sans cet appel.
+          onSuccess={() => {
+            void queryClient.resumePausedMutations();
+          }}
+        >
           {/* Au-dessus de tout ce qui peint : le theme choisi doit etre
               applique avant le premier rendu colore, pas apres. */}
           <ThemeProvider>

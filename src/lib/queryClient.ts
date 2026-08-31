@@ -89,6 +89,16 @@ const persister = createAsyncStoragePersister({
 // l'app sans réseau après une mise à jour.
 const CACHE_VERSION = 'v1';
 
+// LES MUTATIONS EN ATTENTE PARTENT SUR LE DISQUE ELLES AUSSI, et c'est ce qui
+// fait qu'une modification saisie hors-ligne survit à la fermeture de
+// l'application. Rien à déclarer pour ça : le filtre par défaut de TanStack
+// (`shouldDehydrateMutation`) retient exactement les mutations EN PAUSE,
+// c'est-à-dire celles qui attendent le réseau. Les autres n'ont rien à faire
+// sur le disque — elles sont soit terminées, soit en cours.
+//
+// Elles ne sont rejouables qu'à une condition, posée ailleurs : que leur
+// fonction soit retrouvable par leur clé au redémarrage. C'est tout l'objet de
+// registerWriteMutation (voir lib/writeQueue).
 export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: CACHE_LIFETIME,
