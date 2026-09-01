@@ -20,6 +20,7 @@ import { FriendCategorySheet } from '../../src/features/sharing/FriendCategorySh
 import { FriendDetailSheet } from '../../src/features/sharing/FriendDetailSheet';
 import { FriendRow } from '../../src/features/sharing/FriendRow';
 import { type FriendshipEntry, useCancelFriendRequest, useFriendships, useRespondToFriendship } from '../../src/features/sharing/queries';
+import { useIsOffline } from '../../src/lib/network';
 import { useThemeColors } from '../../src/lib/theme';
 
 export default function FriendsScreen() {
@@ -27,6 +28,7 @@ export default function FriendsScreen() {
   const colors = useThemeColors();
   const { t } = useTranslation();
   const { data: friendships, isLoading, isError, refetch } = useFriendships();
+  const offline = useIsOffline();
 
   // L'onglet reste MONTÉ quand on le quitte : sans ce rappel, revenir dessus
   // ne redemande rien et on relit l'état d'il y a une heure. C'est l'écran de
@@ -81,6 +83,27 @@ export default function FriendsScreen() {
     const count = sharedCounts.get(friendUserId) ?? 0;
     return count === 0 ? t('friends.shared_count_zero') : t('friends.shared_count', { count });
   };
+
+  // CET ÉCRAN NE FONCTIONNE PAS HORS CONNEXION, ET IL LE DIT.
+  //
+  // Il ne parle que de ce que font LES AUTRES : demandes d'ami reçues, retraits,
+  // habitations qu'on vous partage. Rien de tout cela n'a de sens depuis un
+  // état gardé sur l'appareil — une demande vieille d'une heure peut avoir été
+  // annulée, un partage retiré. Le préchargement s'arrête donc volontairement
+  // à l'inventaire, qui est à soi.
+  //
+  // Avant la vérification de chargement : sans réseau la requête est mise en
+  // attente, donc éternellement « en cours ». On afficherait un tourniquet
+  // sans fin, ce qui laisse croire à une panne plutôt qu'à une limite.
+  if (offline) {
+    return (
+      <View className="flex-1 items-center justify-center bg-sand px-8">
+        <Icon name="alert" size={32} color={colors.inkFaint} />
+        <Text className="mt-4 text-center text-body font-semibold text-ink">{t('friends.offline_title')}</Text>
+        <Text className="mt-2 text-center text-label leading-5 text-ink-soft">{t('friends.offline_hint')}</Text>
+      </View>
+    );
+  }
 
   if (isError) {
     return (

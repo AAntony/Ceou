@@ -2,7 +2,13 @@ import { Pressable, Text, View } from 'react-native';
 import { STACK_SCALE, useTextScale } from '../lib/textScale';
 
 type SegmentedTabsProps<T extends string> = {
-  options: { value: T; label: string }[];
+  /**
+   * `disabled` : la pastille reste VISIBLE mais inerte, et c'est voulu.
+   * Hors connexion, « Partagées » n'a rien à montrer — les habitations des
+   * autres ne sont pas préchargées. La retirer laisserait croire qu'elle
+   * n'existe pas ; grisée, elle dit qu'elle reviendra.
+   */
+  options: { value: T; label: string; disabled?: boolean }[];
   value: T;
   onChange: (value: T) => void;
 };
@@ -27,15 +33,17 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Se
     <View className={`mb-4 gap-2 ${stacked ? '' : 'flex-row'}`}>
       {options.map((option) => {
         const active = option.value === value;
+        const disabled = option.disabled === true;
         return (
           <Pressable
             key={option.value}
             onPress={() => onChange(option.value)}
+            disabled={disabled}
             accessibilityRole="tab"
-            accessibilityState={{ selected: active }}
+            accessibilityState={{ selected: active, disabled }}
             className={`items-center rounded-xl border px-4 py-3 ${stacked ? '' : 'flex-1'} ${
               active ? 'border-coral bg-coral-light' : 'border-ink/10'
-            }`}
+            } ${disabled ? 'opacity-40' : ''}`}
           >
             {/* Centre : en gros texte, un libelle passe sur deux lignes et
                 un alignement a gauche desaxerait la pastille. */}

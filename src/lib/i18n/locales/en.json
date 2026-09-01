@@ -442,7 +442,9 @@
       "move_title": "Move to",
       "move_none": "Uncategorised",
       "empty_hint": "No friend in this category yet."
-    }
+    },
+    "offline_title": "Friends need a connection",
+    "offline_hint": "This page is about what other people do: incoming requests, shares, removals. It cannot be read from your phone alone. Your homes remain available."
   },
   "invites": {
     "entry": "My invitation codes",

@@ -13,6 +13,7 @@ import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 import { PresetPicker } from '../../../src/components/PresetPicker';
 import { GuestAccessLostCard, useGuestAccessLost } from '../../../src/features/auth/GuestBanner';
 import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
+import { useIsOffline } from '../../../src/lib/network';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { objetCountLabel } from '../../../src/features/inventory/counts';
 import { resolveEntityPhotoUrl } from '../../../src/features/inventory/entityPhoto';
@@ -45,6 +46,7 @@ export default function HabitationsScreen() {
   const isGuest = useIsAnonymous();
   const { lost: guestAccessLost } = useGuestAccessLost();
   const [tab, setTab] = useState<Tab>('personal');
+  const offline = useIsOffline();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingHabitation, setEditingHabitation] = useState<Habitation | null>(null);
   const [type, setType] = useState<HabitationTypeKey>('maison');
@@ -131,6 +133,13 @@ export default function HabitationsScreen() {
   // tout, mieux vaut « ça n'a pas pu être lu » que « aucune habitation ».
   const showError = isError && !habitations;
 
+  // PERDRE LE RÉSEAU EN ÉTANT SUR « PARTAGÉES » NE DOIT PAS PIÉGER. L'onglet
+  // devient inerte : sans ce repli, on resterait devant une liste vide sur une
+  // pastille qui ne répond plus. Calculé au rendu plutôt que corrigé par un
+  // effet — le choix d'origine est ainsi retrouvé tel quel au retour du
+  // réseau, sans qu'on ait eu à le réécrire.
+  const effectiveTab: Tab = offline && tab === 'shared' ? 'personal' : tab;
+
   return (
     <>
       {/* Atteint uniquement via le bouton "Habitations" de la barre du bas,
@@ -145,7 +154,7 @@ export default function HabitationsScreen() {
           // Seul l'onglet Personnelles peut recevoir une creation : l'onglet
           // Partagees liste des amis, pas des habitations a soi.
           headerRight: () =>
-            tab === 'personal' && !isGuest ? (
+            effectiveTab === 'personal' && !isGuest ? (
               <HeaderAddButton onPress={openCreate} label={t('inventory.habitations.add')} />
             ) : null,
         }}
@@ -182,16 +191,21 @@ export default function HabitationsScreen() {
             )
           ) : (
             <>
+          {/* « Partagées » est GRISÉE hors connexion. Le préchargement ne
+              descend que dans SES habitations : celles d'un ami ne sont pas
+              sur l'appareil, l'onglet n'aurait rien à montrer et afficherait
+              un vide indiscernable d'un « personne ne partage rien avec toi ».
+              Grisée, elle dit qu'elle reviendra avec le réseau. */}
           <SegmentedTabs
             options={[
               { value: 'personal', label: t('inventory.habitations.tab_personal') },
-              { value: 'shared', label: t('inventory.habitations.tab_shared') },
+              { value: 'shared', label: t('inventory.habitations.tab_shared'), disabled: offline },
             ]}
-            value={tab}
+            value={effectiveTab}
             onChange={setTab}
           />
 
-          {tab === 'personal' ? (
+          {effectiveTab === 'personal' ? (
             // L'échec passe AVANT l'état vide : sans lui, une lecture ratée
             // affichait "Aucune habitation", ce qui laisse croire à une perte
             // de données alors que rien n'a été lu.

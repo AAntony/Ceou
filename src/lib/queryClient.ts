@@ -1,8 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { MutationCache, QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, MutationCache, QueryClient } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import { logClientError } from './errorLogging';
+
+/**
+ * La clé du cliché hors-ligne, déclarée ICI et non dans le module qui s'en
+ * sert : ce fichier ne dépend de rien, alors que `offlineSnapshot` dépend de
+ * `SessionProvider`, qui dépend de ce fichier. L'importer dans l'autre sens
+ * fermerait le cycle.
+ */
+export const INVENTORY_SNAPSHOT_KEY = 'inventorySnapshot';
 
 // `skipGlobalRefresh` : la seule échappatoire à la règle ci-dessous, pour
 // les mutations à haute fréquence (un glissé de forme sur un plan en émet
@@ -53,7 +61,12 @@ export const queryClient = new QueryClient({
   mutationCache: new MutationCache({
     onSettled: (_data, _error, _variables, _context, mutation) => {
       if (mutation.meta?.skipGlobalRefresh) return;
-      queryClient.invalidateQueries();
+      // LE CLICHÉ HORS-LIGNE EST EXCLU DE CE BALAYAGE, et c'est indispensable.
+      // C'est une dizaine de requêtes qui descendent tout l'arbre ; le
+      // remettre en cause à chaque écriture le relancerait en entier à chaque
+      // renommage d'objet. Il se garnit au démarrage et au retour du réseau,
+      // pas à chaque frappe.
+      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY });
     },
     // UNE ÉCRITURE DIFFÉRÉE QUI ÉCHOUE NE DOIT PAS DISPARAÎTRE EN SILENCE.
     //
@@ -119,6 +132,16 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
   persister,
   maxAge: CACHE_LIFETIME,
   buster: CACHE_VERSION,
+  dehydrateOptions: {
+    // LE CLICHÉ BRUT NE PART PAS SUR LE DISQUE, et pour une raison de taille
+    // au sens propre : il contient déjà tout l'inventaire, dont on a extrait
+    // les entrées de chaque écran. Le persister aussi écrirait DEUX FOIS les
+    // mêmes données — et c'est le plafond de 6 Mo d'AsyncStorage qu'on
+    // atteindrait deux fois plus vite. Il est refait au démarrage suivant de
+    // toute façon, dès qu'il y a du réseau.
+    shouldDehydrateQuery: (query) =>
+      defaultShouldDehydrateQuery(query) && query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY,
+  },
 };
 
 /**

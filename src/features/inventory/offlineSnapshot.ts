@@ -1,36 +1,95 @@
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { INVENTORY_SNAPSHOT_KEY } from '../../lib/queryClient';
 import { selectMany } from '../../lib/supabase/crud';
-import type { Conteneur, Emplacement, Habitation, LocationType, Objet, Piece } from '../../types/database';
+import { supabase } from '../../lib/supabase/client';
+import type {
+  Conteneur,
+  Database,
+  Emplacement,
+  Habitation,
+  LocationType,
+  Objet,
+  Piece,
+  Plan,
+  PlanDoor,
+  PlanForme,
+  PlanPin,
+} from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import type { ObjetLocationNode } from './queries';
 
-// TOUT L'INVENTAIRE D'AVANCE, PENDANT QU'IL Y A DU RÉSEAU.
+// TOUT CE QU'ON POSSÈDE, CHARGÉ D'AVANCE PENDANT QU'IL Y A DU RÉSEAU.
 //
-// LE DÉFAUT QUE CE FICHIER CORRIGE, signalé à l'usage : « j'ai bien la liste
-// des objets en hors connexion, mais je ne peux pas consulter la page d'un
-// objet ». C'était la limite exacte de la persistance du cache — elle ne garde
-// que ce qui a DÉJÀ été affiché. La liste de l'accueil était là parce qu'on
-// venait de la regarder ; la fiche d'un objet jamais ouvert n'avait jamais été
-// chargée, donc n'existait nulle part. Sans réseau, elle ne pouvait
-// qu'attendre indéfiniment.
-//
+// LE DÉFAUT D'ORIGINE : persister le cache ne garde que le DÉJÀ-VU. La liste
+// de l'accueil était là parce qu'on venait de la regarder ; la fiche d'un
+// objet jamais ouvert n'avait jamais été chargée, donc n'existait nulle part.
 // Or ranger ses affaires, c'est justement consulter des fiches qu'on n'a pas
-// regardées récemment. Un cache qui ne retient que le déjà-vu ne répond pas à
-// la question posée.
+// regardées récemment.
 //
-// CINQ REQUÊTES, PAS DEUX CENTS. La voie naïve serait de précharger chaque
-// écran : une requête par habitation, par pièce, par emplacement, par
-// conteneur, par objet — des centaines d'allers-retours pour un inventaire
-// ordinaire. On lit donc les cinq TABLES entières (la RLS restreint déjà
-// chacune à ce que la personne a le droit de voir), et on en déduit localement
-// le contenu de chaque écran.
+// ═══ LA RÈGLE À NE JAMAIS ENFREINDRE ICI ═══
 //
-// CE QUE ÇA COÛTE : l'inventaire entier passe sur le réseau à chaque
-// démarrage. C'est le même ordre de grandeur que l'index de recherche que
-// l'accueil charge déjà. Un inventaire qui deviendrait vraiment gros
-// demanderait de ne rapatrier que ce qui a changé depuis la dernière fois —
-// pas nécessaire aujourd'hui, et prématuré tant que personne n'en a l'usage.
+// AUCUNE REQUÊTE SANS FILTRE sur `pieces`, `emplacements`, `conteneurs`,
+// `objets` ou `plans`. Leurs politiques RLS sont de la forme :
+//
+//   has_habitation_access(location_habitation(parent_emplacement_id,
+//                                             parent_conteneur_id), auth.uid(), …)
+//
+// — deux fonctions PL/pgSQL imbriquées, dont une RÉCURSIVE, évaluées LIGNE PAR
+// LIGNE. Le prédicat n'est pas indexable : sans filtre, Postgres les exécute
+// sur toutes les lignes de la table, tous comptes confondus. La requête dépasse
+// le délai du serveur, le fil JavaScript reste bloqué, et Android finit par
+// tuer l'application.
+//
+// C'est très exactement la faute qu'a commise la première version de ce
+// fichier, et ce qui a rendu l'app inutilisable — y compris AVEC du réseau.
+//
+// Le reste de l'app respecte cette règle sans le dire : chaque requête filtre
+// d'abord sur une colonne indexée, ce qui réduit l'ensemble à quelques lignes
+// AVANT que la politique ne s'exécute. Et `search_index()`, qui rapatrie tout,
+// est une fonction `SECURITY DEFINER` : elle contourne la RLS par construction.
+//
+// On DESCEND DONC L'ARBRE, palier par palier, avec les mêmes filtres que les
+// écrans : habitations, puis pièces de ces habitations, puis emplacements de
+// ces pièces, et ainsi de suite. Une dizaine de requêtes toutes indexées, au
+// lieu de cinq balayages complets.
+
+/** Découpage des listes d'identifiants passées en `in(...)`. */
+// PostgREST fait passer le filtre dans l'URL : quelques centaines
+// d'identifiants suffisent à dépasser la longueur admise, et la requête est
+// rejetée sans que rien ne dise pourquoi.
+const ID_CHUNK = 100;
+
+/** Profondeur maximale d'imbrication des conteneurs explorée. */
+// Garde-fou, pas une limite de produit : une boîte dans une caisse dans une
+// malle fait trois niveaux. Vingt laisse toute la marge voulue, et empêche une
+// donnée cyclique de faire tourner la boucle sans fin.
+const MAX_CONTENEUR_DEPTH = 20;
+
+type TableName = keyof Database['public']['Tables'];
+
+/**
+ * `select * where <colonne> in (...)`, en tranches.
+ *
+ * Rend une liste vide sans faire de requête quand il n'y a rien à demander :
+ * `in()` sur une liste vide est au mieux inutile, et évite un aller-retour par
+ * palier vide de l'arbre.
+ */
+async function selectIn<T>(table: TableName, column: string, values: string[], orderBy?: string): Promise<T[]> {
+  if (values.length === 0) return [];
+
+  const rows: T[] = [];
+  for (let start = 0; start < values.length; start += ID_CHUNK) {
+    let query = supabase.from(table).select('*').in(column, values.slice(start, start + ID_CHUNK));
+    if (orderBy) query = query.order(orderBy);
+    const { data, error } = await query;
+    if (error) throw error;
+    rows.push(...(data as T[]));
+  }
+  return rows;
+}
+
+const idsOf = (rows: { id: string }[]) => rows.map((row) => row.id);
 
 type Snapshot = {
   habitations: Habitation[];
@@ -38,19 +97,58 @@ type Snapshot = {
   emplacements: Emplacement[];
   conteneurs: Conteneur[];
   objets: Objet[];
+  plans: Plan[];
+  formes: PlanForme[];
+  pins: PlanPin[];
+  doors: PlanDoor[];
 };
 
 async function fetchSnapshot(): Promise<Snapshot> {
-  // En parallèle : les cinq tables sont indépendantes, les enchaîner
-  // multiplierait par cinq l'attente au démarrage.
-  const [habitations, pieces, emplacements, conteneurs, objets] = await Promise.all([
-    selectMany<Habitation>('habitations', undefined, 'created_at'),
-    selectMany<Piece>('pieces', undefined, 'created_at'),
-    selectMany<Emplacement>('emplacements', undefined, 'created_at'),
-    selectMany<Conteneur>('conteneurs', undefined, 'created_at'),
-    selectMany<Objet>('objets', undefined, 'created_at'),
+  // `habitations` est la seule table lue sans filtre, et c'est déjà ce que
+  // fait l'écran Habitations : sa politique se résout sur les colonnes de la
+  // ligne, sans fonction récursive, et la table est petite par nature.
+  const habitations = await selectMany<Habitation>('habitations', undefined, 'created_at');
+  const habitationIds = idsOf(habitations);
+
+  const pieces = await selectIn<Piece>('pieces', 'habitation_id', habitationIds, 'created_at');
+  const emplacements = await selectIn<Emplacement>('emplacements', 'piece_id', idsOf(pieces), 'created_at');
+
+  // Les conteneurs s'imbriquent : on descend par PALIERS, chacun filtré sur
+  // les identifiants du palier précédent. Une requête par niveau de
+  // profondeur réellement utilisé, et zéro quand il n'y en a pas.
+  const conteneurs: Conteneur[] = [];
+  let level = await selectIn<Conteneur>('conteneurs', 'parent_emplacement_id', idsOf(emplacements), 'created_at');
+  for (let depth = 0; level.length > 0 && depth < MAX_CONTENEUR_DEPTH; depth++) {
+    conteneurs.push(...level);
+    level = await selectIn<Conteneur>('conteneurs', 'parent_conteneur_id', idsOf(level), 'created_at');
+  }
+
+  // Un objet est posé soit dans un emplacement, soit dans un conteneur : les
+  // deux familles se demandent séparément et se réunissent ici.
+  const [objetsInEmplacements, objetsInConteneurs] = await Promise.all([
+    selectIn<Objet>('objets', 'parent_emplacement_id', idsOf(emplacements), 'created_at'),
+    selectIn<Objet>('objets', 'parent_conteneur_id', idsOf(conteneurs), 'created_at'),
   ]);
-  return { habitations, pieces, emplacements, conteneurs, objets };
+
+  const plans = await selectIn<Plan>('plans', 'habitation_id', habitationIds, 'floor_order');
+  const planIds = idsOf(plans);
+  const [formes, pins, doors] = await Promise.all([
+    selectIn<PlanForme>('plan_formes', 'plan_id', planIds, 'created_at'),
+    selectIn<PlanPin>('plan_pins', 'plan_id', planIds),
+    selectIn<PlanDoor>('plan_doors', 'plan_id', planIds),
+  ]);
+
+  return {
+    habitations,
+    pieces,
+    emplacements,
+    conteneurs,
+    objets: [...objetsInEmplacements, ...objetsInConteneurs],
+    plans,
+    formes,
+    pins,
+    doors,
+  };
 }
 
 function groupBy<T>(rows: T[], key: (row: T) => string | null): Map<string, T[]> {
@@ -81,10 +179,9 @@ function groupBy<T>(rows: T[], key: (row: T) => string | null): Map<string, T[]>
  * mais qu'une donnée abîmée pourrait présenter — ferait boucler l'application
  * sans fin au lieu d'afficher un chemin incomplet.
  *
- * EXPORTÉE POUR ÊTRE ÉPROUVÉE, comme shouldClearForUserChange : c'est la
- * logique la plus délicate de ce fichier, elle réimplémente du SQL de tête, et
- * une erreur d'ordre y donnerait un chemin qui se lit à l'envers sans que rien
- * ne plante. Enfouie dans une boucle de garnissage, elle ne se testerait pas.
+ * EXPORTÉE POUR ÊTRE ÉPROUVÉE : c'est la logique la plus délicate de ce
+ * fichier, elle réimplémente du SQL de tête, et une erreur d'ordre y donnerait
+ * un chemin qui se lit à l'envers sans que rien ne plante.
  */
 export function locationChainFor(
   objet: Objet,
@@ -136,7 +233,7 @@ export function locationChainFor(
 }
 
 /**
- * Garnit le cache de TOUTES les clés que les écrans d'inventaire consultent.
+ * Garnit le cache de toutes les clés que les écrans d'inventaire consultent.
  *
  * Les listes vides comptent autant que les autres : un emplacement sans
  * contenu doit voir sa clé posée à `[]`, sinon son écran chercherait à
@@ -144,7 +241,7 @@ export function locationChainFor(
  * « c'est vide » et « je ne sais pas ».
  */
 function seedCaches(client: QueryClient, snapshot: Snapshot): void {
-  const { habitations, pieces, emplacements, conteneurs, objets } = snapshot;
+  const { habitations, pieces, emplacements, conteneurs, objets, plans, formes, pins, doors } = snapshot;
 
   const habitationById = new Map(habitations.map((h) => [h.id, h]));
   const pieceById = new Map(pieces.map((p) => [p.id, p]));
@@ -157,12 +254,17 @@ function seedCaches(client: QueryClient, snapshot: Snapshot): void {
   const conteneursByConteneur = groupBy(conteneurs, (c) => c.parent_conteneur_id);
   const objetsByEmplacement = groupBy(objets, (o) => o.parent_emplacement_id);
   const objetsByConteneur = groupBy(objets, (o) => o.parent_conteneur_id);
+  const plansByHabitation = groupBy(plans, (p) => p.habitation_id);
+  const formesByPlan = groupBy(formes, (f) => f.plan_id);
+  const pinsByPlan = groupBy(pins, (p) => p.plan_id);
+  const doorsByPlan = groupBy(doors, (d) => d.plan_id);
 
   client.setQueryData(['habitations'], habitations);
 
   for (const habitation of habitations) {
     client.setQueryData(['habitation', habitation.id], habitation);
     client.setQueryData(['pieces', habitation.id], piecesByHabitation.get(habitation.id) ?? []);
+    client.setQueryData(['plans', habitation.id], plansByHabitation.get(habitation.id) ?? []);
   }
 
   for (const piece of pieces) {
@@ -202,6 +304,13 @@ function seedCaches(client: QueryClient, snapshot: Snapshot): void {
       locationChainFor(objet, conteneurById, emplacementById, pieceById, habitationById),
     );
   }
+
+  for (const plan of plans) {
+    client.setQueryData(['plan', plan.id], plan);
+    client.setQueryData(['planFormes', plan.id], formesByPlan.get(plan.id) ?? []);
+    client.setQueryData(['planPins', plan.id], pinsByPlan.get(plan.id) ?? []);
+    client.setQueryData(['planDoors', plan.id], doorsByPlan.get(plan.id) ?? []);
+  }
 }
 
 /**
@@ -215,12 +324,17 @@ export function useInventorySnapshot(): void {
   const client = useQueryClient();
 
   const { data } = useQuery({
-    queryKey: ['inventorySnapshot', session?.user.id],
+    queryKey: [INVENTORY_SNAPSHOT_KEY, session?.user.id],
     enabled: !!session,
-    // Cinq requêtes qui rapatrient tout : inutile de les relancer à chaque
-    // remontage d'écran. Les écritures, elles, rafraîchissent déjà ce qu'il
-    // faut par la règle globale de queryClient.
-    staleTime: 5 * 60 * 1000,
+    // JAMAIS PÉRIMÉ DE LUI-MÊME. C'est une dizaine de requêtes : les relancer
+    // à chaque remontage d'écran serait ruineux. Les écritures rafraîchissent
+    // déjà ce qu'il faut, écran par écran, par la règle globale de
+    // queryClient — qui exclut expressément cette clé-ci.
+    staleTime: Infinity,
+    // Pas de seconde tentative : si la lecture échoue, la reprendre
+    // aussitôt doublerait la charge sans rien changer. Le prochain
+    // démarrage réessaiera.
+    retry: false,
     queryFn: fetchSnapshot,
   });
 
@@ -230,8 +344,7 @@ export function useInventorySnapshot(): void {
     // ON NE GARNIT PAS PAR-DESSUS DES ÉCRITURES EN ATTENTE. Ce cliché a été
     // demandé au serveur, qui ignore encore les modifications faites
     // hors-ligne : l'appliquer ferait disparaître de l'écran ce que la
-    // personne vient de saisir, sans rien annuler côté file. On repassera au
-    // prochain rafraîchissement, une fois la file vidée.
+    // personne vient de saisir, sans rien annuler côté file.
     const pending = client.getMutationCache().findAll({ predicate: (m) => m.state.isPaused });
     if (pending.length > 0) return;
 

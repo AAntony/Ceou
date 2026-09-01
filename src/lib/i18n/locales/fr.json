@@ -442,7 +442,9 @@
       "move_title": "Déplacer vers",
       "move_none": "Sans catégorie",
       "empty_hint": "Aucun ami dans cette catégorie pour le moment."
-    }
+    },
+    "offline_title": "Les amis demandent une connexion",
+    "offline_hint": "Cette page parle de ce que font les autres : demandes reçues, partages, retraits. Elle ne peut pas se lire depuis ton téléphone seul. Tes habitations, elles, restent accessibles."
   },
   "invites": {
     "entry": "Mes codes d’invitation",
