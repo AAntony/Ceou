@@ -240,7 +240,7 @@ export function locationChainFor(
  * charger — et attendrait indéfiniment sans réseau. C'est la différence entre
  * « c'est vide » et « je ne sais pas ».
  */
-function seedCaches(client: QueryClient, snapshot: Snapshot): void {
+function seedCaches(client: QueryClient, snapshot: Snapshot, userId: string): void {
   const { habitations, pieces, emplacements, conteneurs, objets, plans, formes, pins, doors } = snapshot;
 
   const habitationById = new Map(habitations.map((h) => [h.id, h]));
@@ -311,6 +311,62 @@ function seedCaches(client: QueryClient, snapshot: Snapshot): void {
     client.setQueryData(['planPins', plan.id], pinsByPlan.get(plan.id) ?? []);
     client.setQueryData(['planDoors', plan.id], doorsByPlan.get(plan.id) ?? []);
   }
+
+  // ═══ SANS CE QUI SUIT, TOUT EST EN LECTURE SEULE HORS-LIGNE ═══
+  //
+  // Constaté en éprouvant enfin le parcours complet avec une session : la
+  // fiche d'un objet s'ouvrait bien, mais sans disquette d'enregistrement ni
+  // « Déplacer »/« Prêter ». Les écrans décident de ce qu'on peut modifier
+  // avec `canModify(useHabitationPermission(...))`, et cette permission passe
+  // par une fonction SQL — donc une requête, donc rien hors-ligne. `undefined`
+  // se lit comme « aucun droit », et toute la file d'écriture devenait
+  // inatteignable : la phase 2 était morte dès qu'on coupait le réseau.
+  //
+  // Les deux résolveurs sont pourtant déductibles de l'arbre qu'on vient de
+  // lire, sans rien demander au serveur.
+
+  // À QUELLE HABITATION APPARTIENT CE NŒUD. Une pièce le dit d'elle-même ; un
+  // emplacement par sa pièce ; un conteneur en remontant jusqu'à son
+  // emplacement — mêmes garde-fous que pour le fil d'Ariane.
+  const habitationIdForConteneur = (conteneur: Conteneur): string | null => {
+    const seen = new Set<string>();
+    let current: Conteneur | undefined = conteneur;
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      if (current.parent_emplacement_id) {
+        const emplacement = emplacementById.get(current.parent_emplacement_id);
+        return emplacement ? (pieceById.get(emplacement.piece_id)?.habitation_id ?? null) : null;
+      }
+      current = current.parent_conteneur_id ? conteneurById.get(current.parent_conteneur_id) : undefined;
+    }
+    return null;
+  };
+
+  for (const piece of pieces) {
+    client.setQueryData(['habitationIdForNode', 'piece', piece.id], piece.habitation_id);
+  }
+  for (const emplacement of emplacements) {
+    client.setQueryData(
+      ['habitationIdForNode', 'emplacement', emplacement.id],
+      pieceById.get(emplacement.piece_id)?.habitation_id ?? null,
+    );
+  }
+  for (const conteneur of conteneurs) {
+    client.setQueryData(['habitationIdForNode', 'conteneur', conteneur.id], habitationIdForConteneur(conteneur));
+  }
+
+  // LA PERMISSION, ET SEULEMENT POUR CE QU'ON POSSÈDE. Sur une habitation à
+  // soi, la réponse est connue sans le serveur : `owner`. Sur une habitation
+  // PARTAGÉE, elle dépend d'un droit que l'autre peut avoir changé entre-temps
+  // — on ne la devine donc pas, et l'écran reste en lecture seule hors-ligne,
+  // ce qui est la prudence qui s'impose. La RLS reste de toute façon l'arbitre
+  // au moment où la file rejoue l'écriture : deviner trop large ferait au pire
+  // une écriture refusée, jamais un accès obtenu.
+  for (const habitation of habitations) {
+    if (habitation.user_id === userId) {
+      client.setQueryData(['habitationPermission', habitation.id], 'owner');
+    }
+  }
 }
 
 /**
@@ -338,8 +394,10 @@ export function useInventorySnapshot(): void {
     queryFn: fetchSnapshot,
   });
 
+  const userId = session?.user.id;
+
   useEffect(() => {
-    if (!data) return;
+    if (!data || !userId) return;
 
     // ON NE GARNIT PAS PAR-DESSUS DES ÉCRITURES EN ATTENTE. Ce cliché a été
     // demandé au serveur, qui ignore encore les modifications faites
@@ -348,6 +406,6 @@ export function useInventorySnapshot(): void {
     const pending = client.getMutationCache().findAll({ predicate: (m) => m.state.isPaused });
     if (pending.length > 0) return;
 
-    seedCaches(client, data);
-  }, [data, client]);
+    seedCaches(client, data, userId);
+  }, [data, client, userId]);
 }

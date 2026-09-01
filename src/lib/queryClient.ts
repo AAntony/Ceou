@@ -99,6 +99,51 @@ export const queryClient = new QueryClient({
 // dépassement se solde par une écriture qui échoue, pas par un plantage. Un
 // inventaire qui atteindrait ce volume demanderait de relever la limite au
 // niveau natif, ou de filtrer ce qu'on persiste.
+// ═══ UN `Map` NE SURVIT PAS À JSON, ET ÇA A FAIT PLANTER L'APPLICATION ═══
+//
+// `JSON.stringify(new Map([['a', 1]]))` rend `{}`. Sans réviseur, une requête
+// qui rend un `Map` était donc relue comme un objet NU, et le premier `.get()`
+// levait « membership.get is not a function ». L'ErrorBoundary prenait le
+// relais et affichait « Une erreur est survenue » : l'application entière
+// devenait inutilisable, et le rester après redémarrage puisque le cache
+// fautif était sur le disque.
+//
+// Ça n'atteignait que DEUX écrans, et c'est ce qui rendait le défaut si
+// déroutant : seuls Habitations (compteurs d'objets) et Amis (catégories,
+// partages) consomment des requêtes à `Map`. Tout le reste marchait.
+//
+// La correction est ici plutôt que dans les quatre requêtes concernées : un
+// `Map` est la bonne structure pour ces données, et convertir chacune en objet
+// nu déplacerait le problème sur la prochaine qu'on écrira sans y penser. Le
+// `Set` est traité aussi, alors qu'aucune requête n'en rend aujourd'hui —
+// c'est exactement le même piège, et il ne coûte rien de le fermer.
+const MAP_TAG = '__ceouMap';
+const SET_TAG = '__ceouSet';
+
+function serializeCache(client: unknown): string {
+  return JSON.stringify(client, (_key, value) => {
+    if (value instanceof Map) return { [MAP_TAG]: Array.from(value.entries()) };
+    if (value instanceof Set) return { [SET_TAG]: Array.from(value.values()) };
+    return value;
+  });
+}
+
+function deserializeCache(cached: string) {
+  // Le réviseur remonte des feuilles vers la racine : un `Map` imbriqué dans
+  // une liste, ou dans un autre `Map`, est donc reconstruit avant son parent.
+  return JSON.parse(cached, (_key, value) => {
+    if (value && typeof value === 'object') {
+      if (Array.isArray((value as Record<string, unknown>)[MAP_TAG])) {
+        return new Map((value as Record<string, [unknown, unknown][]>)[MAP_TAG]);
+      }
+      if (Array.isArray((value as Record<string, unknown>)[SET_TAG])) {
+        return new Set((value as Record<string, unknown[]>)[SET_TAG]);
+      }
+    }
+    return value;
+  });
+}
+
 const persister = createAsyncStoragePersister({
   storage: AsyncStorage,
   key: 'ceou.query-cache',
@@ -106,6 +151,8 @@ const persister = createAsyncStoragePersister({
   // navigation dans l'inventaire déclencherait des dizaines de sérialisations
   // complètes par seconde.
   throttleTime: 2000,
+  serialize: serializeCache,
+  deserialize: deserializeCache,
 });
 
 // À BUMPER QUAND LA FORME D'UNE DONNÉE EN CACHE CHANGE — pas à chaque version
@@ -116,7 +163,13 @@ const persister = createAsyncStoragePersister({
 // Délibérément PAS le hash de commit : il changerait à chaque mise à jour
 // OTA, et jetterait donc le cache précisément le jour où quelqu'un ouvre
 // l'app sans réseau après une mise à jour.
-const CACHE_VERSION = 'v1';
+//
+// v1 -> v2 : les caches déjà écrits contiennent des `{}` là où il devait y
+// avoir des `Map` (voir le réviseur ci-dessus). Le nouveau code les relirait
+// tels quels et replanterait — c'est exactement le cas que ce jeton existe
+// pour traiter. Les appareils déjà touchés repartent donc d'un cache vide,
+// qui se regarnit au premier démarrage avec du réseau.
+const CACHE_VERSION = 'v2';
 
 // LES MUTATIONS EN ATTENTE PARTENT SUR LE DISQUE ELLES AUSSI, et c'est ce qui
 // fait qu'une modification saisie hors-ligne survit à la fermeture de
