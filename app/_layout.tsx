@@ -4,19 +4,21 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
 import { AppTabBar } from '../src/components/AppTabBar';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SessionProvider, useSession } from '../src/features/auth/SessionProvider';
 import { useAuthDeepLinks } from '../src/features/auth/useAuthDeepLinks';
+import { useInventorySnapshot } from '../src/features/inventory/offlineSnapshot';
 import { PushRegistrar } from '../src/features/notifications/PushRegistrar';
 import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
-import { installOnlineManager } from '../src/lib/network';
+import { installOnlineManager, useIsOffline } from '../src/lib/network';
 import { persistOptions, queryClient } from '../src/lib/queryClient';
 import { registerWriteMutation } from '../src/lib/writeQueue';
 import { SplashGateProvider, useSplashGate } from '../src/lib/splashGate';
@@ -74,6 +76,11 @@ function AppShell() {
   // La fin du splash n'est plus un état privé : le guide de démarrage doit la
   // connaître pour ne pas ouvrir sa fenêtre par-dessus (voir lib/splashGate).
   const { splashDone, markSplashDone } = useSplashGate();
+  const offline = useIsOffline();
+  // Charge tout l'inventaire d'avance pour qu'il soit consultable sans
+  // reseau — y compris les fiches qu'on n'a pas encore ouvertes.
+  useInventorySnapshot();
+  const insets = useSafeAreaInsets();
   const nativeHidden = useRef(false);
 
   // BRANCHEMENT INDISPENSABLE SUR MOBILE. TanStack Query sait rafraîchir ses
@@ -111,12 +118,21 @@ function AppShell() {
       {/* Icônes claires tant que le bleu occupe l'écran, sinon l'heure et la
           batterie s'écrivent en sombre sur fond soutenu. */}
       <StatusBar style={splashDone ? 'auto' : 'light'} />
-      <Stack screenOptions={{ headerShown: false }} />
-      {/* Avant la barre d'onglets dans l'arbre, donc peint dessous : le
-          bandeau se cale au-dessus d'elle par sa position, pas par l'ordre
-          de rendu, et un chevauchement d'un pixel doit se résoudre en faveur
-          de la barre — elle est cliquable, lui non. */}
-      <OfflineBanner />
+      {/* LE BANDEAU POUSSE LE RESTE VERS LE BAS au lieu de le recouvrir : il
+          est dans le flux, avant le navigateur. Une bande posée par-dessus
+          aurait masqué le titre et la flèche de retour des en-têtes natifs.
+          Quand il est absent, il ne rend rien et cette colonne se comporte
+          exactement comme le navigateur seul.
+
+          `top: 0` transmis en dessous : le bandeau porte déjà l'encart de
+          barre d'état, et sans ça les en-têtes le compteraient une seconde
+          fois — un vide de la hauteur de la barre d'état sous le bandeau. */}
+      <View className="flex-1">
+        <OfflineBanner />
+        <SafeAreaInsetsContext.Provider value={offline ? { ...insets, top: 0 } : insets}>
+          <Stack screenOptions={{ headerShown: false }} />
+        </SafeAreaInsetsContext.Provider>
+      </View>
       <AuthedTabBar />
 
       {/* En dernier : c'est un calque, il doit passer au-dessus du reste. */}

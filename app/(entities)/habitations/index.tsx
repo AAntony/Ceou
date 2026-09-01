@@ -119,6 +119,18 @@ export default function HabitationsScreen() {
 
   const isPersonalEmpty = !isLoading && myHabitations.length === 0;
 
+  // L'ÉCHEC NE MASQUE PAS CE QU'ON A DÉJÀ. Une lecture ratée sur une liste
+  // qu'on connaît déjà — parce qu'elle vient du cache disque, ou du
+  // préchargement de l'inventaire — n'est pas une raison de remplacer cette
+  // liste par un écran d'erreur. C'était le défaut signalé à l'usage :
+  // « cliquer sur Habitations fait une erreur » sans réseau, alors que les
+  // habitations étaient là.
+  //
+  // On ne montre donc l'erreur que quand il n'y a VRAIMENT rien à montrer.
+  // L'ordre vis-à-vis de l'état vide, lui, ne change pas : sans données du
+  // tout, mieux vaut « ça n'a pas pu être lu » que « aucune habitation ».
+  const showError = isError && !habitations;
+
   return (
     <>
       {/* Atteint uniquement via le bouton "Habitations" de la barre du bas,
@@ -144,7 +156,7 @@ export default function HabitationsScreen() {
               seraient vides par construction (il ne possede rien et n’a aucun
               ami). Il voit directement ce a quoi son code lui donne acces. */}
           {isGuest ? (
-            isError ? (
+            showError ? (
               <ErrorState onRetry={() => refetch()} />
             ) : guestAccessLost ? (
               // Avant l'etat vide : "rien ne t'a ete partage" est faux quand
@@ -183,7 +195,7 @@ export default function HabitationsScreen() {
             // L'échec passe AVANT l'état vide : sans lui, une lecture ratée
             // affichait "Aucune habitation", ce qui laisse croire à une perte
             // de données alors que rien n'a été lu.
-            isError ? (
+            showError ? (
               <ErrorState onRetry={() => refetch()} />
             ) : isPersonalEmpty ? (
               <EmptyState icon="home" title={t('inventory.habitations.empty')} />
@@ -204,7 +216,7 @@ export default function HabitationsScreen() {
                 />
               ))
             )
-          ) : isError ? (
+          ) : showError ? (
             <ErrorState onRetry={() => refetch()} />
           ) : sharedHabitations.length === 0 ? (
             <EmptyState icon="home" title={t('inventory.habitations.shared_empty')} />
