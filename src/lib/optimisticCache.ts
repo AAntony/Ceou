@@ -74,7 +74,17 @@ export function applyOpsToCache(
   ops: WriteOp[],
   appends: AppendTarget[] = [],
   patches: { id: string; patch: Row }[] = [],
+  sets: { key: QueryKey; data: unknown }[] = [],
 ): void {
+  // ÉCRASEMENT D'UNE CLÉ ENTIÈRE, pour ce qu'aucune des règles générales ne
+  // sait déduire. Un déplacement d'objet en a besoin trois fois : le fil
+  // d'Ariane est recalculé, et l'objet doit quitter la liste de son ancien
+  // contenant pour entrer dans celle du nouveau. Rien de tout cela ne se lit
+  // dans les opérations elles-mêmes — c'est l'appelant qui sait.
+  for (const { key, data } of sets) {
+    client.setQueryData(key, data);
+  }
+
   for (const op of ops) {
     if (op.kind === 'update') {
       mapCachedRows(client, op.id, (row) => ({ ...row, ...op.patch }));

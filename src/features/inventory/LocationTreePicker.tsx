@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
@@ -84,6 +85,7 @@ type LocationTreePickerProps = {
 export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: LocationTreePickerProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [stack, setStack] = useState<Step[]>([{ level: 'habitations' }]);
 
   useEffect(() => {
@@ -94,13 +96,39 @@ export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: 
   const push = (step: Step) => setStack((s) => [...s, step]);
   const pop = () => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
 
+  // UNE HABITATION MONO-ESPACE (Garage, Cave, Véhicule…) N'A PAS DE LISTE DE
+  // PIÈCES À MONTRER : elle en possède une seule, créée avec elle, et on saute
+  // directement à ses emplacements.
+  //
+  // LE CACHE D'ABORD, ET C'EST LE CORRECTIF. Cette recherche passait par un
+  // appel direct à Supabase — le seul de toute l'interface, vérifié. Sans
+  // réseau il échouait, `data` restait vide, et taper sur l'habitation ne
+  // faisait RIEN : ni navigation, ni message. Défaut signalé à l'usage sur
+  // « Clio 4 », et invisible sur « Appartement », qui n'emprunte pas ce
+  // chemin.
+  //
+  // Les pièces sont déjà sur l'appareil (voir offlineSnapshot), il n'y avait
+  // donc rien à demander. L'appel réseau reste en filet de secours pour le cas
+  // — improbable — d'un cache froid avec du réseau.
+  //
+  // `is_default` plutôt que « la seule ligne » : l'ancien `.single()` levait
+  // une erreur si l'habitation en comptait plus d'une, ce que rien n'interdit
+  // vraiment en base.
   const handleSelectHabitation = async (habitation: Habitation) => {
-    if (isSingleSpaceHabitation(habitation.type)) {
-      const { data } = await supabase.from('pieces').select('id').eq('habitation_id', habitation.id).single();
-      if (data) push({ level: 'emplacements', pieceId: data.id });
-    } else {
+    if (!isSingleSpaceHabitation(habitation.type)) {
       push({ level: 'pieces', habitationId: habitation.id });
+      return;
     }
+
+    const cached = queryClient.getQueryData<Piece[]>(['pieces', habitation.id]);
+    const defaultPiece = cached?.find((piece) => piece.is_default) ?? cached?.[0];
+    if (defaultPiece) {
+      push({ level: 'emplacements', pieceId: defaultPiece.id });
+      return;
+    }
+
+    const { data } = await supabase.from('pieces').select('id').eq('habitation_id', habitation.id).limit(1).maybeSingle();
+    if (data) push({ level: 'emplacements', pieceId: data.id });
   };
 
   return (

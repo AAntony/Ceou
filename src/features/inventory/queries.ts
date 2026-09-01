@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useSession } from '../../features/auth/SessionProvider';
 import { logClientError } from '../../lib/errorLogging';
 import { uploadImage } from '../../lib/images/pickAndUploadImage';
@@ -8,6 +8,7 @@ import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationTy
 import { newId } from '../../lib/uuid';
 import { deleteOp, insertOp, rpcOp, updateOp, useLocalFirstWrite } from '../../lib/writeQueue';
 import { isSingleSpaceHabitation } from './constants';
+import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
 
 // L'INVENTAIRE S'ÉCRIT À TRAVERS LA FILE, ET PLUS DIRECTEMENT.
 //
@@ -624,27 +625,80 @@ export function invalidateAfterMove(queryClient: ReturnType<typeof useQueryClien
 }
 
 export function useMoveObjet(objetId: string) {
-  return useLocalFirstWrite((destination: { type: LocationType; id: string }) => ({
-    // UNE FONCTION SQL ET NON DEUX ÉCRITURES : `move_objet` change le parent
-    // ET journalise le déplacement, dans la même transaction. La décomposer
-    // côté client pour la faire tenir dans la file perdrait cette garantie —
-    // un objet déplacé sans trace, ou une trace sans déplacement.
-    ops: [rpcOp('move_objet', { p_objet_id: objetId, p_to_type: destination.type, p_to_id: destination.id })],
-    // Un `rpc` ne dit pas quelles lignes il touche : l'affichage optimiste
-    // doit donc être déclaré ici. L'HISTORIQUE, lui, n'est pas simulé — il
-    // apparaîtra au retour du réseau. Inventer une ligne d'historique
-    // reviendrait à écrire dans le journal ce qui n'a pas encore eu lieu.
-    patches: [
+  const queryClient = useQueryClient();
+
+  return useLocalFirstWrite((destination: { type: LocationType; id: string }) => {
+    const objet = queryClient.getQueryData<Objet>(['objet', objetId]);
+
+    // CE QUE LE DÉPLACEMENT CHANGE À L'ÉCRAN, ET QUE RIEN NE DEVINE.
+    //
+    // Trois affichages mentent sinon, et l'un d'eux se voit immédiatement :
+    // le fil d'Ariane de la fiche continuait d'annoncer l'ancien endroit juste
+    // après le déplacement. Constaté à l'essai, hors-ligne.
+    //
+    // En ligne, le rafraîchissement global corrigeait tout ça tout seul une
+    // seconde plus tard — c'est pour ça que ça ne s'était jamais vu.
+    const previousType: LocationType | null = objet?.parent_conteneur_id ? 'conteneur' : objet?.parent_emplacement_id ? 'emplacement' : null;
+    const previousId = objet?.parent_conteneur_id ?? objet?.parent_emplacement_id ?? null;
+
+    const moved: Objet | undefined = objet && {
+      ...objet,
+      parent_emplacement_id: destination.type === 'emplacement' ? destination.id : null,
+      parent_conteneur_id: destination.type === 'conteneur' ? destination.id : null,
+    };
+
+    const sets: { key: QueryKey; data: unknown }[] = [
       {
-        id: objetId,
-        patch: {
-          parent_emplacement_id: destination.type === 'emplacement' ? destination.id : null,
-          parent_conteneur_id: destination.type === 'conteneur' ? destination.id : null,
-        },
+        key: ['objetLocationChain', objetId],
+        data: locationChainFrom(
+          {
+            emplacementId: destination.type === 'emplacement' ? destination.id : null,
+            conteneurId: destination.type === 'conteneur' ? destination.id : null,
+          },
+          lookupsFromCache(queryClient),
+        ),
       },
-    ],
-    result: undefined,
-  }));
+    ];
+
+    // L'objet quitte la liste de son ancien contenant et entre dans celle du
+    // nouveau. Chirurgie CIBLÉE sur ces deux clés : un retrait généralisé par
+    // identifiant l'aurait aussi effacé de l'index de recherche, où il a
+    // toujours sa place.
+    if (previousType && previousId && previousId !== destination.id) {
+      const fromKey: QueryKey = ['containerContents', 'objets', previousType, previousId];
+      const previousList = queryClient.getQueryData<Objet[]>(fromKey);
+      if (previousList) sets.push({ key: fromKey, data: previousList.filter((row) => row.id !== objetId) });
+    }
+
+    if (moved && previousId !== destination.id) {
+      const toKey: QueryKey = ['containerContents', 'objets', destination.type, destination.id];
+      const nextList = queryClient.getQueryData<Objet[]>(toKey);
+      if (nextList) sets.push({ key: toKey, data: [...nextList.filter((row) => row.id !== objetId), moved] });
+    }
+
+    return {
+      // UNE FONCTION SQL ET NON DEUX ÉCRITURES : `move_objet` change le parent
+      // ET journalise le déplacement, dans la même transaction. La décomposer
+      // côté client pour la faire tenir dans la file perdrait cette garantie —
+      // un objet déplacé sans trace, ou une trace sans déplacement.
+      ops: [rpcOp('move_objet', { p_objet_id: objetId, p_to_type: destination.type, p_to_id: destination.id })],
+      // Un `rpc` ne dit pas quelles lignes il touche : l'affichage optimiste
+      // doit donc être déclaré ici. L'HISTORIQUE, lui, n'est pas simulé — il
+      // apparaîtra au retour du réseau. Inventer une ligne d'historique
+      // reviendrait à écrire dans le journal ce qui n'a pas encore eu lieu.
+      patches: [
+        {
+          id: objetId,
+          patch: {
+            parent_emplacement_id: destination.type === 'emplacement' ? destination.id : null,
+            parent_conteneur_id: destination.type === 'conteneur' ? destination.id : null,
+          },
+        },
+      ],
+      sets,
+      result: undefined,
+    };
+  });
 }
 
 /**

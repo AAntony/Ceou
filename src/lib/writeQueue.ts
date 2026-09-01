@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { supabase } from './supabase/client';
 import type { Database } from '../types/supabase';
@@ -226,6 +226,12 @@ export type LocalFirstWrite<TResult> = {
    * touche. Un deplacement d'objet passe par la.
    */
   patches?: { id: string; patch: Record<string, unknown> }[];
+  /**
+   * Ecrasement d une cle entiere, pour ce qu aucune regle generale ne sait
+   * deduire : un fil d Ariane recalcule, une liste dont un element a change
+   * de parent. L appelant lit le cache et pose la valeur juste.
+   */
+  sets?: { key: QueryKey; data: unknown }[];
   result: TResult;
 };
 
@@ -234,10 +240,28 @@ export function useLocalFirstWrite<TInput, TResult>(build: (input: TInput) => Lo
   const client = useQueryClient();
 
   return useMutation<TResult, Error, TInput>({
+    // ═══ `always` EST CE QUI FAIT MARCHER TOUTE L'ÉCRITURE HORS-LIGNE ═══
+    //
+    // Sans lui, cette mutation-ci prend le mode par défaut, `online` — et se
+    // met donc en PAUSE elle aussi quand il n'y a pas de réseau. Son
+    // `mutationFn` ne s'exécute jamais : ni l'affichage optimiste, ni la mise
+    // en file, et `mutateAsync` ne résout pas. Les écrans qui l'attendent
+    // restent bloqués indéfiniment.
+    //
+    // C'est le défaut signalé à l'usage sur « Choisir cet emplacement » : la
+    // modale ne se fermait pas, l'objet ne bougeait pas. Il touchait en
+    // réalité TOUTE écriture hors-ligne — créer, renommer, déplacer,
+    // supprimer — la file d'attente n'était jamais atteinte.
+    //
+    // `always` est ici le mode JUSTE, pas un contournement : cette mutation ne
+    // touche pas le réseau. Elle construit une ligne, l'écrit dans le cache et
+    // passe le relais. C'est la mutation de la FILE qui parle au serveur, et
+    // elle garde `online` — c'est elle qui doit attendre.
+    networkMode: 'always',
     meta: { skipGlobalRefresh: true },
     mutationFn: async (input) => {
-      const { ops, appends, patches, result } = build(input);
-      applyOpsToCache(client, ops, appends, patches);
+      const { ops, appends, patches, sets, result } = build(input);
+      applyOpsToCache(client, ops, appends, patches, sets);
       // VOLONTAIREMENT PAS ATTENDU. Voir le commentaire ci-dessus : hors-ligne
       // cette promesse ne se résoudrait jamais.
       write.mutate({ ops });

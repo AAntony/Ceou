@@ -183,21 +183,31 @@ function groupBy<T>(rows: T[], key: (row: T) => string | null): Map<string, T[]>
  * fichier, elle réimplémente du SQL de tête, et une erreur d'ordre y donnerait
  * un chemin qui se lit à l'envers sans que rien ne plante.
  */
-export function locationChainFor(
-  objet: Objet,
-  conteneurById: Map<string, Conteneur>,
-  emplacementById: Map<string, Emplacement>,
-  pieceById: Map<string, Piece>,
-  habitationById: Map<string, Habitation>,
+export type EntityLookups = {
+  conteneur: (id: string) => Conteneur | undefined;
+  emplacement: (id: string) => Emplacement | undefined;
+  piece: (id: string) => Piece | undefined;
+  habitation: (id: string) => Habitation | undefined;
+};
+
+/**
+ * Les entités sont fournies par des FONCTIONS et non par des tables, pour que
+ * cette logique serve aux deux appelants sans être écrite deux fois : le
+ * préchargement, qui a tout en mémoire, et le déplacement d'un objet, qui doit
+ * recalculer le chemin depuis le cache.
+ */
+export function locationChainFrom(
+  start: { emplacementId: string | null; conteneurId: string | null },
+  lookups: EntityLookups,
 ): ObjetLocationNode[] {
   const nested: Conteneur[] = [];
   const seen = new Set<string>();
-  let emplacementId = objet.parent_emplacement_id;
-  let cursor = objet.parent_conteneur_id;
+  let emplacementId = start.emplacementId;
+  let cursor = start.conteneurId;
 
   while (cursor && !seen.has(cursor)) {
     seen.add(cursor);
-    const conteneur = conteneurById.get(cursor);
+    const conteneur = lookups.conteneur(cursor);
     if (!conteneur) break;
     nested.push(conteneur);
     if (conteneur.parent_emplacement_id) emplacementId = conteneur.parent_emplacement_id;
@@ -206,9 +216,9 @@ export function locationChainFor(
   // Remonté depuis l'objet, donc du plus interne au plus englobant.
   nested.reverse();
 
-  const emplacement = emplacementId ? emplacementById.get(emplacementId) : undefined;
-  const piece = emplacement ? pieceById.get(emplacement.piece_id) : undefined;
-  const habitation = piece ? habitationById.get(piece.habitation_id) : undefined;
+  const emplacement = emplacementId ? lookups.emplacement(emplacementId) : undefined;
+  const piece = emplacement ? lookups.piece(emplacement.piece_id) : undefined;
+  const habitation = piece ? lookups.habitation(piece.habitation_id) : undefined;
 
   const chain: ObjetLocationNode[] = [];
   if (habitation) {
@@ -301,7 +311,15 @@ function seedCaches(client: QueryClient, snapshot: Snapshot, userId: string): vo
     client.setQueryData(['objet', objet.id], objet);
     client.setQueryData(
       ['objetLocationChain', objet.id],
-      locationChainFor(objet, conteneurById, emplacementById, pieceById, habitationById),
+      locationChainFrom(
+        { emplacementId: objet.parent_emplacement_id, conteneurId: objet.parent_conteneur_id },
+        {
+          conteneur: (id) => conteneurById.get(id),
+          emplacement: (id) => emplacementById.get(id),
+          piece: (id) => pieceById.get(id),
+          habitation: (id) => habitationById.get(id),
+        },
+      ),
     );
   }
 
@@ -408,4 +426,21 @@ export function useInventorySnapshot(): void {
 
     seedCaches(client, data, userId);
   }, [data, client, userId]);
+}
+
+/**
+ * Les mêmes recherches, mais servies par le CACHE.
+ *
+ * Le préchargement a posé chaque entité sous sa propre clé (`['piece', id]`,
+ * `['conteneur', id]`…) : il n'y a donc rien à redemander pour recalculer un
+ * chemin après un déplacement fait hors-ligne. Les recherches sont directes,
+ * jamais une énumération du cache.
+ */
+export function lookupsFromCache(client: QueryClient): EntityLookups {
+  return {
+    conteneur: (id) => client.getQueryData<Conteneur>(['conteneur', id]),
+    emplacement: (id) => client.getQueryData<Emplacement>(['emplacement', id]),
+    piece: (id) => client.getQueryData<Piece>(['piece', id]),
+    habitation: (id) => client.getQueryData<Habitation>(['habitation', id]),
+  };
 }
