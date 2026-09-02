@@ -32,10 +32,20 @@ const TILE_WIDTH: Record<number, `${number}%`> = {
 // Largeur de la vignette en disposition RANGÉE, avant mise à l'échelle.
 const ROW_THUMB_WIDTH = 96;
 
+// UNE INTERPOLATION NE DOIT JAMAIS SERVIR ICI, et ça a fini par se voir :
+// `parent_label` est nul dès qu'un objet est posé à même sa pièce, et
+// `${entry.parent_label}` écrivait alors le mot « null » sur la tuile.
+// Signalé à l'usage sous la forme « null · Cellier ».
+//
+// Le filtre traite la cause générale plutôt que ce seul champ : tous les
+// libellés de cette ligne viennent du serveur et peuvent manquer. Voir
+// aussi seedNewEntity, qui corrige la raison pour laquelle il manquait ce
+// jour-là.
 function locationLine(entry: SearchIndexEntry): string {
   if (entry.kind === 'piece') return entry.habitation_name;
   if (entry.kind === 'emplacement') return entry.piece_name;
-  return `${entry.parent_label} · ${entry.piece_name}`;
+  // L'habitation en dernier recours : mieux vaut un repère large que rien.
+  return [entry.parent_label, entry.piece_name].filter(Boolean).join(' · ') || entry.habitation_name;
 }
 
 type ResultCardProps = {

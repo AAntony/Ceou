@@ -84,6 +84,35 @@ function entityPhotoWrite(params: {
   };
 }
 
+/**
+ * CE QUI VIENT D'ÊTRE CRÉÉ DOIT EXISTER SOUS SA PROPRE CLÉ, PAS SEULEMENT
+ * DANS LA LISTE DE SON PARENT.
+ *
+ * LE DÉFAUT QUE ÇA CORRIGE, signalé à l'usage : hors-ligne, créer un
+ * emplacement puis y déplacer un objet affichait « null · Cellier » sur
+ * l'accueil. La cause n'était pas dans le déplacement : `lookupsFromCache`
+ * cherche les entités sous `['emplacement', id]`, et une création ne
+ * garnissait que `['emplacements', pieceId]`. L'emplacement restait donc
+ * INTROUVABLE, le chemin se reconstruisait vide, et le libellé perdait son
+ * contenant — puis affichait le mot « null » à sa place.
+ *
+ * En ligne, le rafraîchissement global rechargeait tout une seconde plus
+ * tard : la faute ne pouvait se voir que sans réseau.
+ *
+ * LES LISTES VIDES SONT POSÉES ELLES AUSSI. Une pièce qui vient de naître
+ * n'a pas d'emplacement — mais sans clé en cache, l'écran ne lit pas « rien
+ * dedans », il lit « je n'ai pas la réponse », et hors-ligne il ne peut pas
+ * aller la chercher. C'est la même règle que le préchargement, qui garnit
+ * lui aussi les listes vides (voir seedCaches).
+ */
+function seedNewEntity(
+  key: QueryKey,
+  row: unknown,
+  children: { key: QueryKey; data: unknown }[] = [],
+): { key: QueryKey; data: unknown }[] {
+  return [{ key, data: row }, ...children];
+}
+
 function invalidateSearchIndex(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
   queryClient.invalidateQueries({ queryKey: ['habitationObjectCounts'] });
@@ -139,14 +168,38 @@ export function useCreateHabitation() {
     // référence l'Habitation, elles doivent partir dans cet ordre et
     // échouer ensemble. C'est possible parce que l'identifiant du parent
     // est connu AVANT l'écriture.
-    if (isSingleSpaceHabitation(input.type)) {
-      ops.push(insertOp('pieces', [{ id: newId(), habitation_id: habitation.id, name: input.name, is_default: true }]));
+    //
+    // LA LIGNE ENVOYÉE RESTE MINIMALE — la base pose elle-même les colonnes
+    // absentes — mais le CACHE, lui, reçoit une Pièce complète : c'est une
+    // ligne que des écrans vont lire, pas seulement écrire.
+    const defaultPiece: Piece | null = isSingleSpaceHabitation(input.type)
+      ? {
+          id: newId(),
+          habitation_id: id,
+          name: input.name,
+          preset_key: null,
+          color: null,
+          photo_url: null,
+          is_default: true,
+          created_at: new Date().toISOString(),
+        }
+      : null;
+    if (defaultPiece) {
+      ops.push(insertOp('pieces', [{ id: defaultPiece.id, habitation_id: id, name: input.name, is_default: true }]));
     }
 
     return {
       ops,
       describe: { kind: 'create', name: input.name },
       appends: [{ key: ['habitations'], row: { ...habitation, photo_url: photo.cachedPhotoUrl } }],
+      sets: seedNewEntity(['habitation', id], { ...habitation, photo_url: photo.cachedPhotoUrl }, [
+        // La liste des pièces est POSÉE et non complétée : une habitation
+        // qui vient de naître n'en a pas d'autre, et sa clé n'existe pas
+        // encore en cache — un ajout à une liste absente ne donnerait rien.
+        { key: ['pieces', id], data: defaultPiece ? [defaultPiece] : [] },
+        ...(defaultPiece ? [{ key: ['piece', defaultPiece.id] as QueryKey, data: defaultPiece }] : []),
+        ...(defaultPiece ? [{ key: ['emplacements', defaultPiece.id] as QueryKey, data: [] }] : []),
+      ]),
       result: habitation,
     };
   });
@@ -303,6 +356,9 @@ export function useCreatePiece(habitationId: string) {
         describe: { kind: 'create' as const, name: input.name },
         ops: [insertOp('pieces', [piece]), ...photo.ops],
         appends: [{ key: ['pieces', habitationId], row: { ...piece, photo_url: photo.cachedPhotoUrl } }],
+        sets: seedNewEntity(['piece', id], { ...piece, photo_url: photo.cachedPhotoUrl }, [
+          { key: ['emplacements', id], data: [] },
+        ]),
         result: piece,
       };
     },
@@ -416,6 +472,10 @@ export function useCreateEmplacement(pieceId: string) {
       describe: { kind: 'create' as const, name: input.name },
       ops: [insertOp('emplacements', [emplacement]), ...photo.ops],
       appends: [{ key: ['emplacements', pieceId], row: { ...emplacement, photo_url: photo.cachedPhotoUrl } }],
+      sets: seedNewEntity(['emplacement', id], { ...emplacement, photo_url: photo.cachedPhotoUrl }, [
+        { key: ['containerContents', 'conteneurs', 'emplacement', id], data: [] },
+        { key: ['containerContents', 'objets', 'emplacement', id], data: [] },
+      ]),
       result: emplacement,
     };
   });
@@ -540,6 +600,10 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
           row: { ...conteneur, photo_url: photo.cachedPhotoUrl },
         },
       ],
+      sets: seedNewEntity(['conteneur', id], { ...conteneur, photo_url: photo.cachedPhotoUrl }, [
+        { key: ['containerContents', 'conteneurs', 'conteneur', id], data: [] },
+        { key: ['containerContents', 'objets', 'conteneur', id], data: [] },
+      ]),
       result: conteneur,
     };
   });
@@ -878,18 +942,26 @@ export function useMoveObjet(objetId: string) {
       parent_conteneur_id: destination.type === 'conteneur' ? destination.id : null,
     };
 
-    const sets: { key: QueryKey; data: unknown }[] = [
+    // UN CHEMIN VIDE VEUT DIRE « JE NE SAIS PAS », PAS « IL N'Y A RIEN ».
+    //
+    // Il l'est quand la destination est introuvable en cache — ce que
+    // seedNewEntity rend désormais très improbable, mais qu'un cache
+    // incomplet peut encore produire. Les deux affichages qui en dépendent
+    // sont alors laissés TELS QUELS : écrire un chemin vide effacerait le
+    // fil d'Ariane de la fiche, et réécrire l'index de recherche y poserait
+    // `parent_label: null` par-dessus une valeur juste. Mieux vaut un
+    // affichage périmé d'une seconde, que le rafraîchissement corrigera,
+    // qu'un affichage faux.
+    const chain = locationChainFrom(
       {
-        key: ['objetLocationChain', objetId],
-        data: locationChainFrom(
-          {
-            emplacementId: destination.type === 'emplacement' ? destination.id : null,
-            conteneurId: destination.type === 'conteneur' ? destination.id : null,
-          },
-          lookupsFromCache(queryClient),
-        ),
+        emplacementId: destination.type === 'emplacement' ? destination.id : null,
+        conteneurId: destination.type === 'conteneur' ? destination.id : null,
       },
-    ];
+      lookupsFromCache(queryClient),
+    );
+
+    const sets: { key: QueryKey; data: unknown }[] = [];
+    if (chain.length > 0) sets.push({ key: ['objetLocationChain', objetId], data: chain });
 
     // L'objet quitte la liste de son ancien contenant et entre dans celle du
     // nouveau. Chirurgie CIBLÉE sur ces deux clés : un retrait généralisé par
@@ -919,30 +991,34 @@ export function useMoveObjet(objetId: string) {
     //
     // La clé porte l'identifiant du compte : on la retrouve par PRÉFIXE
     // plutôt que de le faire remonter jusqu'ici.
-    const chain = sets[0].data as ObjetLocationNode[];
     const habitationNode = chain.find((node) => node.kind === 'habitation');
     const pieceNode = chain.find((node) => node.kind === 'piece');
     const parentNode = chain[chain.length - 1];
 
-    for (const [key, entries] of queryClient.getQueriesData<SearchIndexEntry[]>({ queryKey: ['searchIndex'] })) {
-      if (!entries) continue;
-      sets.push({
-        key,
-        data: entries.map((entry) =>
-          entry.kind === 'objet' && entry.id === objetId
-            ? {
-                ...entry,
-                piece_id: pieceNode?.id ?? entry.piece_id,
-                piece_name: pieceNode?.name ?? entry.piece_name,
-                habitation_id: habitationNode?.id ?? entry.habitation_id,
-                habitation_name: habitationNode?.name ?? entry.habitation_name,
-                // Le contenant DIRECT, c'est-à-dire le dernier maillon du
-                // chemin. Nul si l'objet est posé à même la pièce.
-                parent_label: parentNode && parentNode.kind !== 'piece' && parentNode.kind !== 'habitation' ? parentNode.name : null,
-              }
-            : entry,
-        ),
-      });
+    if (chain.length > 0) {
+      for (const [key, entries] of queryClient.getQueriesData<SearchIndexEntry[]>({ queryKey: ['searchIndex'] })) {
+        if (!entries) continue;
+        sets.push({
+          key,
+          data: entries.map((entry) =>
+            entry.kind === 'objet' && entry.id === objetId
+              ? {
+                  ...entry,
+                  piece_id: pieceNode?.id ?? entry.piece_id,
+                  piece_name: pieceNode?.name ?? entry.piece_name,
+                  habitation_id: habitationNode?.id ?? entry.habitation_id,
+                  habitation_name: habitationNode?.name ?? entry.habitation_name,
+                  // Le contenant DIRECT, c'est-à-dire le dernier maillon du
+                  // chemin. Nul si l'objet est posé à même sa pièce — et
+                  // c'est un null que l'accueil doit savoir ne pas écrire
+                  // (voir locationLine).
+                  parent_label:
+                    parentNode && parentNode.kind !== 'piece' && parentNode.kind !== 'habitation' ? parentNode.name : null,
+                }
+              : entry,
+          ),
+        });
+      }
     }
 
     return {
