@@ -774,5 +774,22 @@
   "network": {
     "offline": "Offline",
     "offline_hint": "You are seeing the last data loaded."
+  },
+  "sync": {
+    "banner_one": "{{count}} change could not be sent",
+    "banner_other": "{{count}} changes could not be sent",
+    "banner_hint": "Tap to see",
+    "title": "Changes not sent",
+    "intro": "These changes were made on your phone but refused by the server. They are no longer shown in the app: it is up to you to retry them or give them up.",
+    "unnamed": "unnamed item",
+    "retry": "Retry",
+    "dismiss": "Give up",
+    "failed": {
+      "create": "Adding “{{name}}”",
+      "update": "Editing “{{name}}”",
+      "delete": "Deleting “{{name}}”",
+      "move": "Moving “{{name}}”",
+      "photo": "The photo of “{{name}}”"
+    }
   }
 }

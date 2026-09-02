@@ -4,6 +4,7 @@ import { uploadImage } from './images/pickAndUploadImage';
 import { supabase } from './supabase/client';
 import type { Database } from '../types/supabase';
 import { applyOpsToCache, type AppendTarget } from './optimisticCache';
+import type { WriteDescription } from './syncFailures';
 
 /**
  * Les tables réellement existantes, et pas `string`.
@@ -86,6 +87,17 @@ export type WriteOp =
 
 export type WriteBatch = {
   ops: WriteOp[];
+  /**
+   * DE QUOI EN PARLER À LA PERSONNE SI ÇA ÉCHOUE — et c'est pour cela que ce
+   * champ est OBLIGATOIRE. Une opération générique ne se raconte pas :
+   * « update objets » ne dit rien à personne. Seul le hook qui construit le
+   * lot sait qu'il s'agit du déplacement de « Agathe ».
+   *
+   * Elle voyage sur le disque avec le reste du lot : l'échec peut survenir des
+   * heures plus tard, après un redémarrage, alors que plus rien du contexte
+   * d'origine n'existe en mémoire.
+   */
+  describe: WriteDescription;
 };
 
 /**
@@ -255,6 +267,7 @@ export function deleteWhereOp<T extends WriteTable>(table: T, match: Record<stri
 // c'est-à-dire quand l'écriture a réellement abouti.
 export type LocalFirstWrite<TResult> = {
   ops: WriteOp[];
+  describe: WriteDescription;
   appends?: AppendTarget[];
   /**
    * Modifications a reporter dans le cache que les operations ne permettent
@@ -296,11 +309,11 @@ export function useLocalFirstWrite<TInput, TResult>(build: (input: TInput) => Lo
     networkMode: 'always',
     meta: { skipGlobalRefresh: true },
     mutationFn: async (input) => {
-      const { ops, appends, patches, sets, result } = build(input);
+      const { ops, appends, patches, sets, describe, result } = build(input);
       applyOpsToCache(client, ops, appends, patches, sets);
       // VOLONTAIREMENT PAS ATTENDU. Voir le commentaire ci-dessus : hors-ligne
       // cette promesse ne se résoudrait jamais.
-      write.mutate({ ops });
+      write.mutate({ ops, describe });
       return result;
     },
   });

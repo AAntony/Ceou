@@ -1,8 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { defaultShouldDehydrateQuery, MutationCache, QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, hashKey, MutationCache, QueryClient } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
 import { logClientError } from './errorLogging';
+import { recordSyncFailure, SYNC_FAILURES_KEY } from './syncFailures';
+import { WRITE_MUTATION_KEY, type WriteBatch } from './writeQueue';
 
 /**
  * La clé du cliché hors-ligne, déclarée ICI et non dans le module qui s'en
@@ -66,7 +68,15 @@ export const queryClient = new QueryClient({
       // remettre en cause à chaque écriture le relancerait en entier à chaque
       // renommage d'objet. Il se garnit au démarrage et au retour du réseau,
       // pas à chaque frappe.
-      queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY });
+      //
+      // LA LISTE DES ÉCHECS D'ENVOI EST EXCLUE ELLE AUSSI, pour une autre
+      // raison : ce n'est pas une donnée serveur, personne ne peut la
+      // « recharger ». La marquer périmée déclencherait une relecture vide
+      // de sens après chaque écriture.
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY && query.queryHash !== hashKey(SYNC_FAILURES_KEY),
+      });
     },
     // UNE ÉCRITURE DIFFÉRÉE QUI ÉCHOUE NE DOIT PAS DISPARAÎTRE EN SILENCE.
     //
@@ -77,11 +87,45 @@ export const queryClient = new QueryClient({
     // alors l'affichage optimiste, et la modification s'évapore sans que
     // personne ne l'ait vue échouer.
     //
-    // Le prévenir SUR LE COUP demanderait une file de notifications qui
-    // n'existe pas encore. En attendant, l'échec laisse au moins une trace
-    // exploitable côté diagnostic plutôt que rien du tout.
-    onError: (error, _variables, _context, mutation) => {
+    // ELLE EST DÉSORMAIS RETENUE ET MONTRÉE. Le journal reste — c'est lui
+    // qui porte la pile d'appels — mais il ne prévenait personne : on ne lit
+    // pas les journaux de son téléphone. L'échec rejoint une liste persistée
+    // qu'une bande rouge annonce jusqu'à ce qu'on la traite (voir
+    // lib/syncFailures), avec le choix de rejouer ou d'abandonner.
+    //
+    // SEULES LES ÉCRITURES DE LA FILE y entrent, et c'est ce que teste la
+    // comparaison de clé ci-dessous. Les autres mutations — favoris, amis,
+    // profil — parlent au serveur sur le champ, sous les yeux de la personne
+    // qui vient d'appuyer : leur échec se constate à l'écran, immédiatement.
+    // Les inscrire ici afficherait une alerte différée pour un refus déjà vu.
+    onError: (error, variables, _context, mutation) => {
       logClientError(error, { source: 'mutation', mutationKey: JSON.stringify(mutation.options.mutationKey ?? null) });
+
+      const key = mutation.options.mutationKey;
+      if (key === undefined || hashKey(key) !== hashKey(WRITE_MUTATION_KEY)) return;
+
+      const batch = variables as WriteBatch | undefined;
+      if (!batch) return;
+
+      recordSyncFailure(queryClient, {
+        // L'HORODATAGE FAIT PARTIE DE L'IDENTIFIANT, et il le faut : le
+        // compteur de `mutationId` repart de zéro à chaque lancement de
+        // l'application. Un échec survenu après un redémarrage aurait donc
+        // pu porter le même numéro qu'un échec plus ancien encore en
+        // liste — et « Abandonner » en aurait effacé deux d'un coup.
+        id: `${Date.now()}-${mutation.mutationId}`,
+        // LA DESCRIPTION PEUT MANQUER, et seulement dans un cas : une
+        // écriture déjà en file AVANT cette version, relue du disque après
+        // la mise à jour. `describe` est obligatoire à la compilation, mais
+        // le compilateur n'a rien à dire sur ce qu'un ancien binaire a
+        // écrit. Plutôt que d'afficher une ligne cassée — ou pire, de se
+        // taire, ce que ce fichier existe justement pour éviter — on annonce
+        // ce qu'on sait : une modification n'est pas passée.
+        describe: batch.describe ?? { kind: 'update', name: '' },
+        message: error instanceof Error ? error.message : String(error),
+        failedAt: new Date().toISOString(),
+        ops: batch.ops,
+      });
     },
   }),
 });

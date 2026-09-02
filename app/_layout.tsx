@@ -9,7 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
 import { AppTabBar } from '../src/components/AppTabBar';
-import { OfflineBanner } from '../src/components/OfflineBanner';
+import { OfflineBanner, useHasTopBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SessionProvider, useSession } from '../src/features/auth/SessionProvider';
 import { useAuthDeepLinks } from '../src/features/auth/useAuthDeepLinks';
@@ -18,7 +18,7 @@ import { PushRegistrar } from '../src/features/notifications/PushRegistrar';
 import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
-import { installOnlineManager, useIsOffline } from '../src/lib/network';
+import { installOnlineManager } from '../src/lib/network';
 import { persistOptions, queryClient } from '../src/lib/queryClient';
 import { registerWriteMutation } from '../src/lib/writeQueue';
 import { SplashGateProvider, useSplashGate } from '../src/lib/splashGate';
@@ -76,7 +76,7 @@ function AppShell() {
   // La fin du splash n'est plus un état privé : le guide de démarrage doit la
   // connaître pour ne pas ouvrir sa fenêtre par-dessus (voir lib/splashGate).
   const { splashDone, markSplashDone } = useSplashGate();
-  const offline = useIsOffline();
+  const hasBanner = useHasTopBanner();
   // Charge tout l'inventaire d'avance pour qu'il soit consultable sans
   // reseau — y compris les fiches qu'on n'a pas encore ouvertes.
   useInventorySnapshot();
@@ -129,7 +129,7 @@ function AppShell() {
           fois — un vide de la hauteur de la barre d'état sous le bandeau. */}
       <View className="flex-1">
         <OfflineBanner />
-        <SafeAreaInsetsContext.Provider value={offline ? { ...insets, top: 0 } : insets}>
+        <SafeAreaInsetsContext.Provider value={hasBanner ? { ...insets, top: 0 } : insets}>
           <Stack screenOptions={{ headerShown: false }} />
         </SafeAreaInsetsContext.Provider>
       </View>

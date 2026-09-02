@@ -774,5 +774,22 @@
   "network": {
     "offline": "Hors connexion",
     "offline_hint": "Tu vois les dernières données chargées."
+  },
+  "sync": {
+    "banner_one": "{{count}} modification n’a pas pu être envoyée",
+    "banner_other": "{{count}} modifications n’ont pas pu être envoyées",
+    "banner_hint": "Touche pour voir",
+    "title": "Modifications non envoyées",
+    "intro": "Ces modifications ont été faites sur ton téléphone mais refusées par le serveur. Elles ne sont plus affichées dans l’application : à toi de décider si tu les retentes ou si tu les abandonnes.",
+    "unnamed": "élément sans nom",
+    "retry": "Réessayer",
+    "dismiss": "Abandonner",
+    "failed": {
+      "create": "L’ajout de « {{name}} »",
+      "update": "La modification de « {{name}} »",
+      "delete": "La suppression de « {{name}} »",
+      "move": "Le déplacement de « {{name}} »",
+      "photo": "La photo de « {{name}} »"
+    }
   }
 }

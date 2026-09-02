@@ -43,6 +43,17 @@ import type { SearchIndexEntry } from '../search/queries';
 // memes moments (creation, suppression ou deplacement d'un objet n'importe
 // ou), les invalider ensemble evite qu'une rangee annonce « 12 objets »
 // alors que l'accueil en montre 13.
+/**
+ * Le nom tel qu il est en cache, pour raconter une ecriture qui ne recoit
+ * qu un identifiant (suppressions, deplacement, photo).
+ *
+ * Lu AVANT que l ecriture ne parte : apres, la ligne peut avoir disparu du
+ * cache — et c est justement le cas d une suppression.
+ */
+function nameFromCache(client: ReturnType<typeof useQueryClient>, key: QueryKey): string {
+  return client.getQueryData<{ name?: string }>(key)?.name ?? '';
+}
+
 function invalidateSearchIndex(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
   queryClient.invalidateQueries({ queryKey: ['habitationObjectCounts'] });
@@ -90,12 +101,18 @@ export function useCreateHabitation() {
       ops.push(insertOp('pieces', [{ id: newId(), habitation_id: habitation.id, name: input.name, is_default: true }]));
     }
 
-    return { ops, appends: [{ key: ['habitations'], row: habitation }], result: habitation };
+    return {
+      ops,
+      describe: { kind: 'create', name: input.name },
+      appends: [{ key: ['habitations'], row: habitation }],
+      result: habitation,
+    };
   });
 }
 
 export function useUpdateHabitation() {
   return useLocalFirstWrite((input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => ({
+    describe: { kind: 'update' as const, name: input.name },
     ops: [
       // `photoUrl` absent = photo inchangée ; `null` explicite = photo
       // retirée. Sans cette distinction, ouvrir la fiche pour renommer
@@ -112,7 +129,12 @@ export function useUpdateHabitation() {
 }
 
 export function useDeleteHabitation() {
-  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('habitations', id)], result: undefined }));
+  const queryClient = useQueryClient();
+  return useLocalFirstWrite((id: string) => ({
+    describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['habitation', id]) },
+    ops: [deleteOp('habitations', id)],
+    result: undefined,
+  }));
 }
 
 // === Favoris d'Habitation (Phase 9b) ==================================
@@ -211,6 +233,7 @@ export function useCreatePiece(habitationId: string) {
       };
 
       return {
+        describe: { kind: 'create' as const, name: input.name },
         ops: [insertOp('pieces', [piece])],
         appends: [{ key: ['pieces', habitationId], row: piece }],
         result: piece,
@@ -226,8 +249,10 @@ export function useCreatePiece(habitationId: string) {
 // écrans qui appellent ces hooks — et le jour où une mise à jour optimiste
 // plus fine sera nécessaire, il sera déjà là.
 export function useUpdatePiece(_habitationId: string) {
+  const queryClient = useQueryClient();
   return useLocalFirstWrite(
     (input: { id: string; name?: string; presetKey?: string | null; color?: string | null; photoUrl?: string | null }) => ({
+      describe: { kind: 'update' as const, name: input.name ?? nameFromCache(queryClient, ['piece', input.id]) },
       ops: [
         updateOp('pieces', input.id, {
           ...(input.name !== undefined && { name: input.name }),
@@ -242,7 +267,12 @@ export function useUpdatePiece(_habitationId: string) {
 }
 
 export function useDeletePiece(_habitationId: string) {
-  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('pieces', id)], result: undefined }));
+  const queryClient = useQueryClient();
+  return useLocalFirstWrite((id: string) => ({
+    describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['piece', id]) },
+    ops: [deleteOp('pieces', id)],
+    result: undefined,
+  }));
 }
 
 // === Emplacements ======================================================
@@ -291,6 +321,7 @@ export function useCreateEmplacement(pieceId: string) {
     };
 
     return {
+      describe: { kind: 'create' as const, name: input.name },
       ops: [insertOp('emplacements', [emplacement])],
       appends: [{ key: ['emplacements', pieceId], row: emplacement }],
       result: emplacement,
@@ -300,6 +331,7 @@ export function useCreateEmplacement(pieceId: string) {
 
 export function useUpdateEmplacement(_pieceId: string) {
   return useLocalFirstWrite((input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => ({
+    describe: { kind: 'update' as const, name: input.name },
     ops: [
       updateOp('emplacements', input.id, {
         name: input.name,
@@ -312,7 +344,12 @@ export function useUpdateEmplacement(_pieceId: string) {
 }
 
 export function useDeleteEmplacement(_pieceId: string) {
-  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('emplacements', id)], result: undefined }));
+  const queryClient = useQueryClient();
+  return useLocalFirstWrite((id: string) => ({
+    describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['emplacement', id]) },
+    ops: [deleteOp('emplacements', id)],
+    result: undefined,
+  }));
 }
 
 // === Conteneurs + Objets (contenu d'un Emplacement ou d'un Conteneur) ===
@@ -378,6 +415,7 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
     };
 
     return {
+      describe: { kind: 'create' as const, name: input.name },
       ops: [insertOp('conteneurs', [conteneur])],
       appends: [{ key: ['containerContents', 'conteneurs', parentType, parentId], row: conteneur }],
       result: conteneur,
@@ -387,6 +425,7 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
 
 export function useUpdateConteneur() {
   return useLocalFirstWrite((input: { id: string; name: string; presetKey?: string | null; photoUrl?: string | null }) => ({
+    describe: { kind: 'update' as const, name: input.name },
     ops: [
       updateOp('conteneurs', input.id, {
         name: input.name,
@@ -399,7 +438,12 @@ export function useUpdateConteneur() {
 }
 
 export function useDeleteConteneur() {
-  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('conteneurs', id)], result: undefined }));
+  const queryClient = useQueryClient();
+  return useLocalFirstWrite((id: string) => ({
+    describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['conteneur', id]) },
+    ops: [deleteOp('conteneurs', id)],
+    result: undefined,
+  }));
 }
 
 // === Objets ============================================================
@@ -440,6 +484,7 @@ export function useCreateObjet() {
       };
 
       return {
+        describe: { kind: 'create' as const, name: input.name },
         ops: [insertOp('objets', [objet])],
         appends: [{ key: ['containerContents', 'objets', input.parentType, input.parentId], row: objet }],
         // RENDU TOUT DE SUITE, et c'est ce qui permet aux écrans d'enchaîner :
@@ -509,7 +554,9 @@ export function useCreateObjetsBulk() {
 }
 
 export function useUpdateObjet(id: string) {
+  const queryClient = useQueryClient();
   return useLocalFirstWrite((patch: Partial<Pick<Objet, 'name' | 'description' | 'photo_url'>>) => ({
+    describe: { kind: 'update' as const, name: patch.name ?? nameFromCache(queryClient, ['objet', id]) },
     ops: [updateOp('objets', id, patch)],
     result: undefined,
   }));
@@ -548,6 +595,7 @@ export function useSetObjetPhoto() {
  */
 export function useSetObjetPhotoFromLocal(objetId: string) {
   const { session } = useSession();
+  const queryClient = useQueryClient();
 
   return useLocalFirstWrite((localUri: string) => ({
     ops: [
@@ -561,13 +609,19 @@ export function useSetObjetPhotoFromLocal(objetId: string) {
         then: { table: 'objets', id: objetId, column: 'photo_url' },
       }),
     ],
+    describe: { kind: 'photo' as const, name: nameFromCache(queryClient, ['objet', objetId]) },
     patches: [{ id: objetId, patch: { photo_url: localUri } }],
     result: undefined,
   }));
 }
 
 export function useDeleteObjet() {
-  return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('objets', id)], result: undefined }));
+  const queryClient = useQueryClient();
+  return useLocalFirstWrite((id: string) => ({
+    describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['objet', id]) },
+    ops: [deleteOp('objets', id)],
+    result: undefined,
+  }));
 }
 
 export type ObjetLocationNode = {
@@ -756,6 +810,7 @@ export function useMoveObjet(objetId: string) {
     }
 
     return {
+      describe: { kind: 'move' as const, name: objet?.name ?? '' },
       // UNE FONCTION SQL ET NON DEUX ÉCRITURES : `move_objet` change le parent
       // ET journalise le déplacement, dans la même transaction. La décomposer
       // côté client pour la faire tenir dans la file perdrait cette garantie —
