@@ -18,6 +18,7 @@ import { PushRegistrar } from '../src/features/notifications/PushRegistrar';
 import { installNotificationHandler } from '../src/features/notifications/push';
 import '../src/lib/i18n';
 import { installGlobalErrorHandler } from '../src/lib/globalErrorHandler';
+import { useHeaderOptions } from '../src/lib/headerOptions';
 import { installOnlineManager } from '../src/lib/network';
 import { persistOptions, queryClient } from '../src/lib/queryClient';
 import { registerWriteMutation } from '../src/lib/writeQueue';
@@ -81,6 +82,7 @@ function AppShell() {
   // reseau — y compris les fiches qu'on n'a pas encore ouvertes.
   useInventorySnapshot();
   const insets = useSafeAreaInsets();
+  const header = useHeaderOptions();
   const nativeHidden = useRef(false);
 
   // BRANCHEMENT INDISPENSABLE SUR MOBILE. TanStack Query sait rafraîchir ses
@@ -130,7 +132,14 @@ function AppShell() {
       <View className="flex-1">
         <OfflineBanner />
         <SafeAreaInsetsContext.Provider value={hasBanner ? { ...insets, top: 0 } : insets}>
-          <Stack screenOptions={{ headerShown: false }} />
+          {/* Éteint par défaut : les groupes (tabs) et (entities) posent
+              chacun le leur. Mais les écrans RACINE qui le rallument —
+              Prêts, Compte, Invitations, Confidentialité, Passer en compte
+              complet — héritaient alors du thème de React Navigation, donc
+              d'un fond BLANC en clair comme en sombre. D'où l'apparence
+              donnée ici même quand l'en-tête est éteint : elle n'attend que
+              d'être rallumée. */}
+          <Stack screenOptions={{ headerShown: false, headerBackTitle: '', ...header }} />
         </SafeAreaInsetsContext.Provider>
       </View>
       <AuthedTabBar />

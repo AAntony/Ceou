@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Platform, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../src/features/auth/SessionProvider';
+import { useHeaderOptions } from '../../src/lib/headerOptions';
 import { useChromeScale } from '../../src/lib/textScale';
-import { useThemeColors } from '../../src/lib/theme';
 
 // Les écrans (entities) — Habitations, Pièce, Emplacement — utilisent
 // l'en-tête NATIF d'un Stack, qui reprend l'actionBarSize d'Android : 56 dp.
@@ -21,40 +21,29 @@ import { useThemeColors } from '../../src/lib/theme';
 //
 // Sur iOS les deux valent déjà 44 : ce correctif ne change rien là-bas.
 const NATIVE_STACK_HEADER_HEIGHT = Platform.OS === 'ios' ? 44 : 56;
-const HEADER_TITLE_SIZE = Platform.OS === 'ios' ? 17 : 20;
 
 export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const colors = useThemeColors();
   const chrome = useChromeScale();
+  const header = useHeaderOptions();
 
   if (isLoading) return <View className="flex-1 bg-sand" />;
   if (!session) return <Redirect href="/(auth)/login" />;
 
-  // Mêmes valeurs de style qu'app/(entities)/_layout.tsx, sans quoi le fond
-  // et la teinte différeraient d'un écran à l'autre. Écrites UNE fois pour
-  // les deux onglets qui portent un en-tête : recopiées, elles finiraient par
-  // diverger, et c'est exactement le genre d'écart de 8 dp qu'on a déjà passé
-  // du temps à traquer ici.
-  //
   // Attention : ce n'est PAS le même composant d'en-tête que celui des écrans
   // (entities) — eux ont l'en-tête natif du Stack, celui-ci est l'en-tête JS
-  // du navigateur d'onglets. D'où la hauteur forcée ci-dessus ; toute autre
+  // du navigateur d'onglets. D'où la hauteur forcée ci-dessous ; toute autre
   // différence de rendu entre les deux se règlera ici, pas dans l'écran.
   const headerOptions = {
+    ...header,
     headerShown: true,
-    // Contrairement a l'en-tete natif de (entities), celui-ci est rendu
-    // en JavaScript : sa hauteur suit donc le reglage, elle aussi.
+    // Contrairement à l'en-tête natif de (entities), celui-ci est rendu
+    // en JavaScript : sa hauteur suit donc le réglage, elle aussi.
     headerStyle: {
-      backgroundColor: colors.sand,
+      ...header.headerStyle,
       height: Math.round(NATIVE_STACK_HEADER_HEIGHT * chrome) + insets.top,
-    },
-    headerTintColor: colors.accent,
-    headerTitleStyle: {
-      color: colors.ink,
-      ...(chrome > 1 ? { fontSize: Math.round(HEADER_TITLE_SIZE * chrome) } : {}),
     },
   };
 
