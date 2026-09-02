@@ -16,7 +16,7 @@ import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionPr
 import { useIsOffline } from '../../../src/lib/network';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { objetCountLabel } from '../../../src/features/inventory/counts';
-import { resolveEntityPhotoUrl } from '../../../src/features/inventory/entityPhoto';
+import { photoChange } from '../../../src/features/inventory/entityPhoto';
 import {
   useCreateHabitation,
   useDeleteHabitation,
@@ -274,44 +274,28 @@ export default function HabitationsScreen() {
           loading={createHabitation.isPending || updateHabitation.isPending}
           onClose={() => setModalOpen(false)}
           onDelete={editingHabitation ? () => handleDelete(editingHabitation.id) : undefined}
+          // UNE SEULE ÉCRITURE, PHOTO COMPRISE. C'était deux temps — créer la
+          // ligne, puis téléverser et réécrire — parce que le fichier est
+          // nommé d'après l'identifiant. Il n'y a plus de raison d'attendre :
+          // l'identifiant est tiré localement, et l'envoi du fichier voyage
+          // dans le même lot que la ligne (voir entityPhotoWrite).
           onSubmit={async (submittedName) => {
             const definition = HABITATION_TYPES.find((h) => h.key === type)!;
-            const userId = session!.user.id;
             if (editingHabitation) {
-              const photoUrl = await resolveEntityPhotoUrl({
-                level: 'habitation',
-                entityId: editingHabitation.id,
-                userId,
-                chosen: photoUri,
-                current: editingHabitation.photo_url,
-              });
               await updateHabitation.mutateAsync({
                 id: editingHabitation.id,
                 name: submittedName,
                 type,
                 icon: definition.icon,
-                photoUrl,
+                photoUrl: photoChange(photoUri, editingHabitation.photo_url),
               });
             } else {
-              // La ligne d'abord, la photo ensuite : le fichier est nommé
-              // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
-              const habitation = await createHabitation.mutateAsync({ name: submittedName, type, icon: definition.icon });
-              const photoUrl = await resolveEntityPhotoUrl({
-                level: 'habitation',
-                entityId: habitation.id,
-                userId,
-                chosen: photoUri,
-                current: null,
+              await createHabitation.mutateAsync({
+                name: submittedName,
+                type,
+                icon: definition.icon,
+                photoUrl: photoChange(photoUri, null),
               });
-              if (photoUrl !== undefined) {
-                await updateHabitation.mutateAsync({
-                  id: habitation.id,
-                  name: submittedName,
-                  type,
-                  icon: definition.icon,
-                  photoUrl,
-                });
-              }
             }
             setModalOpen(false);
           }}

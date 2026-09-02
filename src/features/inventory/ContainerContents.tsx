@@ -13,12 +13,11 @@ import { PresetPicker } from '../../components/PresetPicker';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Conteneur, LocationType } from '../../types/database';
-import { useSession } from '../auth/SessionProvider';
 import { canModify, useLocationPermission } from '../sharing/queries';
 import { CONTENEUR_PRESETS, getConteneurIcon, type ConteneurPresetKey } from './constants';
 import { objetCountLabel } from './counts';
 import { CreateObjetModal } from './CreateObjetModal';
-import { resolveEntityPhotoUrl } from './entityPhoto';
+import { photoChange } from './entityPhoto';
 import {
   nodeCountKey,
   useContainerContents,
@@ -38,7 +37,6 @@ type ContainerContentsProps = {
 export function ContainerContents({ parentType, parentId, addSignal }: ContainerContentsProps) {
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
-  const { session } = useSession();
   const { conteneurs, objets, isLoading, isError, refetch } = useContainerContents(parentType, parentId);
   // Compteurs à la maille de l'habitation : cet écran ne connaît que son
   // parent immédiat, qui peut être un conteneur imbriqué à n'importe quelle
@@ -162,39 +160,22 @@ export function ContainerContents({ parentType, parentId, addSignal }: Container
         loading={createConteneur.isPending || updateConteneur.isPending}
         onClose={() => setConteneurModalOpen(false)}
         onDelete={editingConteneur ? () => handleDeleteConteneur(editingConteneur.id) : undefined}
+        // Une seule écriture, photo comprise : voir le commentaire de
+        // l'écran des habitations.
         onSubmit={async (submittedName) => {
-          const userId = session!.user.id;
           if (editingConteneur) {
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'conteneur',
-              entityId: editingConteneur.id,
-              userId,
-              chosen: conteneurPhotoUri,
-              current: editingConteneur.photo_url,
-            });
             await updateConteneur.mutateAsync({
               id: editingConteneur.id,
               name: submittedName,
               presetKey: conteneurPresetKey,
-              photoUrl,
+              photoUrl: photoChange(conteneurPhotoUri, editingConteneur.photo_url),
             });
           } else {
-            // La ligne d'abord, la photo ensuite : le fichier est nommé
-            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
-            const conteneur = await createConteneur.mutateAsync({
+            await createConteneur.mutateAsync({
               name: submittedName,
               presetKey: conteneurPresetKey,
+              photoUrl: photoChange(conteneurPhotoUri, null),
             });
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'conteneur',
-              entityId: conteneur.id,
-              userId,
-              chosen: conteneurPhotoUri,
-              current: null,
-            });
-            if (photoUrl !== undefined) {
-              await updateConteneur.mutateAsync({ id: conteneur.id, name: submittedName, photoUrl });
-            }
           }
           setConteneurModalOpen(false);
         }}

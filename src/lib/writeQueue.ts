@@ -127,7 +127,7 @@ type Filterable = PromiseLike<{ error: PostgrestError | null }> & {
   eq: (column: string, value: string) => Filterable;
 };
 type UntypedTable = {
-  insert: (rows: unknown) => PromiseLike<{ error: PostgrestError | null }>;
+  upsert: (rows: unknown) => PromiseLike<{ error: PostgrestError | null }>;
   update: (patch: unknown) => Filterable;
   delete: () => Filterable;
 };
@@ -155,7 +155,20 @@ async function runBatch({ ops }: WriteBatch): Promise<void> {
     const table = supabase.from(op.table) as unknown as UntypedTable;
 
     if (op.kind === 'insert') {
-      const { error } = await table.insert(op.rows);
+      // UPSERT ET NON INSERT, POUR QUE REJOUER UN LOT SOIT SANS DANGER.
+      //
+      // Un lot n'est PAS une transaction : ses opérations partent une par
+      // une, et rien ne défait les premières si la dernière échoue. Une
+      // création accompagnée d'une photo, par exemple, insère la ligne puis
+      // envoie le fichier — si l'envoi échoue, la ligne est déjà là. Le
+      // « Réessayer » de la liste des échecs rejouerait alors l'insertion
+      // sur une clé qui existe, et la seconde tentative échouerait pour une
+      // raison n'ayant plus rien à voir avec la première.
+      //
+      // L'identifiant vient de `newId` (un UUID tiré localement) : écraser
+      // une ligne portant ce même identifiant, c'est écraser LA NÔTRE, avec
+      // un contenu identique. Il n'y a personne d'autre à écraser.
+      const { error } = await table.upsert(op.rows);
       if (error) throw error;
     } else if (op.kind === 'update') {
       const { error } = await table.update(op.patch).eq('id', op.id);

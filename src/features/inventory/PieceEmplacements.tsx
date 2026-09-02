@@ -13,11 +13,10 @@ import { PresetPicker } from '../../components/PresetPicker';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Emplacement } from '../../types/database';
-import { useSession } from '../auth/SessionProvider';
 import { canModify, usePiecePermission } from '../sharing/queries';
 import { EMPLACEMENT_PRESETS, getEmplacementIcon, type EmplacementPresetKey } from './constants';
 import { objetCountLabel } from './counts';
-import { resolveEntityPhotoUrl } from './entityPhoto';
+import { photoChange } from './entityPhoto';
 import {
   nodeCountKey,
   useCreateEmplacement,
@@ -36,7 +35,6 @@ type PieceEmplacementsProps = {
 export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps) {
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
-  const { session } = useSession();
   const { data: emplacements, isLoading, isError, refetch } = useEmplacements(pieceId);
   // Les compteurs sont à la maille de l'habitation (un appel pour toute
   // l'arborescence) ; cet écran ne connaît que sa pièce, d'où la résolution.
@@ -136,31 +134,22 @@ export function PieceEmplacements({ pieceId, addSignal }: PieceEmplacementsProps
         loading={createEmplacement.isPending || updateEmplacement.isPending}
         onClose={() => setModalOpen(false)}
         onDelete={editingEmplacement ? () => handleDelete(editingEmplacement.id) : undefined}
+        // Une seule écriture, photo comprise : voir le commentaire de
+        // l'écran des habitations.
         onSubmit={async (submittedName) => {
-          const userId = session!.user.id;
           if (editingEmplacement) {
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'emplacement',
-              entityId: editingEmplacement.id,
-              userId,
-              chosen: photoUri,
-              current: editingEmplacement.photo_url,
+            await updateEmplacement.mutateAsync({
+              id: editingEmplacement.id,
+              name: submittedName,
+              presetKey,
+              photoUrl: photoChange(photoUri, editingEmplacement.photo_url),
             });
-            await updateEmplacement.mutateAsync({ id: editingEmplacement.id, name: submittedName, presetKey, photoUrl });
           } else {
-            // La ligne d'abord, la photo ensuite : le fichier est nommé
-            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
-            const emplacement = await createEmplacement.mutateAsync({ name: submittedName, presetKey });
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'emplacement',
-              entityId: emplacement.id,
-              userId,
-              chosen: photoUri,
-              current: null,
+            await createEmplacement.mutateAsync({
+              name: submittedName,
+              presetKey,
+              photoUrl: photoChange(photoUri, null),
             });
-            if (photoUrl !== undefined) {
-              await updateEmplacement.mutateAsync({ id: emplacement.id, name: submittedName, presetKey, photoUrl });
-            }
           }
           setModalOpen(false);
         }}

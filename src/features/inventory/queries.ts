@@ -6,8 +6,9 @@ import { selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { newId } from '../../lib/uuid';
-import { deleteOp, insertOp, rpcOp, updateOp, uploadOp, useLocalFirstWrite } from '../../lib/writeQueue';
+import { deleteOp, insertOp, rpcOp, updateOp, uploadOp, useLocalFirstWrite, type WriteTable } from '../../lib/writeQueue';
 import { isSingleSpaceHabitation } from './constants';
+import { planEntityPhoto } from './entityPhoto';
 import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
 import type { SearchIndexEntry } from '../search/queries';
 
@@ -54,6 +55,35 @@ function nameFromCache(client: ReturnType<typeof useQueryClient>, key: QueryKey)
   return client.getQueryData<{ name?: string }>(key)?.name ?? '';
 }
 
+/**
+ * LA PHOTO D'UNE ENTITÉ, SANS ATTENDRE LE RÉSEAU.
+ *
+ * Les quatre niveaux — habitation, pièce, emplacement, conteneur — passent
+ * par ici, et c'est le but : le défaut corrigé était identique sur les
+ * quatre, et le laisser réparer quatre fois garantissait qu'un cinquième
+ * niveau naîtrait cassé.
+ *
+ * Rend de quoi compléter l'écriture appelante : la colonne à fondre dans son
+ * `patch`, les opérations d'envoi à ajouter à son lot, et le `patches` qui
+ * fait apparaître la photo à l'écran tout de suite.
+ */
+function entityPhotoWrite(params: {
+  level: 'habitation' | 'piece' | 'emplacement' | 'conteneur';
+  table: WriteTable;
+  entityId: string;
+  userId: string;
+  photo: string | null | undefined;
+}) {
+  const plan = planEntityPhoto(params);
+  return {
+    column: plan.column,
+    ops: plan.ops,
+    patches: plan.localUri === null ? [] : [{ id: params.entityId, patch: { photo_url: plan.localUri } }],
+    /** Ce que la ligne DU CACHE doit porter, quand elle vient d'être créée. */
+    cachedPhotoUrl: plan.localUri ?? plan.column.photo_url ?? null,
+  };
+}
+
 function invalidateSearchIndex(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['searchIndex'] });
   queryClient.invalidateQueries({ queryKey: ['habitationObjectCounts'] });
@@ -82,17 +112,29 @@ export function useCreateHabitation() {
   const { session } = useSession();
 
   return useLocalFirstWrite((input: { name: string; type: string; icon: string; photoUrl?: string | null }) => {
+    const id = newId();
+    const photo = entityPhotoWrite({
+      level: 'habitation',
+      table: 'habitations',
+      entityId: id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
     const habitation: Habitation = {
-      id: newId(),
+      id,
       user_id: session!.user.id,
       name: input.name,
       type: input.type,
       icon: input.icon,
-      photo_url: input.photoUrl ?? null,
+      // LA LIGNE PART SANS PHOTO et le cache en porte une : voir
+      // entityPhotoWrite. L'adresse définitive n'existera qu'après l'envoi
+      // du fichier, que la file fera juste derrière.
+      photo_url: photo.column.photo_url ?? null,
       created_at: new Date().toISOString(),
     };
 
-    const ops = [insertOp('habitations', [habitation])];
+    const ops = [insertOp('habitations', [habitation]), ...photo.ops];
     // LES DEUX DANS LE MÊME LOT, donc dans la même mutation : la Pièce
     // référence l'Habitation, elles doivent partir dans cet ordre et
     // échouer ensemble. C'est possible parce que l'identifiant du parent
@@ -104,28 +146,42 @@ export function useCreateHabitation() {
     return {
       ops,
       describe: { kind: 'create', name: input.name },
-      appends: [{ key: ['habitations'], row: habitation }],
+      appends: [{ key: ['habitations'], row: { ...habitation, photo_url: photo.cachedPhotoUrl } }],
       result: habitation,
     };
   });
 }
 
 export function useUpdateHabitation() {
-  return useLocalFirstWrite((input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => ({
-    describe: { kind: 'update' as const, name: input.name },
-    ops: [
-      // `photoUrl` absent = photo inchangée ; `null` explicite = photo
-      // retirée. Sans cette distinction, ouvrir la fiche pour renommer
-      // effacerait la photo au passage.
-      updateOp('habitations', input.id, {
-        name: input.name,
-        type: input.type,
-        icon: input.icon,
-        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-      }),
-    ],
-    result: undefined,
-  }));
+  const { session } = useSession();
+
+  return useLocalFirstWrite((input: { id: string; name: string; type: string; icon: string; photoUrl?: string | null }) => {
+    // `photoUrl` absent = photo inchangée ; `null` explicite = photo retirée.
+    // Sans cette distinction, ouvrir la fiche pour renommer effacerait la
+    // photo au passage.
+    const photo = entityPhotoWrite({
+      level: 'habitation',
+      table: 'habitations',
+      entityId: input.id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
+    return {
+      describe: { kind: 'update' as const, name: input.name },
+      ops: [
+        updateOp('habitations', input.id, {
+          name: input.name,
+          type: input.type,
+          icon: input.icon,
+          ...photo.column,
+        }),
+        ...photo.ops,
+      ],
+      patches: photo.patches,
+      result: undefined,
+    };
+  });
 }
 
 export function useDeleteHabitation() {
@@ -219,23 +275,34 @@ export function usePiece(id: string) {
 }
 
 export function useCreatePiece(habitationId: string) {
+  const { session } = useSession();
+
   return useLocalFirstWrite(
     (input: { name: string; presetKey: string | null; color?: string | null; photoUrl?: string | null }) => {
+      const id = newId();
+      const photo = entityPhotoWrite({
+        level: 'piece',
+        table: 'pieces',
+        entityId: id,
+        userId: session!.user.id,
+        photo: input.photoUrl,
+      });
+
       const piece: Piece = {
-        id: newId(),
+        id,
         habitation_id: habitationId,
         name: input.name,
         preset_key: input.presetKey,
         color: input.color ?? null,
-        photo_url: input.photoUrl ?? null,
+        photo_url: photo.column.photo_url ?? null,
         is_default: false,
         created_at: new Date().toISOString(),
       };
 
       return {
         describe: { kind: 'create' as const, name: input.name },
-        ops: [insertOp('pieces', [piece])],
-        appends: [{ key: ['pieces', habitationId], row: piece }],
+        ops: [insertOp('pieces', [piece]), ...photo.ops],
+        appends: [{ key: ['pieces', habitationId], row: { ...piece, photo_url: photo.cachedPhotoUrl } }],
         result: piece,
       };
     },
@@ -249,20 +316,34 @@ export function useCreatePiece(habitationId: string) {
 // écrans qui appellent ces hooks — et le jour où une mise à jour optimiste
 // plus fine sera nécessaire, il sera déjà là.
 export function useUpdatePiece(_habitationId: string) {
+  const { session } = useSession();
   const queryClient = useQueryClient();
+
   return useLocalFirstWrite(
-    (input: { id: string; name?: string; presetKey?: string | null; color?: string | null; photoUrl?: string | null }) => ({
-      describe: { kind: 'update' as const, name: input.name ?? nameFromCache(queryClient, ['piece', input.id]) },
-      ops: [
-        updateOp('pieces', input.id, {
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
-          ...(input.color !== undefined && { color: input.color }),
-          ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-        }),
-      ],
-      result: undefined,
-    }),
+    (input: { id: string; name?: string; presetKey?: string | null; color?: string | null; photoUrl?: string | null }) => {
+      const photo = entityPhotoWrite({
+        level: 'piece',
+        table: 'pieces',
+        entityId: input.id,
+        userId: session!.user.id,
+        photo: input.photoUrl,
+      });
+
+      return {
+        describe: { kind: 'update' as const, name: input.name ?? nameFromCache(queryClient, ['piece', input.id]) },
+        ops: [
+          updateOp('pieces', input.id, {
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
+            ...(input.color !== undefined && { color: input.color }),
+            ...photo.column,
+          }),
+          ...photo.ops,
+        ],
+        patches: photo.patches,
+        result: undefined,
+      };
+    },
   );
 }
 
@@ -310,37 +391,62 @@ export function useEmplacement(id: string) {
 }
 
 export function useCreateEmplacement(pieceId: string) {
+  const { session } = useSession();
+
   return useLocalFirstWrite((input: { name: string; presetKey: string | null; photoUrl?: string | null }) => {
+    const id = newId();
+    const photo = entityPhotoWrite({
+      level: 'emplacement',
+      table: 'emplacements',
+      entityId: id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
     const emplacement: Emplacement = {
-      id: newId(),
+      id,
       piece_id: pieceId,
       name: input.name,
       preset_key: input.presetKey,
-      photo_url: input.photoUrl ?? null,
+      photo_url: photo.column.photo_url ?? null,
       created_at: new Date().toISOString(),
     };
 
     return {
       describe: { kind: 'create' as const, name: input.name },
-      ops: [insertOp('emplacements', [emplacement])],
-      appends: [{ key: ['emplacements', pieceId], row: emplacement }],
+      ops: [insertOp('emplacements', [emplacement]), ...photo.ops],
+      appends: [{ key: ['emplacements', pieceId], row: { ...emplacement, photo_url: photo.cachedPhotoUrl } }],
       result: emplacement,
     };
   });
 }
 
 export function useUpdateEmplacement(_pieceId: string) {
-  return useLocalFirstWrite((input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => ({
-    describe: { kind: 'update' as const, name: input.name },
-    ops: [
-      updateOp('emplacements', input.id, {
-        name: input.name,
-        preset_key: input.presetKey,
-        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-      }),
-    ],
-    result: undefined,
-  }));
+  const { session } = useSession();
+
+  return useLocalFirstWrite((input: { id: string; name: string; presetKey: string | null; photoUrl?: string | null }) => {
+    const photo = entityPhotoWrite({
+      level: 'emplacement',
+      table: 'emplacements',
+      entityId: input.id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
+    return {
+      describe: { kind: 'update' as const, name: input.name },
+      ops: [
+        updateOp('emplacements', input.id, {
+          name: input.name,
+          preset_key: input.presetKey,
+          ...photo.column,
+        }),
+        ...photo.ops,
+      ],
+      patches: photo.patches,
+      result: undefined,
+    };
+  });
 }
 
 export function useDeleteEmplacement(_pieceId: string) {
@@ -403,12 +509,23 @@ export function useConteneur(id: string) {
 }
 
 export function useCreateConteneur(parentType: LocationType, parentId: string) {
+  const { session } = useSession();
+
   return useLocalFirstWrite((input: { name: string; presetKey: string | null; photoUrl?: string | null }) => {
+    const id = newId();
+    const photo = entityPhotoWrite({
+      level: 'conteneur',
+      table: 'conteneurs',
+      entityId: id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
     const conteneur: Conteneur = {
-      id: newId(),
+      id,
       name: input.name,
       preset_key: input.presetKey,
-      photo_url: input.photoUrl ?? null,
+      photo_url: photo.column.photo_url ?? null,
       parent_emplacement_id: parentType === 'emplacement' ? parentId : null,
       parent_conteneur_id: parentType === 'conteneur' ? parentId : null,
       created_at: new Date().toISOString(),
@@ -416,25 +533,44 @@ export function useCreateConteneur(parentType: LocationType, parentId: string) {
 
     return {
       describe: { kind: 'create' as const, name: input.name },
-      ops: [insertOp('conteneurs', [conteneur])],
-      appends: [{ key: ['containerContents', 'conteneurs', parentType, parentId], row: conteneur }],
+      ops: [insertOp('conteneurs', [conteneur]), ...photo.ops],
+      appends: [
+        {
+          key: ['containerContents', 'conteneurs', parentType, parentId],
+          row: { ...conteneur, photo_url: photo.cachedPhotoUrl },
+        },
+      ],
       result: conteneur,
     };
   });
 }
 
 export function useUpdateConteneur() {
-  return useLocalFirstWrite((input: { id: string; name: string; presetKey?: string | null; photoUrl?: string | null }) => ({
-    describe: { kind: 'update' as const, name: input.name },
-    ops: [
-      updateOp('conteneurs', input.id, {
-        name: input.name,
-        ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
-        ...(input.photoUrl !== undefined && { photo_url: input.photoUrl }),
-      }),
-    ],
-    result: undefined,
-  }));
+  const { session } = useSession();
+
+  return useLocalFirstWrite((input: { id: string; name: string; presetKey?: string | null; photoUrl?: string | null }) => {
+    const photo = entityPhotoWrite({
+      level: 'conteneur',
+      table: 'conteneurs',
+      entityId: input.id,
+      userId: session!.user.id,
+      photo: input.photoUrl,
+    });
+
+    return {
+      describe: { kind: 'update' as const, name: input.name },
+      ops: [
+        updateOp('conteneurs', input.id, {
+          name: input.name,
+          ...(input.presetKey !== undefined && { preset_key: input.presetKey }),
+          ...photo.column,
+        }),
+        ...photo.ops,
+      ],
+      patches: photo.patches,
+      result: undefined,
+    };
+  });
 }
 
 export function useDeleteConteneur() {

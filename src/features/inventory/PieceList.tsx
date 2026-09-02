@@ -12,12 +12,11 @@ import { PresetPicker } from '../../components/PresetPicker';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { confirmDelete } from '../../lib/confirmDelete';
 import type { Piece } from '../../types/database';
-import { useSession } from '../auth/SessionProvider';
 import { canModify, useHabitationPermission } from '../sharing/queries';
 import { useEntityTints } from '../../lib/theme';
 import { DEFAULT_PIECE_COLOR, PIECE_TYPES, getPieceIcon, type PieceTypeKey } from './constants';
 import { objetCountLabel } from './counts';
-import { resolveEntityPhotoUrl } from './entityPhoto';
+import { photoChange } from './entityPhoto';
 import {
   nodeCountKey,
   useCreatePiece,
@@ -35,7 +34,6 @@ type PieceListProps = {
 export function PieceList({ habitationId, addSignal }: PieceListProps) {
   const refreshControl = usePullToRefresh();
   const { t } = useTranslation();
-  const { session } = useSession();
   const { data: pieces, isLoading, isError, refetch } = usePieces(habitationId);
   const { data: counts } = useHabitationNodeCounts(habitationId);
   const { data: permission } = useHabitationPermission(habitationId);
@@ -130,29 +128,24 @@ export function PieceList({ habitationId, addSignal }: PieceListProps) {
         loading={createPiece.isPending || updatePiece.isPending}
         onClose={() => setModalOpen(false)}
         onDelete={editingPiece ? () => handleDelete(editingPiece.id) : undefined}
+        // Une seule écriture, photo comprise : voir le commentaire de
+        // l'écran des habitations.
         onSubmit={async (submittedName) => {
-          const userId = session!.user.id;
           if (editingPiece) {
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'piece',
-              entityId: editingPiece.id,
-              userId,
-              chosen: photoUri,
-              current: editingPiece.photo_url,
+            await updatePiece.mutateAsync({
+              id: editingPiece.id,
+              name: submittedName,
+              presetKey,
+              color,
+              photoUrl: photoChange(photoUri, editingPiece.photo_url),
             });
-            await updatePiece.mutateAsync({ id: editingPiece.id, name: submittedName, presetKey, color, photoUrl });
           } else {
-            // La ligne d'abord, la photo ensuite : le fichier est nommé
-            // d'après l'identifiant, qui n'existe qu'une fois la ligne créée.
-            const piece = await createPiece.mutateAsync({ name: submittedName, presetKey, color });
-            const photoUrl = await resolveEntityPhotoUrl({
-              level: 'piece',
-              entityId: piece.id,
-              userId,
-              chosen: photoUri,
-              current: null,
+            await createPiece.mutateAsync({
+              name: submittedName,
+              presetKey,
+              color,
+              photoUrl: photoChange(photoUri, null),
             });
-            if (photoUrl !== undefined) await updatePiece.mutateAsync({ id: piece.id, photoUrl });
           }
           setModalOpen(false);
         }}
