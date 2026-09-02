@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { uploadImage } from './images/pickAndUploadImage';
 import { supabase } from './supabase/client';
 import type { Database } from '../types/supabase';
 import { applyOpsToCache, type AppendTarget } from './optimisticCache';
@@ -63,7 +64,25 @@ export type WriteOp =
   // transaction. La refaire en deux opérations côté client perdrait cette
   // garantie — et c'est exactement l'action qu'on fait le plus souvent sans
   // réseau, une caisse à la main devant une étagère.
-  | { kind: 'rpc'; fn: keyof Database['public']['Functions']; args: Record<string, unknown> };
+  | { kind: 'rpc'; fn: keyof Database['public']['Functions']; args: Record<string, unknown> }
+  // TÉLÉVERSER UNE PHOTO, PUIS ÉCRIRE SON ADRESSE. Une photo n'est pas une
+  // ligne de base : c'est un fichier à envoyer au stockage, dont on ne connaît
+  // l'adresse définitive qu'après l'envoi. Les deux temps tiennent donc dans
+  // UNE opération, sans quoi le rejeu pourrait écrire l'adresse d'un fichier
+  // jamais arrivé.
+  //
+  // Ce qui voyage sur le disque, c'est le CHEMIN LOCAL du fichier choisi. Il
+  // vit dans le cache de l'application : il survit très bien à un redémarrage,
+  // mais Android peut le supprimer sous pression de stockage. Une copie
+  // durable demanderait `expo-file-system`, donc un module natif, donc un
+  // nouvel APK pour tout le monde — PAS FAIT, et signalé.
+  | {
+      kind: 'upload';
+      uri: string;
+      bucket: string;
+      path: string;
+      then: { table: WriteTable; id: string; column: string };
+    };
 
 export type WriteBatch = {
   ops: WriteOp[];
@@ -109,6 +128,14 @@ async function runBatch({ ops }: WriteBatch): Promise<void> {
   for (const op of ops) {
     if (op.kind === 'rpc') {
       const { error } = await supabase.rpc(op.fn, op.args as never);
+      if (error) throw error;
+      continue;
+    }
+
+    if (op.kind === 'upload') {
+      const url = await uploadImage(op.uri, { bucket: op.bucket, path: op.path });
+      const target = supabase.from(op.then.table) as unknown as UntypedTable;
+      const { error } = await target.update({ [op.then.column]: url }).eq('id', op.then.id);
       if (error) throw error;
       continue;
     }
@@ -183,6 +210,15 @@ export function updateOp<T extends WriteTable>(table: T, id: string, patch: Tabl
 
 export function deleteOp<T extends WriteTable>(table: T, id: string): WriteOp {
   return { kind: 'delete', table, id };
+}
+
+export function uploadOp(input: {
+  uri: string;
+  bucket: string;
+  path: string;
+  then: { table: WriteTable; id: string; column: string };
+}): WriteOp {
+  return { kind: 'upload', ...input };
 }
 
 export function rpcOp(fn: keyof Database['public']['Functions'], args: Record<string, unknown>): WriteOp {

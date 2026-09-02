@@ -16,11 +16,11 @@ import { LoanSheet } from '../../../src/features/loans/LoanSheet';
 import { useClosePret, useObjetPret } from '../../../src/features/loans/queries';
 import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
-import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useUpdateObjet } from '../../../src/features/inventory/queries';
+import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useSetObjetPhotoFromLocal, useUpdateObjet } from '../../../src/features/inventory/queries';
 import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
-import { pickAndUploadImage } from '../../../src/lib/images/pickAndUploadImage';
+import { pickImage } from '../../../src/lib/images/pickAndUploadImage';
 import { useThemeColors } from '../../../src/lib/theme';
 import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 
@@ -43,6 +43,7 @@ export default function ObjetScreen() {
   const editable = canModify(permission);
   const updateObjet = useUpdateObjet(id);
   const deleteObjet = useDeleteObjet();
+  const setObjetPhoto = useSetObjetPhotoFromLocal(id);
   const { pret } = useObjetPret(id);
   const closePret = useClosePret();
   const [loanSheetOpen, setLoanSheetOpen] = useState(false);
@@ -74,16 +75,24 @@ export default function ObjetScreen() {
     updateObjet.mutate({ name, description: description || null });
   };
 
+  // ON CHOISIT, ON AFFICHE, ON ENVOIE — dans cet ordre, et c'est le correctif.
+  //
+  // L'écran téléversait d'abord et n'écrivait qu'ensuite : sans réseau, le
+  // téléversement échouait et il ne restait RIEN — ni photo à l'écran, ni
+  // écriture en attente. Défaut signalé à l'usage.
+  //
+  // Le fichier choisi est déjà sur l'appareil : il s'affiche donc tout de
+  // suite, et la file se charge de l'envoyer puis d'écrire son adresse
+  // définitive dès qu'il y a du réseau.
+  //
+  // `photoUploading` ne couvre plus que la SÉLECTION, qui est brève. C'est
+  // juste : il n'y a plus d'attente réseau à signaler ici.
   const handleChangePhoto = async () => {
     if (!session) return;
     setPhotoUploading(true);
     try {
-      const photoUrl = await pickAndUploadImage({
-        bucket: 'objets',
-        path: `${session.user.id}/${id}.jpg`,
-        aspect: [1, 1],
-      });
-      if (photoUrl) updateObjet.mutate({ photo_url: photoUrl });
+      const localUri = await pickImage([1, 1]);
+      if (localUri) setObjetPhoto.mutate(localUri);
     } finally {
       setPhotoUploading(false);
     }

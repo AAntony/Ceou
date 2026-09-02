@@ -6,9 +6,10 @@ import { selectMany, selectOne } from '../../lib/supabase/crud';
 import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { newId } from '../../lib/uuid';
-import { deleteOp, insertOp, rpcOp, updateOp, useLocalFirstWrite } from '../../lib/writeQueue';
+import { deleteOp, insertOp, rpcOp, updateOp, uploadOp, useLocalFirstWrite } from '../../lib/writeQueue';
 import { isSingleSpaceHabitation } from './constants';
 import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
+import type { SearchIndexEntry } from '../search/queries';
 
 // L'INVENTAIRE S'ÉCRIT À TRAVERS LA FILE, ET PLUS DIRECTEMENT.
 //
@@ -18,12 +19,16 @@ import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
 // garde tant qu'il n'y a pas de réseau, la persiste sur le disque et la rejoue
 // au retour. Voir lib/writeQueue pour le mécanisme.
 //
-// CE QUI RESTE EN LIGNE, et pourquoi : tout ce qui suppose un TÉLÉVERSEMENT.
-// Une photo n'est pas une ligne de base, c'est un fichier à envoyer vers le
-// stockage ; la mettre en file demanderait de garder le fichier sur l'appareil
-// et de le rejouer séparément — une seconde file, avec ses propres échecs.
-// `useCreateObjetsBulk` et `useSetObjetPhoto` gardent donc l'ancien
-// fonctionnement et échouent sans réseau, comme avant.
+// LES PHOTOS PASSENT PAR LA FILE ELLES AUSSI, depuis qu'une opération
+// `upload` y existe : on garde le chemin LOCAL du fichier choisi, on l'affiche
+// tout de suite, et l'envoi vers le stockage attend le réseau comme le reste
+// (voir useSetObjetPhotoFromLocal).
+//
+// CE QUI RESTE EN LIGNE : `useCreateObjetsBulk`, le scan IA multi-objets. Il
+// téléverse une photo PAR objet détecté et compte les échecs pour les
+// annoncer ; le faire passer en file demanderait de repenser ce compte rendu,
+// et c'est de toute façon une fonctionnalité qui appelle un service distant
+// pour reconnaître les objets — elle ne peut pas fonctionner sans réseau.
 //
 // L'HORODATAGE DES LIGNES LOCALES est posé ici et non laissé au défaut de la
 // base : la ligne optimiste est affichée AVANT d'être écrite, et les listes
@@ -525,6 +530,42 @@ export function useSetObjetPhoto() {
   });
 }
 
+/**
+ * CHANGER LA PHOTO D'UN OBJET SANS ATTENDRE LE RÉSEAU.
+ *
+ * Le défaut corrigé, signalé à l'usage : hors-ligne, choisir une photo ne
+ * faisait RIEN, et après reconnexion l'ancienne était toujours là. La cause
+ * était que l'écran téléversait d'abord et n'écrivait qu'ensuite — sans
+ * réseau, le téléversement échouait et rien n'était mis en file.
+ *
+ * L'ordre est inversé : on prend le chemin LOCAL du fichier, on l'affiche
+ * immédiatement, et c'est la file qui se charge de l'envoyer puis d'écrire
+ * l'adresse définitive. Le fichier choisi est déjà sur l'appareil : il n'y a
+ * aucune raison d'attendre pour le montrer.
+ *
+ * `patches` touche l'objet ET sa ligne dans l'index de recherche — les deux
+ * portent une colonne `photo_url`, donc l'accueil se met à jour tout seul.
+ */
+export function useSetObjetPhotoFromLocal(objetId: string) {
+  const { session } = useSession();
+
+  return useLocalFirstWrite((localUri: string) => ({
+    ops: [
+      uploadOp({
+        uri: localUri,
+        bucket: 'objets',
+        // MÊME CHEMIN QU'AVANT, à l'octet près : le fichier de stockage porte
+        // l'identifiant de l'objet, donc une nouvelle photo remplace la
+        // précédente au lieu d'en accumuler.
+        path: `${session!.user.id}/${objetId}.jpg`,
+        then: { table: 'objets', id: objetId, column: 'photo_url' },
+      }),
+    ],
+    patches: [{ id: objetId, patch: { photo_url: localUri } }],
+    result: undefined,
+  }));
+}
+
 export function useDeleteObjet() {
   return useLocalFirstWrite((id: string) => ({ ops: [deleteOp('objets', id)], result: undefined }));
 }
@@ -674,6 +715,44 @@ export function useMoveObjet(objetId: string) {
       const toKey: QueryKey = ['containerContents', 'objets', destination.type, destination.id];
       const nextList = queryClient.getQueryData<Objet[]>(toKey);
       if (nextList) sets.push({ key: toKey, data: [...nextList.filter((row) => row.id !== objetId), moved] });
+    }
+
+    // L'ACCUEIL AUSSI, et il a sa propre représentation. Il ne lit ni les
+    // objets ni les listes de contenants, mais l'index de recherche — une
+    // ligne à plat par objet, qui recopie le nom de sa pièce, de son
+    // habitation et de son contenant direct. Rien de tout cela ne se déduit
+    // d'un `parent_conteneur_id` : il faut réécrire ces champs.
+    //
+    // Défaut signalé à l'usage : « hors-ligne, quand je déplace un objet, la
+    // modification ne se voit pas dans la page d'accueil ». En ligne, le
+    // rafraîchissement global rechargeait l'index une seconde plus tard.
+    //
+    // La clé porte l'identifiant du compte : on la retrouve par PRÉFIXE
+    // plutôt que de le faire remonter jusqu'ici.
+    const chain = sets[0].data as ObjetLocationNode[];
+    const habitationNode = chain.find((node) => node.kind === 'habitation');
+    const pieceNode = chain.find((node) => node.kind === 'piece');
+    const parentNode = chain[chain.length - 1];
+
+    for (const [key, entries] of queryClient.getQueriesData<SearchIndexEntry[]>({ queryKey: ['searchIndex'] })) {
+      if (!entries) continue;
+      sets.push({
+        key,
+        data: entries.map((entry) =>
+          entry.kind === 'objet' && entry.id === objetId
+            ? {
+                ...entry,
+                piece_id: pieceNode?.id ?? entry.piece_id,
+                piece_name: pieceNode?.name ?? entry.piece_name,
+                habitation_id: habitationNode?.id ?? entry.habitation_id,
+                habitation_name: habitationNode?.name ?? entry.habitation_name,
+                // Le contenant DIRECT, c'est-à-dire le dernier maillon du
+                // chemin. Nul si l'objet est posé à même la pièce.
+                parent_label: parentNode && parentNode.kind !== 'piece' && parentNode.kind !== 'habitation' ? parentNode.name : null,
+              }
+            : entry,
+        ),
+      });
     }
 
     return {

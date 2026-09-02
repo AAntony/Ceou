@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import * as Network from 'expo-network';
 import { useEffect, useState } from 'react';
+import { AppState } from 'react-native';
 
 // L'ÉTAT DU RÉSEAU, ET LE SEUL ENDROIT QUI LE DÉCIDE.
 //
@@ -21,14 +22,26 @@ import { useEffect, useState } from 'react';
 // comporter comme avant plutôt que de planter.
 
 /**
- * `isInternetReachable` vaut `undefined` le temps qu'Android tranche, et
- * suit simplement `isConnected` sur iOS (limite documentée du module). On ne
- * déclare donc hors-ligne que sur un `false` FRANC : traiter l'indécision
- * comme une coupure ferait clignoter le bandeau à chaque changement de
- * réseau, et suspendrait des requêtes qui seraient passées.
+ * SEUL `isConnected` DÉCIDE, et `isInternetReachable` a été écarté.
+ *
+ * Il servait de veto : hors-ligne dès qu'il valait `false`. Défaut signalé à
+ * l'usage — le bandeau restait affiché après le retour du réseau. Android
+ * calcule cette « joignabilité » en validant la connexion, ce qui prend un
+ * moment ; si l'écouteur se déclenche pendant cette fenêtre et ne se
+ * redéclenche pas une fois la validation acquise, l'application reste
+ * définitivement persuadée d'être hors-ligne.
+ *
+ * Et la conséquence dépasse le bandeau : tant qu'elle se croit coupée, les
+ * écritures en attente ne repartent JAMAIS. C'est ce qui rend ce veto
+ * inacceptable.
+ *
+ * Le compromis assumé : sur un réseau connecté mais sans Internet (portail
+ * captif d'hôtel), on se croira en ligne, et les requêtes échoueront au lieu
+ * d'afficher le cache. C'est nettement moins grave que de rester bloqué —
+ * l'échec est temporaire et visible, le blocage était permanent et muet.
  */
 function isOnline(state: Network.NetworkState): boolean {
-  return state.isConnected === true && state.isInternetReachable !== false;
+  return state.isConnected === true;
 }
 
 /**
@@ -64,7 +77,24 @@ export function installOnlineManager(): void {
         .catch(() => setOnline(true));
 
       const subscription = Network.addNetworkStateListener((state) => setOnline(isOnline(state)));
-      return () => subscription.remove();
+
+      // UNE SECONDE SOURCE, PARCE QU'UN ÉCOUTEUR PEUT MANQUER UN ÉVÉNEMENT.
+      // Reprendre l'application au premier plan est le moment exact où l'on
+      // constate « ah, j'ai du réseau maintenant » — et c'est aussi celui où
+      // un écouteur endormi pendant que l'app était en arrière-plan a le plus
+      // de chances d'avoir laissé passer le changement. On relit donc l'état
+      // à chaque retour, sans attendre qu'on veuille bien nous le dire.
+      const appState = AppState.addEventListener('change', (status) => {
+        if (status !== 'active') return;
+        Network.getNetworkStateAsync()
+          .then((state) => setOnline(isOnline(state)))
+          .catch(() => setOnline(true));
+      });
+
+      return () => {
+        subscription.remove();
+        appState.remove();
+      };
     } catch {
       // On reste sur l'hypothèse « en ligne », c'est-à-dire le comportement
       // d'avant ce fichier : l'app tente ses requêtes et échoue proprement.
