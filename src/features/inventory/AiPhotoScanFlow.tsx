@@ -12,7 +12,7 @@ import { cropDetection, detectObjects, getImageSize, RateLimitedError } from '..
 import { logClientError } from '../../lib/errorLogging';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
-import { useProfile, useSetAiPhotoConsent } from '../profile/useProfile';
+import { useProfile, useSetAiConsent } from '../profile/useProfile';
 import { useCreateObjetsBulk } from './queries';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
@@ -55,7 +55,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
   const insets = useSafeAreaInsets();
   const createObjetsBulk = useCreateObjetsBulk();
   const { data: profile } = useProfile();
-  const setAiPhotoConsent = useSetAiPhotoConsent();
+  const setAiPhotoConsent = useSetAiConsent('ai_photo_consent_at');
   const [step, setStep] = useState<Step>('capture');
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [pendingSource, setPendingSource] = useState<'camera' | 'library' | null>(null);

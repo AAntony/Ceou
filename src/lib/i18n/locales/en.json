@@ -289,6 +289,11 @@
     }
   },
   "assistant": {
+    "consent": {
+      "title": "Before talking to Ceou",
+      "body": "To understand you, Ceou relies on two services: your phone's own speech recognition, which turns your voice into text (Apple's or Google's, depending on the device), then Google's Gemini API, which receives that text and interprets it. Your sentence is only used to answer this one-off request.",
+      "accept": "Accept and continue"
+    },
     "thinking": "Looking…",
     "error": "I could not handle your request. Try again in a moment.",
     "error_busy": "Too many questions at once. Ask me again in a few seconds.",

@@ -289,6 +289,11 @@
     }
   },
   "assistant": {
+    "consent": {
+      "title": "Avant de parler à Céoù",
+      "body": "Pour te comprendre, Céoù passe par deux services : la reconnaissance vocale de ton téléphone, qui transforme ta voix en texte (celle d'Apple ou de Google selon l'appareil), puis l'API Gemini de Google, à qui ce texte est envoyé pour être interprété. Ta phrase n'est utilisée que pour répondre à cette demande ponctuelle.",
+      "accept": "J'accepte et je continue"
+    },
     "thinking": "Je cherche…",
     "error": "Je n'ai pas pu traiter ta demande. Réessaie dans un instant.",
     "error_busy": "Trop de questions coup sur coup. Redemande-moi dans quelques secondes.",

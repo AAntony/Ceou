@@ -717,6 +717,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_assistant_consent_at: string | null
           ai_photo_consent_at: string | null
           avatar_url: string | null
           created_at: string
@@ -727,6 +728,7 @@ export type Database = {
           onboarding_done_at: string | null
         }
         Insert: {
+          ai_assistant_consent_at?: string | null
           ai_photo_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string
@@ -737,6 +739,7 @@ export type Database = {
           onboarding_done_at?: string | null
         }
         Update: {
+          ai_assistant_consent_at?: string | null
           ai_photo_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string

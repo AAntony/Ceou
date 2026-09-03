@@ -1,0 +1,15 @@
+-- Trace le consentement explicite à l'envoi de la PAROLE vers Google Gemini
+-- (assistant vocal) — nullable, jamais rempli tant que l'utilisateur n'a pas
+-- validé la boîte de dialogue dédiée.
+--
+-- UNE SECONDE COLONNE, ET NON LA RÉUTILISATION DE ai_photo_consent_at. Un
+-- consentement RGPD vaut pour un traitement précis : accepter d'envoyer une
+-- photo de son garage n'est pas accepter d'envoyer ce qu'on dit à voix haute
+-- chez soi. Les deux fonctionnalités partent chez le même tiers, mais ce ne
+-- sont pas les mêmes données, et on peut vouloir de l'une sans l'autre.
+--
+-- Ce qui manquait jusqu'ici : l'assistant transmettait déjà le transcript à
+-- Gemini (voir supabase/functions/interpret-command) sans rien demander ni
+-- rien déclarer, alors que le scan photo, lui, faisait les deux. Relevé à
+-- l'audit d'avant publication.
+alter table public.profiles add column ai_assistant_consent_at timestamptz;

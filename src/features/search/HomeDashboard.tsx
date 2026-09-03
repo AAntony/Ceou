@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Animated, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Animated, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
@@ -10,10 +10,11 @@ import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
 import { OnboardingGuide } from '../onboarding/OnboardingGuide';
 import { useOnboardingLaunch } from '../onboarding/useOnboarding';
-import { useProfile } from '../profile/useProfile';
+import { useProfile, useSetAiConsent } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
 import { AssistantFab } from './AssistantFab';
+import { AssistantConsentSheet } from '../assistant/AssistantConsentSheet';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
 import { normalizeForMatch } from '../../lib/text/match';
@@ -23,6 +24,7 @@ import {
   useScaled,
   useTextScale,
 } from '../../lib/textScale';
+import { logClientError } from '../../lib/errorLogging';
 import { useThemeColors } from '../../lib/theme';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
@@ -325,9 +327,37 @@ export function HomeDashboard() {
   // dictees courtes restent une recherche texte, sans appel IA (voir
   // DIRECT_SEARCH_MAX_WORDS).
   const voiceSearch = useAssistant();
+  // CE QU'ON DIT À L'ASSISTANT PART CHEZ GOOGLE : son transcript est envoyé
+  // à Gemini pour être compris (voir supabase/functions/interpret-command).
+  // L'accord se demande donc AVANT que le micro ne s'ouvre, comme le scan
+  // photo le fait avant de prendre la photo — et pas une fois la phrase
+  // prononcée, ce qui reviendrait à faire choisir entre consentir et perdre
+  // ce qu'on vient de dire.
+  const [assistantConsentOpen, setAssistantConsentOpen] = useState(false);
+  const setAssistantConsent = useSetAiConsent('ai_assistant_consent_at');
   // Le guide de démarrage : il s'ouvre de lui-même à la toute première
   // utilisation, et reste ensuite accessible depuis l'écran vide ci-dessous.
   const onboarding = useOnboardingLaunch();
+
+  const startAssistant = () => {
+    if (profile?.ai_assistant_consent_at) {
+      voiceSearch.start();
+      return;
+    }
+    setAssistantConsentOpen(true);
+  };
+
+  const acceptAssistantConsent = async () => {
+    try {
+      await setAssistantConsent.mutateAsync();
+    } catch (err) {
+      logClientError(err, { source: 'assistant', step: 'consent' });
+      Alert.alert(t('common.error_generic'));
+      return;
+    }
+    setAssistantConsentOpen(false);
+    voiceSearch.start();
+  };
 
   const pieceOptions = useMemo(() => {
     const seen = new Map<string, string>();
@@ -502,7 +532,14 @@ export function HomeDashboard() {
           pastille micro vivait dans le champ de recherche, tout en haut de
           l'écran, là où l'utilisateur la trouvait trop discrète et où elle
           demandait de changer de prise en main pour l'atteindre. */}
-      <AssistantFab active={voiceSearch.active} onPress={voiceSearch.active ? voiceSearch.stop : voiceSearch.start} />
+      <AssistantFab active={voiceSearch.active} onPress={voiceSearch.active ? voiceSearch.stop : startAssistant} />
+
+      <AssistantConsentSheet
+        visible={assistantConsentOpen}
+        loading={setAssistantConsent.isPending}
+        onAccept={acceptAssistantConsent}
+        onCancel={() => setAssistantConsentOpen(false)}
+      />
 
       <AssistantSheet
         state={voiceSearch}
