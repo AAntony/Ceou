@@ -22,6 +22,20 @@ import { useChromeScale } from '../../src/lib/textScale';
 // Sur iOS les deux valent déjà 44 : ce correctif ne change rien là-bas.
 const NATIVE_STACK_HEADER_HEIGHT = Platform.OS === 'ios' ? 44 : 56;
 
+// MÊME HISTOIRE POUR LE RETRAIT À DROITE, et ça s'est vu aussi.
+//
+// La barre native garde 16 dp avant son bouton d'action. L'en-tête JS, lui,
+// n'en garde aucun : son conteneur de droite ne porte que l'encart d'écran,
+// nul en portrait. Les boutons posés dedans — « Ajouter » sur Amis, la
+// disquette sur Profil — ajoutent 8 px de leur côté pour retomber sur les
+// 24 px de marge du contenu de l'app (px-6) ; sans ces 16 dp rendus ici,
+// ils s'arrêtaient à 8 px du bord, soit 16 de moins que sur Habitations ou
+// n'importe quelle fiche. Signalé à l'usage.
+//
+// Une valeur FIXE, non mise à l'échelle : le retrait de la barre native ne
+// suit pas la taille du texte, celui-ci ne doit pas non plus.
+const NATIVE_HEADER_RIGHT_INSET = 16;
+
 export default function TabsLayout() {
   const { session, isLoading } = useSession();
   const { t } = useTranslation();
@@ -45,6 +59,10 @@ export default function TabsLayout() {
       ...header.headerStyle,
       height: Math.round(NATIVE_STACK_HEADER_HEIGHT * chrome) + insets.top,
     },
+    // `paddingRight` et non `marginRight` : le conteneur porte déjà
+    // `marginEnd: insets.right` pour l'encart d'écran en paysage, qu'il ne
+    // faut pas écraser. Le retrait se pose donc À L'INTÉRIEUR de l'encart.
+    headerRightContainerStyle: { paddingRight: NATIVE_HEADER_RIGHT_INSET },
   };
 
   // La barre d'onglets visible est AppTabBar, rendue depuis app/_layout.tsx
