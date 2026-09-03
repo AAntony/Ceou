@@ -30,7 +30,9 @@ import { fileURLToPath } from 'node:url';
 //
 //   node scripts/build-legal-page.mjs
 //
-// puis déployer le dossier legal-site/ (voir le README qu'il contient).
+// puis déployer le dossier legal-site/ — voir scripts/legal-site.md. Ce
+// dossier est mis en ligne TEL QUEL : rien d'autre que les pages ne doit y
+// atterrir, tout ce qu'il contient devient public.
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
