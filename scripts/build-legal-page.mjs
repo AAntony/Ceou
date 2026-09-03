@@ -39,7 +39,7 @@ const root = join(here, '..');
 
 const data = JSON.parse(readFileSync(join(root, 'src/features/legal/privacyPolicy.json'), 'utf8'));
 
-const CONTACT = 'aldana.antony@gmail.com';
+const CONTACT = 'contact@ceou.eu';
 
 // Les ancres de suppression ne doivent PLUS JAMAIS changer : une adresse
 // déposée dans une fiche de store est recopiée ailleurs, et la corriger

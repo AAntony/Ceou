@@ -10,7 +10,7 @@
         },
         {
           "heading": "Qui traite tes données",
-          "body": "Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte aldana.antony@gmail.com."
+          "body": "Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte contact@ceou.eu."
         },
         {
           "heading": "Données collectées",
@@ -50,7 +50,7 @@
         },
         {
           "heading": "Tes droits",
-          "body": "Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à aldana.antony@gmail.com."
+          "body": "Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à contact@ceou.eu."
         }
       ]
     },
@@ -64,7 +64,7 @@
         },
         {
           "heading": "Who processes your data",
-          "body": "Ceou is published independently. For any question about your data, contact aldana.antony@gmail.com."
+          "body": "Ceou is published independently. For any question about your data, contact contact@ceou.eu."
         },
         {
           "heading": "Data collected",
@@ -104,7 +104,7 @@
         },
         {
           "heading": "Your rights",
-          "body": "You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then \"My account\", then \"Delete my account\". It is immediate and permanent, photos included. For a data export, write to aldana.antony@gmail.com."
+          "body": "You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then \"My account\", then \"Delete my account\". It is immediate and permanent, photos included. For a data export, write to contact@ceou.eu."
         }
       ]
     }
@@ -114,7 +114,7 @@
       "heading": "Supprimer ton compte et tes données",
       "paragraphs": [
         "Depuis l'application, c'est immédiat : Profil, puis « Mon compte », puis « Supprimer mon compte ». Ton mot de passe t'est redemandé, pour confirmer que c'est bien toi.",
-        "Sans l'application, écris à aldana.antony@gmail.com depuis l'adresse e-mail de ton compte, avec « Suppression de compte » en objet. La demande est traitée sous 30 jours.",
+        "Sans l'application, écris à contact@ceou.eu depuis l'adresse e-mail de ton compte, avec « Suppression de compte » en objet. La demande est traitée sous 30 jours.",
         "Ce qui est supprimé : ton compte et ton profil, tes habitations, pièces, emplacements, conteneurs et objets, leurs photos, l'historique de leurs déplacements, tes prêts et emprunts, tes amis, tes partages et tes invitations, tes jetons de notification et tes journaux d'erreurs.",
         "Ce qui reste : les habitations que des amis ont partagées avec toi ne sont pas supprimées — elles leur appartiennent, tu perds simplement leur accès. De même, si quelqu'un a enregistré t'avoir prêté un objet, la ligne reste chez lui : elle fait partie de ses données à lui, pas des tiennes.",
         "La suppression est définitive : rien n'est récupérable ensuite depuis l'application. Les sauvegardes techniques de l'hébergeur peuvent en conserver une copie le temps de leur rotation, avant d'être écrasées à leur tour."
@@ -124,7 +124,7 @@
       "heading": "Deleting your account and your data",
       "paragraphs": [
         "From the app, it is immediate: Profile, then \"My account\", then \"Delete my account\". You are asked for your password again, to confirm it is really you.",
-        "Without the app, write to aldana.antony@gmail.com from your account’s email address, with \"Account deletion\" as the subject. Requests are handled within 30 days.",
+        "Without the app, write to contact@ceou.eu from your account’s email address, with \"Account deletion\" as the subject. Requests are handled within 30 days.",
         "What is deleted: your account and profile, your homes, rooms, spots, containers and items, their photos, their move history, your loans and borrowings, your friends, your shares and invitations, your notification tokens and your error logs.",
         "What remains: homes that friends shared with you are not deleted — they belong to them, you simply lose access. Likewise, if someone recorded lending you an item, that record stays with them: it is part of their data, not yours.",
         "Deletion is permanent: nothing can be recovered from the app afterwards. The host’s technical backups may keep a copy for the length of their rotation, before being overwritten in turn."
