@@ -57,8 +57,8 @@ export function PlanRoomSheet({
               </Text>
               <Text className="text-label text-ink-soft">
                 {objectCount === null
-                  ? t('plans.room_sheet.storages', { n: list.length })
-                  : `${t('plans.room_sheet.objects', { n: objectCount })} · ${t('plans.room_sheet.storages', { n: list.length })}`}
+                  ? t('plans.room_sheet.storages', { count: list.length })
+                  : `${t('plans.room_sheet.objects', { count: objectCount })} · ${t('plans.room_sheet.storages', { count: list.length })}`}
               </Text>
             </View>
           </View>

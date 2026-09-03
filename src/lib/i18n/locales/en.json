@@ -694,10 +694,34 @@
     "unassigned_room": "Unassigned room",
     "room_sheet": {
       "storages_title": "Storages",
-      "storages": "{{n}} storages",
-      "objects": "{{n}} items",
+      "storages_zero": "No storage",
+      "storages_one": "1 storage",
+      "storages_other": "{{count}} storages",
+      "objects_zero": "No items",
+      "objects_one": "1 item",
+      "objects_other": "{{count}} items",
       "empty": "No storage in this room yet.",
       "open": "Open the room"
+    },
+    "list": {
+      "show": "View as a list",
+      "show_plan": "View the plan",
+      "zone": {
+        "nw": "Top left",
+        "n": "Top",
+        "ne": "Top right",
+        "w": "Left",
+        "c": "Centre",
+        "e": "Right",
+        "sw": "Bottom left",
+        "s": "Bottom",
+        "se": "Bottom right"
+      },
+      "connected": "Opens onto {{rooms}}",
+      "adjacent": "Shares a wall with {{rooms}}",
+      "outside_one": "1 door to the outside",
+      "outside_other": "{{count}} doors to the outside",
+      "placed": "Placed on the plan: {{names}}"
     }
   },
   "a11y": {

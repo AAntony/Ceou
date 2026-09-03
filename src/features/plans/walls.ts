@@ -37,16 +37,16 @@ const EDGES: DoorEdge[] = ['n', 'e', 's', 'w'];
 // mais un redimensionnement peut laisser une fraction d'unité : sans cette
 // tolérance, un mur mitoyen se retrouverait tracé épais des deux côtés pour un
 // écart invisible à l'écran.
-const TOUCH_EPSILON = 1;
+export const TOUCH_EPSILON = 1;
 
-type Interval = { start: number; end: number };
+export type Interval = { start: number; end: number };
 type EdgeIntervals = Record<DoorEdge, Interval[]>;
 
 export function wallWidth(interior: boolean): number {
   return interior ? WALL_WIDTH_INNER : WALL_WIDTH;
 }
 
-function edgeLength(geo: ShapeGeometry, edge: DoorEdge): number {
+export function edgeLength(geo: ShapeGeometry, edge: DoorEdge): number {
   return edge === 'n' || edge === 's' ? geo.width : geo.height;
 }
 
@@ -204,27 +204,39 @@ function mergeIntervals(intervals: Interval[]): Interval[] {
  * d'intervalles, pas un booléen.
  */
 function partitionIntervals(geo: ShapeGeometry, edge: DoorEdge, neighbours: NeighbourRoom[]): Interval[] {
-  const shared: Interval[] = [];
+  return mergeIntervals(
+    neighbours
+      .map(({ geo: other }) => sharedInterval(geo, edge, other))
+      .filter((interval): interval is Interval => interval !== null),
+  );
+}
 
-  for (const { geo: other } of neighbours) {
-    if (edge === 'n' || edge === 's') {
-      const line = edge === 'n' ? geo.y : geo.y + geo.height;
-      const facing = edge === 'n' ? other.y + other.height : other.y;
-      if (Math.abs(facing - line) > TOUCH_EPSILON) continue;
-      const start = Math.max(geo.x, other.x) - geo.x;
-      const end = Math.min(geo.x + geo.width, other.x + other.width) - geo.x;
-      if (end - start > TOUCH_EPSILON) shared.push({ start, end });
-    } else {
-      const line = edge === 'w' ? geo.x : geo.x + geo.width;
-      const facing = edge === 'w' ? other.x + other.width : other.x;
-      if (Math.abs(facing - line) > TOUCH_EPSILON) continue;
-      const start = Math.max(geo.y, other.y) - geo.y;
-      const end = Math.min(geo.y + geo.height, other.y + other.height) - geo.y;
-      if (end - start > TOUCH_EPSILON) shared.push({ start, end });
-    }
+/**
+ * Le pan de ce mur que la pièce partage avec UNE voisine, ou `null` si les
+ * deux ne se touchent pas par ce côté-là. Distances mesurées depuis le départ
+ * du mur, comme partout ici.
+ *
+ * Extrait de partitionIntervals, qui fusionnait les pans de toutes les
+ * voisines et perdait donc laquelle donnait sur quoi. Le plan en liste a
+ * justement besoin de ce lien : c'est ce qui permet de dire « la Cuisine est
+ * mitoyenne du Séjour » plutôt que « ce mur est une cloison ».
+ */
+export function sharedInterval(geo: ShapeGeometry, edge: DoorEdge, other: ShapeGeometry): Interval | null {
+  if (edge === 'n' || edge === 's') {
+    const line = edge === 'n' ? geo.y : geo.y + geo.height;
+    const facing = edge === 'n' ? other.y + other.height : other.y;
+    if (Math.abs(facing - line) > TOUCH_EPSILON) return null;
+    const start = Math.max(geo.x, other.x) - geo.x;
+    const end = Math.min(geo.x + geo.width, other.x + other.width) - geo.x;
+    return end - start > TOUCH_EPSILON ? { start, end } : null;
   }
 
-  return mergeIntervals(shared);
+  const line = edge === 'w' ? geo.x : geo.x + geo.width;
+  const facing = edge === 'w' ? other.x + other.width : other.x;
+  if (Math.abs(facing - line) > TOUCH_EPSILON) return null;
+  const start = Math.max(geo.y, other.y) - geo.y;
+  const end = Math.min(geo.y + geo.height, other.y + other.height) - geo.y;
+  return end - start > TOUCH_EPSILON ? { start, end } : null;
 }
 
 function containsPoint(intervals: Interval[], distance: number): boolean {

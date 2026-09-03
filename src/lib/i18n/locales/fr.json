@@ -694,10 +694,34 @@
     "unassigned_room": "Pièce non associée",
     "room_sheet": {
       "storages_title": "Rangements",
-      "storages": "{{n}} rangements",
-      "objects": "{{n}} objets",
+      "storages_zero": "Aucun rangement",
+      "storages_one": "1 rangement",
+      "storages_other": "{{count}} rangements",
+      "objects_zero": "Aucun objet",
+      "objects_one": "1 objet",
+      "objects_other": "{{count}} objets",
       "empty": "Aucun rangement dans cette pièce pour l’instant.",
       "open": "Ouvrir la pièce"
+    },
+    "list": {
+      "show": "Voir en liste",
+      "show_plan": "Voir le plan",
+      "zone": {
+        "nw": "En haut à gauche",
+        "n": "En haut",
+        "ne": "En haut à droite",
+        "w": "À gauche",
+        "c": "Au centre",
+        "e": "À droite",
+        "sw": "En bas à gauche",
+        "s": "En bas",
+        "se": "En bas à droite"
+      },
+      "connected": "Communique avec {{rooms}}",
+      "adjacent": "Mitoyenne de {{rooms}}",
+      "outside_one": "1 porte vers l'extérieur",
+      "outside_other": "{{count}} portes vers l'extérieur",
+      "placed": "Placés sur le plan : {{names}}"
     }
   },
   "a11y": {

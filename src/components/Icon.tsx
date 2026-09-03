@@ -98,6 +98,7 @@ export type IconName =
   | 'eyeOff'
   | 'theme'
   | 'textSize'
+  | 'list'
   | 'moveUp'
   | 'moveDown'
   // Prêts et emprunts
@@ -207,6 +208,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   moveUp: 'chevron-up',
   moveDown: 'chevron-down',
   textSize: 'format-size',
+  // Le plan d'un niveau, mais en phrases (voir PlanRoomList) : des puces,
+  // pas des colonnes — ce n'est pas un tableau.
+  list: 'format-list-bulleted',
   share: 'share-variant',
   star: 'star',
   starOutline: 'star-outline',
