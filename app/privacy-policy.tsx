@@ -1,121 +1,30 @@
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
+import privacyPolicy from '../src/features/legal/privacyPolicy.json';
 
-// Contenu déclaré directement ici (pas de clé i18n par paragraphe) : un texte
-// juridique traduit phrase par phrase via i18next serait fragile à maintenir
-// et risquerait des incohérences entre langues. Un objet FR/EN complet par
-// langue reste la structure la plus sûre pour ce type de contenu.
-const CONTENT: Record<'fr' | 'en', { title: string; updated: string; sections: { heading: string; body: string }[] }> = {
-  fr: {
-    title: 'Politique de confidentialité',
-    updated: 'Dernière mise à jour : septembre 2026',
-    sections: [
-      {
-        heading: 'Avertissement',
-        body: "Ce texte est rédigé par l'éditeur de l'application (pas un professionnel du droit) dans un souci de transparence honnête sur les données traitées. Il ne remplace pas une relecture juridique professionnelle, en particulier si l'application venait à être proposée plus largement au public.",
-      },
-      {
-        heading: 'Qui traite tes données',
-        body: "Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte aldana.antony@gmail.com.",
-      },
-      {
-        heading: 'Données collectées',
-        body: 'Ton adresse email et ton mot de passe (pour la connexion), un nom affiché et une photo de profil optionnels, ainsi que le contenu que tu crées dans l\'app : habitations, pièces, emplacements, conteneurs, objets (nom, description, photo, code-barre) et leur historique de déplacement.',
-      },
-      {
-        heading: 'Hébergement',
-        body: 'Toutes ces données sont hébergées chez Supabase, dans l\'Union Européenne (région eu-north-1, Stockholm).',
-      },
-      {
-        heading: "Le scan photo par intelligence artificielle",
-        body: "Si tu utilises la fonctionnalité de scan photo pour ajouter plusieurs objets à la fois, la photo que tu prends est envoyée à l'API Gemini de Google (hors Union Européenne) afin de détecter automatiquement les objets qu'elle contient. Google traite cette photo uniquement pour répondre à cette requête ponctuelle. Cette fonctionnalité te demande un accord explicite avant sa toute première utilisation, distinct de l'acceptation de cette politique.",
-      },
-      {
-        heading: "L'assistant vocal",
-        body: "Quand tu parles à Céoù, deux services interviennent. D'abord la reconnaissance vocale de ton téléphone, qui transforme ta voix en texte : c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs — c'est le même mécanisme que la dictée du clavier. Ensuite le texte obtenu, et jamais l'audio, est envoyé à l'API Gemini de Google, hors Union Européenne, pour être interprété. Ta phrase n'est traitée que pour répondre à cette demande ponctuelle. Comme le scan photo, l'assistant demande un accord explicite avant sa toute première utilisation.",
-      },
-      {
-        heading: 'Recherche de produit par code-barre',
-        body: "Si tu scannes un code-barre, ce code (pas d'autre donnée personnelle) est envoyé à UPCItemDB, un service tiers, pour retrouver automatiquement le nom et la photo du produit.",
-      },
-      {
-        heading: 'Notifications',
-        body: "Si tu acceptes les notifications, ton téléphone reçoit un identifiant d'envoi (un « jeton ») fourni par le service de notifications d'Expo. Il est conservé avec ton compte pour pouvoir t'avertir — un prêt à rendre, une demande d'ami — et transite par Expo, Apple et Google au moment de l'envoi, comme toute notification sur téléphone. Il disparaît quand tu refuses les notifications ou quand tu supprimes ton compte.",
-      },
-      {
-        heading: "Journal d'erreurs",
-        body: "Quand l'application rencontre une erreur, elle enregistre le message technique, la trace de l'erreur et le contexte de l'écran concerné, rattachés à ton compte. Cela ne sert qu'à corriger les pannes, reste chez le même hébergeur que le reste de tes données, et disparaît avec ton compte.",
-      },
-      {
-        heading: 'Ce qui n\'est jamais fait',
-        body: "Tes données ne sont ni vendues, ni utilisées à des fins publicitaires, ni partagées avec d'autres utilisateurs de l'app au-delà de ce que tu choisis explicitement de partager.",
-      },
-      {
-        heading: 'Durée de conservation',
-        body: "Tes données sont conservées tant que ton compte existe. Tu peux en demander la suppression à tout moment (voir ci-dessous).",
-      },
-      {
-        heading: 'Tes droits',
-        body: "Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à aldana.antony@gmail.com.",
-      },
-    ],
-  },
-  en: {
-    title: 'Privacy Policy',
-    updated: 'Last updated: September 2026',
-    sections: [
-      {
-        heading: 'Disclaimer',
-        body: "This text was written by the app's developer (not a legal professional) in the interest of honest transparency about how data is handled. It does not replace a professional legal review, particularly if the app were to be offered more widely to the public.",
-      },
-      {
-        heading: 'Who processes your data',
-        body: 'Ceou is published independently. For any question about your data, contact aldana.antony@gmail.com.',
-      },
-      {
-        heading: 'Data collected',
-        body: "Your email and password (for login), an optional display name and profile picture, and the content you create in the app: homes, rooms, spots, containers, items (name, description, photo, barcode) and their move history.",
-      },
-      {
-        heading: 'Hosting',
-        body: 'All this data is hosted with Supabase, within the European Union (eu-north-1 region, Stockholm).',
-      },
-      {
-        heading: 'AI photo scanning',
-        body: "If you use the photo scan feature to add several items at once, the photo you take is sent to Google's Gemini API (outside the EU) to automatically detect the objects it contains. Google processes this photo only to answer that one-off request. This feature asks for your explicit consent before its very first use, separate from accepting this policy.",
-      },
-      {
-        heading: 'The voice assistant',
-        body: "When you talk to Ceou, two services are involved. First your phone's own speech recognition, which turns your voice into text: that is Apple's or Google's depending on the device, and it may send the audio to their servers — the same mechanism as your keyboard's dictation. Then the resulting text, never the audio, is sent to Google's Gemini API, outside the EU, to be interpreted. Your sentence is only processed to answer that one-off request. Like photo scanning, the assistant asks for your explicit consent before its very first use.",
-      },
-      {
-        heading: 'Barcode product lookup',
-        body: 'If you scan a barcode, that code (no other personal data) is sent to UPCItemDB, a third-party service, to automatically retrieve the product name and photo.',
-      },
-      {
-        heading: 'Notifications',
-        body: "If you allow notifications, your phone receives a delivery identifier (a token) issued by Expo's notification service. It is stored with your account so we can alert you — a loan due back, a friend request — and passes through Expo, Apple and Google when a notification is sent, as any phone notification does. It is removed when you turn notifications off or when you delete your account.",
-      },
-      {
-        heading: 'Error logs',
-        body: "When the app hits an error, it records the technical message, the error trace and the context of the screen involved, tied to your account. This is used only to fix failures, stays with the same host as the rest of your data, and disappears with your account.",
-      },
-      {
-        heading: "What is never done",
-        body: "Your data is never sold, never used for advertising, and never shared with other app users beyond what you explicitly choose to share.",
-      },
-      {
-        heading: 'Retention',
-        body: 'Your data is kept for as long as your account exists. You can request its deletion at any time (see below).',
-      },
-      {
-        heading: 'Your rights',
-        body: "You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then \"My account\", then \"Delete my account\". It is immediate and permanent, photos included. For a data export, write to aldana.antony@gmail.com.",
-      },
-    ],
-  },
-};
+// LE TEXTE VIT DANS UN JSON, ET IL EST PARTAGÉ AVEC LA PAGE PUBLIQUE.
+//
+// Pas de clé i18n par paragraphe : un texte juridique traduit phrase par
+// phrase serait fragile à maintenir et risquerait des incohérences entre
+// langues. Un objet FR/EN complet par langue reste la structure la plus
+// sûre pour ce type de contenu.
+//
+// Mais il doit exister à DEUX endroits : ici, dans l'app, et sur une page web
+// publique — les deux stores exigent une adresse consultable sans installer
+// l'app, et Google Play une page de demande de suppression de compte
+// par-dessus. Deux copies d'un texte juridique finissent toujours par
+// diverger, et la divergence ne se voit pas : personne ne relit l'une en
+// pensant à l'autre.
+//
+// Il est donc écrit UNE SEULE FOIS dans privacyPolicy.json, lu ici et lu par
+// scripts/build-legal-page.mjs, qui régénère la page publique. Après toute
+// modification du JSON : relancer ce script et redéployer, sinon la version
+// publique reste en arrière.
+const CONTENT = privacyPolicy.policy as Record<
+  'fr' | 'en',
+  { title: string; updated: string; sections: { heading: string; body: string }[] }
+>;
 
 export default function PrivacyPolicyScreen() {
   const { i18n } = useTranslation();
