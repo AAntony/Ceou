@@ -1,7 +1,8 @@
 # Le site public de Céoù
 
-Quatre pages et une image engendrées dans `site/`. **Ne rien y modifier à la
-main** — le dossier est réécrit à chaque exécution du générateur.
+Quatre pages, une image et une règle de serveur, engendrées dans `site/`.
+**Ne rien y modifier à la main** — le dossier est réécrit à chaque exécution
+du générateur.
 
 | Fichier | Contenu | Ancre |
 | --- | --- | --- |
@@ -10,6 +11,7 @@ main** — le dossier est réécrit à chaque exécution du générateur.
 | `confidentialite.html` | Politique de confidentialité, français | `#suppression-de-compte` |
 | `privacy.html` | Politique de confidentialité, anglais | `#account-deletion` |
 | `og-image.png` | Vignette de partage et icône de raccourci | |
+| `.htaccess` | Redirection de HTTP vers HTTPS (Apache, donc OVH) | |
 
 Ce document vit ici et non dans `site/` : ce dossier part en ligne tel quel, et
 tout ce qu'il contient devient public. Une note de développement n'a rien à
@@ -94,6 +96,23 @@ Par FTP, avec WinSCP :
 
 Déposer le **contenu** de `site/` à la racine de `www`, pas le dossier
 lui-même : `index.html` doit répondre à `https://ceou.eu/`.
+
+**WinSCP masque les fichiers commençant par un point.** `.htaccess` en fait
+partie, et sans lui `http://ceou.eu` continue de répondre en clair. Pour le
+voir : Options → Préférences → Panneaux → cocher « Afficher les fichiers
+cachés » (ou Ctrl+Alt+H).
+
+La redirection se vérifie en une commande — 301 attendu, pas 200 :
+
+```bash
+curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}" http://ceou.eu/
+```
+
+Si elle répond toujours 200, c'est qu'OVH ne transmet pas le protocole
+d'origine dans l'en-tête attendu : remplacer `=http` par `!=https` dans la
+règle du générateur. La forme positive est le choix par défaut parce qu'un
+en-tête absent y coûte la redirection, là où la forme négative coûterait le
+site — la page se redirigerait vers elle-même sans fin.
 
 ### EAS Hosting (le miroir, `ceou.expo.app`)
 

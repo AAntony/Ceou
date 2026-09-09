@@ -402,7 +402,34 @@ for (const lang of ['fr', 'en']) {
 // ne plus se ressembler.
 copyFileSync(join(root, 'assets/icon.png'), join(outDir, 'og-image.png'));
 
+// FORCER HTTPS, ET C'EST LA SEULE CHOSE QUE CE FICHIER FAIT.
+//
+// L'hebergement mutualise OVH n'a pas de reglage pour ca dans son panneau :
+// la redirection se declare dans un .htaccess a la racine de www. Il est
+// engendre ici plutot que depose une fois a la main, pour qu'un
+// re-televersement complet du dossier ne l'efface pas en silence.
+//
+// LA CONDITION EST EN « =http » ET NON EN « !=https », VOLONTAIREMENT. OVH
+// termine le chiffrement sur un frontal et transmet le protocole d'origine
+// dans cet en-tete. Ecrite en negatif, la regle se declencherait aussi
+// lorsque l'en-tete est absent — donc sur HTTPS — et la page se redirigerait
+// vers elle-meme sans fin. En positif, un en-tete manquant ne fait rien :
+// on perd la redirection, on ne perd pas le site.
+//
+// Inoffensif ailleurs : un hebergeur qui n'est pas Apache ignore ce fichier.
+writeFileSync(
+  join(outDir, '.htaccess'),
+  `# Engendre par scripts/build-site.mjs — ne pas modifier a la main.
+# Redirige http://ceou.eu vers https://ceou.eu, en conservant le chemin.
+
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} =http
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+`,
+  'utf8',
+);
+
 const pages = ['fr', 'en'].flatMap((lang) => [FILES.home[lang], FILES.privacy[lang]]);
-console.log(`site/ : ${pages.join(', ')}, og-image.png`);
+console.log(`site/ : ${pages.join(', ')}, og-image.png, .htaccess`);
 console.log(`ancres de suppression : #${DELETION_ANCHOR.fr} (fr), #${DELETION_ANCHOR.en} (en)`);
 console.log(`langue alternee : ${FILES.home.fr} <-> ${FILES.home[OTHER.fr]}`);
