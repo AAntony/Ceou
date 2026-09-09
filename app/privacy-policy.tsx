@@ -18,7 +18,7 @@ import privacyPolicy from '../src/features/legal/privacyPolicy.json';
 // pensant à l'autre.
 //
 // Il est donc écrit UNE SEULE FOIS dans privacyPolicy.json, lu ici et lu par
-// scripts/build-legal-page.mjs, qui régénère la page publique. Après toute
+// scripts/build-site.mjs, qui régénère le site public. Après toute
 // modification du JSON : relancer ce script et redéployer, sinon la version
 // publique reste en arrière.
 const CONTENT = privacyPolicy.policy as Record<

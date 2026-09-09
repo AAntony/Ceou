@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Céoù — sais toujours où sont tes affaires</title>
+  <meta name="description" content="Céoù note où tu ranges tes affaires, pièce par pièce, et te le redit quand tu l'as oublié. Hors ligne, sans publicité, hébergé dans l'Union européenne.">
+  <link rel="alternate" hreflang="en" href="en.html">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --sand: #FFFBF8;
+      --card: #FFFFFF;
+      --ink: #2D2A26;
+      --ink-soft: #6B6459;
+      --blue: #1591EA;
+      --link: #0B5E9E;
+      --line: rgba(45, 42, 38, 0.12);
+      --chip: #F1F7FC;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sand: #191714;
+        --card: #201E1A;
+        --ink: #F4F0E9;
+        --ink-soft: #A8A094;
+        --blue: #1591EA;
+        --link: #8FCBF7;
+        --line: rgba(244, 240, 233, 0.14);
+        --chip: #12324D;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--sand);
+      color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { width: 100%; max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
+    a { color: var(--link); }
+
+    /* En-tête : le nom à gauche, le strict nécessaire à droite. */
+    .top { display: flex; align-items: center; gap: 1rem; padding: 1.5rem 0; }
+    .brand { display: flex; align-items: center; gap: 0.6rem; margin-right: auto; color: var(--blue); text-decoration: none; }
+    .brand .mark { width: 26px; height: 26px; display: block; }
+    .brand span { font-size: 1.125rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+    .top nav { display: flex; gap: 1.25rem; font-size: 0.9375rem; }
+
+    /* Accueil */
+    .hero { padding: 2rem 0 3.5rem; display: grid; gap: 2.5rem; align-items: center; }
+    @media (min-width: 52rem) { .hero { grid-template-columns: 1.05fr 1fr; padding: 3.5rem 0 5rem; } }
+    .pun { margin: 0 0 0.75rem; font-size: 0.875rem; color: var(--ink-soft); }
+    .hero h1 { margin: 0 0 1rem; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; letter-spacing: -0.02em; }
+    .lede { margin: 0 0 1.5rem; font-size: 1.125rem; color: var(--ink-soft); max-width: 34rem; }
+    .soon { display: inline-block; margin: 0; padding: 0.5rem 0.9rem; border-radius: 999px;
+            background: var(--chip); color: var(--link); font-size: 0.875rem; font-weight: 600; }
+    .plan { width: 100%; height: auto; display: block; }
+
+    /* Sections */
+    section { padding: 3rem 0; border-top: 1px solid var(--line); }
+    h2 { margin: 0 0 1.75rem; font-size: 1.5rem; line-height: 1.25; letter-spacing: -0.01em; }
+    h3 { margin: 0 0 0.4rem; font-size: 1.0625rem; line-height: 1.3; }
+    p { margin: 0; color: var(--ink-soft); }
+
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 40rem) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 58rem) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    .card { padding: 1.5rem; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+
+    .pillars { display: grid; gap: 2rem; }
+    @media (min-width: 52rem) { .pillars { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; } }
+    .pillars h3 { color: var(--ink); }
+
+    .closing { text-align: center; }
+    .closing p { margin-bottom: 1rem; }
+    .mailto { font-size: 1.125rem; font-weight: 600; }
+
+    footer { padding: 2.5rem 0 3.5rem; border-top: 1px solid var(--line); font-size: 0.875rem; color: var(--ink-soft); }
+    footer .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 0.75rem; }
+
+    /* Pages de la politique : une colonne étroite, faite pour être lue —
+       en-tête et pied de page compris, sans quoi le logo se calerait sur la
+       largeur du site et le texte sur la sienne, deux bords gauches
+       différents sur un grand écran. */
+    .doc-page .wrap { max-width: 44rem; }
+    /* padding-top/bottom et NON le raccourci : la forme courte remettrait
+       les marges latérales de .wrap à zéro, et le texte irait toucher le
+       bord de l'écran alors que l'en-tête garderait les siennes. */
+    .doc { padding-top: 1rem; padding-bottom: 3rem; }
+    .doc h1 { margin: 0 0 0.35rem; font-size: 1.75rem; line-height: 1.25; }
+    .updated { margin: 0 0 2.5rem; color: var(--ink-soft); font-size: 0.9375rem; }
+    .doc section { padding: 0; border: 0; margin-bottom: 1.75rem; }
+    .doc h2 { margin: 0 0 0.5rem; font-size: 1.0625rem; line-height: 1.35; }
+    .doc p { margin: 0 0 0.75rem; }
+    .doc p:last-child { margin-bottom: 0; }
+    .highlight { padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); }
+    /* Ciblée depuis la fiche Play Store : elle doit se distinguer dès
+       l'arrivée, sans quoi le lecteur atterrit au milieu d'un mur de texte. */
+    .highlight:target { border-color: var(--link); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <a class="brand" href="index.html">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
+      <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
+    </svg>
+        <span>Céoù</span>
+      </a>
+      <nav>
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="en.html">English</a>
+      </nav>
+    </div>
+  </div>
+
+  <main>
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <p class="pun">Comme « c’est où ? »</p>
+          <h1>Range une fois. Retrouve toujours.</h1>
+          <p class="lede">Céoù retient où tu poses tes affaires — quelle pièce, quel meuble, quelle boîte — et te le redit le jour où tu ne t'en souviens plus.</p>
+          <p class="soon">Bientôt sur Android et iOS.</p>
+        </div>
+        <svg class="plan" viewBox="0 0 320 210" role="img" aria-labelledby="planTitle">
+      <title id="planTitle">Un plan de logement avec ses pièces et un repère</title>
+      <rect x="8" y="8" width="304" height="194" rx="14" fill="var(--card)" stroke="var(--line)"/>
+      <g opacity="0.55">
+        <rect x="28" y="28" width="128" height="92" rx="4" fill="#BFD7EA"/>
+        <rect x="156" y="28" width="128" height="52" rx="4" fill="#C9E4C5"/>
+        <rect x="156" y="80" width="128" height="40" rx="4" fill="#FCE8A8"/>
+        <rect x="28" y="120" width="256" height="62" rx="4" fill="#BEE3DB"/>
+      </g>
+      <g stroke="var(--ink)" fill="none" stroke-linecap="round">
+        <!-- Deux epaisseurs, comme sur le plan de l'app : le mur qui ferme
+             le logement est porteur et se trace epais, une cloison entre
+             deux pieces est fine. Les trous sont des portes. -->
+        <path d="M28 28h256v154H28z" stroke-width="3.5"/>
+        <g stroke-width="2">
+          <path d="M156 28v30M156 74v46"/>
+          <path d="M156 80h48M232 80h52"/>
+          <path d="M28 120h72M132 120h152"/>
+        </g>
+      </g>
+      <circle cx="196" cy="150" r="15" fill="var(--blue)"/>
+      <circle cx="196" cy="150" r="5.5" fill="var(--sand)"/>
+    </svg>
+      </div>
+
+      <section>
+        <h2>Ce que Céoù sait faire</h2>
+        <div class="grid">
+        <div class="card">
+          <h3>Range comme chez toi</h3>
+          <p>Logement, pièce, meuble, boîte, objet. La même logique que ton appartement — pas une liste à plat où tout se ressemble.</p>
+        </div>
+        <div class="card">
+          <h3>Retrouve d’un mot</h3>
+          <p>Tape « perceuse ». Céoù répond dans quelle boîte, dans quel meuble, dans quelle pièce, dans quel logement.</p>
+        </div>
+        <div class="card">
+          <h3>Demande à voix haute</h3>
+          <p>« Où sont mes clés ? » Pose la question, l’assistant répond. Il peut même ranger un objet à ta place, sans que tu touches l’écran.</p>
+        </div>
+        <div class="card">
+          <h3>Le plan de ton logement</h3>
+          <p>Dessine tes pièces, pose tes meubles dessus, retrouve un objet d’un coup d’œil. Et si tu préfères lire, le même plan existe en liste.</p>
+        </div>
+        <div class="card">
+          <h3>Photographie, scanne</h3>
+          <p>Une photo par objet, pour reconnaître sans lire. Un code-barre pour retrouver un nom tout seul. Une photo de tiroir pour créer plusieurs objets d’un coup.</p>
+        </div>
+        <div class="card">
+          <h3>Prête sans oublier</h3>
+          <p>Note à qui tu prêtes, et ce qu’on t’a prêté. Céoù te rappelle ce qui n’est pas revenu — l’objet, lui, garde sa place au retour.</p>
+        </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="pillars">
+        <div>
+          <h3>Pensé pour être lisible</h3>
+          <p>Le texte grossit jusqu’à deux fois sans que rien ne se casse ni ne se tronque. Le plan se lit aussi en liste, pour qui ne voit pas l’écran ou ne peut pas le pincer. Thème sombre, grandes cibles, contrastes vérifiés un par un.</p>
+        </div>
+        <div>
+          <h3>Marche sans réseau</h3>
+          <p>Une cave, un garage, un box en sous-sol : Céoù continue de répondre sur ce qu’il sait déjà, enregistre ce que tu changes, et l’envoie tout seul au retour du réseau.</p>
+        </div>
+        <div>
+          <h3>Tes données restent les tiennes</h3>
+          <p>Hébergées dans l’Union européenne. Jamais vendues, jamais de publicité, jamais partagées au-delà de ce que tu choisis. Tout se supprime depuis l’application, définitivement.</p>
+        </div>
+        </div>
+      </section>
+
+      <section class="closing">
+        <h2>Une question ?</h2>
+        <p>Écris, on répond.</p>
+        <p class="mailto"><a href="mailto:contact@ceou.eu">contact@ceou.eu</a></p>
+      </section>
+    </div>
+  </main>
+
+  <div class="wrap">
+    <footer>
+      <div class="links">
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>
+        <a href="en.html">English</a>
+      </div>
+      <p>Céoù — sais toujours où sont tes affaires</p>
+    </footer>
+  </div>
+</body>
+</html>

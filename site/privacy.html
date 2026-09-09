@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Céoù</title>
+  <meta name="description" content="Privacy policy of the Ceou app, and account deletion requests.">
+  <link rel="alternate" hreflang="fr" href="confidentialite.html">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --sand: #FFFBF8;
+      --card: #FFFFFF;
+      --ink: #2D2A26;
+      --ink-soft: #6B6459;
+      --blue: #1591EA;
+      --link: #0B5E9E;
+      --line: rgba(45, 42, 38, 0.12);
+      --chip: #F1F7FC;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --sand: #191714;
+        --card: #201E1A;
+        --ink: #F4F0E9;
+        --ink-soft: #A8A094;
+        --blue: #1591EA;
+        --link: #8FCBF7;
+        --line: rgba(244, 240, 233, 0.14);
+        --chip: #12324D;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--sand);
+      color: var(--ink);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { width: 100%; max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
+    a { color: var(--link); }
+
+    /* En-tête : le nom à gauche, le strict nécessaire à droite. */
+    .top { display: flex; align-items: center; gap: 1rem; padding: 1.5rem 0; }
+    .brand { display: flex; align-items: center; gap: 0.6rem; margin-right: auto; color: var(--blue); text-decoration: none; }
+    .brand .mark { width: 26px; height: 26px; display: block; }
+    .brand span { font-size: 1.125rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+    .top nav { display: flex; gap: 1.25rem; font-size: 0.9375rem; }
+
+    /* Accueil */
+    .hero { padding: 2rem 0 3.5rem; display: grid; gap: 2.5rem; align-items: center; }
+    @media (min-width: 52rem) { .hero { grid-template-columns: 1.05fr 1fr; padding: 3.5rem 0 5rem; } }
+    .pun { margin: 0 0 0.75rem; font-size: 0.875rem; color: var(--ink-soft); }
+    .hero h1 { margin: 0 0 1rem; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; letter-spacing: -0.02em; }
+    .lede { margin: 0 0 1.5rem; font-size: 1.125rem; color: var(--ink-soft); max-width: 34rem; }
+    .soon { display: inline-block; margin: 0; padding: 0.5rem 0.9rem; border-radius: 999px;
+            background: var(--chip); color: var(--link); font-size: 0.875rem; font-weight: 600; }
+    .plan { width: 100%; height: auto; display: block; }
+
+    /* Sections */
+    section { padding: 3rem 0; border-top: 1px solid var(--line); }
+    h2 { margin: 0 0 1.75rem; font-size: 1.5rem; line-height: 1.25; letter-spacing: -0.01em; }
+    h3 { margin: 0 0 0.4rem; font-size: 1.0625rem; line-height: 1.3; }
+    p { margin: 0; color: var(--ink-soft); }
+
+    .grid { display: grid; gap: 1rem; }
+    @media (min-width: 40rem) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 58rem) { .grid { grid-template-columns: repeat(3, 1fr); } }
+    .card { padding: 1.5rem; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+
+    .pillars { display: grid; gap: 2rem; }
+    @media (min-width: 52rem) { .pillars { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; } }
+    .pillars h3 { color: var(--ink); }
+
+    .closing { text-align: center; }
+    .closing p { margin-bottom: 1rem; }
+    .mailto { font-size: 1.125rem; font-weight: 600; }
+
+    footer { padding: 2.5rem 0 3.5rem; border-top: 1px solid var(--line); font-size: 0.875rem; color: var(--ink-soft); }
+    footer .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 0.75rem; }
+
+    /* Pages de la politique : une colonne étroite, faite pour être lue —
+       en-tête et pied de page compris, sans quoi le logo se calerait sur la
+       largeur du site et le texte sur la sienne, deux bords gauches
+       différents sur un grand écran. */
+    .doc-page .wrap { max-width: 44rem; }
+    /* padding-top/bottom et NON le raccourci : la forme courte remettrait
+       les marges latérales de .wrap à zéro, et le texte irait toucher le
+       bord de l'écran alors que l'en-tête garderait les siennes. */
+    .doc { padding-top: 1rem; padding-bottom: 3rem; }
+    .doc h1 { margin: 0 0 0.35rem; font-size: 1.75rem; line-height: 1.25; }
+    .updated { margin: 0 0 2.5rem; color: var(--ink-soft); font-size: 0.9375rem; }
+    .doc section { padding: 0; border: 0; margin-bottom: 1.75rem; }
+    .doc h2 { margin: 0 0 0.5rem; font-size: 1.0625rem; line-height: 1.35; }
+    .doc p { margin: 0 0 0.75rem; }
+    .doc p:last-child { margin-bottom: 0; }
+    .highlight { padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); }
+    /* Ciblée depuis la fiche Play Store : elle doit se distinguer dès
+       l'arrivée, sans quoi le lecteur atterrit au milieu d'un mur de texte. */
+    .highlight:target { border-color: var(--link); }
+  </style>
+</head>
+<body class="doc-page">
+  <div class="wrap">
+    <div class="top">
+      <a class="brand" href="en.html">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+      <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
+      <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
+    </svg>
+        <span>Céoù</span>
+      </a>
+      <nav>
+        <a href="privacy.html">Privacy</a>
+        <a href="index.html">Français</a>
+      </nav>
+    </div>
+  </div>
+
+  <main>
+    <div class="wrap doc">
+      <h1>Privacy Policy</h1>
+      <p class="updated">Last updated: September 2026</p>
+
+      <section>
+        <h2>Disclaimer</h2>
+        <p>This text was written by the app's developer (not a legal professional) in the interest of honest transparency about how data is handled. It does not replace a professional legal review, particularly if the app were to be offered more widely to the public.</p>
+      </section>
+      <section>
+        <h2>Who processes your data</h2>
+        <p>Ceou is published independently. For any question about your data, contact <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+      </section>
+      <section>
+        <h2>Data collected</h2>
+        <p>Your email and password (for login), an optional display name and profile picture, and the content you create in the app: homes, rooms, spots, containers, items (name, description, photo, barcode) and their move history.</p>
+      </section>
+      <section>
+        <h2>Hosting</h2>
+        <p>All this data is hosted with Supabase, within the European Union (eu-north-1 region, Stockholm).</p>
+      </section>
+      <section>
+        <h2>AI photo scanning</h2>
+        <p>If you use the photo scan feature to add several items at once, the photo you take is sent to Google's Gemini API (outside the EU) to automatically detect the objects it contains. Google processes this photo only to answer that one-off request. This feature asks for your explicit consent before its very first use, separate from accepting this policy.</p>
+      </section>
+      <section>
+        <h2>The voice assistant</h2>
+        <p>When you talk to Ceou, two services are involved. First your phone's own speech recognition, which turns your voice into text: that is Apple's or Google's depending on the device, and it may send the audio to their servers — the same mechanism as your keyboard's dictation. Then the resulting text, never the audio, is sent to Google's Gemini API, outside the EU, to be interpreted. Your sentence is only processed to answer that one-off request. Like photo scanning, the assistant asks for your explicit consent before its very first use.</p>
+      </section>
+      <section>
+        <h2>Barcode product lookup</h2>
+        <p>If you scan a barcode, that code (no other personal data) is sent to UPCItemDB, a third-party service, to automatically retrieve the product name and photo.</p>
+      </section>
+      <section>
+        <h2>Notifications</h2>
+        <p>If you allow notifications, your phone receives a delivery identifier (a token) issued by Expo's notification service. It is stored with your account so we can alert you — a loan due back, a friend request — and passes through Expo, Apple and Google when a notification is sent, as any phone notification does. It is removed when you turn notifications off or when you delete your account.</p>
+      </section>
+      <section>
+        <h2>Error logs</h2>
+        <p>When the app hits an error, it records the technical message, the error trace and the context of the screen involved, tied to your account. This is used only to fix failures, stays with the same host as the rest of your data, and disappears with your account.</p>
+      </section>
+      <section>
+        <h2>What is never done</h2>
+        <p>Your data is never sold, never used for advertising, and never shared with other app users beyond what you explicitly choose to share.</p>
+      </section>
+      <section>
+        <h2>Retention</h2>
+        <p>Your data is kept for as long as your account exists. You can request its deletion at any time (see below).</p>
+      </section>
+      <section>
+        <h2>Your rights</h2>
+        <p>You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then &quot;My account&quot;, then &quot;Delete my account&quot;. It is immediate and permanent, photos included. For a data export, write to <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+      </section>
+
+      <section class="highlight" id="account-deletion">
+        <h2>Deleting your account and your data</h2>
+        <p>From the app, it is immediate: Profile, then &quot;My account&quot;, then &quot;Delete my account&quot;. You are asked for your password again, to confirm it is really you.</p>
+        <p>Without the app, write to <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> from your account’s email address, with &quot;Account deletion&quot; as the subject. Requests are handled within 30 days.</p>
+        <p>What is deleted: your account and profile, your homes, rooms, spots, containers and items, their photos, their move history, your loans and borrowings, your friends, your shares and invitations, your notification tokens and your error logs.</p>
+        <p>What remains: homes that friends shared with you are not deleted — they belong to them, you simply lose access. Likewise, if someone recorded lending you an item, that record stays with them: it is part of their data, not yours.</p>
+        <p>Deletion is permanent: nothing can be recovered from the app afterwards. The host’s technical backups may keep a copy for the length of their rotation, before being overwritten in turn.</p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>For any question about your data, or to exercise a right of access, correction or export: <a href="mailto:contact@ceou.eu">contact@ceou.eu</a></p>
+      </section>
+    </div>
+  </main>
+
+  <div class="wrap">
+    <footer>
+      <div class="links">
+        <a href="privacy.html">Privacy</a>
+        <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>
+        <a href="index.html">Français</a>
+      </div>
+      <p>Ceou — always know where your things are</p>
+    </footer>
+  </div>
+</body>
+</html>
