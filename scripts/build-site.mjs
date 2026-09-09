@@ -340,7 +340,7 @@ function privacyPage(lang) {
     .map((text) => `          <p>${withMailto(escape(text))}</p>`)
     .join('\n');
 
-  const body = `${header(lang, { base: FILES.home[lang] })}
+  const body = `${header(lang, { base: FILES.home[lang], current: 'privacy' })}
 
   <main id="main">
     <div class="wrap doc-layout">

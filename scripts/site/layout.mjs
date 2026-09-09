@@ -160,15 +160,19 @@ const SCRIPT = `(function () {
  * de l'accueil sur les pages de politique — d'où le menu ramène vers la
  * section demandée plutôt que de ne rien faire.
  */
-export function header(lang, { base = '' } = {}) {
+export function header(lang, { base = '', current = 'home' } = {}) {
   const copy = SITE[lang];
+  // aria-current="page" et non "true" : ce n'est pas la section qu'on lit,
+  // c'est la page ou l'on est. Ecrit dans la page plutot que pose par le
+  // script — un menu doit dire ou l'on se trouve meme sans JavaScript.
+  const ici = (name) => (current === name ? ' aria-current="page"' : '');
   const links = copy.nav
     .map((item) => `        <a href="${base}#${copy.ids[item.to]}">${escape(item.label)}</a>`)
     .join('\n');
 
   return `  <header class="top" data-open="false">
     <div class="wrap top-inner">
-      <a class="brand" href="${FILES.home[lang]}">
+      <a class="brand" href="${FILES.home[lang]}"${ici('home')}>
         ${MARK}
         <span>Céoù</span>
       </a>
@@ -179,7 +183,7 @@ export function header(lang, { base = '' } = {}) {
       </button>
       <nav class="nav" id="site-nav"${base ? '' : ' data-spy'} aria-label="${escape(copy.footer.nav)}">
 ${links}
-        <a href="${FILES.privacy[lang]}">${escape(copy.navPrivacy)}</a>
+        <a href="${FILES.privacy[lang]}"${ici('privacy')}>${escape(copy.navPrivacy)}</a>
         <span class="nav-sep" aria-hidden="true"></span>
         <a class="lang" href="${FILES.home[OTHER[lang]]}" hreflang="${OTHER[lang]}" lang="${OTHER[lang]}"
            title="${escape(copy.switchTitle)}">${escape(copy.switchLabel)}</a>

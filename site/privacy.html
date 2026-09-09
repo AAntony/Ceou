@@ -280,7 +280,9 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
 .nav a:hover { color: var(--ink); background: var(--line); }
 /* Le lien de la section qu'on est en train de lire. aria-current le dit
    aussi aux lecteurs d'écran : la couleur seule ne serait qu'un effet. */
-.nav a[aria-current="true"] { color: var(--accent-strong); background: var(--accent-soft); }
+/* Sans valeur precise : « page » pour la page ou l'on est, « true » pour la
+   section qu'on lit. Les deux se soulignent pareil. */
+.nav a[aria-current] { color: var(--accent-strong); background: var(--accent-soft); }
 
 .nav-sep { width: 1px; height: 1.4rem; background: var(--line-strong); margin: 0 0.35rem; }
 .nav .lang { font-weight: 600; color: var(--accent-strong); }
@@ -742,15 +744,28 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 
 /* === Les pages de la politique ========================================= */
 
-/* Une colonne étroite, faite pour être lue — en-tête et pied de page
-   compris, sans quoi le logo se calerait sur la largeur du site et le texte
-   sur la sienne, deux bords gauches différents sur un grand écran. */
-.doc-page { --wrap: 58rem; }
-.doc-layout { display: grid; gap: 2.5rem; padding: 2.5rem 0 4rem; }
+/* UNE COLONNE ETROITE, FAITE POUR ETRE LUE — MAIS ELLE SEULE.
+   Retrecir --wrap retrecissait TOUTES les boites de la page, en-tete et pied
+   de page compris : le logo sautait de 80 pixels vers la droite en arrivant
+   sur la politique, et le menu avec lui. Un menu qui bouge d'une page a
+   l'autre donne l'impression d'avoir change de site. */
+/* padding-top et padding-bottom, PAS le raccourci : la forme courte
+   remettrait a zero les marges laterales heritees de .wrap, et la colonne se
+   decalerait de 21 pixels vers la gauche — le texte n'aurait plus le meme
+   bord que le logo, et sur telephone il irait toucher le bord de l'ecran. */
+.doc-layout { display: grid; gap: 2.5rem; padding-top: 2.5rem; padding-bottom: 4rem; }
 @media (min-width: 62rem) {
-  .doc-layout { grid-template-columns: 14rem 1fr; gap: 3.5rem; }
+  /* Des pistes FIXES plutot qu'un 1fr qui remplirait la boite : la colonne
+     de texte s'arrete a 44rem, et l'espace qui reste est laisse a droite.
+     C'est ce qui aligne le sommaire sur le logo — un texte centre dans une
+     boite plus large que lui donnerait deux bords gauches differents sur la
+     meme page. */
+  .doc-layout { grid-template-columns: 14rem minmax(0, 44rem); gap: 3.5rem; }
   .doc-toc { position: sticky; top: 6rem; align-self: start; }
 }
+/* Sans le sommaire — ecran etroit — la colonne garde sa largeur de lecture
+   au lieu de s'etaler sur toute la page. */
+.doc { max-width: 44rem; }
 .doc-toc h2 { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.9rem; }
 .doc-toc ul { display: grid; gap: 0.15rem; }
 .doc-toc a {
@@ -763,7 +778,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
   transition: color 0.2s, border-color 0.2s;
 }
 .doc-toc a:hover { color: var(--ink); border-color: var(--ink-faint); }
-.doc-toc a[aria-current="true"] { color: var(--accent-strong); border-color: var(--accent); font-weight: 600; }
+.doc-toc a[aria-current] { color: var(--accent-strong); border-color: var(--accent); font-weight: 600; }
 @media (max-width: 61.99rem) { .doc-toc { display: none; } }
 
 .doc h1 { font-size: clamp(1.85rem, 4.5vw, 2.4rem); margin-bottom: 0.5rem; }
@@ -870,7 +885,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
         <a href="en.html#features">Features</a>
         <a href="en.html#principles">Principles</a>
         <a href="en.html#faq">FAQ</a>
-        <a href="privacy.html">Privacy</a>
+        <a href="privacy.html" aria-current="page">Privacy</a>
         <span class="nav-sep" aria-hidden="true"></span>
         <a class="lang" href="index.html" hreflang="fr" lang="fr"
            title="Lire cette page en français">Français</a>
