@@ -120,7 +120,11 @@ ${rooms(ROOM_TINTS_DARK, '    ')}
 html {
   scroll-behavior: smooth;
   /* Les ancres visent sous l'en-tête collant, qui sinon recouvre le titre
-     qu'on vient de demander. */
+     qu'on vient de demander. SEULE valeur de décalage du site : ajouter en
+     plus un scroll-margin-top aux sections ne le remplacerait pas, les deux
+     s'additionnent — la cible se posait 168 pixels plus bas au lieu de 88, et
+     le menu soulignait du coup la section précédente. C'est aussi la valeur
+     que lit le script, pour qu'ils ne puissent pas diverger. */
   scroll-padding-top: 5.5rem;
   -webkit-text-size-adjust: 100%;
 }
@@ -183,7 +187,7 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
   text-decoration: none;
 }
 
-.section { padding: 4.5rem 0; scroll-margin-top: 5rem; }
+.section { padding: 4.5rem 0; }
 .section-alt { background: var(--sand-2); }
 .section-head { max-width: 40rem; margin-bottom: 2.75rem; }
 .section h2 { font-size: clamp(1.6rem, 3.6vw, 2.25rem); }
@@ -754,7 +758,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 
 .doc h1 { font-size: clamp(1.85rem, 4.5vw, 2.4rem); margin-bottom: 0.5rem; }
 .updated { color: var(--ink-soft); font-size: 0.9375rem; margin-bottom: 2.5rem; }
-.doc section { margin-bottom: 1.9rem; scroll-margin-top: 6rem; }
+.doc section { margin-bottom: 1.9rem; }
 .doc h2 { font-size: 1.125rem; margin-bottom: 0.5rem; }
 .doc p { color: var(--ink-soft); }
 .doc p + p { margin-top: 0.7rem; }

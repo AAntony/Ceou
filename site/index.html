@@ -130,7 +130,11 @@
 html {
   scroll-behavior: smooth;
   /* Les ancres visent sous l'en-tête collant, qui sinon recouvre le titre
-     qu'on vient de demander. */
+     qu'on vient de demander. SEULE valeur de décalage du site : ajouter en
+     plus un scroll-margin-top aux sections ne le remplacerait pas, les deux
+     s'additionnent — la cible se posait 168 pixels plus bas au lieu de 88, et
+     le menu soulignait du coup la section précédente. C'est aussi la valeur
+     que lit le script, pour qu'ils ne puissent pas diverger. */
   scroll-padding-top: 5.5rem;
   -webkit-text-size-adjust: 100%;
 }
@@ -193,7 +197,7 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
   text-decoration: none;
 }
 
-.section { padding: 4.5rem 0; scroll-margin-top: 5rem; }
+.section { padding: 4.5rem 0; }
 .section-alt { background: var(--sand-2); }
 .section-head { max-width: 40rem; margin-bottom: 2.75rem; }
 .section h2 { font-size: clamp(1.6rem, 3.6vw, 2.25rem); }
@@ -764,7 +768,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 
 .doc h1 { font-size: clamp(1.85rem, 4.5vw, 2.4rem); margin-bottom: 0.5rem; }
 .updated { color: var(--ink-soft); font-size: 0.9375rem; margin-bottom: 2.5rem; }
-.doc section { margin-bottom: 1.9rem; scroll-margin-top: 6rem; }
+.doc section { margin-bottom: 1.9rem; }
 .doc h2 { font-size: 1.125rem; margin-bottom: 0.5rem; }
 .doc p { color: var(--ink-soft); }
 .doc p + p { margin-top: 0.7rem; }
@@ -1279,6 +1283,15 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
     });
   }
 
+  // LA LIGNE DE PARTAGE EST CELLE DU NAVIGATEUR, ET PAS UNE AUTRE.
+  // Une ancre suivie depose sa cible a scroll-padding-top du haut de la
+  // fenetre. Un script qui jugerait sur une autre valeur designerait la
+  // section d'avant — c'est exactement ce qui arrivait avec une constante
+  // ecrite ici a la main. On lit donc la feuille plutot que de la deviner.
+  var seuil = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+  if (!(seuil > 0)) { seuil = 88; }
+  seuil += 10;
+
   var spySections = Array.prototype.slice.call(document.querySelectorAll('[data-spy-target]'));
   var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
 
@@ -1287,12 +1300,22 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
     if (!spySections.length) { return; }
     var current = null;
     for (var i = 0; i < spySections.length; i++) {
-      if (spySections[i].getBoundingClientRect().top <= 130) { current = spySections[i]; }
+      if (spySections[i].getBoundingClientRect().top <= seuil) { current = spySections[i]; }
     }
-    // Arrive en bas, la derniere section peut n'avoir jamais franchi la
-    // ligne : on la designe quand meme, sinon le menu revient au debut.
+    // ARRIVE EN BAS, LA POSITION NE DECIDE PLUS.
+    //
+    // Les dernieres sections ne peuvent plus venir se placer sous l'en-tete :
+    // la page ne descend plus. Deux entrees de menu differentes y donnent
+    // donc exactement la meme position, et la regle ci-dessus designerait
+    // dans les deux cas une section d'avant. C'est alors le lien qu'on vient
+    // de suivre qui tranche — mais seulement s'il vise quelque chose qu'on a
+    // sous les yeux, sinon une ancre restee dans l'adresse depuis un clic
+    // ancien continuerait de souligner une section hors de l'ecran.
     if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
-      current = spySections[spySections.length - 1];
+      var vise = document.getElementById(location.hash.slice(1));
+      var boite = vise && vise.getBoundingClientRect();
+      var aLEcran = boite && boite.top < window.innerHeight && boite.bottom > 0;
+      current = (aLEcran && spySections.indexOf(vise) !== -1) ? vise : spySections[spySections.length - 1];
     }
     var id = current ? current.id : '';
     for (var j = 0; j < spyLinks.length; j++) {
@@ -1304,6 +1327,10 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
       }
     }
   };
+
+  // Suivre une ancre alors qu'on est deja en bas ne fait rien defiler : sans
+  // cette ligne, aucun evenement ne viendrait rafraichir le soulignement.
+  window.addEventListener('hashchange', function () { onScroll(); });
 
   var ticking = false;
   window.addEventListener('scroll', function () {

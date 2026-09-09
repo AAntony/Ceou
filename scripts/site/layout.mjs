@@ -62,6 +62,15 @@ const SCRIPT = `(function () {
     });
   }
 
+  // LA LIGNE DE PARTAGE EST CELLE DU NAVIGATEUR, ET PAS UNE AUTRE.
+  // Une ancre suivie depose sa cible a scroll-padding-top du haut de la
+  // fenetre. Un script qui jugerait sur une autre valeur designerait la
+  // section d'avant — c'est exactement ce qui arrivait avec une constante
+  // ecrite ici a la main. On lit donc la feuille plutot que de la deviner.
+  var seuil = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
+  if (!(seuil > 0)) { seuil = 88; }
+  seuil += 10;
+
   var spySections = Array.prototype.slice.call(document.querySelectorAll('[data-spy-target]'));
   var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
 
@@ -70,12 +79,22 @@ const SCRIPT = `(function () {
     if (!spySections.length) { return; }
     var current = null;
     for (var i = 0; i < spySections.length; i++) {
-      if (spySections[i].getBoundingClientRect().top <= 130) { current = spySections[i]; }
+      if (spySections[i].getBoundingClientRect().top <= seuil) { current = spySections[i]; }
     }
-    // Arrive en bas, la derniere section peut n'avoir jamais franchi la
-    // ligne : on la designe quand meme, sinon le menu revient au debut.
+    // ARRIVE EN BAS, LA POSITION NE DECIDE PLUS.
+    //
+    // Les dernieres sections ne peuvent plus venir se placer sous l'en-tete :
+    // la page ne descend plus. Deux entrees de menu differentes y donnent
+    // donc exactement la meme position, et la regle ci-dessus designerait
+    // dans les deux cas une section d'avant. C'est alors le lien qu'on vient
+    // de suivre qui tranche — mais seulement s'il vise quelque chose qu'on a
+    // sous les yeux, sinon une ancre restee dans l'adresse depuis un clic
+    // ancien continuerait de souligner une section hors de l'ecran.
     if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
-      current = spySections[spySections.length - 1];
+      var vise = document.getElementById(location.hash.slice(1));
+      var boite = vise && vise.getBoundingClientRect();
+      var aLEcran = boite && boite.top < window.innerHeight && boite.bottom > 0;
+      current = (aLEcran && spySections.indexOf(vise) !== -1) ? vise : spySections[spySections.length - 1];
     }
     var id = current ? current.id : '';
     for (var j = 0; j < spyLinks.length; j++) {
@@ -87,6 +106,10 @@ const SCRIPT = `(function () {
       }
     }
   };
+
+  // Suivre une ancre alors qu'on est deja en bas ne fait rien defiler : sans
+  // cette ligne, aucun evenement ne viendrait rafraichir le soulignement.
+  window.addEventListener('hashchange', function () { onScroll(); });
 
   var ticking = false;
   window.addEventListener('scroll', function () {
