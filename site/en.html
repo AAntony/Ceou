@@ -3,219 +3,1348 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ceou — always know where your things are</title>
-  <meta name="description" content="Ceou remembers where you put your things, room by room, and tells you when you have forgotten. Works offline, no ads, hosted in the European Union.">
-  <link rel="alternate" hreflang="fr" href="index.html">
+  <title>Céoù — always know where your things are</title>
+  <meta name="description" content="Céoù remembers where you put your things, room by room, and tells you when you have forgotten. Works offline, no ads, hosted in the European Union.">
+  <link rel="canonical" href="https://ceou.eu/en.html">
+  <link rel="alternate" hreflang="fr" href="https://ceou.eu/">
+  <link rel="alternate" hreflang="en" href="https://ceou.eu/en.html">
+  <link rel="alternate" hreflang="x-default" href="https://ceou.eu/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23FFFBF8%22%2F%3E%3Cpath%20d%3D%22M32%208c-8.8%200-16%207.2-16%2016%200%2012%2016%2032%2016%2032s16-20%2016-32c0-8.8-7.2-16-16-16z%22%20fill%3D%22%231591EA%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2223%22%20r%3D%227%22%20fill%3D%22%23FFFBF8%22%2F%3E%3C%2Fsvg%3E">
+  <link rel="apple-touch-icon" href="og-image.png">
+  <meta name="theme-color" content="#FFFBF8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#191714" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Céoù">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:title" content="Céoù — always know where your things are">
+  <meta property="og:description" content="Céoù remembers where you put your things, room by room, and tells you when you have forgotten. Works offline, no ads, hosted in the European Union.">
+  <meta property="og:url" content="https://ceou.eu/en.html">
+  <meta property="og:image" content="https://ceou.eu/og-image.png">
+  <meta property="og:image:width" content="1024">
+  <meta property="og:image:height" content="1024">
+  <meta name="twitter:card" content="summary">
+  <!-- Posee avant tout affichage : les regles d'animation en dependent, et
+       la poser plus tard ferait clignoter la page une fois construite. -->
+  <script>document.documentElement.classList.add('js');</script>
   <style>
-    :root {
-      color-scheme: light dark;
-      --sand: #FFFBF8;
-      --card: #FFFFFF;
-      --ink: #2D2A26;
-      --ink-soft: #6B6459;
-      --blue: #1591EA;
-      --link: #0B5E9E;
-      --line: rgba(45, 42, 38, 0.12);
-      --chip: #F1F7FC;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --sand: #191714;
-        --card: #201E1A;
-        --ink: #F4F0E9;
-        --ink-soft: #A8A094;
-        --blue: #1591EA;
-        --link: #8FCBF7;
-        --line: rgba(244, 240, 233, 0.14);
-        --chip: #12324D;
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--sand);
-      color: var(--ink);
-      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
-      -webkit-text-size-adjust: 100%;
-    }
-    .wrap { width: 100%; max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
-    a { color: var(--link); }
+/* === Jetons ============================================================ */
 
-    /* En-tête : le nom à gauche, le strict nécessaire à droite. */
-    .top { display: flex; align-items: center; gap: 1rem; padding: 1.5rem 0; }
-    .brand { display: flex; align-items: center; gap: 0.6rem; margin-right: auto; color: var(--blue); text-decoration: none; }
-    .brand .mark { width: 26px; height: 26px; display: block; }
-    .brand span { font-size: 1.125rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
-    .top nav { display: flex; gap: 1.25rem; font-size: 0.9375rem; }
+:root {
+  color-scheme: light dark;
 
-    /* Accueil */
-    .hero { padding: 2rem 0 3.5rem; display: grid; gap: 2.5rem; align-items: center; }
-    @media (min-width: 52rem) { .hero { grid-template-columns: 1.05fr 1fr; padding: 3.5rem 0 5rem; } }
-    .pun { margin: 0 0 0.75rem; font-size: 0.875rem; color: var(--ink-soft); }
-    .hero h1 { margin: 0 0 1rem; font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; letter-spacing: -0.02em; }
-    .lede { margin: 0 0 1.5rem; font-size: 1.125rem; color: var(--ink-soft); max-width: 34rem; }
-    .soon { display: inline-block; margin: 0; padding: 0.5rem 0.9rem; border-radius: 999px;
-            background: var(--chip); color: var(--link); font-size: 0.875rem; font-weight: 600; }
-    .plan { width: 100%; height: auto; display: block; }
+  --sand: #FFFBF8;
+  --sand-2: #F7F1EA;
+  --surface: #FFFFFF;
 
-    /* Sections */
-    section { padding: 3rem 0; border-top: 1px solid var(--line); }
-    h2 { margin: 0 0 1.75rem; font-size: 1.5rem; line-height: 1.25; letter-spacing: -0.01em; }
-    h3 { margin: 0 0 0.4rem; font-size: 1.0625rem; line-height: 1.3; }
-    p { margin: 0; color: var(--ink-soft); }
+  --ink: #2D2A26;
+  --ink-soft: #6B6459;
+  --ink-faint: #A39C8F;
+  --line: rgba(45, 42, 38, 0.11);
+  --line-strong: rgba(45, 42, 38, 0.2);
 
-    .grid { display: grid; gap: 1rem; }
-    @media (min-width: 40rem) { .grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (min-width: 58rem) { .grid { grid-template-columns: repeat(3, 1fr); } }
-    .card { padding: 1.5rem; border: 1px solid var(--line); border-radius: 18px; background: var(--card); }
+  --accent: #1591EA;
+  --accent-strong: #0B5E9E;
+  --accent-soft: #D8E8F3;
+  /* LE BLEU DES APLATS PORTANT DU TEXTE BLANC, ET IL EST PLUS SOMBRE QUE
+     --accent EXPRÈS. Mesuré : blanc sur #1591EA ne donne que 3,35:1, sous le
+     seuil de 4,5 exigé pour du texte — releve sur le bouton de contact, les
+     bulles de l'assistant et les pastilles numerotees. Sur #0B5E9E, 6,74:1.
+     La MÊME valeur dans les deux thèmes : un rapport de contraste ne dépend
+     que des deux couleurs en présence, pas du fond de la page. */
+  --accent-fill: #0B5E9E;
+  --on-accent: #FFFFFF;
 
-    .pillars { display: grid; gap: 2rem; }
-    @media (min-width: 52rem) { .pillars { grid-template-columns: repeat(3, 1fr); gap: 2.5rem; } }
-    .pillars h3 { color: var(--ink); }
+  --teal: #2EC4B6;
+  --teal-strong: #219488;
+  --teal-soft: #DBF7F4;
 
-    .closing { text-align: center; }
-    .closing p { margin-bottom: 1rem; }
-    .mailto { font-size: 1.125rem; font-weight: 600; }
+  --mustard: #FFC857;
+  --mustard-strong: #927028;
+  --mustard-soft: #FFF3DA;
 
-    footer { padding: 2.5rem 0 3.5rem; border-top: 1px solid var(--line); font-size: 0.875rem; color: var(--ink-soft); }
-    footer .links { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 0.75rem; }
+  --sky: #5B9BE0;
+  --sky-strong: #3F7BC0;
+  --sky-soft: #DCEBFB;
 
-    /* Pages de la politique : une colonne étroite, faite pour être lue —
-       en-tête et pied de page compris, sans quoi le logo se calerait sur la
-       largeur du site et le texte sur la sienne, deux bords gauches
-       différents sur un grand écran. */
-    .doc-page .wrap { max-width: 44rem; }
-    /* padding-top/bottom et NON le raccourci : la forme courte remettrait
-       les marges latérales de .wrap à zéro, et le texte irait toucher le
-       bord de l'écran alors que l'en-tête garderait les siennes. */
-    .doc { padding-top: 1rem; padding-bottom: 3rem; }
-    .doc h1 { margin: 0 0 0.35rem; font-size: 1.75rem; line-height: 1.25; }
-    .updated { margin: 0 0 2.5rem; color: var(--ink-soft); font-size: 0.9375rem; }
-    .doc section { padding: 0; border: 0; margin-bottom: 1.75rem; }
-    .doc h2 { margin: 0 0 0.5rem; font-size: 1.0625rem; line-height: 1.35; }
-    .doc p { margin: 0 0 0.75rem; }
-    .doc p:last-child { margin-bottom: 0; }
-    .highlight { padding: 1.25rem; border: 1px solid var(--line); border-radius: 14px; background: var(--chip); }
-    /* Ciblée depuis la fiche Play Store : elle doit se distinguer dès
-       l'arrivée, sans quoi le lecteur atterrit au milieu d'un mur de texte. */
-    .highlight:target { border-color: var(--link); }
-  </style>
+  /* Le châssis du téléphone. Plus foncé que tout le reste en clair, plus
+     clair que l'écran en sombre : dans les deux cas il doit se détacher de
+     ce qu'il encadre, sans quoi l'appareil disparaît. */
+  --device: #2D2A26;
+
+  /* Les pièces du plan miniature. */
+  --room-1: #BFD7EA;
+  --room-2: #C9E4C5;
+  --room-3: #FCE8A8;
+  --room-4: #BEE3DB;
+
+  --shadow-sm: 0 1px 2px rgba(45, 42, 38, 0.05), 0 2px 6px rgba(45, 42, 38, 0.05);
+  --shadow-md: 0 8px 24px -8px rgba(45, 42, 38, 0.16);
+  --shadow-lg: 0 30px 70px -28px rgba(45, 42, 38, 0.32);
+
+  --wrap: 68rem;
+  --radius: 20px;
+  --ease: cubic-bezier(0.22, 0.68, 0.24, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sand: #191714;
+    --sand-2: #201E1A;
+    --surface: #201E1A;
+
+    --ink: #F4F0E9;
+    --ink-soft: #A8A094;
+    --ink-faint: #7A7369;
+    --line: rgba(244, 240, 233, 0.13);
+    --line-strong: rgba(244, 240, 233, 0.24);
+
+    --accent-strong: #8FCBF7;
+    --accent-soft: #12324D;
+
+    --teal-strong: #6FDDD1;
+    --teal-soft: #123A35;
+
+    --mustard-strong: #F0C266;
+    --mustard-soft: #3A2F16;
+
+    --sky-strong: #9CC4F0;
+    --sky-soft: #16283D;
+
+    --device: #3B3730;
+
+    --room-1: #1c415f;
+    --room-2: #245f1c;
+    --room-3: #5f4f1c;
+    --room-4: #1c5f50;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 10px 26px -10px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 30px 70px -28px rgba(0, 0, 0, 0.75);
+  }
+}
+
+/* === Base ============================================================== */
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  /* Les ancres visent sous l'en-tête collant, qui sinon recouvre le titre
+     qu'on vient de demander. */
+  scroll-padding-top: 5.5rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--sand);
+  color: var(--ink);
+  font: 1rem/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, "Helvetica Neue", sans-serif;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3 {
+  margin: 0;
+  letter-spacing: -0.022em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+p { margin: 0; text-wrap: pretty; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+
+a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-offset: 0.16em; }
+
+/* Un anneau franc plutôt que le contour par défaut du navigateur, qui se
+   perd sur un fond crème. Au clavier seulement : la souris n'en a pas
+   besoin, et il ferait sale sur chaque clic. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 1.35rem; }
+
+/* UN ELEMENT DE GRILLE NE DESCEND PAS, PAR DEFAUT, SOUS LA LARGEUR MINIMALE
+   DE SON CONTENU. Une etiquette insecable ou un mot long suffit alors a
+   pousser la grille entiere hors de l'ecran, en emportant tout le reste avec
+   elle. Le defaut ne se voit pas a taille normale : il apparait quand le
+   texte grossit, c'est-a-dire exactement chez qui en a besoin. Releve au
+   test a 200 % — la rangee des prets debordait de 375 a 653 pixels. */
+.grid > *, .row > *, .steps > *, .pillars > *, .hero > *, .foot-grid > *,
+.loan > *, .chat > *, .results > *, .doc-layout > * { min-width: 0; }
+
+.skip {
+  position: absolute;
+  left: -9999px;
+}
+.skip:focus {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 90;
+  padding: 0.75rem 1.1rem;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+  text-decoration: none;
+}
+
+.section { padding: 4.5rem 0; scroll-margin-top: 5rem; }
+.section-alt { background: var(--sand-2); }
+.section-head { max-width: 40rem; margin-bottom: 2.75rem; }
+.section h2 { font-size: clamp(1.6rem, 3.6vw, 2.25rem); }
+.eyebrow {
+  display: block;
+  margin-bottom: 0.7rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+.lede { margin-top: 0.9rem; font-size: 1.0625rem; color: var(--ink-soft); }
+
+/* === Barre de progression ============================================== */
+
+/* Purement décorative, et sans une ligne de JavaScript : là où le défilement
+   ne pilote pas encore les animations, elle ne s'affiche simplement pas. */
+.progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  .progress {
+    display: block;
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 2px;
+    z-index: 60;
+    background: var(--accent);
+    transform-origin: 0 50%;
+    animation: progress linear;
+    animation-timeline: scroll();
+  }
+  @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+}
+
+/* === En-tête =========================================================== */
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  /* Une valeur pleine d'abord : là où color-mix n'existe pas, l'en-tête
+     reste opaque au lieu de laisser le texte défiler au travers. */
+  background: var(--sand);
+  background: color-mix(in srgb, var(--sand) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s var(--ease), background-color 0.3s var(--ease);
+}
+.top.is-stuck {
+  border-bottom-color: var(--line);
+  background: var(--sand);
+  background: color-mix(in srgb, var(--sand) 92%, transparent);
+}
+.top-inner { display: flex; align-items: center; gap: 1rem; min-height: 4.25rem; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-right: auto;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+.brand .mark { width: 26px; height: 26px; display: block; flex: none; }
+.brand span { font-size: 1.1875rem; color: var(--ink); letter-spacing: -0.02em; }
+
+.nav { display: flex; align-items: center; gap: 0.35rem; }
+.nav a {
+  display: block;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.2s, background-color 0.2s;
+}
+.nav a:hover { color: var(--ink); background: var(--line); }
+/* Le lien de la section qu'on est en train de lire. aria-current le dit
+   aussi aux lecteurs d'écran : la couleur seule ne serait qu'un effet. */
+.nav a[aria-current="true"] { color: var(--accent-strong); background: var(--accent-soft); }
+
+.nav-sep { width: 1px; height: 1.4rem; background: var(--line-strong); margin: 0 0.35rem; }
+.nav .lang { font-weight: 600; color: var(--accent-strong); }
+
+/* Le bouton hamburger n'existe qu'en dessous de la largeur où le menu tient
+   en ligne. Caché ici, révélé plus bas. */
+.burger {
+  display: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.burger span {
+  position: relative;
+  display: block;
+  width: 1.1rem;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.28s var(--ease), background-color 0.1s;
+}
+.burger span::before, .burger span::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.28s var(--ease);
+}
+.burger span::before { transform: translateY(-0.34rem); }
+.burger span::after { transform: translateY(0.34rem); }
+.top[data-open="true"] .burger span { background: transparent; }
+.top[data-open="true"] .burger span::before { transform: rotate(45deg); }
+.top[data-open="true"] .burger span::after { transform: rotate(-45deg); }
+
+@media (max-width: 54rem) {
+  .burger { display: flex; }
+  .nav {
+    position: absolute;
+    inset: 100% 0 auto 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.7rem 1.35rem 1.2rem;
+    background: var(--sand);
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow-md);
+    /* Replié : hauteur nulle et invisible, mais toujours dans le flux du
+       document pour que la transition ait quelque chose à animer. */
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-0.5rem);
+    transition: opacity 0.25s var(--ease), transform 0.25s var(--ease), visibility 0.25s;
+  }
+  .top[data-open="true"] .nav { visibility: visible; opacity: 1; transform: none; }
+  .nav a { padding: 0.75rem 0.7rem; font-size: 1rem; }
+  .nav-sep { width: auto; height: 1px; margin: 0.4rem 0.7rem; }
+}
+/* Sans JavaScript le bouton ne peut rien plier : le menu reste en ligne,
+   quitte à passer à la ligne, plutôt que d'être définitivement fermé. */
+html:not(.js) .burger { display: none; }
+html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transform: none; flex-direction: row; flex-wrap: wrap; box-shadow: none; border: 0; padding: 0; background: none; }
+
+/* === Héros ============================================================= */
+
+.hero { padding: 3rem 0 1rem; display: grid; gap: 3rem; align-items: center; }
+/* 62 rem et non 56 : a 56 la colonne de texte ne fait plus que 430 pixels
+   alors que le titre a deja atteint sa taille maximale, et « Range une fois.
+   Retrouve toujours. » part sur trois lignes hachees. Le telephone descend
+   sous le texte jusqu'a ce qu'il y ait vraiment la place pour les deux. */
+@media (min-width: 62rem) {
+  .hero { grid-template-columns: 1.08fr 1fr; padding: 4.5rem 0 2rem; gap: 4rem; }
+}
+
+.pun {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+.hero h1 { font-size: clamp(2.2rem, 4.6vw, 3.4rem); letter-spacing: -0.035em; }
+.hero .lede { margin-top: 1.15rem; font-size: clamp(1.0625rem, 2vw, 1.25rem); max-width: 32rem; }
+
+.hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.9rem; margin-top: 1.9rem; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.badge::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.72); } }
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  transition: border-color 0.2s, transform 0.2s var(--ease);
+}
+.ghost:hover { border-color: var(--accent); transform: translateY(-1px); }
+.ghost::after { content: ""; width: 0.42rem; height: 0.42rem; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg) translate(-0.1em, -0.1em); }
+
+.hero-note { margin-top: 1.35rem; font-size: 0.9375rem; color: var(--ink-soft); }
+
+/* === Le téléphone ====================================================== */
+
+.device {
+  position: relative;
+  width: min(19rem, 80vw);
+  margin: 0 auto;
+  padding: 0.55rem;
+  border-radius: 2.7rem;
+  background: var(--device);
+  box-shadow: var(--shadow-lg);
+}
+/* L'encoche. Dessinée plutôt que photographiée : elle suffit à faire lire
+   « téléphone », et ne ressemble à l'appareil de personne en particulier. */
+.device::before {
+  content: "";
+  position: absolute;
+  top: 0.95rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 33%;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: var(--device);
+  z-index: 2;
+}
+.screen {
+  border-radius: 2.2rem;
+  background: var(--sand);
+  overflow: hidden;
+  padding: 2.5rem 0.85rem 1.1rem;
+}
+.screen-title { font-size: 1.0625rem; font-weight: 700; margin: 0 0.2rem 0.85rem; }
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.68rem 0.8rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.9375rem;
+}
+.field svg { width: 1.05rem; height: 1.05rem; flex: none; color: var(--ink-soft); }
+.type { position: relative; white-space: nowrap; font-weight: 600; }
+.type::after {
+  content: "";
+  display: inline-block;
+  width: 1.5px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.14em;
+  background: var(--accent);
+}
+
+.results { margin-top: 0.8rem; display: grid; gap: 0.5rem; }
+.results li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.results .thumb {
+  width: 2.1rem;
+  height: 2.1rem;
+  flex: none;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  display: grid;
+  place-items: center;
+}
+.results .thumb svg { width: 1.05rem; height: 1.05rem; }
+.results b { display: block; font-size: 0.875rem; }
+.results span { display: block; font-size: 0.75rem; color: var(--ink-soft); line-height: 1.4; }
+
+/* === Les trois étapes ================================================== */
+
+.steps { display: grid; gap: 1.4rem; counter-reset: step; }
+@media (min-width: 52rem) { .steps { grid-template-columns: repeat(3, 1fr); gap: 2rem; } }
+.step { counter-increment: step; }
+.step::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+}
+.step h3 { font-size: 1.125rem; margin-bottom: 0.45rem; }
+.step p { color: var(--ink-soft); }
+
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 0;
+  margin-top: 3.25rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line);
+}
+.chain li { display: flex; align-items: center; }
+.chain li + li::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  margin: 0 0.55rem;
+  border-right: 1.6px solid var(--ink-faint);
+  border-top: 1.6px solid var(--ink-faint);
+  transform: rotate(45deg);
+}
+.chain b {
+  display: block;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+.chain b { color: var(--ink); }
+.chain li:nth-child(1) b { background: var(--sky-soft); }
+.chain li:nth-child(2) b { background: var(--accent-soft); }
+.chain li:nth-child(3) b { background: var(--teal-soft); }
+.chain li:nth-child(4) b { background: var(--mustard-soft); }
+.chain li:nth-child(5) b { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+
+/* === Les cartes ======================================================== */
+
+.grid { display: grid; gap: 1.1rem; }
+@media (min-width: 42rem) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 62rem) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+.card {
+  padding: 1.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+@media (hover: hover) {
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--line-strong); }
+}
+.card h3 { font-size: 1.0625rem; margin-bottom: 0.45rem; }
+.card p { color: var(--ink-soft); font-size: 0.9375rem; }
+.pill {
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  margin-bottom: 1.05rem;
+  border-radius: 14px;
+}
+.pill svg { width: 1.4rem; height: 1.4rem; }
+.tone-blue .pill { background: var(--accent-soft); color: var(--accent-strong); }
+.tone-teal .pill { background: var(--teal-soft); color: var(--teal-strong); }
+.tone-mustard .pill { background: var(--mustard-soft); color: var(--mustard-strong); }
+.tone-sky .pill { background: var(--sky-soft); color: var(--sky-strong); }
+
+/* === « En détail » ===================================================== */
+
+.row { display: grid; gap: 2.25rem; align-items: center; padding: 2.75rem 0; }
+.row + .row { border-top: 1px solid var(--line); }
+@media (min-width: 56rem) {
+  .row { grid-template-columns: 1fr 1fr; gap: 4rem; padding: 3.5rem 0; }
+  /* Une ligne sur deux inverse texte et image : lues à la suite, trois
+     lignes identiques donneraient une colonne, pas une démonstration. */
+  .row:nth-of-type(even) .row-media { order: -1; }
+}
+.row h3 { font-size: clamp(1.35rem, 2.8vw, 1.75rem); margin-bottom: 0.85rem; }
+.row p { color: var(--ink-soft); }
+.row .points { margin-top: 1.25rem; display: grid; gap: 0.7rem; }
+.row .points li { display: flex; gap: 0.65rem; font-size: 0.9375rem; color: var(--ink-soft); }
+.row .points li::before {
+  content: "";
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.2rem;
+  border-radius: 50%;
+  background: var(--teal-soft);
+  /* La coche, tracée dans un fond SVG : pas de caractère à charger, et elle
+     garde sa forme quelle que soit la police du visiteur. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23219488' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3 6.3 2 2L9 4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.mock {
+  padding: 1.35rem;
+  border-radius: 26px;
+  background: var(--sand-2);
+  border: 1px solid var(--line);
+}
+.section-alt .mock { background: var(--sand); }
+.plan-svg { width: 100%; height: auto; display: block; }
+/* Le clair dilue le pastel par-dessus la feuille, comme l'app. Le sombre ne
+   dilue rien : la teinte y est deja calculee pour ce fond, et l'affaiblir la
+   ramenerait au gris. */
+.plan-rooms { opacity: 0.55; }
+@media (prefers-color-scheme: dark) { .plan-rooms { opacity: 1; } }
+
+/* La bulle de l'assistant. */
+.chat { display: grid; gap: 0.7rem; }
+.chat li { max-width: 88%; padding: 0.8rem 1rem; border-radius: 18px; font-size: 0.9375rem; }
+.chat .me { justify-self: end; background: var(--accent-fill); color: var(--on-accent); border-bottom-right-radius: 6px; }
+.chat .app { justify-self: start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 6px; box-shadow: var(--shadow-sm); }
+.chat .app b { display: block; }
+.chat .app span { display: block; margin-top: 0.15rem; font-size: 0.8125rem; color: var(--ink-soft); }
+
+/* La carte d'un prêt. */
+.loan { display: grid; gap: 0.7rem; }
+.loan li {
+  display: flex;
+  align-items: center;
+  /* L'etiquette passe a la ligne plutot que d'elargir la carte : « Retour
+     depasse » ne se coupe pas en deux, mais elle peut descendre. */
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.9375rem;
+}
+.loan .who { width: 2.3rem; height: 2.3rem; flex: none; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.875rem; background: var(--sky-soft); color: var(--ink); }
+.loan li:nth-child(2) .who { background: var(--mustard-soft); }
+.loan b { display: block; }
+.loan .when { display: block; font-size: 0.8125rem; color: var(--ink-soft); }
+.loan .tag { margin-left: auto; padding: 0.25rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; background: var(--teal-soft); color: var(--ink); white-space: nowrap; }
+.loan .tag.late { background: var(--mustard-soft); }
+
+/* === Les engagements =================================================== */
+
+.pillars { display: grid; gap: 2.25rem; }
+@media (min-width: 54rem) { .pillars { grid-template-columns: repeat(3, 1fr); gap: 2.75rem; } }
+.pillar .pill { background: var(--accent-soft); color: var(--accent-strong); border-radius: 16px; width: 3rem; height: 3rem; }
+.pillar:nth-child(2) .pill { background: var(--teal-soft); color: var(--teal-strong); }
+.pillar:nth-child(3) .pill { background: var(--mustard-soft); color: var(--mustard-strong); }
+.pillar h3 { font-size: 1.1875rem; margin-bottom: 0.55rem; }
+.pillar p { color: var(--ink-soft); font-size: 0.9375rem; }
+
+/* === Les questions ===================================================== */
+
+.faq { max-width: 46rem; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq details:first-of-type { border-top: 1px solid var(--line); }
+.faq summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "";
+  flex: none;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.5rem;
+  border-right: 1.8px solid var(--ink-soft);
+  border-bottom: 1.8px solid var(--ink-soft);
+  transform: rotate(45deg);
+  transition: transform 0.28s var(--ease);
+}
+.faq details[open] summary::after { transform: rotate(-135deg); }
+.faq summary:hover { color: var(--accent-strong); }
+.faq .answer { padding: 0 0 1.35rem; color: var(--ink-soft); max-width: 40rem; }
+
+/* === L'appel final et le pied de page ================================== */
+
+.cta { text-align: center; padding: 4.5rem 0; }
+.cta p { margin: 0.9rem auto 0; max-width: 32rem; color: var(--ink-soft); }
+.mailto {
+  display: inline-block;
+  /* L'adresse ne contient pas d'espace : sans ces deux lignes le bouton
+     s'elargit au lieu de passer a la ligne, et c'est la page entiere qui
+     defile de cote. Visible seulement quand le texte grossit. */
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  margin-top: 1.75rem;
+  padding: 0.85rem 1.6rem;
+  border-radius: 999px;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.25s var(--ease), filter 0.25s;
+}
+.mailto:hover { transform: translateY(-2px); filter: brightness(1.06); }
+
+.foot { border-top: 1px solid var(--line); padding: 3rem 0 3.5rem; font-size: 0.9375rem; }
+.foot-grid { display: grid; gap: 2rem; }
+@media (min-width: 46rem) { .foot-grid { grid-template-columns: 1.4fr 1fr 1fr; gap: 3rem; } }
+.foot h2 { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.9rem; }
+.foot ul { display: grid; gap: 0.55rem; }
+.foot a { color: var(--ink-soft); text-decoration: none; }
+.foot a:hover { color: var(--accent-strong); text-decoration: underline; }
+.foot .brand { margin: 0 0 0.85rem; }
+.foot .tagline { color: var(--ink-soft); max-width: 22rem; }
+.foot .eu { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.875rem; color: var(--ink-soft); }
+.foot .eu::before { content: ""; width: 0.7rem; height: 0.7rem; border-radius: 2px; background: var(--accent); }
+
+/* === Les pages de la politique ========================================= */
+
+/* Une colonne étroite, faite pour être lue — en-tête et pied de page
+   compris, sans quoi le logo se calerait sur la largeur du site et le texte
+   sur la sienne, deux bords gauches différents sur un grand écran. */
+.doc-page { --wrap: 58rem; }
+.doc-layout { display: grid; gap: 2.5rem; padding: 2.5rem 0 4rem; }
+@media (min-width: 62rem) {
+  .doc-layout { grid-template-columns: 14rem 1fr; gap: 3.5rem; }
+  .doc-toc { position: sticky; top: 6rem; align-self: start; }
+}
+.doc-toc h2 { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.9rem; }
+.doc-toc ul { display: grid; gap: 0.15rem; }
+.doc-toc a {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  border-left: 2px solid var(--line);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  transition: color 0.2s, border-color 0.2s;
+}
+.doc-toc a:hover { color: var(--ink); border-color: var(--ink-faint); }
+.doc-toc a[aria-current="true"] { color: var(--accent-strong); border-color: var(--accent); font-weight: 600; }
+@media (max-width: 61.99rem) { .doc-toc { display: none; } }
+
+.doc h1 { font-size: clamp(1.85rem, 4.5vw, 2.4rem); margin-bottom: 0.5rem; }
+.updated { color: var(--ink-soft); font-size: 0.9375rem; margin-bottom: 2.5rem; }
+.doc section { margin-bottom: 1.9rem; scroll-margin-top: 6rem; }
+.doc h2 { font-size: 1.125rem; margin-bottom: 0.5rem; }
+.doc p { color: var(--ink-soft); }
+.doc p + p { margin-top: 0.7rem; }
+.highlight {
+  padding: 1.5rem;
+  border: 1px solid var(--accent-soft);
+  border-radius: 18px;
+  background: var(--accent-soft);
+}
+.highlight h2 { color: var(--ink); }
+.highlight p { color: var(--ink); }
+/* Ciblée depuis la fiche Play Store : elle doit se distinguer dès l'arrivée,
+   sans quoi le lecteur atterrit au milieu d'un mur de texte. */
+.highlight:target { outline: 2px solid var(--accent); outline-offset: 3px; }
+.doc-back { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.9375rem; text-decoration: none; }
+.doc-back::before { content: ""; width: 0.4rem; height: 0.4rem; border-left: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); }
+
+/* === Apparitions au défilement ========================================= */
+
+/* Tout est conditionné à la classe "js" posée par le script en tête de page.
+   Sans elle — script bloqué, moteur d'indexation, lecteur en mode texte —
+   ces règles ne s'appliquent pas et la page s'affiche entière du premier
+   coup. Une animation ne doit jamais pouvoir cacher le contenu.  */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+.js .reveal.in { opacity: 1; transform: none; }
+
+.js .device .type { clip-path: inset(0 100% 0 0); }
+.js .in .type { animation: type 1.05s steps(9, end) 0.5s forwards; }
+@keyframes type { to { clip-path: inset(0 0 0 0); } }
+.js .device .type::after { animation: caret 1.05s step-end infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+
+.js .results li { opacity: 0; transform: translateY(8px); }
+.js .in .results li { animation: pop 0.5s var(--ease) forwards; }
+.js .in .results li:nth-child(1) { animation-delay: 1.65s; }
+.js .in .results li:nth-child(2) { animation-delay: 1.82s; }
+@keyframes pop { to { opacity: 1; transform: none; } }
+
+.js .plan-pin { transform-box: fill-box; transform-origin: center; }
+.js .in .plan-pin { animation: drop 0.6s var(--ease) 0.35s backwards; }
+@keyframes drop { from { opacity: 0; transform: translateY(-18px) scale(0.7); } }
+
+/* LE RÉGLAGE SYSTÈME A LE DERNIER MOT. Chez qui a demandé moins de
+   mouvement, rien ne bouge : pas de fondu, pas de glissement, pas de curseur
+   clignotant, et la barre de progression s'arrête de suivre le défilement.
+   Ce n'est pas une préférence esthétique — c'est une demande médicale pour
+   une partie de ceux qui la posent. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+  .js .device .type { clip-path: none; }
+  .js .results li { opacity: 1; transform: none; }
+  .progress { display: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* === Impression ======================================================== */
+
+/* La politique de confidentialité finit imprimée ou versée à un dossier :
+   sans ces quelques lignes, elle sort avec un menu collant en travers de la
+   première page et des liens dont on ne voit pas la destination. */
+@media print {
+  .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
+  body { background: #FFFFFF; color: #000000; }
+  .doc-layout { display: block; padding: 0; }
+  .highlight { border: 1px solid #999999; background: none; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555555; }
+}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
+  <div class="progress" aria-hidden="true"></div>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top" data-open="false">
+    <div class="wrap top-inner">
       <a class="brand" href="en.html">
         <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
-      <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
-    </svg>
+  <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
+  <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
+</svg>
         <span>Céoù</span>
       </a>
-      <nav>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="site-nav"
+              aria-label="Open menu"
+              data-label-open="Open menu" data-label-close="Close menu">
+        <span></span>
+      </button>
+      <nav class="nav" id="site-nav" data-spy aria-label="The site">
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#principles">Principles</a>
+        <a href="#faq">FAQ</a>
         <a href="privacy.html">Privacy</a>
-        <a href="index.html">Français</a>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <a class="lang" href="index.html" hreflang="fr" lang="fr"
+           title="Lire cette page en français">Français</a>
       </nav>
     </div>
-  </div>
+  </header>
 
-  <main>
+  <main id="main">
     <div class="wrap">
       <div class="hero">
         <div>
-          <p class="pun">French for “where is it?”</p>
+          <p class="pun">Céoù — French for “where is it?”</p>
           <h1>Put it away once. Find it every time.</h1>
-          <p class="lede">Ceou remembers where you put your things — which room, which piece of furniture, which box — and tells you on the day you cannot remember.</p>
-          <p class="soon">Coming soon to Android and iOS.</p>
+          <p class="lede">Céoù remembers where you put your things — which room, which piece of furniture, which box — and tells you on the day you cannot remember.</p>
+          <div class="hero-actions">
+            <span class="badge">Coming soon to Android and iOS</span>
+            <a class="ghost" href="#features">See what it does</a>
+          </div>
+          <p class="hero-note">No ads. Works offline. Hosted in the European Union.</p>
         </div>
-        <svg class="plan" viewBox="0 0 320 210" role="img" aria-labelledby="planTitle">
-      <title id="planTitle">A home plan with its rooms and a marker</title>
-      <rect x="8" y="8" width="304" height="194" rx="14" fill="var(--card)" stroke="var(--line)"/>
-      <g opacity="0.55">
-        <rect x="28" y="28" width="128" height="92" rx="4" fill="#BFD7EA"/>
-        <rect x="156" y="28" width="128" height="52" rx="4" fill="#C9E4C5"/>
-        <rect x="156" y="80" width="128" height="40" rx="4" fill="#FCE8A8"/>
-        <rect x="28" y="120" width="256" height="62" rx="4" fill="#BEE3DB"/>
-      </g>
-      <g stroke="var(--ink)" fill="none" stroke-linecap="round">
-        <!-- Deux epaisseurs, comme sur le plan de l'app : le mur qui ferme
-             le logement est porteur et se trace epais, une cloison entre
-             deux pieces est fine. Les trous sont des portes. -->
-        <path d="M28 28h256v154H28z" stroke-width="3.5"/>
-        <g stroke-width="2">
-          <path d="M156 28v30M156 74v46"/>
-          <path d="M156 80h48M232 80h52"/>
-          <path d="M28 120h72M132 120h152"/>
-        </g>
-      </g>
-      <circle cx="196" cy="150" r="15" fill="var(--blue)"/>
-      <circle cx="196" cy="150" r="5.5" fill="var(--sand)"/>
-    </svg>
+        <div class="device reveal" role="img" aria-label="The Céoù search screen: the word “drill” has been typed, and the answer appears — Drill, in the toolbox, on the workbench, in the garage.">
+          <div class="screen">
+            <p class="screen-title">Search for an item</p>
+            <div class="field">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.6" cy="10.6" r="6.6"/><path d="m15.4 15.4 4.6 4.6"/></svg>
+              <span class="type">drill</span>
+            </div>
+            <ul class="results">
+            <li>
+              <span class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7.5 12 3.5l8.4 4v9L12 20.5 3.6 16.5v-9Z"/><path d="M3.6 7.5 12 11.6l8.4-4.1"/><path d="M12 11.6v8.9"/></svg></span>
+              <span><b>Drill</b><span>Home › Garage › Workbench › Toolbox</span></span>
+            </li>
+            <li>
+              <span class="thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 7.5 12 3.5l8.4 4v9L12 20.5 3.6 16.5v-9Z"/><path d="M3.6 7.5 12 11.6l8.4-4.1"/><path d="M12 11.6v8.9"/></svg></span>
+              <span><b>Masonry bits</b><span>Home › Garage › Workbench › Toolbox</span></span>
+            </li>
+            </ul>
+          </div>
+        </div>
       </div>
-
-      <section>
-        <h2>What Ceou does</h2>
-        <div class="grid">
-        <div class="card">
-          <h3>Organised like your home</h3>
-          <p>Home, room, furniture, box, item. The same logic as your flat — not a flat list where everything looks alike.</p>
-        </div>
-        <div class="card">
-          <h3>Find it with one word</h3>
-          <p>Type “drill”. Ceou answers which box, in which piece of furniture, in which room, in which home.</p>
-        </div>
-        <div class="card">
-          <h3>Just ask out loud</h3>
-          <p>“Where are my keys?” Ask, and the assistant answers. It can even put an item away for you, without you touching the screen.</p>
-        </div>
-        <div class="card">
-          <h3>A plan of your home</h3>
-          <p>Draw your rooms, place your furniture on them, spot an item at a glance. And if you would rather read, the same plan exists as a list.</p>
-        </div>
-        <div class="card">
-          <h3>Photograph, scan</h3>
-          <p>A photo per item, to recognise without reading. A barcode to fetch a name on its own. A photo of a drawer to create several items at once.</p>
-        </div>
-        <div class="card">
-          <h3>Lend without forgetting</h3>
-          <p>Record who you lent to, and what was lent to you. Ceou reminds you what has not come back — and the item keeps its place for its return.</p>
-        </div>
-        </div>
-      </section>
-
-      <section>
-        <div class="pillars">
-        <div>
-          <h3>Built to be readable</h3>
-          <p>Text grows to twice its size without breaking or truncating anything. The plan can also be read as a list, for anyone who cannot see the screen or pinch it. Dark theme, large targets, contrasts checked one by one.</p>
-        </div>
-        <div>
-          <h3>Works without a network</h3>
-          <p>A cellar, a garage, a basement storage unit: Ceou keeps answering from what it already knows, records what you change, and sends it on its own once the network is back.</p>
-        </div>
-        <div>
-          <h3>Your data stays yours</h3>
-          <p>Hosted in the European Union. Never sold, never used for advertising, never shared beyond what you choose. Everything can be deleted from the app, permanently.</p>
-        </div>
-        </div>
-      </section>
-
-      <section class="closing">
-        <h2>A question?</h2>
-        <p>Write to us, we answer.</p>
-        <p class="mailto"><a href="mailto:contact@ceou.eu">contact@ceou.eu</a></p>
-      </section>
     </div>
-  </main>
 
-  <div class="wrap">
-    <footer>
-      <div class="links">
-        <a href="privacy.html">Privacy</a>
-        <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>
-        <a href="index.html">Français</a>
+    <section class="section section-alt" id="how-it-works" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Three moves, and it is done</h2>
+          <p class="lede">You describe your home once. What you get back, you get back for years.</p>
+        </div>
+        <ol class="steps">
+          <li class="step reveal" style="--i:0">
+            <h3>Describe your home</h3>
+            <p>Once only: your rooms, your furniture, the boxes sitting inside them. Céoù mirrors the structure of your home, not a flat list where everything looks alike.</p>
+          </li>
+          <li class="step reveal" style="--i:1">
+            <h3>Put things away for real</h3>
+            <p>The drill goes in the toolbox, on the workbench, in the garage. You say it once — by typing, out loud, or by photographing the whole drawer.</p>
+          </li>
+          <li class="step reveal" style="--i:2">
+            <h3>Ask, when the day comes</h3>
+            <p>Six months later, type “drill”. Céoù gives you the whole path, from the home down to the box. No thinking, no digging.</p>
+          </li>
+        </ol>
+        <ol class="chain reveal" role="img" aria-label="The Céoù hierarchy: Home, then Garage, then Workbench, then Toolbox, then Drill.">
+          <li><b>Home</b></li>
+          <li><b>Garage</b></li>
+          <li><b>Workbench</b></li>
+          <li><b>Toolbox</b></li>
+          <li><b>Drill</b></li>
+        </ol>
       </div>
-      <p>Ceou — always know where your things are</p>
+    </section>
+
+    <section class="section" id="features" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>What Céoù does</h2>
+          <p class="lede">Everything is there the first time you open it. Nothing is held back, nothing unlocks later.</p>
+        </div>
+        <ul class="grid">
+          <li class="card tone-blue reveal" style="--i:0">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.6 12 3.5l9 7.1"/><path d="M5.6 9.6V20h12.8V9.6"/><rect x="9" y="13" width="6" height="4.6" rx="1"/></svg></span>
+            <h3>Organised like your home</h3>
+            <p>Home, room, furniture, box, item. The same logic as your flat — and every level is found from the one above it.</p>
+          </li>
+          <li class="card tone-teal reveal" style="--i:1">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.6" cy="10.6" r="6.6"/><path d="m15.4 15.4 4.6 4.6"/></svg></span>
+            <h3>Find it with one word</h3>
+            <p>Type “drill”. Céoù answers which box, in which piece of furniture, in which room, in which home. The whole path, not just a name.</p>
+          </li>
+          <li class="card tone-mustard reveal" style="--i:2">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.6 11.4a6.4 6.4 0 0 0 12.8 0"/><path d="M12 17.8V21"/></svg></span>
+            <h3>Just ask out loud</h3>
+            <p>“Where are my keys?” Ask, and the assistant answers. It can even put an item away for you, without you touching the screen.</p>
+          </li>
+          <li class="card tone-sky reveal" style="--i:0">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M10.6 4.5v4.2M10.6 12.4v7.1"/><path d="M10.6 12.4h9.9"/></svg></span>
+            <h3>A plan of your home</h3>
+            <p>Draw your rooms, place your furniture on them, spot an item at a glance. And if you would rather read, the same plan exists as a list.</p>
+          </li>
+          <li class="card tone-blue reveal" style="--i:1">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.6V6.4a2.4 2.4 0 0 1 2.4-2.4h2.2"/><path d="M20 8.6V6.4A2.4 2.4 0 0 0 17.6 4h-2.2"/><path d="M4 15.4v2.2A2.4 2.4 0 0 0 6.4 20h2.2"/><path d="M20 15.4v2.2a2.4 2.4 0 0 1-2.4 2.4h-2.2"/><circle cx="12" cy="12" r="3.1"/></svg></span>
+            <h3>Photograph, scan</h3>
+            <p>A photo per item, to recognise without reading. A barcode to fetch a name on its own. A photo of a drawer to create several items at once.</p>
+          </li>
+          <li class="card tone-teal reveal" style="--i:2">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.8a8.2 8.2 0 1 1-7.8 5.7"/><path d="M4.2 4.2v5.3h5.3"/><rect x="9.2" y="9.2" width="5.6" height="5.6" rx="1.4"/></svg></span>
+            <h3>Lend without forgetting</h3>
+            <p>Record who you lent to, and what was lent to you. Céoù reminds you what has not come back — and the item keeps its place for its return.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="in-detail">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>A closer look</h2>
+        </div>
+      <article class="row">
+        <div class="reveal">
+          <span class="eyebrow">The plan</span>
+          <h3>Your home, seen from above</h3>
+          <p>Trace your rooms, place your furniture on them. Load-bearing walls are drawn thick, partitions thin, and the gaps are doors — the plan looks like what is under your feet.</p>
+          <ul class="points">
+            <li>Furniture sits on the plan and keeps its place</li>
+            <li>The same plan reads as a list, room by room, for anyone who cannot see the screen</li>
+          </ul>
+        </div>
+        <div class="row-media reveal"><div class="mock"><svg class="plan-svg" viewBox="0 0 320 210" role="img" aria-label="A home plan seen from above: four pastel rooms, the walls traced, the doors left as gaps, and a marker on a piece of furniture in the living room.">
+  <rect x="8" y="8" width="304" height="194" rx="14" fill="var(--surface)" stroke="var(--line)"/>
+  <g class="plan-rooms">
+    <rect x="28" y="28" width="128" height="92" rx="4" fill="var(--room-1)"/>
+    <rect x="156" y="28" width="128" height="52" rx="4" fill="var(--room-2)"/>
+    <rect x="156" y="80" width="128" height="40" rx="4" fill="var(--room-3)"/>
+    <rect x="28" y="120" width="256" height="62" rx="4" fill="var(--room-4)"/>
+  </g>
+  <g stroke="var(--ink)" fill="none" stroke-linecap="round">
+    <path d="M28 28h256v154H28z" stroke-width="3.5"/>
+    <g stroke-width="2">
+      <path d="M156 28v30M156 74v46"/>
+      <path d="M156 80h48M232 80h52"/>
+      <path d="M28 120h72M132 120h152"/>
+    </g>
+  </g>
+  <g class="plan-pin">
+    <circle cx="196" cy="150" r="15" fill="var(--accent)"/>
+    <circle cx="196" cy="150" r="5.5" fill="var(--sand)"/>
+  </g>
+</svg></div></div>
+      </article>
+      <article class="row">
+        <div class="reveal">
+          <span class="eyebrow">The assistant</span>
+          <h3>Hands full, question all the same</h3>
+          <p>A box in your arms, you ask out loud. Céoù understands the question, and can also put things away: “put the drill in the toolbox” is enough.</p>
+          <ul class="points">
+            <li>Nothing is sent before you have said yes, once, knowing what for</li>
+            <li>The privacy policy says exactly who receives what</li>
+          </ul>
+        </div>
+        <div class="row-media reveal"><div class="mock">
+          <ul class="chat" role="img" aria-label="A conversation with the assistant. &quot;Where are my keys?&quot; — &quot;Car keys, Home, Hallway, Key bowl.&quot; Then &quot;Put the drill in the toolbox&quot; — &quot;Put away.&quot;">
+            <li class="me">Where are my keys?</li>
+            <li class="app"><b>Car keys</b><span>Home › Hallway › Key bowl</span></li>
+            <li class="me">Put the drill in the toolbox</li>
+            <li class="app"><b>Put away.</b><span>Drill → Home › Garage › Workbench › Toolbox</span></li>
+          </ul>
+        </div></div>
+      </article>
+      <article class="row">
+        <div class="reveal">
+          <span class="eyebrow">Loans</span>
+          <h3>What has left your home</h3>
+          <p>A lent item does not vanish from the inventory: it keeps its place, marked as out, and takes it back on return. You see at a glance what is still with other people.</p>
+          <ul class="points">
+            <li>What you lent, and what was lent to you, in the same place</li>
+            <li>A reminder once the return date has passed</li>
+          </ul>
+        </div>
+        <div class="row-media reveal"><div class="mock">
+          <ul class="loan" role="img" aria-label="The loans list: a drill lent to Marc twelve days ago, ongoing; a ladder borrowed from Lucie, now overdue.">
+            <li>
+              <span class="who">M</span>
+              <span><b>Drill</b><span class="when">Lent to Marc, 12 days ago</span></span>
+              <span class="tag">Out</span>
+            </li>
+            <li>
+              <span class="who">L</span>
+              <span><b>Ladder</b><span class="when">Borrowed from Lucie</span></span>
+              <span class="tag late">Overdue</span>
+            </li>
+          </ul>
+        </div></div>
+      </article>
+      </div>
+    </section>
+
+    <section class="section" id="principles" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>What we will not trade away</h2>
+        </div>
+        <ul class="pillars">
+          <li class="pillar reveal" style="--i:0">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 19 8.8 5.4 14 19"/><path d="M5.6 14.6h6.4"/><path d="M18.6 8.4v10.2M18.6 8.4l-2 2.2M18.6 8.4l2 2.2"/></svg></span>
+            <h3>Built to be readable</h3>
+            <p>Text grows to twice its size without breaking or truncating anything. The plan can also be read as a list, for anyone who cannot see the screen or pinch it. Dark theme, large targets, contrasts checked one by one.</p>
+          </li>
+          <li class="pillar reveal" style="--i:1">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.6 9.3A13 13 0 0 1 9.4 6.2"/><path d="M20.4 9.3a13 13 0 0 0-4.3-2.8"/><path d="M7 12.9a8 8 0 0 1 2.2-1.4"/><path d="M17 12.9a8 8 0 0 0-1.9-1.3"/><circle cx="12" cy="17.6" r="1.15" fill="currentColor" stroke="none"/><path d="M3.4 3.4 20.6 20.6"/></svg></span>
+            <h3>Works without a network</h3>
+            <p>A cellar, a garage, a basement storage unit: Céoù keeps answering from what it already knows, records what you change, and sends it on its own once the network is back.</p>
+          </li>
+          <li class="pillar reveal" style="--i:2">
+            <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.4 19 6v6.1c0 4.2-2.9 7.3-7 8.5-4.1-1.2-7-4.3-7-8.5V6l7-2.6Z"/><path d="m9.1 12 2.1 2.1 3.7-3.9"/></svg></span>
+            <h3>Your data stays yours</h3>
+            <p>Hosted in the European Union. Never sold, never used for advertising, never shared beyond what you choose. Everything can be deleted from the app, permanently.</p>
+          </li>
+        </ul>
+        <p style="margin-top:2.5rem"><a href="privacy.html">Read the privacy policy</a></p>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="faq" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <h2>Frequently asked questions</h2>
+        </div>
+        <div class="faq reveal">
+        <details name="faq">
+          <summary>Does Céoù cost anything?</summary>
+          <p class="answer">There are no ads and no in-app purchases. Nothing described on this page is reserved for a paid tier.</p>
+        </details>
+        <details name="faq">
+          <summary>Do I need an account?</summary>
+          <p class="answer">To put your own things away, yes: that is what lets you find them again from another phone, and lose nothing when you change device. To only look at what someone has shared with you, no — an invitation code is enough.</p>
+        </details>
+        <details name="faq">
+          <summary>Does it work without a network?</summary>
+          <p class="answer">Yes. Céoù answers from what it already knows and records what you change, even at the back of a cellar. Everything reaches the server on its own once the network is back.</p>
+        </details>
+        <details name="faq">
+          <summary>Can I share with my family?</summary>
+          <p class="answer">Yes. Everyone has a friend code, which never changes: they scan yours, and you then choose which homes to open to them. Nothing is shared before that choice.</p>
+        </details>
+        <details name="faq">
+          <summary>Where is my data?</summary>
+          <p class="answer">With Supabase, in the European Union, in Stockholm. Two features call on services outside the Union — the photo scan and the voice assistant — and each asks you first, once, explicitly.</p>
+        </details>
+        <details name="faq">
+          <summary>Can I delete everything?</summary>
+          <p class="answer">Yes, from the app: Profile, then “My account”, then delete. The account and everything in it go permanently. The steps are also written on this site, for anyone who no longer has the app.</p>
+        </details>
+        <details name="faq">
+          <summary>When is it out?</summary>
+          <p class="answer">The app is being prepared for the Play Store and the App Store. Write to <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> to hear about it on release day.</p>
+        </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap">
+        <h2>A question?</h2>
+        <p>Write to us, we answer. It is a small team, and the mail really does arrive.</p>
+        <a class="mailto" href="mailto:contact@ceou.eu">contact@ceou.eu</a>
+      </div>
+    </section>
+  </main>
+  <div class="wrap">
+    <footer class="foot">
+      <div class="foot-grid">
+        <div>
+          <span class="brand"><svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
+  <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
+</svg><span>Céoù</span></span>
+          <p class="tagline">Céoù — always know where your things are</p>
+          <p class="eu">Hosted in the European Union</p>
+        </div>
+        <div>
+          <h2>The site</h2>
+          <ul>
+            <li><a href="en.html#how-it-works">How it works</a></li>
+            <li><a href="en.html#features">Features</a></li>
+            <li><a href="en.html#principles">Principles</a></li>
+            <li><a href="en.html#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h2>Legal</h2>
+          <ul>
+            <li><a href="privacy.html">Privacy</a></li>
+            <li><a href="privacy.html#account-deletion">Delete my account</a></li>
+            <li><a href="mailto:contact@ceou.eu">contact@ceou.eu</a></li>
+            <li><a href="index.html" hreflang="fr" lang="fr">Français</a></li>
+          </ul>
+        </div>
+      </div>
     </footer>
   </div>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Céoù",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Android, iOS",
+  "inLanguage": [
+    "fr",
+    "en"
+  ],
+  "description": "Céoù remembers where you put your things, room by room, and tells you when you have forgotten. Works offline, no ads, hosted in the European Union.",
+  "url": "https://ceou.eu/",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "EUR"
+  },
+  "privacyPolicy": "https://ceou.eu/privacy.html"
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does Céoù cost anything?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "There are no ads and no in-app purchases. Nothing described on this page is reserved for a paid tier."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need an account?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To put your own things away, yes: that is what lets you find them again from another phone, and lose nothing when you change device. To only look at what someone has shared with you, no — an invitation code is enough."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work without a network?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Céoù answers from what it already knows and records what you change, even at the back of a cellar. Everything reaches the server on its own once the network is back."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I share with my family?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Everyone has a friend code, which never changes: they scan yours, and you then choose which homes to open to them. Nothing is shared before that choice."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where is my data?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "With Supabase, in the European Union, in Stockholm. Two features call on services outside the Union — the photo scan and the voice assistant — and each asks you first, once, explicitly."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I delete everything?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, from the app: Profile, then “My account”, then delete. The account and everything in it go permanently. The steps are also written on this site, for anyone who no longer has the app."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When is it out?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The app is being prepared for the Play Store and the App Store. Write to contact@ceou.eu to hear about it on release day."
+      }
+    }
+  ]
+}
+  </script>
+  <script>(function () {
+  var top = document.querySelector('.top');
+  var burger = top && top.querySelector('.burger');
+
+  if (burger) {
+    var setOpen = function (open) {
+      top.setAttribute('data-open', open ? 'true' : 'false');
+      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      burger.setAttribute('aria-label', open ? burger.getAttribute('data-label-close') : burger.getAttribute('data-label-open'));
+    };
+    burger.addEventListener('click', function () {
+      setOpen(top.getAttribute('data-open') !== 'true');
+    });
+    // Un lien suivi referme le panneau : sur telephone il recouvre le haut
+    // de la page, et on atterrirait sur une section cachee par le menu.
+    Array.prototype.forEach.call(top.querySelectorAll('.nav a'), function (a) {
+      a.addEventListener('click', function () { setOpen(false); });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && top.getAttribute('data-open') === 'true') {
+        setOpen(false);
+        burger.focus();
+      }
+    });
+  }
+
+  var spySections = Array.prototype.slice.call(document.querySelectorAll('[data-spy-target]'));
+  var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
+
+  var onScroll = function () {
+    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8); }
+    if (!spySections.length) { return; }
+    var current = null;
+    for (var i = 0; i < spySections.length; i++) {
+      if (spySections[i].getBoundingClientRect().top <= 130) { current = spySections[i]; }
+    }
+    // Arrive en bas, la derniere section peut n'avoir jamais franchi la
+    // ligne : on la designe quand meme, sinon le menu revient au debut.
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+      current = spySections[spySections.length - 1];
+    }
+    var id = current ? current.id : '';
+    for (var j = 0; j < spyLinks.length; j++) {
+      var href = spyLinks[j].getAttribute('href');
+      if (id && href.slice(href.indexOf('#') + 1) === id) {
+        spyLinks[j].setAttribute('aria-current', 'true');
+      } else {
+        spyLinks[j].removeAttribute('aria-current');
+      }
+    }
+  };
+
+  var ticking = false;
+  window.addEventListener('scroll', function () {
+    if (ticking) { return; }
+    ticking = true;
+    window.requestAnimationFrame(function () { onScroll(); ticking = false; });
+  }, { passive: true });
+  onScroll();
+
+  var reveal = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
+  var revealAll = function () {
+    for (var k = 0; k < reveal.length; k++) { reveal[k].classList.add('in'); }
+  };
+
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) { return; }
+        entry.target.classList.add('in');
+        // Une fois entre, on cesse d'observer : l'animation ne se rejoue
+        // pas en remontant, et le navigateur n'a plus rien a surveiller.
+        io.unobserve(entry.target);
+      });
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.06 });
+    reveal.forEach(function (el) { io.observe(el); });
+
+    // FILET DE SECURITE, ET IL A DEJA SERVI.
+    //
+    // Un observateur peut exister sans jamais repondre : page rendue hors
+    // ecran, onglet en veille, moteur qui n'appelle pas le premier rappel.
+    // Le contenu resterait alors a opacite nulle, c'est-a-dire invisible.
+    // Si rien n'a ete revele au bout de neuf dixiemes de seconde, on
+    // montre tout : mieux vaut perdre l'animation que la page. Le delai est
+    // choisi bien au-dela du premier rappel d'un observateur en bonne sante
+    // — immediat — et assez court pour qu'un ecran vide ne s'installe pas.
+    window.setTimeout(function () {
+      if (!document.querySelector('.reveal.in')) { revealAll(); }
+    }, 900);
+  } else {
+    revealAll();
+  }
+}());</script>
 </body>
 </html>

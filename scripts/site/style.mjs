@@ -1,32 +1,28 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Politique de confidentialité — Céoù</title>
-  <meta name="description" content="Politique de confidentialité de l'application Céoù, et demande de suppression de compte.">
-  <link rel="canonical" href="https://ceou.eu/confidentialite.html">
-  <link rel="alternate" hreflang="en" href="https://ceou.eu/privacy.html">
-  <link rel="alternate" hreflang="fr" href="https://ceou.eu/confidentialite.html">
-  <link rel="alternate" hreflang="x-default" href="https://ceou.eu/confidentialite.html">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2214%22%20fill%3D%22%23FFFBF8%22%2F%3E%3Cpath%20d%3D%22M32%208c-8.8%200-16%207.2-16%2016%200%2012%2016%2032%2016%2032s16-20%2016-32c0-8.8-7.2-16-16-16z%22%20fill%3D%22%231591EA%22%2F%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2223%22%20r%3D%227%22%20fill%3D%22%23FFFBF8%22%2F%3E%3C%2Fsvg%3E">
-  <link rel="apple-touch-icon" href="og-image.png">
-  <meta name="theme-color" content="#FFFBF8" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#191714" media="(prefers-color-scheme: dark)">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Céoù">
-  <meta property="og:locale" content="fr_FR">
-  <meta property="og:title" content="Politique de confidentialité — Céoù">
-  <meta property="og:description" content="Politique de confidentialité de l'application Céoù, et demande de suppression de compte.">
-  <meta property="og:url" content="https://ceou.eu/confidentialite.html">
-  <meta property="og:image" content="https://ceou.eu/og-image.png">
-  <meta property="og:image:width" content="1024">
-  <meta property="og:image:height" content="1024">
-  <meta name="twitter:card" content="summary">
-  <!-- Posee avant tout affichage : les regles d'animation en dependent, et
-       la poser plus tard ferait clignoter la page une fois construite. -->
-  <script>document.documentElement.classList.add('js');</script>
-  <style>
+// LA FEUILLE DE STYLE, ÉCRITE DANS LA PAGE.
+//
+// Un seul <style> par page plutôt qu'un fichier .css à côté : le site fait
+// quatre pages, la feuille pèse quelques kilo-octets, et l'inclure évite un
+// aller-retour réseau avant le premier affichage. C'est aussi ce qui garantit
+// qu'une page copiée seule quelque part reste présentable.
+//
+// LES COULEURS SONT CELLES DE L'APP, reprises de global.css. Le jeton
+// historique s'appelle « coral » alors qu'il rend du bleu — l'app a changé de
+// teinte sans renommer. Ici il s'appelle `--accent`, ce qu'il est vraiment.
+//
+// Trois familles de nuances, comme dans l'app : `--x` la teinte vive (elle ne
+// bouge pas d'un thème à l'autre, c'est l'identité), `--x-soft` le fond de
+// pastille et `--x-strong` ce qu'on pose dessus. Ce sont les deux dernières
+// qui basculent en sombre — sinon un fond pâle éclairerait l'écran comme une
+// lampe, et son texte foncé y deviendrait illisible.
+
+import { ROOM_OPACITY_DARK, ROOM_OPACITY_LIGHT, ROOM_PASTELS, ROOM_TINTS_DARK } from './appColors.mjs';
+
+/** Les quatre jetons de pièce, déclarés à l'indentation du bloc qui les reçoit. */
+const rooms = (values, indent) =>
+  values.map((hex, i) => `${indent}--room-${i + 1}: ${hex};`).join(`
+`);
+
+export const STYLE = `
 /* === Jetons ============================================================ */
 
 :root {
@@ -72,10 +68,7 @@
   --device: #2D2A26;
 
   /* Les pièces du plan miniature. */
-  --room-1: #BFD7EA;
-  --room-2: #C9E4C5;
-  --room-3: #FCE8A8;
-  --room-4: #BEE3DB;
+${rooms(ROOM_PASTELS, '  ')}
 
   --shadow-sm: 0 1px 2px rgba(45, 42, 38, 0.05), 0 2px 6px rgba(45, 42, 38, 0.05);
   --shadow-md: 0 8px 24px -8px rgba(45, 42, 38, 0.16);
@@ -112,10 +105,7 @@
 
     --device: #3B3730;
 
-    --room-1: #1c415f;
-    --room-2: #245f1c;
-    --room-3: #5f4f1c;
-    --room-4: #1c5f50;
+${rooms(ROOM_TINTS_DARK, '    ')}
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 10px 26px -10px rgba(0, 0, 0, 0.6);
@@ -624,8 +614,8 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 /* Le clair dilue le pastel par-dessus la feuille, comme l'app. Le sombre ne
    dilue rien : la teinte y est deja calculee pour ce fond, et l'affaiblir la
    ramenerait au gris. */
-.plan-rooms { opacity: 0.55; }
-@media (prefers-color-scheme: dark) { .plan-rooms { opacity: 1; } }
+.plan-rooms { opacity: ${ROOM_OPACITY_LIGHT}; }
+@media (prefers-color-scheme: dark) { .plan-rooms { opacity: ${ROOM_OPACITY_DARK}; } }
 
 /* La bulle de l'assistant. */
 .chat { display: grid; gap: 0.7rem; }
@@ -842,256 +832,4 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
   .highlight { border: 1px solid #999999; background: none; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; color: #555555; }
 }
-</style>
-</head>
-<body class="doc-page">
-  <div class="progress" aria-hidden="true"></div>
-  <a class="skip" href="#main">Aller au contenu</a>
-  <header class="top" data-open="false">
-    <div class="wrap top-inner">
-      <a class="brand" href="index.html">
-        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-  <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
-  <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
-</svg>
-        <span>Céoù</span>
-      </a>
-      <button class="burger" type="button" aria-expanded="false" aria-controls="site-nav"
-              aria-label="Ouvrir le menu"
-              data-label-open="Ouvrir le menu" data-label-close="Fermer le menu">
-        <span></span>
-      </button>
-      <nav class="nav" id="site-nav" aria-label="Le site">
-        <a href="index.html#comment">Comment ça marche</a>
-        <a href="index.html#fonctionnalites">Fonctionnalités</a>
-        <a href="index.html#engagements">Engagements</a>
-        <a href="index.html#questions">Questions</a>
-        <a href="confidentialite.html">Confidentialité</a>
-        <span class="nav-sep" aria-hidden="true"></span>
-        <a class="lang" href="en.html" hreflang="en" lang="en"
-           title="Read this page in English">English</a>
-      </nav>
-    </div>
-  </header>
-
-  <main id="main">
-    <div class="wrap doc-layout">
-      <nav class="doc-toc" data-spy aria-label="Sur cette page">
-        <h2>Sur cette page</h2>
-        <ul>
-            <li><a href="#avertissement">Avertissement</a></li>
-            <li><a href="#qui-traite-tes-donnees">Qui traite tes données</a></li>
-            <li><a href="#donnees-collectees">Données collectées</a></li>
-            <li><a href="#hebergement">Hébergement</a></li>
-            <li><a href="#le-scan-photo-par-intelligence-artificielle">Le scan photo par intelligence artificielle</a></li>
-            <li><a href="#l-assistant-vocal">L'assistant vocal</a></li>
-            <li><a href="#recherche-de-produit-par-code-barre">Recherche de produit par code-barre</a></li>
-            <li><a href="#notifications">Notifications</a></li>
-            <li><a href="#journal-d-erreurs">Journal d'erreurs</a></li>
-            <li><a href="#ce-qui-n-est-jamais-fait">Ce qui n'est jamais fait</a></li>
-            <li><a href="#duree-de-conservation">Durée de conservation</a></li>
-            <li><a href="#tes-droits">Tes droits</a></li>
-            <li><a href="#suppression-de-compte">Supprimer ton compte et tes données</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-      </nav>
-
-      <div class="doc">
-        <h1>Politique de confidentialité</h1>
-        <p class="updated">Dernière mise à jour : septembre 2026</p>
-
-        <section id="avertissement" data-spy-target>
-          <h2>Avertissement</h2>
-          <p>Ce texte est rédigé par l'éditeur de l'application (pas un professionnel du droit) dans un souci de transparence honnête sur les données traitées. Il ne remplace pas une relecture juridique professionnelle, en particulier si l'application venait à être proposée plus largement au public.</p>
-        </section>
-        <section id="qui-traite-tes-donnees" data-spy-target>
-          <h2>Qui traite tes données</h2>
-          <p>Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
-        </section>
-        <section id="donnees-collectees" data-spy-target>
-          <h2>Données collectées</h2>
-          <p>Ton adresse email et ton mot de passe (pour la connexion), un nom affiché et une photo de profil optionnels, ainsi que le contenu que tu crées dans l'app : habitations, pièces, emplacements, conteneurs, objets (nom, description, photo, code-barre) et leur historique de déplacement.</p>
-        </section>
-        <section id="hebergement" data-spy-target>
-          <h2>Hébergement</h2>
-          <p>Toutes ces données sont hébergées chez Supabase, dans l'Union Européenne (région eu-north-1, Stockholm).</p>
-        </section>
-        <section id="le-scan-photo-par-intelligence-artificielle" data-spy-target>
-          <h2>Le scan photo par intelligence artificielle</h2>
-          <p>Si tu utilises la fonctionnalité de scan photo pour ajouter plusieurs objets à la fois, la photo que tu prends est envoyée à l'API Gemini de Google (hors Union Européenne) afin de détecter automatiquement les objets qu'elle contient. Google traite cette photo uniquement pour répondre à cette requête ponctuelle. Cette fonctionnalité te demande un accord explicite avant sa toute première utilisation, distinct de l'acceptation de cette politique.</p>
-        </section>
-        <section id="l-assistant-vocal" data-spy-target>
-          <h2>L'assistant vocal</h2>
-          <p>Quand tu parles à Céoù, deux services interviennent. D'abord la reconnaissance vocale de ton téléphone, qui transforme ta voix en texte : c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs — c'est le même mécanisme que la dictée du clavier. Ensuite le texte obtenu, et jamais l'audio, est envoyé à l'API Gemini de Google, hors Union Européenne, pour être interprété. Ta phrase n'est traitée que pour répondre à cette demande ponctuelle. Comme le scan photo, l'assistant demande un accord explicite avant sa toute première utilisation.</p>
-        </section>
-        <section id="recherche-de-produit-par-code-barre" data-spy-target>
-          <h2>Recherche de produit par code-barre</h2>
-          <p>Si tu scannes un code-barre, ce code (pas d'autre donnée personnelle) est envoyé à UPCItemDB, un service tiers, pour retrouver automatiquement le nom et la photo du produit.</p>
-        </section>
-        <section id="notifications" data-spy-target>
-          <h2>Notifications</h2>
-          <p>Si tu acceptes les notifications, ton téléphone reçoit un identifiant d'envoi (un « jeton ») fourni par le service de notifications d'Expo. Il est conservé avec ton compte pour pouvoir t'avertir — un prêt à rendre, une demande d'ami — et transite par Expo, Apple et Google au moment de l'envoi, comme toute notification sur téléphone. Il disparaît quand tu refuses les notifications ou quand tu supprimes ton compte.</p>
-        </section>
-        <section id="journal-d-erreurs" data-spy-target>
-          <h2>Journal d'erreurs</h2>
-          <p>Quand l'application rencontre une erreur, elle enregistre le message technique, la trace de l'erreur et le contexte de l'écran concerné, rattachés à ton compte. Cela ne sert qu'à corriger les pannes, reste chez le même hébergeur que le reste de tes données, et disparaît avec ton compte.</p>
-        </section>
-        <section id="ce-qui-n-est-jamais-fait" data-spy-target>
-          <h2>Ce qui n'est jamais fait</h2>
-          <p>Tes données ne sont ni vendues, ni utilisées à des fins publicitaires, ni partagées avec d'autres utilisateurs de l'app au-delà de ce que tu choisis explicitement de partager.</p>
-        </section>
-        <section id="duree-de-conservation" data-spy-target>
-          <h2>Durée de conservation</h2>
-          <p>Tes données sont conservées tant que ton compte existe. Tu peux en demander la suppression à tout moment (voir ci-dessous).</p>
-        </section>
-        <section id="tes-droits" data-spy-target>
-          <h2>Tes droits</h2>
-          <p>Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
-        </section>
-
-        <section class="highlight" id="suppression-de-compte" data-spy-target>
-          <h2>Supprimer ton compte et tes données</h2>
-          <p>Depuis l'application, c'est immédiat : Profil, puis « Mon compte », puis « Supprimer mon compte ». Ton mot de passe t'est redemandé, pour confirmer que c'est bien toi.</p>
-          <p>Sans l'application, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> depuis l'adresse e-mail de ton compte, avec « Suppression de compte » en objet. La demande est traitée sous 30 jours.</p>
-          <p>Ce qui est supprimé : ton compte et ton profil, tes habitations, pièces, emplacements, conteneurs et objets, leurs photos, l'historique de leurs déplacements, tes prêts et emprunts, tes amis, tes partages et tes invitations, tes jetons de notification et tes journaux d'erreurs.</p>
-          <p>Ce qui reste : les habitations que des amis ont partagées avec toi ne sont pas supprimées — elles leur appartiennent, tu perds simplement leur accès. De même, si quelqu'un a enregistré t'avoir prêté un objet, la ligne reste chez lui : elle fait partie de ses données à lui, pas des tiennes.</p>
-          <p>La suppression est définitive : rien n'est récupérable ensuite depuis l'application. Les sauvegardes techniques de l'hébergeur peuvent en conserver une copie le temps de leur rotation, avant d'être écrasées à leur tour.</p>
-        </section>
-
-        <section id="contact" data-spy-target>
-          <h2>Contact</h2>
-          <p>Pour toute question sur tes données, ou pour exercer un droit d'accès, de rectification ou d'export : <a href="mailto:contact@ceou.eu">contact@ceou.eu</a></p>
-        </section>
-
-        <a class="doc-back" href="index.html">Retour à l’accueil</a>
-      </div>
-    </div>
-  </main>
-  <div class="wrap">
-    <footer class="foot">
-      <div class="foot-grid">
-        <div>
-          <span class="brand"><svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-  <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
-  <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
-</svg><span>Céoù</span></span>
-          <p class="tagline">Céoù — sais toujours où sont tes affaires</p>
-          <p class="eu">Hébergé dans l’Union européenne</p>
-        </div>
-        <div>
-          <h2>Le site</h2>
-          <ul>
-            <li><a href="index.html#comment">Comment ça marche</a></li>
-            <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
-            <li><a href="index.html#engagements">Engagements</a></li>
-            <li><a href="index.html#questions">Questions</a></li>
-          </ul>
-        </div>
-        <div>
-          <h2>Légal</h2>
-          <ul>
-            <li><a href="confidentialite.html">Confidentialité</a></li>
-            <li><a href="confidentialite.html#suppression-de-compte">Supprimer mon compte</a></li>
-            <li><a href="mailto:contact@ceou.eu">contact@ceou.eu</a></li>
-            <li><a href="en.html" hreflang="en" lang="en">English</a></li>
-          </ul>
-        </div>
-      </div>
-    </footer>
-  </div>
-
-  <script>(function () {
-  var top = document.querySelector('.top');
-  var burger = top && top.querySelector('.burger');
-
-  if (burger) {
-    var setOpen = function (open) {
-      top.setAttribute('data-open', open ? 'true' : 'false');
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-      burger.setAttribute('aria-label', open ? burger.getAttribute('data-label-close') : burger.getAttribute('data-label-open'));
-    };
-    burger.addEventListener('click', function () {
-      setOpen(top.getAttribute('data-open') !== 'true');
-    });
-    // Un lien suivi referme le panneau : sur telephone il recouvre le haut
-    // de la page, et on atterrirait sur une section cachee par le menu.
-    Array.prototype.forEach.call(top.querySelectorAll('.nav a'), function (a) {
-      a.addEventListener('click', function () { setOpen(false); });
-    });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && top.getAttribute('data-open') === 'true') {
-        setOpen(false);
-        burger.focus();
-      }
-    });
-  }
-
-  var spySections = Array.prototype.slice.call(document.querySelectorAll('[data-spy-target]'));
-  var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
-
-  var onScroll = function () {
-    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8); }
-    if (!spySections.length) { return; }
-    var current = null;
-    for (var i = 0; i < spySections.length; i++) {
-      if (spySections[i].getBoundingClientRect().top <= 130) { current = spySections[i]; }
-    }
-    // Arrive en bas, la derniere section peut n'avoir jamais franchi la
-    // ligne : on la designe quand meme, sinon le menu revient au debut.
-    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
-      current = spySections[spySections.length - 1];
-    }
-    var id = current ? current.id : '';
-    for (var j = 0; j < spyLinks.length; j++) {
-      var href = spyLinks[j].getAttribute('href');
-      if (id && href.slice(href.indexOf('#') + 1) === id) {
-        spyLinks[j].setAttribute('aria-current', 'true');
-      } else {
-        spyLinks[j].removeAttribute('aria-current');
-      }
-    }
-  };
-
-  var ticking = false;
-  window.addEventListener('scroll', function () {
-    if (ticking) { return; }
-    ticking = true;
-    window.requestAnimationFrame(function () { onScroll(); ticking = false; });
-  }, { passive: true });
-  onScroll();
-
-  var reveal = Array.prototype.slice.call(document.querySelectorAll('.reveal'));
-  var revealAll = function () {
-    for (var k = 0; k < reveal.length; k++) { reveal[k].classList.add('in'); }
-  };
-
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) { return; }
-        entry.target.classList.add('in');
-        // Une fois entre, on cesse d'observer : l'animation ne se rejoue
-        // pas en remontant, et le navigateur n'a plus rien a surveiller.
-        io.unobserve(entry.target);
-      });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.06 });
-    reveal.forEach(function (el) { io.observe(el); });
-
-    // FILET DE SECURITE, ET IL A DEJA SERVI.
-    //
-    // Un observateur peut exister sans jamais repondre : page rendue hors
-    // ecran, onglet en veille, moteur qui n'appelle pas le premier rappel.
-    // Le contenu resterait alors a opacite nulle, c'est-a-dire invisible.
-    // Si rien n'a ete revele au bout de neuf dixiemes de seconde, on
-    // montre tout : mieux vaut perdre l'animation que la page. Le delai est
-    // choisi bien au-dela du premier rappel d'un observateur en bonne sante
-    // — immediat — et assez court pour qu'un ecran vide ne s'installe pas.
-    window.setTimeout(function () {
-      if (!document.querySelector('.reveal.in')) { revealAll(); }
-    }, 900);
-  } else {
-    revealAll();
-  }
-}());</script>
-</body>
-</html>
+`;

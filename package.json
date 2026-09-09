@@ -63,7 +63,9 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run lint"
+    "verify": "npm run typecheck && npm run lint",
+    "site": "node scripts/build-site.mjs",
+    "site:serve": "node scripts/serve-site.mjs"
   },
   "private": true
 }
