@@ -826,6 +826,19 @@
     "delete": {
       "title": "Delete this receipt?",
       "message": "The document will be removed from every item it covers."
+    },
+    "entry": {
+      "title": "Receipts for this home",
+      "count_one": "{{count}} receipt",
+      "count_other": "{{count}} receipts"
+    },
+    "list": {
+      "title": "Claim file",
+      "empty_title": "No receipt here",
+      "empty_hint": "Proofs of purchase are added from an item's page.",
+      "total_on_one": "Total over {{count}} priced receipt, out of {{sur}}",
+      "total_on_other": "Total over {{count}} priced receipts, out of {{sur}}",
+      "warranty_until": "Under warranty until {{date}}"
     }
   },
   "network": {

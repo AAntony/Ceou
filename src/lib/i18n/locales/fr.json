@@ -826,6 +826,19 @@
     "delete": {
       "title": "Supprimer cette facture ?",
       "message": "Le document sera retiré de tous les objets qu'il couvre."
+    },
+    "entry": {
+      "title": "Factures de ce logement",
+      "count_one": "{{count}} facture",
+      "count_other": "{{count}} factures"
+    },
+    "list": {
+      "title": "Dossier",
+      "empty_title": "Aucune facture ici",
+      "empty_hint": "Les preuves d'achat s'ajoutent depuis la fiche d'un objet.",
+      "total_on_one": "Total sur {{count}} facture chiffrée, sur {{sur}}",
+      "total_on_other": "Total sur {{count}} factures chiffrées, sur {{sur}}",
+      "warranty_until": "Sous garantie jusqu'au {{date}}"
     }
   },
   "network": {
