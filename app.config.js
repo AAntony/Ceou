@@ -43,7 +43,19 @@ module.exports = {
     userInterfaceStyle: 'automatic',
     scheme: 'ceou',
     ios: {
-      supportsTablet: true,
+      // FAUX, ET C'EST UN CHOIX DE FICHE AUTANT QUE DE CODE.
+      //
+      // A `true`, Apple exige un jeu complet de captures d'ecran iPad dans la
+      // fiche App Store — et refuse la soumission sans elles. Or rien n'a
+      // jamais ete dessine ni verifie pour cette largeur : le plan 2D, les
+      // feuilles du bas et les grilles sont regles pour un telephone. Une
+      // fiche iPad promettrait un ecran qu'on n'a pas travaille.
+      //
+      // A `false`, l'app reste installable sur iPad, en mode compatibilite
+      // iPhone. Rien n'est ferme : le jour ou la tablette est visee pour de
+      // bon, on remet `true` ET on fait le travail de mise en page qui va
+      // avec. Decide pour la premiere version, le 2026-09-10.
+      supportsTablet: false,
       bundleIdentifier: 'com.aantony.ceou',
       infoPlist: {
         // DECLARATION D'EXPORT, ET CE N'EST PAS UNE FORMALITE VIDE.
