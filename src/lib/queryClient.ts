@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { defaultShouldDehydrateQuery, hashKey, MutationCache, QueryClient } from '@tanstack/react-query';
 import type { PersistQueryClientOptions } from '@tanstack/react-query-persist-client';
-import { logClientError } from './errorLogging';
+import { errorMessage, logClientError } from './errorLogging';
 import { recordSyncFailure, SYNC_FAILURES_KEY } from './syncFailures';
 import { WRITE_MUTATION_KEY, type WriteBatch } from './writeQueue';
 
@@ -140,7 +140,12 @@ export const queryClient = new QueryClient({
         // taire, ce que ce fichier existe justement pour éviter — on annonce
         // ce qu'on sait : une modification n'est pas passée.
         describe: batch.describe ?? { kind: 'update', name: '' },
-        message: error instanceof Error ? error.message : String(error),
+        // PAS `instanceof Error` : une erreur de supabase-js n'en est pas
+        // une au runtime, et `String()` la rendait en « [object Object] » —
+        // le champ censé expliquer le refus n'expliquait donc rien. Le piège
+        // est documenté deux fois ailleurs dans ce dépôt (errorLogging,
+        // rpcError) ; il ne manquait plus qu'ici.
+        message: errorMessage(error),
         failedAt: new Date().toISOString(),
         ops: batch.ops,
       });

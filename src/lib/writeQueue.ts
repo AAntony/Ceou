@@ -192,7 +192,31 @@ async function runBatch({ ops }: WriteBatch): Promise<void> {
  * exécuter : `resumePausedMutations` la reprendrait et ne saurait qu'en faire.
  */
 export function registerWriteMutation(client: QueryClient): void {
-  client.setMutationDefaults(WRITE_MUTATION_KEY, { mutationFn: runBatch });
+  client.setMutationDefaults(WRITE_MUTATION_KEY, {
+    mutationFn: runBatch,
+    // ═══ UNE FILE, DONC UNE À LA FOIS ═══
+    //
+    // `resumePausedMutations` reprend TOUT en même temps — un `Promise.all`
+    // sur les mutations en pause (query-core/mutationCache). Sans portée
+    // commune, les écritures mises de côté hors ligne repartent donc
+    // ensemble, dans le désordre.
+    //
+    // LE DÉFAUT QUE ÇA CORRIGE, signalé à l'usage : créer un objet hors
+    // ligne puis le déplacer, et au retour du réseau « le serveur a refusé
+    // ta modification ». Le déplacement atteignait le serveur avant que
+    // l'insertion n'ait été validée, et `move_objet` levait « objet not
+    // found » — sur un objet qui existait pourtant, une seconde plus tard.
+    //
+    // Une portée partagée fait exécuter en SÉRIE toutes les mutations qui la
+    // portent, dans leur ordre d'arrivée. C'est le sens même d'une file :
+    // les gestes se rejouent comme ils ont été faits, parce qu'ils dépendent
+    // les uns des autres.
+    //
+    // Déclarée ICI et non dans `useWrite` : c'est cet enregistrement, et lui
+    // seul, que retrouve une mutation relue du disque après un redémarrage —
+    // or ce sont exactement celles-là qui se bousculent au retour du réseau.
+    scope: { id: 'ceou-write-queue' },
+  });
 }
 
 /**

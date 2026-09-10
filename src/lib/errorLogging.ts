@@ -86,6 +86,21 @@ function describeError(error: unknown): {
 // utilisateurs déjà installés, contrairement au SDK Sentry qui embarque du
 // code natif). Écrit dans la table `client_errors` (insert-only côté
 // client, lecture réservée au propriétaire du projet via Supabase Studio).
+/**
+ * Le message d'une erreur, lisible par un humain.
+ *
+ * MÊME EXTRACTION QUE POUR LE JOURNAL, et c'est tout l'intérêt de l'exposer :
+ * `describeError` avait déjà été écrite ici parce qu'`instanceof Error` laisse
+ * passer les erreurs de supabase-js — elles arrivaient alors en
+ * « [object Object] ». Le même défaut restait pourtant dans la liste des
+ * écritures refusées, qui construisait son message à la main, avec le test
+ * que ce fichier documente comme insuffisant. Une extraction, un seul
+ * endroit.
+ */
+export function errorMessage(error: unknown): string {
+  return describeError(error).message;
+}
+
 export async function logClientError(error: unknown, context?: Record<string, unknown>): Promise<void> {
   try {
     const { message, stack, extra } = describeError(error);
