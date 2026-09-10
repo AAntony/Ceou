@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../inventory/placeholders';
+import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
@@ -87,11 +88,12 @@ type ResultCardProps = {
 // « Charg… », ce qui ne distingue plus rien.
 export function ResultCard({ entry, columns }: ResultCardProps) {
   const rowThumbWidth = useScaled(ROW_THUMB_WIDTH);
+  const photo = useMediaSource(entry.photo_url);
   const asRow = columns <= 1;
 
   const image = (
     <Image
-      source={entry.photo_url ? { uri: entry.photo_url } : PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
+      source={photo ?? PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
       style={{ width: '100%', height: '100%' }}
       contentFit="cover"
     />

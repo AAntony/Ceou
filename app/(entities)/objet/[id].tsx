@@ -20,6 +20,7 @@ import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useSe
 import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
+import { useMediaSource } from '../../../src/lib/images/media';
 import { pickImage } from '../../../src/lib/images/pickAndUploadImage';
 import { useThemeColors } from '../../../src/lib/theme';
 import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
@@ -34,6 +35,7 @@ export default function ObjetScreen() {
   const { t, i18n } = useTranslation();
   const { session } = useSession();
   const { data: objet, isLoading, isError, refetch } = useObjet(id);
+  const photo = useMediaSource(objet?.photo_url);
   const { data: history } = useObjetHistory(id);
   const { data: locationChain } = useObjetLocationChain(id);
   const pieceId = locationChain?.find((node) => node.kind === 'piece')?.id;
@@ -159,7 +161,7 @@ export default function ObjetScreen() {
             ) : objet.photo_url ? (
               // Remplit son cadre plutot que d'imposer sa taille : le cadre
               // grandit avec le reglage de taille, l'image le suit.
-              <Image source={{ uri: objet.photo_url }} style={{ width: '100%', height: '100%' }} />
+              <Image source={photo} style={{ width: '100%', height: '100%' }} />
             ) : (
               <Text className="px-2 text-center text-label text-ink-soft">{editable ? t('inventory.objet.add_photo') : ''}</Text>
             )}

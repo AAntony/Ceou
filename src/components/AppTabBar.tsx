@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsAnonymous } from '../features/auth/SessionProvider';
 import { useProfile } from '../features/profile/useProfile';
 import { useFriendships } from '../features/sharing/queries';
+import { useMediaSource } from '../lib/images/media';
 import { MAX_CHROME_SCALE, useChromeScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
@@ -91,6 +92,7 @@ type TabItemProps = {
 function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }: TabItemProps) {
   const colors = useThemeColors();
   const chrome = useChromeScale();
+  const avatar = useMediaSource(avatarUrl);
   const color = active ? ACTIVE_COLOR : colors.inkFaint;
   const avatarSize = Math.round(AVATAR_SIZE * chrome);
   // `fixedSize` a l'usage : la taille porte deja le plafond de la barre,
@@ -121,7 +123,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
               borderColor: ACTIVE_COLOR,
             }}
           >
-            <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} />
+            <Image source={avatar} style={{ width: '100%', height: '100%' }} />
           </View>
         ) : (
           <Icon name={iconName} size={iconSize} color={color} fixedSize />

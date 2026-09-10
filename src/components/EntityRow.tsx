@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
+import { useMediaSource } from '../lib/images/media';
 import { STACK_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
@@ -91,6 +92,7 @@ export function EntityRow({
 }: EntityRowProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
+  const photo = useMediaSource(photoUri);
   // La vignette est dessinee en pixels (ratio 4:3 impose), donc hors de
   // portee de `rem` : elle grandit avec le texte pour ne pas devenir un
   // timbre-poste a cote d'un nom de 26 points.
@@ -163,7 +165,7 @@ export function EntityRow({
 
   const media = thumbnail ?? (
     <Image
-      source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
+      source={photo ?? PLACEHOLDER_IMAGES[level]}
       style={{ width: '100%', height: '100%' }}
       contentFit="cover"
     />

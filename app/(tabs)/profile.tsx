@@ -24,6 +24,7 @@ import { useProfile, useUpdateProfile } from '../../src/features/profile/useProf
 import { formatFriendCodeQrValue } from '../../src/features/sharing/queries';
 import { ShareInviteModal } from '../../src/features/sharing/ShareInviteModal';
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../src/lib/i18n';
+import { useMediaSource } from '../../src/lib/images/media';
 import { useScaled } from '../../src/lib/textScale';
 import { supabase } from '../../src/lib/supabase/client';
 import { useThemeColors } from '../../src/lib/theme';
@@ -40,6 +41,7 @@ export default function ProfileScreen() {
   const isGuest = useIsAnonymous();
   const { data: profile, isLoading, isError, refetch } = useProfile();
   const updateProfile = useUpdateProfile();
+  const avatar = useMediaSource(profile?.avatar_url);
 
   const [displayName, setDisplayName] = useState('');
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -157,7 +159,7 @@ export default function ProfileScreen() {
           {avatarUploading ? (
             <ActivityIndicator />
           ) : profile?.avatar_url ? (
-            <Image source={{ uri: profile.avatar_url }} style={{ width: avatarSize, height: avatarSize }} />
+            <Image source={avatar} style={{ width: avatarSize, height: avatarSize }} />
           ) : (
             <Text className="text-display font-semibold text-ink-soft">
               {(displayName || session?.user.email || '?').charAt(0).toUpperCase()}

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { logClientError } from '../lib/errorLogging';
+import { useMediaSource } from '../lib/images/media';
 import { pickImage, takePhoto } from '../lib/images/pickAndUploadImage';
 import { STACK_SCALE, useScaled, useTextScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
@@ -40,6 +41,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
   const colors = useThemeColors();
   const { t } = useTranslation();
   const { textScale } = useTextScale();
+  const photo = useMediaSource(photoUri);
 
   // EN GRAND TEXTE, LES TROIS BOUTONS PASSENT SOUS LA PHOTO.
   //
@@ -72,7 +74,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
           className="overflow-hidden rounded-xl bg-sand"
         >
           <Image
-            source={photoUri ? { uri: photoUri } : PLACEHOLDER_IMAGES[level]}
+            source={photo ?? PLACEHOLDER_IMAGES[level]}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
           />

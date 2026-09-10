@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useMediaSource } from '../lib/images/media';
 import { Icon } from './Icon';
 
 type PhotoViewerModalProps = {
@@ -17,7 +18,9 @@ type PhotoViewerModalProps = {
 export function PhotoViewerModal({ visible, uri, onClose }: PhotoViewerModalProps) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  if (!uri) return null;
+  // Avant le retour anticipe : un hook ne peut pas etre appele apres.
+  const photo = useMediaSource(uri);
+  if (!photo) return null;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -28,7 +31,7 @@ export function PhotoViewerModal({ visible, uri, onClose }: PhotoViewerModalProp
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
         >
-          <Image source={{ uri }} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+          <Image source={photo} style={{ width: '100%', height: '100%' }} contentFit="contain" />
         </Pressable>
         <Pressable
           onPress={onClose}

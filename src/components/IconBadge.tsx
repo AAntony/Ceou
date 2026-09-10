@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { View } from 'react-native';
+import { useMediaSource } from '../lib/images/media';
 import { useScaled } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
@@ -23,6 +24,7 @@ export function IconBadge({ icon, fill, size = 56, photoUri, iconColor, borderCo
   const colors = useThemeColors();
   // La pastille suit le zoom de l'app, comme le texte a cote d'elle.
   const box = useScaled(size);
+  const photo = useMediaSource(photoUri);
 
   return (
     <View
@@ -37,8 +39,8 @@ export function IconBadge({ icon, fill, size = 56, photoUri, iconColor, borderCo
         borderColor,
       }}
     >
-      {photoUri ? (
-        <Image source={{ uri: photoUri }} style={{ width: box, height: box }} />
+      {photo ? (
+        <Image source={photo} style={{ width: box, height: box }} />
       ) : (
         // Taille NON mise a l'echelle ici : Icon s'en charge lui-meme. La
         // passer deja agrandie l'agrandirait deux fois et l'icone deborderait

@@ -1,3 +1,12 @@
+// LA RÈGLE VIT DANS lib/images/media.ts, ET NULLE PART AILLEURS.
+//
+// « Fichier local » se distinguait ici par le préfixe http, et le module
+// d'affichage posait exactement le même test de son côté. Deux copies d'une
+// même règle sur la forme d'une valeur stockée, c'est une divergence en
+// attente : le jour où cette forme change — buckets privés, adresses
+// signées — une seule des deux serait corrigée, et l'app re-téléverserait
+// en boucle des photos déjà envoyées.
+import { isLocalUri } from '../../lib/images/media';
 import { uploadOp, type WriteOp, type WriteTable } from '../../lib/writeQueue';
 import type { EntityLevel } from './placeholders';
 
@@ -23,12 +32,6 @@ import type { EntityLevel } from './placeholders';
 // le montre tout de suite, et l'envoi part avec le reste de l'écriture — donc
 // au retour du réseau s'il le faut. Le fichier est déjà sur l'appareil : il
 // n'y a aucune raison d'attendre pour l'afficher.
-
-function isLocalUri(uri: string): boolean {
-  // Une photo fraîchement choisie est un fichier local (file:, content:,
-  // blob:, data:) ; une photo déjà enregistrée est une URL Supabase.
-  return !uri.startsWith('http://') && !uri.startsWith('https://');
-}
 
 /**
  * Ce que le formulaire a changé, en une valeur à trois états.

@@ -1,6 +1,7 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
+import { useMediaSource } from '../../lib/images/media';
 import { STACK_SCALE, useScaled, useTextScale, WRAP_SCALE } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
@@ -47,6 +48,7 @@ type FriendRowProps = {
 
 export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowProps) {
   const colors = useThemeColors();
+  const avatarPhoto = useMediaSource(avatarUrl);
   const color = avatarColor(id);
   // L'avatar et ses initiales sont dessines en pixels : ils grandissent avec
   // le texte du nom pose a cote, sinon le cercle devient un point.
@@ -69,8 +71,8 @@ export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowP
       style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: color }}
       className="items-center justify-center overflow-hidden"
     >
-      {avatarUrl ? (
-        <Image source={{ uri: avatarUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+      {avatarPhoto ? (
+        <Image source={avatarPhoto} style={{ width: '100%', height: '100%' }} contentFit="cover" />
       ) : (
         // Les initiales plutôt qu'une silhouette générique : elles
         // distinguent réellement deux amis sans photo, ce qu'un même
