@@ -14,6 +14,16 @@ import { WRITE_MUTATION_KEY, type WriteBatch } from './writeQueue';
  */
 export const INVENTORY_SNAPSHOT_KEY = 'inventorySnapshot';
 
+/**
+ * La clé des adresses signées du stockage.
+ *
+ * Déclarée ici pour la même raison que celle du dessus : ce fichier ne dépend
+ * de rien, et les deux exclusions plus bas ont besoin de la reconnaître. Une
+ * signature n'est pas une donnée comme les autres — elle échappe à deux
+ * règles générales du cache, chacune commentée à son endroit.
+ */
+export const MEDIA_SIGNATURE_KEY = 'media-signature';
+
 // `skipGlobalRefresh` : la seule échappatoire à la règle ci-dessous, pour
 // les mutations à haute fréquence (un glissé de forme sur un plan en émet
 // une par relâché) qui invalident déjà exactement ce qu'elles touchent.
@@ -73,9 +83,17 @@ export const queryClient = new QueryClient({
       // raison : ce n'est pas une donnée serveur, personne ne peut la
       // « recharger ». La marquer périmée déclencherait une relecture vide
       // de sens après chaque écriture.
+      //
+      // LES ADRESSES SIGNÉES SONT EXCLUES ELLES AUSSI, pour une troisième
+      // raison : une signature ne devient pas fausse parce qu'un objet a été
+      // renommé. Elle ne dépend que du fichier et de l'heure. La balayer à
+      // chaque écriture ferait re-signer toutes les photos affichées à chaque
+      // frappe enregistrée, pour rendre exactement les mêmes images.
       queryClient.invalidateQueries({
         predicate: (query) =>
-          query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY && query.queryHash !== hashKey(SYNC_FAILURES_KEY),
+          query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY &&
+          query.queryKey[0] !== MEDIA_SIGNATURE_KEY &&
+          query.queryHash !== hashKey(SYNC_FAILURES_KEY),
       });
     },
     // UNE ÉCRITURE DIFFÉRÉE QUI ÉCHOUE NE DOIT PAS DISPARAÎTRE EN SILENCE.
@@ -236,8 +254,17 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
     // mêmes données — et c'est le plafond de 6 Mo d'AsyncStorage qu'on
     // atteindrait deux fois plus vite. Il est refait au démarrage suivant de
     // toute façon, dès qu'il y a du réseau.
+    //
+    // LES ADRESSES SIGNÉES NON PLUS, et cette fois c'est une affaire de
+    // durée : une signature vaut une heure, ce cache-ci se garde sept jours.
+    // Persistée, elle serait relue PÉRIMÉE au démarrage suivant — donc une
+    // photo qui ne charge pas, alors que le fichier est là et que la personne
+    // y a droit. Re-signer au démarrage coûte un appel groupé ; relire une
+    // signature morte coûte une image absente.
     shouldDehydrateQuery: (query) =>
-      defaultShouldDehydrateQuery(query) && query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY,
+      defaultShouldDehydrateQuery(query) &&
+      query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY &&
+      query.queryKey[0] !== MEDIA_SIGNATURE_KEY,
   },
 };
 

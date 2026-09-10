@@ -20,7 +20,12 @@ export function PhotoViewerModal({ visible, uri, onClose }: PhotoViewerModalProp
   const { t } = useTranslation();
   // Avant le retour anticipe : un hook ne peut pas etre appele apres.
   const photo = useMediaSource(uri);
-  if (!photo) return null;
+  // LA CONDITION PORTE SUR `uri` ET NON SUR `photo`, et la nuance compte
+  // depuis que la source se fait signer. `photo` vaut null le temps de
+  // l'appel : fermer la visionneuse la-dessus la ferait ne pas s'ouvrir du
+  // tout pendant ce delai, alors qu'on vient d'appuyer sur la photo. On
+  // ouvre donc sur fond noir, et l'image arrive.
+  if (!uri) return null;
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
@@ -31,7 +36,7 @@ export function PhotoViewerModal({ visible, uri, onClose }: PhotoViewerModalProp
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
         >
-          <Image source={photo} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+          <Image source={photo ?? undefined} style={{ width: '100%', height: '100%' }} contentFit="contain" />
         </Pressable>
         <Pressable
           onPress={onClose}

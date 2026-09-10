@@ -1,5 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import type { ImageSource } from 'expo-image';
 import { useMemo } from 'react';
+import { MEDIA_SIGNATURE_KEY } from '../queryClient';
+import { signMedia, SIGNATURE_TTL_SECONDS } from './signMedia';
 
 // LE SEUL ENDROIT QUI SAIT COMMENT UNE PHOTO DEVIENT UNE IMAGE AFFICHABLE.
 //
@@ -71,19 +74,62 @@ export function parseStoredMedia(value: string): { bucket: string; path: string;
  * qu'on est hors réseau. En posant le chemin (plus la version) comme clé, le
  * cache survit aux re-signatures, et le hors ligne avec lui.
  */
+/**
+ * Combien de temps on garde une signature avant d'en redemander une.
+ *
+ * Sous sa durée de validité, avec de la marge : une signature qu'on garderait
+ * jusqu'à la dernière seconde partirait parfois expirée vers expo-image, et
+ * la photo ne chargerait pas — pour dix minutes gagnées sur un appel groupé.
+ */
+const SIGNATURE_STALE_MS = (SIGNATURE_TTL_SECONDS - 10 * 60) * 1000;
+
 export function useMediaSource(value: string | null | undefined): ImageSource | null {
+  const stored = value && !isLocalUri(value) ? parseStoredMedia(value) : null;
+
+  const signature = useQuery({
+    queryKey: [MEDIA_SIGNATURE_KEY, stored?.bucket, stored?.path],
+    queryFn: () => signMedia(stored!.bucket, stored!.path),
+    enabled: stored !== null,
+    staleTime: SIGNATURE_STALE_MS,
+    gcTime: SIGNATURE_TTL_SECONDS * 1000,
+    // « ALWAYS » ET NON LE DÉFAUT, ET C'EST CE QUI FAIT MARCHER LE HORS LIGNE.
+    //
+    // Par défaut react-query ne LANCE PAS une requête quand il se croit hors
+    // réseau : elle reste en attente, sans erreur. Le repli ci-dessous ne se
+    // déclencherait donc jamais — la photo resterait indéfiniment absente au
+    // lieu de sortir du cache. On tente, et on échoue franchement.
+    networkMode: 'always',
+  });
+
   return useMemo(() => {
     if (!value) return null;
-    if (isLocalUri(value)) return { uri: value };
+    if (!stored) {
+      // Fichier local pas encore téléversé, ou adresse qu'on ne sait pas
+      // lire : rendue telle quelle, mieux vaut une photo sans clé de cache
+      // stable que pas de photo.
+      return { uri: value };
+    }
 
-    const parsed = parseStoredMedia(value);
-    // Une adresse qu'on ne sait pas lire est rendue telle quelle : mieux vaut
-    // une photo affichée sans clé de cache stable que pas de photo du tout.
-    if (!parsed) return { uri: value };
+    const cacheKey = `${stored.bucket}/${stored.path}${stored.version ? `?v=${stored.version}` : ''}`;
 
-    return {
-      uri: value,
-      cacheKey: `${parsed.bucket}/${parsed.path}${parsed.version ? `?v=${parsed.version}` : ''}`,
-    };
-  }, [value]);
+    if (signature.data) return { uri: signature.data, cacheKey };
+
+    // LE REPLI, QUI SERT DEUX SITUATIONS DIFFÉRENTES.
+    //
+    // Tant que les buckets sont publics, l'adresse stockée répond encore :
+    // une signature qui échoue ne se voit pas, et la bascule se fait sans
+    // trou. Une fois les buckets fermés, cette même adresse ne répond plus —
+    // mais elle porte la bonne clé de cache, et c'est le cache d'expo-image
+    // qui sert alors la photo. Hors réseau, c'est exactement ce qu'on veut.
+    if (signature.isError) return { uri: value, cacheKey };
+
+    // Signature en cours : on n'affiche rien plutôt qu'une adresse qu'on
+    // sait condamnée. L'appelant montre son illustration par défaut le temps
+    // de l'appel — quelques centaines de millisecondes, une seule fois par
+    // photo et par session.
+    //
+    // `data === null` tombe ici aussi, et c'est voulu : le fichier n'existe
+    // plus, ou la personne n'y a pas droit. Il n'y a rien à montrer.
+    return null;
+  }, [value, stored, signature.data, signature.isError]);
 }
