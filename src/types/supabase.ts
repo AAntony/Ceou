@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -172,6 +172,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      facture_objets: {
+        Row: {
+          facture_id: string
+          objet_id: string
+        }
+        Insert: {
+          facture_id: string
+          objet_id: string
+        }
+        Update: {
+          facture_id?: string
+          objet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_objets_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "facture_objets_objet_id_fkey"
+            columns: ["objet_id"]
+            isOneToOne: false
+            referencedRelation: "objets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures: {
+        Row: {
+          amount: number | null
+          created_at: string
+          document_kind: string
+          document_url: string
+          id: string
+          purchase_date: string | null
+          user_id: string
+          vendor: string | null
+          warranty_until: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          document_kind?: string
+          document_url: string
+          id?: string
+          purchase_date?: string | null
+          user_id: string
+          vendor?: string | null
+          warranty_until?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          document_kind?: string
+          document_url?: string
+          id?: string
+          purchase_date?: string | null
+          user_id?: string
+          vendor?: string | null
+          warranty_until?: string | null
+        }
+        Relationships: []
       }
       friend_categories: {
         Row: {
@@ -876,6 +942,10 @@ export type Database = {
         Args: { p_habitation_id: string; p_user_id: string }
         Returns: boolean
       }
+      can_read_media: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: boolean
+      }
       check_and_touch_ai_rate_limit: {
         Args: { p_cooldown_seconds: number; p_kind: string; p_user_id: string }
         Returns: boolean
@@ -926,6 +996,21 @@ export type Database = {
       emplacement_habitation: {
         Args: { p_emplacement_id: string }
         Returns: string
+      }
+      factures_for_habitation: {
+        Args: { p_habitation_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          document_kind: string
+          document_url: string
+          id: string
+          objet_count: number
+          objet_names: string[]
+          purchase_date: string
+          vendor: string
+          warranty_until: string
+        }[]
       }
       friend_shared_habitation_counts: {
         Args: never
@@ -1039,6 +1124,7 @@ export type Database = {
         Args: { p_parent_conteneur_id: string; p_parent_emplacement_id: string }
         Returns: string
       }
+      media_habitation: { Args: { p_name: string }; Returns: string }
       move_objet: {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
@@ -1090,6 +1176,10 @@ export type Database = {
         }[]
       }
       send_friend_request: { Args: { p_friend_code: string }; Returns: string }
+      shares_context_with: {
+        Args: { p_owner: string; p_viewer: string }
+        Returns: boolean
+      }
       update_share_invite: {
         Args: {
           p_expires_at: string
@@ -1146,12 +1236,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1175,11 +1265,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1200,11 +1290,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1225,11 +1315,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1242,11 +1332,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

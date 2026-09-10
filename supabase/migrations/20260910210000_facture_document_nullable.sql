@@ -1,0 +1,22 @@
+-- Correctif de la migration precedente : `document_url` doit pouvoir etre nul.
+--
+-- CE QUE J'AI MANQUE. La colonne a ete declaree `not null` par reflexe — une
+-- facture sans document n'a pas de sens. C'est vrai du resultat, et faux du
+-- chemin pour y arriver.
+--
+-- L'app ecrit d'abord, envoie ensuite : la file pose la ligne, puis televerse
+-- le fichier, puis ecrit l'adresse obtenue dans la colonne (voir uploadOp et
+-- planEntityPhoto). C'est ce qui permet d'ajouter une facture sans reseau. Avec
+-- `not null`, l'insertion echouait avant meme d'arriver a l'envoi — donc
+-- exactement le defaut qu'on vient de corriger trois fois sur les photos.
+--
+-- L'ALTERNATIVE ETAIT PIRE. Poser le chemin local en attendant aurait laisse
+-- un `file://...` en base si le lot echouait juste apres : une adresse
+-- qu'aucun autre appareil ne sait ouvrir, et que l'app prendrait ensuite pour
+-- un document deja enregistre. Le commentaire de planEntityPhoto le dit deja
+-- pour les photos ; c'est la meme raison ici.
+--
+-- Un `document_url` nul se lit donc « envoi en attente », jamais « pas de
+-- document ». L'ecran montre le fichier local pendant ce temps.
+
+alter table public.factures alter column document_url drop not null;
