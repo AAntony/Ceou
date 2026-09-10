@@ -672,6 +672,7 @@ export function useObjet(id: string) {
 // passe simplement les mêmes valeurs à chaque appel, sans rien y perdre.
 export function useCreateObjet() {
   const { session } = useSession();
+  const queryClient = useQueryClient();
 
   return useLocalFirstWrite(
     (input: {
@@ -716,6 +717,66 @@ export function useCreateObjet() {
       // sur l'appareil, il n'y a aucune raison d'attendre pour l'afficher.
       const cached = { ...objet, photo_url: photo.cachedPhotoUrl };
 
+      // LE CHEMIN SE RECONSTRUIT, IL NE SE DEVINE PAS VIDE.
+      //
+      // Il avait d'abord été posé à `[]`, ce qui était un contresens : un
+      // chemin vide veut dire « il n'y a rien », pas « je ne sais pas ». La
+      // fiche en concluait que l'objet n'était nulle part, et le bouton
+      // « Voir sur le plan » disparaissait — hors ligne seulement, puisque le
+      // rafraîchissement le rétablissait dès le retour du réseau. Même règle
+      // et même outillage que le déplacement d'un objet, plus bas.
+      const chain = locationChainFrom(
+        {
+          emplacementId: input.parentType === 'emplacement' ? input.parentId : null,
+          conteneurId: input.parentType === 'conteneur' ? input.parentId : null,
+        },
+        lookupsFromCache(queryClient),
+      );
+
+      const sets: { key: QueryKey; data: unknown }[] = seedNewEntity(['objet', id], cached, [
+        { key: ['objetHistory', id], data: [] },
+      ]);
+
+      const habitationNode = chain.find((node) => node.kind === 'habitation');
+      const pieceNode = chain.find((node) => node.kind === 'piece');
+      const parentNode = chain[chain.length - 1];
+
+      if (chain.length > 0) sets.push({ key: ['objetLocationChain', id], data: chain });
+
+      // L'ACCUEIL LIT L'INDEX DE RECHERCHE, PAS LES LISTES DE CONTENANTS.
+      //
+      // C'est une fonction SQL : un objet créé sans réseau n'y figure pas, et
+      // l'invalidation qui suivrait ne peut rien recharger. L'objet était donc
+      // introuvable sur l'accueil tout en étant bien présent dans son
+      // emplacement — signalé à l'usage. On l'y ajoute nous-mêmes, avec ce que
+      // le chemin vient de nous apprendre.
+      if (habitationNode && pieceNode) {
+        for (const [key, entries] of queryClient.getQueriesData<SearchIndexEntry[]>({ queryKey: ['searchIndex'] })) {
+          if (!entries) continue;
+          sets.push({
+            key,
+            data: [
+              ...entries,
+              {
+                kind: 'objet',
+                id,
+                name: objet.name,
+                photo_url: photo.cachedPhotoUrl,
+                preset_key: null,
+                piece_id: pieceNode.id,
+                piece_name: pieceNode.name,
+                habitation_id: habitationNode.id,
+                habitation_name: habitationNode.name,
+                // Le contenant DIRECT, nul quand l'objet est posé à même sa
+                // pièce — un null que l'accueil sait ne pas écrire.
+                parent_label:
+                  parentNode && parentNode.kind !== 'piece' && parentNode.kind !== 'habitation' ? parentNode.name : null,
+              } satisfies SearchIndexEntry,
+            ],
+          });
+        }
+      }
+
       return {
         describe: { kind: 'create' as const, name: input.name },
         ops: [insertOp('objets', [objet]), ...photo.ops],
@@ -729,13 +790,10 @@ export function useCreateObjet() {
         // exactement le défaut que seedNewEntity existe pour éviter, et les
         // objets étaient les seuls à ne pas s'en servir.
         //
-        // L'historique et le chemin d'emplacement sont posés vides pour la
-        // même raison : un objet qui vient de naître n'a ni l'un ni l'autre,
-        // et leurs écrans doivent lire « rien » plutôt qu'attendre.
-        sets: seedNewEntity(['objet', id], cached, [
-          { key: ['objetHistory', id], data: [] },
-          { key: ['objetLocationChain', id], data: [] },
-        ]),
+        // L'historique est posé VIDE, et là c'est juste : un objet qui vient
+        // de naître n'a pas encore bougé. Son chemin d'emplacement, lui, se
+        // reconstruit — voir juste au-dessus.
+        sets,
         // RENDU TOUT DE SUITE, et c'est ce qui permet aux écrans d'enchaîner :
         // ils font `await mutateAsync(...)` puis naviguent vers l'objet créé.
         // L'identifiant étant déjà connu, il n'y a rien à attendre du serveur.
