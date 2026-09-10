@@ -838,7 +838,11 @@
       "empty_hint": "Les preuves d'achat s'ajoutent depuis la fiche d'un objet.",
       "total_on_one": "Total sur {{count}} facture chiffrée, sur {{sur}}",
       "total_on_other": "Total sur {{count}} factures chiffrées, sur {{sur}}",
-      "warranty_until": "Sous garantie jusqu'au {{date}}"
+      "warranty_until": "Sous garantie jusqu'au {{date}}",
+      "intro": "Ce que ce logement peut prouver, document à l'appui.",
+      "total_label": "Valeur prouvée",
+      "no_amount": "Montant non renseigné",
+      "open_document": "Voir la facture {{name}}"
     }
   },
   "network": {
