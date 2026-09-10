@@ -68,7 +68,15 @@ function nameFromCache(client: ReturnType<typeof useQueryClient>, key: QueryKey)
  * fait apparaître la photo à l'écran tout de suite.
  */
 function entityPhotoWrite(params: {
-  level: 'habitation' | 'piece' | 'emplacement' | 'conteneur';
+  // L'OBJET A REJOINT LA LISTE, ET IL AURAIT DÛ Y ÊTRE DEPUIS LE DÉBUT.
+  //
+  // Le commentaire ci-dessus annonçait qu'un cinquième niveau naîtrait
+  // cassé s'il ne passait pas par ici. C'est exactement ce qui s'était
+  // produit — sauf que l'objet n'est pas né après les quatre autres, il
+  // était là AVANT, avec son propre envoi immédiat que la correction des
+  // quatre n'a pas touché. Hors ligne, ajouter un objet avec une photo
+  // rendait « l'ajout de la photo a échoué » et perdait la photo.
+  level: 'habitation' | 'piece' | 'emplacement' | 'conteneur' | 'objet';
   table: WriteTable;
   entityId: string;
   userId: string;
@@ -663,35 +671,75 @@ export function useObjet(id: string) {
 // moment du clic. CreateObjetModal (destination déjà connue dès l'ouverture)
 // passe simplement les mêmes valeurs à chaque appel, sans rien y perdre.
 export function useCreateObjet() {
+  const { session } = useSession();
+
   return useLocalFirstWrite(
     (input: {
       parentType: LocationType;
       parentId: string;
       name: string;
       description: string | null;
+      /** Chemin LOCAL d'une photo fraîchement choisie, ou adresse déjà connue. */
       photoUrl: string | null;
       barcode?: string | null;
     }) => {
+      const id = newId();
+      // LA PHOTO PART PAR LA FILE, COMME CELLE DES QUATRE AUTRES NIVEAUX.
+      //
+      // Elle était envoyée à part, tout de suite, par l'écran appelant. Hors
+      // ligne, cet envoi échouait : l'objet était créé sans sa photo, et le
+      // fichier était simplement perdu — l'app invitait à « réessayer depuis
+      // sa fiche », c'est-à-dire à tout refaire à la main.
+      const photo = entityPhotoWrite({
+        level: 'objet',
+        table: 'objets',
+        entityId: id,
+        userId: session!.user.id,
+        photo: input.photoUrl,
+      });
+
       const objet: Objet = {
-        id: newId(),
+        id,
         name: input.name,
         description: input.description,
-        photo_url: input.photoUrl,
+        // Ce que la BASE recevra : rien tant que le fichier n'est pas parti.
+        // C'est l'opération d'envoi qui écrira l'adresse, une fois le réseau
+        // revenu.
+        photo_url: photo.column.photo_url ?? null,
         barcode: input.barcode ?? null,
         parent_emplacement_id: input.parentType === 'emplacement' ? input.parentId : null,
         parent_conteneur_id: input.parentType === 'conteneur' ? input.parentId : null,
         created_at: new Date().toISOString(),
       };
 
+      // Ce que le CACHE montre : le fichier local, tout de suite. Il est déjà
+      // sur l'appareil, il n'y a aucune raison d'attendre pour l'afficher.
+      const cached = { ...objet, photo_url: photo.cachedPhotoUrl };
+
       return {
         describe: { kind: 'create' as const, name: input.name },
-        ops: [insertOp('objets', [objet])],
-        appends: [{ key: ['containerContents', 'objets', input.parentType, input.parentId], row: objet }],
+        ops: [insertOp('objets', [objet]), ...photo.ops],
+        appends: [{ key: ['containerContents', 'objets', input.parentType, input.parentId], row: cached }],
+        // SANS CETTE LIGNE L'OBJET N'EXISTE QUE DANS LA LISTE DE SON PARENT.
+        //
+        // Sa fiche le cherche sous `['objet', id]` : non garnie, la requête
+        // part au réseau, et hors ligne elle ne revient pas. L'écran
+        // n'affiche donc pas « rien », il reste sans réponse — et l'objet
+        // qu'on vient de créer paraît ne pas avoir été enregistré. C'est
+        // exactement le défaut que seedNewEntity existe pour éviter, et les
+        // objets étaient les seuls à ne pas s'en servir.
+        //
+        // L'historique et le chemin d'emplacement sont posés vides pour la
+        // même raison : un objet qui vient de naître n'a ni l'un ni l'autre,
+        // et leurs écrans doivent lire « rien » plutôt qu'attendre.
+        sets: seedNewEntity(['objet', id], cached, [
+          { key: ['objetHistory', id], data: [] },
+          { key: ['objetLocationChain', id], data: [] },
+        ]),
         // RENDU TOUT DE SUITE, et c'est ce qui permet aux écrans d'enchaîner :
-        // ils font `await mutateAsync(...)` puis naviguent vers l'objet créé,
-        // ou lui attachent une photo. L'identifiant étant déjà connu, il n'y a
-        // rien à attendre du serveur.
-        result: objet,
+        // ils font `await mutateAsync(...)` puis naviguent vers l'objet créé.
+        // L'identifiant étant déjà connu, il n'y a rien à attendre du serveur.
+        result: cached,
       };
     },
   );
@@ -762,20 +810,15 @@ export function useUpdateObjet(id: string) {
   }));
 }
 
-// La photo d'un objet qu'on vient de créer : elle est téléversée APRÈS la
-// création (il faut l'id de l'objet pour nommer le fichier), donc après
-// l'invalidation déclenchée par cette création. Sans une écriture qui passe
-// elle aussi par une mutation, l'objet resterait affiché sans sa photo
-// jusqu'au prochain chargement — cf. la règle de src/lib/queryClient.ts, qui
-// ne voit que les mutations.
-export function useSetObjetPhoto() {
-  return useMutation({
-    mutationFn: async (input: { objetId: string; photoUrl: string }) => {
-      const { error } = await supabase.from('objets').update({ photo_url: input.photoUrl }).eq('id', input.objetId);
-      if (error) throw error;
-    },
-  });
-}
+// RETIRÉ : `useSetObjetPhoto`, qui posait l'adresse d'une photo téléversée
+// APRÈS la création d'un objet. Sa raison d'être était la séquence même qu'on
+// vient de supprimer — créer, puis envoyer le fichier, puis écrire l'adresse.
+// La photo part désormais dans la même écriture que l'objet (voir
+// useCreateObjet), il n'y a plus d'« après ». Le laisser en place aurait
+// invité à reprendre le motif qui cassait le hors ligne.
+//
+// `useSetObjetPhotoFromLocal`, juste en dessous, reste : c'est le chemin de
+// la fiche d'un objet DÉJÀ créé, et lui passe bien par la file.
 
 /**
  * CHANGER LA PHOTO D'UN OBJET SANS ATTENDRE LE RÉSEAU.

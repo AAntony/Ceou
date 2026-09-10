@@ -6,7 +6,7 @@
 // attente : le jour où cette forme change — buckets privés, adresses
 // signées — une seule des deux serait corrigée, et l'app re-téléverserait
 // en boucle des photos déjà envoyées.
-import { isLocalUri } from '../../lib/images/media';
+import { isLocalUri, parseStoredMedia } from '../../lib/images/media';
 import { uploadOp, type WriteOp, type WriteTable } from '../../lib/writeQueue';
 import type { EntityLevel } from './placeholders';
 
@@ -80,7 +80,20 @@ export function planEntityPhoto(params: {
 
   if (photo === undefined) return NOTHING;
   if (photo === null) return { column: { photo_url: null }, ops: [], localUri: null };
-  if (!isLocalUri(photo)) return { column: { photo_url: photo }, ops: [], localUri: null };
+
+  // UNE ADRESSE QUI EST DÉJÀ LA NÔTRE NE SE RENVOIE PAS. C'est le cas d'une
+  // fiche qu'on rouvre pour corriger un nom : la photo n'a pas bougé, son
+  // fichier est en place, il n'y a rien à faire.
+  //
+  // TOUT LE RESTE PART DANS NOTRE BUCKET, y compris une adresse distante.
+  // Le scan de code-barre en produit une — UPCItemDB rend la photo du
+  // produit — et la ranger telle quelle en base ferait dépendre l'inventaire
+  // d'un tiers : sa photo disparaîtrait le jour où il la retire, et il
+  // saurait à chaque affichage qu'on la regarde. On la recopie, comme
+  // avant.
+  if (!isLocalUri(photo) && parseStoredMedia(photo) !== null) {
+    return { column: { photo_url: photo }, ops: [], localUri: null };
+  }
 
   return {
     column: {},
@@ -91,7 +104,14 @@ export function planEntityPhoto(params: {
         // MÊME CHEMIN QU'AVANT, à l'octet près : le fichier porte
         // l'identifiant de l'entité, donc une nouvelle photo remplace la
         // précédente au lieu d'en accumuler.
-        path: `${userId}/${level}-${entityId}.jpg`,
+        //
+        // L'OBJET N'A PAS DE PRÉFIXE DE NIVEAU, et c'est historique : ses
+        // photos s'appellent `<uid>/<id>.jpg` depuis toujours, celles des
+        // quatre autres niveaux `<uid>/<niveau>-<id>.jpg`. Uniformiser
+        // renommerait chaque fichier déjà déposé — et la policy de lecture
+        // du stockage connaît les deux formes exprès (voir la migration
+        // media_read_access). On garde donc les deux.
+        path: level === 'objet' ? `${userId}/${entityId}.jpg` : `${userId}/${level}-${entityId}.jpg`,
         then: { table, id: entityId, column: 'photo_url' },
       }),
     ],

@@ -3,13 +3,12 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { logClientError } from '../../lib/errorLogging';
-import { uploadImage } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { AiPhotoScanFlow, type CollectedScanItem } from './AiPhotoScanFlow';
 import { LocationTreePicker } from './LocationTreePicker';
 import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
-import { useCreateObjet, useCreateObjetsBulk, useSetObjetPhoto } from './queries';
+import { useCreateObjet, useCreateObjetsBulk } from './queries';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 
@@ -35,7 +34,6 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
   const { session } = useSession();
   const createObjet = useCreateObjet();
   const createObjetsBulk = useCreateObjetsBulk();
-  const setObjetPhoto = useSetObjetPhoto();
   const [step, setStep] = useState<Step>('choice');
   const [pendingManual, setPendingManual] = useState<CollectedObjet | null>(null);
   const [pendingScan, setPendingScan] = useState<CollectedScanItem[] | null>(null);
@@ -63,26 +61,21 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
     setSaving(true);
     try {
       if (pendingManual) {
-        const objet = await createObjet.mutateAsync({
+        // LA PHOTO PART AVEC L'OBJET, DANS LA MÊME ÉCRITURE.
+        //
+        // Elle était envoyée ici, séparément et tout de suite. Hors ligne cet
+        // envoi échouait, l'objet naissait sans photo, et le fichier était
+        // perdu — on proposait de « réessayer depuis sa fiche », c'est-à-dire
+        // de tout refaire. Le chemin local suffit désormais : la file s'en
+        // charge au retour du réseau, comme pour les quatre autres niveaux.
+        await createObjet.mutateAsync({
           parentType: type,
           parentId: id,
           name: pendingManual.name,
           description: pendingManual.description,
-          photoUrl: null,
+          photoUrl: pendingManual.localPhotoUri ?? null,
           barcode: pendingManual.barcode,
         });
-        if (pendingManual.localPhotoUri) {
-          try {
-            const photoUrl = await uploadImage(pendingManual.localPhotoUri, {
-              bucket: 'objets',
-              path: `${session.user.id}/${objet.id}.jpg`,
-            });
-            await setObjetPhoto.mutateAsync({ objetId: objet.id, photoUrl });
-          } catch (err) {
-            logClientError(err, { source: 'add_objet_modal', step: 'photo_upload', objetId: objet.id });
-            Alert.alert(t('inventory.objet.saved_without_photo'));
-          }
-        }
       } else if (pendingScan) {
         const result = await createObjetsBulk.mutateAsync({ parentType: type, parentId: id, items: pendingScan });
         if (result.photoFailures > 0) {

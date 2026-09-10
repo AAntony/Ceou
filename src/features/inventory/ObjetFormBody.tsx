@@ -7,11 +7,11 @@ import { FormActions } from '../../components/FormActions';
 import { TextField } from '../../components/TextField';
 import { lookupBarcode } from '../../lib/barcode/lookupBarcode';
 import { logClientError } from '../../lib/errorLogging';
-import { pickImage, uploadImage } from '../../lib/images/pickAndUploadImage';
+import { pickImage } from '../../lib/images/pickAndUploadImage';
 import type { LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { BarcodeScanner } from './BarcodeScanner';
-import { useCreateObjet, useSetObjetPhoto } from './queries';
+import { useCreateObjet } from './queries';
 
 export type CollectedObjet = { name: string; description: string | null; localPhotoUri: string | null; barcode: string | null };
 
@@ -42,7 +42,6 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
   const { t } = useTranslation();
   const { session } = useSession();
   const createObjet = useCreateObjet();
-  const setObjetPhoto = useSetObjetPhoto();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
@@ -88,34 +87,21 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
 
     if (!session || !parentType || !parentId) return;
 
-    let objetId: string;
     try {
-      const objet = await createObjet.mutateAsync({
+      await createObjet.mutateAsync({
         parentType,
         parentId,
         name: name.trim(),
         description: description.trim() || null,
-        photoUrl: null,
+        // Le chemin LOCAL, pas une adresse : c'est la file qui enverra le
+        // fichier, au retour du réseau s'il le faut. Voir useCreateObjet.
+        photoUrl: localPhotoUri ?? null,
         barcode,
       });
-      objetId = objet.id;
     } catch (err) {
       logClientError(err, { source: 'objet_form', step: 'create', parentType });
       Alert.alert(t('common.error_generic'));
       return;
-    }
-
-    if (localPhotoUri) {
-      try {
-        const photoUrl = await uploadImage(localPhotoUri, {
-          bucket: 'objets',
-          path: `${session.user.id}/${objetId}.jpg`,
-        });
-        await setObjetPhoto.mutateAsync({ objetId, photoUrl });
-      } catch (err) {
-        logClientError(err, { source: 'objet_form', step: 'photo_upload', objetId });
-        Alert.alert(t('inventory.objet.saved_without_photo'));
-      }
     }
 
     onDone();
