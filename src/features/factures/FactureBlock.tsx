@@ -105,7 +105,12 @@ export function FactureBlock({ objetId, isOwner }: FactureBlockProps) {
         <Text className="mb-3 text-label text-ink-soft">{t('factures.block.empty')}</Text>
       )}
 
-      <Button label={t('factures.block.add')} variant="ghost" onPress={() => ouvrir(undefined)} />
+      {/* EN PASTILLE, COMME « DEPLACER » ET « PRETER ». En ghost, le libelle
+          n'etait qu'une ligne de texte de plus dans une fiche qui en compte
+          beaucoup : rien ne disait que c'etait une action, et on ne le
+          decouvrait qu'en appuyant dessus par hasard. Meme traitement que les
+          deux autres gestes de la fiche, donc meme lecture. */}
+      <Button label={t('factures.block.add')} variant="tile" icon="facture" onPress={() => ouvrir(undefined)} />
 
       <FactureFormSheet
         key={ouvertures}

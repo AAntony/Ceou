@@ -59,6 +59,7 @@ export type IconName =
   | 'addPhoto'
   | 'move'
   | 'history'
+  | 'facture'
   | 'plan'
   | 'piece'
   | 'conteneur'
@@ -166,6 +167,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   addPhoto: 'image-plus',
   move: 'swap-horizontal',
   history: 'history',
+  // Le ticket de caisse plutot qu'un document generique : c'est la forme
+  // qu'on reconnait sans lire, et elle distingue une facture d'une note.
+  facture: 'receipt-text-outline',
   plan: 'floor-plan',
   piece: 'door-open',
   conteneur: 'archive',
