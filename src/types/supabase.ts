@@ -208,7 +208,7 @@ export type Database = {
           amount: number | null
           created_at: string
           document_kind: string
-          document_url: string
+          document_url: string | null
           id: string
           purchase_date: string | null
           user_id: string
@@ -219,7 +219,7 @@ export type Database = {
           amount?: number | null
           created_at?: string
           document_kind?: string
-          document_url: string
+          document_url?: string | null
           id?: string
           purchase_date?: string | null
           user_id: string
@@ -230,7 +230,7 @@ export type Database = {
           amount?: number | null
           created_at?: string
           document_kind?: string
-          document_url?: string
+          document_url?: string | null
           id?: string
           purchase_date?: string | null
           user_id?: string

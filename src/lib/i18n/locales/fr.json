@@ -799,6 +799,35 @@
       "body_borrowed": "« {{objet}} » est à rendre à {{name}} aujourd'hui."
     }
   },
+  "factures": {
+    "block": {
+      "title": "Factures",
+      "empty": "Aucune preuve d'achat pour cet objet.",
+      "add": "Ajouter une facture",
+      "untitled": "Facture",
+      "covers_one": "{{count}} objet",
+      "covers_other": "{{count}} objets",
+      "warranty_active": "Sous garantie",
+      "warranty_over": "Garantie finie"
+    },
+    "form": {
+      "add_title": "Ajouter une facture",
+      "edit_title": "Modifier la facture",
+      "document_label": "Le document",
+      "document_empty": "Photographie la facture, ou choisis-la dans tes images.",
+      "take_photo": "Photographier",
+      "choose_file": "Choisir une image",
+      "vendor_label": "Vendeur",
+      "amount_label": "Montant",
+      "purchase_label": "Date d'achat",
+      "warranty_label": "Fin de garantie",
+      "date_invalid": "Date incomplète ou impossible."
+    },
+    "delete": {
+      "title": "Supprimer cette facture ?",
+      "message": "Le document sera retiré de tous les objets qu'il couvre."
+    }
+  },
   "network": {
     "offline": "Hors connexion",
     "offline_hint": "Tu vois les dernières données chargées."

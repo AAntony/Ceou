@@ -11,6 +11,7 @@ import { Icon } from '../../../src/components/Icon';
 import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
 import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
+import { FactureBlock } from '../../../src/features/factures/FactureBlock';
 import { LoanBanner } from '../../../src/features/loans/LoanBanner';
 import { LoanSheet } from '../../../src/features/loans/LoanSheet';
 import { useClosePret, useObjetPret } from '../../../src/features/loans/queries';
@@ -201,6 +202,16 @@ export default function ObjetScreen() {
           numberOfLines={3}
           editable={editable}
         />
+
+        {/* APRES LE NOM ET LA DESCRIPTION, AVANT LES ACTIONS. La facture
+            DECRIT l'objet — ce qu'il a coute, quand, chez qui. Ce n'est pas un
+            geste qu'on lui applique comme « Deplacer » ou « Preter », donc sa
+            place est avec les informations, pas avec les boutons.
+
+            Le droit teste est la PROPRIETE, pas la modification : un ami a qui
+            l'habitation est ouverte peut renommer un objet, les factures ne
+            lui appartiennent pas pour autant. */}
+        <FactureBlock objetId={id} isOwner={permission === 'owner'} />
 
         {/* LES DEUX GESTES QU'ON FAIT SUR UN OBJET, cote a cote et sur le
             meme rang. Ils etaient l'un sous l'autre, en `ghost` : deux

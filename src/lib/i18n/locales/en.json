@@ -799,6 +799,35 @@
       "body_borrowed": "\"{{objet}}\" is due back to {{name}} today."
     }
   },
+  "factures": {
+    "block": {
+      "title": "Receipts",
+      "empty": "No proof of purchase for this item.",
+      "add": "Add a receipt",
+      "untitled": "Receipt",
+      "covers_one": "{{count}} item",
+      "covers_other": "{{count}} items",
+      "warranty_active": "Under warranty",
+      "warranty_over": "Warranty ended"
+    },
+    "form": {
+      "add_title": "Add a receipt",
+      "edit_title": "Edit receipt",
+      "document_label": "The document",
+      "document_empty": "Photograph the receipt, or pick it from your images.",
+      "take_photo": "Take a photo",
+      "choose_file": "Choose an image",
+      "vendor_label": "Seller",
+      "amount_label": "Amount",
+      "purchase_label": "Purchase date",
+      "warranty_label": "Warranty ends",
+      "date_invalid": "Incomplete or impossible date."
+    },
+    "delete": {
+      "title": "Delete this receipt?",
+      "message": "The document will be removed from every item it covers."
+    }
+  },
   "network": {
     "offline": "Offline",
     "offline_hint": "You are seeing the last data loaded."
