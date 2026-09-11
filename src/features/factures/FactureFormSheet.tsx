@@ -6,12 +6,13 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { ButtonRow } from '../../components/ButtonRow';
 import { FormActions } from '../../components/FormActions';
+import { PhotoViewerModal } from '../../components/PhotoViewerModal';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
 import { useMediaSource } from '../../lib/images/media';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
+import type { Facture } from '../../types/database';
 import { dateOrderFor, datePlaceholder, formatDateInput, fromIsoDate, isDateIncomplete, toIsoDate } from './dateField';
-import type { FactureWithObjets } from './queries';
 
 // AJOUTER UNE FACTURE DOIT PRENDRE DIX SECONDES.
 //
@@ -25,10 +26,23 @@ import type { FactureWithObjets } from './queries';
 //    saisir vaut infiniment mieux qu'une facture qu'on renonce à ajouter
 //    parce que le formulaire est long. Le dossier dira ce qu'il sait.
 
+/**
+ * CE QUE LA FEUILLE LIT D'UNE FACTURE, ET RIEN DE PLUS.
+ *
+ * Pas `FactureWithObjets` : le dossier d'un logement ouvre la même feuille sur
+ * des lignes qui viennent d'une fonction SQL, sans `user_id` ni `objets`. La
+ * feuille n'a jamais eu besoin de ces champs-là — les demander n'aurait servi
+ * qu'à interdire un appelant légitime.
+ */
+export type FactureModifiable = Pick<
+  Facture,
+  'document_url' | 'vendor' | 'amount' | 'purchase_date' | 'warranty_until'
+>;
+
 type FactureFormSheetProps = {
   visible: boolean;
   /** Absente en création, présente en modification. */
-  facture?: FactureWithObjets;
+  facture?: FactureModifiable;
   onClose: () => void;
   onSubmit: (valeurs: {
     document: string;
@@ -46,9 +60,9 @@ export function FactureFormSheet({ visible, facture, onClose, onSubmit, loading 
 
   // L'ETAT SE CONSTRUIT UNE FOIS, IL NE SE REMET PAS A JOUR PAR EFFET.
   //
-  // La feuille est remontee a chaque ouverture (voir la cle posee par
-  // FactureBlock) : ces valeurs initiales sont donc relues a chaque fois,
-  // sans le rendu en cascade qu'un effet de reinitialisation provoque.
+  // La feuille est remontee a chaque ouverture (voir la cle rendue par
+  // useFeuilleFacture) : ces valeurs initiales sont donc relues a chaque
+  // fois, sans le rendu en cascade qu'un effet de reinitialisation provoque.
   //
   // Le point decimal a l'affichage : la virgule reviendra a la saisie sur un
   // clavier francais, et normaliserMontant la reprend.
@@ -57,6 +71,7 @@ export function FactureFormSheet({ visible, facture, onClose, onSubmit, loading 
   const [amount, setAmount] = useState(facture?.amount != null ? String(facture.amount) : '');
   const [purchase, setPurchase] = useState(() => fromIsoDate(facture?.purchase_date ?? null, order));
   const [warranty, setWarranty] = useState(() => fromIsoDate(facture?.warranty_until ?? null, order));
+  const [visionneuse, setVisionneuse] = useState(false);
 
   const aperçu = useMediaSource(document);
 
@@ -88,76 +103,91 @@ export function FactureFormSheet({ visible, facture, onClose, onSubmit, loading 
   };
 
   return (
-    <BottomSheetModal
-      visible={visible}
-      onClose={onClose}
-      sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6"
-      scrollable
-    >
-      <Text className="mb-4 text-subheading font-bold text-ink">
-        {t(facture ? 'factures.form.edit_title' : 'factures.form.add_title')}
-      </Text>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t('factures.form.document_label')}
-        onPress={() => choisir('library')}
-        className="mb-3 h-44 items-center justify-center overflow-hidden rounded-xl bg-sand"
+    <>
+      <BottomSheetModal
+        visible={visible}
+        onClose={onClose}
+        sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6"
+        scrollable
       >
-        {aperçu ? (
-          // `contain` et non `cover` : on doit voir la facture ENTIÈRE, pas
-          // un cadrage esthétique qui en coupe le montant.
-          <Image source={aperçu} style={{ width: '100%', height: '100%' }} contentFit="contain" />
-        ) : (
-          <Text className="px-4 text-center text-label text-ink-soft">{t('factures.form.document_empty')}</Text>
-        )}
-      </Pressable>
+        <Text className="mb-4 text-subheading font-bold text-ink">
+          {t(facture ? 'factures.form.edit_title' : 'factures.form.add_title')}
+        </Text>
 
-      <ButtonRow>
-        <Button label={t('factures.form.take_photo')} variant="ghost" onPress={() => choisir('camera')} />
-        <Button label={t('factures.form.choose_file')} variant="ghost" onPress={() => choisir('library')} />
-      </ButtonRow>
+        {/* APPUYER SUR LE DOCUMENT L'OUVRE EN GRAND — tant qu'il y en a un.
+            Cette zone ouvrait la galerie, ce qui doublait inutilement les deux
+            boutons posés juste en dessous ; or c'est ici qu'on vient LIRE une
+            facture, et un aperçu de 176 points ne laisse pas déchiffrer un
+            montant. Vide, en revanche, elle reste le raccourci évident vers le
+            choix d'une image : c'est alors la seule chose qu'elle puisse
+            vouloir dire. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t(document ? 'factures.form.document_zoom' : 'factures.form.document_label')}
+          onPress={() => (document ? setVisionneuse(true) : choisir('library'))}
+          className="mb-3 h-44 items-center justify-center overflow-hidden rounded-xl bg-sand"
+        >
+          {aperçu ? (
+            // `contain` et non `cover` : on doit voir la facture ENTIÈRE, pas
+            // un cadrage esthétique qui en coupe le montant.
+            <Image source={aperçu} style={{ width: '100%', height: '100%' }} contentFit="contain" />
+          ) : (
+            <Text className="px-4 text-center text-label text-ink-soft">{t('factures.form.document_empty')}</Text>
+          )}
+        </Pressable>
 
-      <View className="mt-4">
-        <TextField label={t('factures.form.vendor_label')} value={vendor} onChangeText={setVendor} />
-        <TextField
-          label={t('factures.form.amount_label')}
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-        />
-        <TextField
-          label={t('factures.form.purchase_label')}
-          value={purchase}
-          onChangeText={(v) => setPurchase(formatDateInput(v))}
-          placeholder={datePlaceholder(order)}
-          keyboardType="number-pad"
-          error={isDateIncomplete(purchase, order) ? t('factures.form.date_invalid') : undefined}
-        />
-        <TextField
-          label={t('factures.form.warranty_label')}
-          value={warranty}
-          onChangeText={(v) => setWarranty(formatDateInput(v))}
-          placeholder={datePlaceholder(order)}
-          keyboardType="number-pad"
-          error={isDateIncomplete(warranty, order) ? t('factures.form.date_invalid') : undefined}
-        />
-      </View>
+        <ButtonRow>
+          <Button label={t('factures.form.take_photo')} variant="ghost" onPress={() => choisir('camera')} />
+          <Button label={t('factures.form.choose_file')} variant="ghost" onPress={() => choisir('library')} />
+        </ButtonRow>
 
-      <FormActions
-        cancelLabel={t('common.cancel')}
-        onCancel={onClose}
-        confirmLabel={t('common.save')}
-        onConfirm={valider}
-        loading={loading}
-        // LE DOCUMENT EST LA SEULE CHOSE OBLIGATOIRE. Sans lui il n'y a pas de
-        // facture — les quatre champs, eux, se remplissent plus tard ou
-        // jamais. Une date en cours de frappe bloque aussi : l'enregistrer
-        // reviendrait à perdre en silence ce que la personne était en train
-        // d'écrire.
-        disabled={!document || dateInvalide}
-      />
-    </BottomSheetModal>
+        <View className="mt-4">
+          <TextField label={t('factures.form.vendor_label')} value={vendor} onChangeText={setVendor} />
+          <TextField
+            label={t('factures.form.amount_label')}
+            value={amount}
+            onChangeText={setAmount}
+            keyboardType="decimal-pad"
+          />
+          <TextField
+            label={t('factures.form.purchase_label')}
+            value={purchase}
+            onChangeText={(v) => setPurchase(formatDateInput(v))}
+            placeholder={datePlaceholder(order)}
+            keyboardType="number-pad"
+            error={isDateIncomplete(purchase, order) ? t('factures.form.date_invalid') : undefined}
+          />
+          <TextField
+            label={t('factures.form.warranty_label')}
+            value={warranty}
+            onChangeText={(v) => setWarranty(formatDateInput(v))}
+            placeholder={datePlaceholder(order)}
+            keyboardType="number-pad"
+            error={isDateIncomplete(warranty, order) ? t('factures.form.date_invalid') : undefined}
+          />
+        </View>
+
+        <FormActions
+          cancelLabel={t('common.cancel')}
+          onCancel={onClose}
+          confirmLabel={t('common.save')}
+          onConfirm={valider}
+          loading={loading}
+          // LE DOCUMENT EST LA SEULE CHOSE OBLIGATOIRE. Sans lui il n'y a pas de
+          // facture — les quatre champs, eux, se remplissent plus tard ou
+          // jamais. Une date en cours de frappe bloque aussi : l'enregistrer
+          // reviendrait à perdre en silence ce que la personne était en train
+          // d'écrire.
+          disabled={!document || dateInvalide}
+        />
+      </BottomSheetModal>
+
+      {/* VOISINE DE LA FEUILLE, PAS ENFANT. Deux modales imbriquées se
+          disputent la présentation sur iOS ; côte à côte, la seconde s'affiche
+          par-dessus la première, qui reste ouverte dessous. C'est le montage
+          déjà employé par l'ajout d'un ami et son scanner de QR. */}
+      <PhotoViewerModal visible={visionneuse} uri={document} onClose={() => setVisionneuse(false)} />
+    </>
   );
 }
 

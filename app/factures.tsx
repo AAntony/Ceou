@@ -6,12 +6,13 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
 import { Icon } from '../src/components/Icon';
-import { PhotoViewerModal } from '../src/components/PhotoViewerModal';
 import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
+import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
-import { useFacturesForHabitation, useObjetsSansFacture } from '../src/features/factures/queries';
+import { useFacturesForHabitation, useObjetsSansFacture, useUpdateFacture } from '../src/features/factures/queries';
+import { useFeuilleFacture } from '../src/features/factures/useFeuilleFacture';
 import { useHabitationPermission } from '../src/features/sharing/queries';
 import { useMediaSource } from '../src/lib/images/media';
 import { useScaled } from '../src/lib/textScale';
@@ -64,7 +65,17 @@ export default function FacturesScreen() {
 
   const [tab, setTab] = useState<Tab>('avec');
   const refreshControl = usePullToRefresh();
-  const [apercu, setApercu] = useState<string | null>(null);
+
+  // TOUCHER UNE CARTE OUVRE LA MÊME FEUILLE QUE SUR LA FICHE D'UN OBJET.
+  //
+  // Elle n'ouvrait que la visionneuse : on voyait le document, sans pouvoir
+  // corriger le montant ou la date qu'on venait justement d'y relire. Or
+  // c'est précisément en regardant une facture qu'on s'aperçoit qu'elle est
+  // mal saisie. La visionneuse n'est pas perdue pour autant — l'aperçu de la
+  // feuille l'ouvre en plein écran.
+  const modifier = useUpdateFacture();
+  const [enEdition, setEnEdition] = useState<FactureEntry | null>(null);
+  const feuille = useFeuilleFacture();
 
   const dossier = useFacturesForHabitation(habitationId);
   const orphelins = useObjetsSansFacture(isOwner ? habitationId : undefined);
@@ -135,7 +146,14 @@ export default function FacturesScreen() {
               <TotalCard total={total} chiffrees={chiffrees.length} sur={factures.length} langue={i18n.language} />
 
               {factures.map((facture) => (
-                <FactureCard key={facture.id} facture={facture} onOpen={() => setApercu(facture.document_url)} />
+                <FactureCard
+                  key={facture.id}
+                  facture={facture}
+                  onOpen={() => {
+                    setEnEdition(facture);
+                    feuille.ouvrir();
+                  }}
+                />
               ))}
             </ScrollView>
           )
@@ -164,7 +182,30 @@ export default function FacturesScreen() {
         )}
       </View>
 
-      <PhotoViewerModal visible={apercu !== null} uri={apercu} onClose={() => setApercu(null)} />
+      {/* SEULEMENT POUR LE PROPRIÉTAIRE : lui seul a une facture à modifier,
+          et lui seul en voit. */}
+      {isOwner ? (
+        <FactureFormSheet
+          key={feuille.cle}
+          visible={feuille.visible}
+          facture={enEdition ?? undefined}
+          onClose={feuille.fermer}
+          onSubmit={(valeurs) => {
+            if (enEdition) {
+              modifier.mutate({
+                id: enEdition.id,
+                vendor: valeurs.vendor,
+                amount: valeurs.amount,
+                purchaseDate: valeurs.purchaseDate,
+                warrantyUntil: valeurs.warrantyUntil,
+                document: valeurs.document,
+              });
+            }
+            feuille.fermer();
+          }}
+          loading={modifier.isPending}
+        />
+      ) : null}
     </>
   );
 }

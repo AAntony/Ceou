@@ -10,6 +10,7 @@ import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, fromIsoDate } from './dateField';
 import { FactureFormSheet } from './FactureFormSheet';
 import { useCreateFacture, useDeleteFacture, useFacturesForObjet, useUpdateFacture, type FactureWithObjets } from './queries';
+import { useFeuilleFacture } from './useFeuilleFacture';
 
 // LES PREUVES D'ACHAT D'UN OBJET, SUR SA FICHE.
 //
@@ -35,19 +36,14 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
   const modifier = useUpdateFacture();
   const supprimer = useDeleteFacture();
 
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [enEdition, setEnEdition] = useState<FactureWithObjets | undefined>(undefined);
-  // COMPTEUR D'OUVERTURES, ET IL SERT DE CLÉ DE REMONTAGE. La feuille lit ses
-  // valeurs initiales à la construction ; sans remontage, rouvrir « Ajouter »
-  // juste après en avoir enregistré une afficherait encore la précédente.
-  const [ouvertures, setOuvertures] = useState(0);
+  const feuilleEtat = useFeuilleFacture();
 
   const factures = data ?? [];
 
   const ouvrir = (facture?: FactureWithObjets) => {
     setEnEdition(facture);
-    setOuvertures((n) => n + 1);
-    setSheetOpen(true);
+    feuilleEtat.ouvrir();
   };
 
   const enregistrer = (valeurs: Parameters<Parameters<typeof FactureFormSheet>[0]['onSubmit']>[0]) => {
@@ -58,13 +54,14 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         amount: valeurs.amount,
         purchaseDate: valeurs.purchaseDate,
         warrantyUntil: valeurs.warrantyUntil,
+        document: valeurs.document,
       });
     } else {
       // `habitationId` ne part pas en base : il dit seulement quel dossier
       // rafraîchir sans attendre le réseau (voir useCreateFacture).
       creer.mutate({ objetId, habitationId, ...valeurs });
     }
-    setSheetOpen(false);
+    feuilleEtat.fermer();
   };
 
   return {
@@ -108,10 +105,10 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
     /** À poser n'importe où : c'est une modale. */
     feuille: isOwner ? (
       <FactureFormSheet
-        key={ouvertures}
-        visible={sheetOpen}
+        key={feuilleEtat.cle}
+        visible={feuilleEtat.visible}
         facture={enEdition}
-        onClose={() => setSheetOpen(false)}
+        onClose={feuilleEtat.fermer}
         onSubmit={enregistrer}
         loading={creer.isPending || modifier.isPending}
       />

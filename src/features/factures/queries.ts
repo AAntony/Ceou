@@ -235,6 +235,8 @@ function retirerDesOrphelins(
 }
 
 export function useUpdateFacture() {
+  const { session } = useSession();
+
   return useLocalFirstWrite(
     (input: {
       id: string;
@@ -242,29 +244,54 @@ export function useUpdateFacture() {
       amount: number | null;
       purchaseDate: string | null;
       warrantyUntil: string | null;
-    }) => ({
-      describe: { kind: 'update' as const, name: input.vendor ?? '' },
-      ops: [
-        updateOp('factures', input.id, {
-          vendor: input.vendor,
-          amount: input.amount,
-          purchase_date: input.purchaseDate,
-          warranty_until: input.warrantyUntil,
-        }),
-      ],
-      patches: [
-        {
-          id: input.id,
-          patch: {
-            vendor: input.vendor,
-            amount: input.amount,
-            purchase_date: input.purchaseDate,
-            warranty_until: input.warrantyUntil,
-          },
-        },
-      ],
-      result: undefined,
-    }),
+      /**
+       * Le document tel que la feuille le rend : l'adresse déjà connue si on
+       * n'y a pas touché, un chemin local si on vient de le rephotographier.
+       */
+      document?: string;
+    }) => {
+      const userId = session!.user.id;
+      // REMPLACER LE DOCUMENT, ET PAS SEULEMENT LES QUATRE CHAMPS. La feuille
+      // montre « Photographier » et « Choisir une image » en modification
+      // aussi : sans cette branche, on reprenait en photo une facture floue,
+      // on enregistrait, et rien ne changeait — en silence.
+      //
+      // C'est `isLocalUri` qui tranche, pas un drapeau posé par l'écran : une
+      // adresse http est celle qui était déjà là, il n'y a rien à envoyer.
+      const remplace = input.document != null && isLocalUri(input.document);
+
+      const champs = {
+        vendor: input.vendor,
+        amount: input.amount,
+        purchase_date: input.purchaseDate,
+        warranty_until: input.warrantyUntil,
+      };
+
+      return {
+        describe: { kind: 'update' as const, name: input.vendor ?? '' },
+        ops: [
+          updateOp('factures', input.id, champs),
+          ...(remplace
+            ? [
+                uploadOp({
+                  uri: input.document!,
+                  bucket: 'factures',
+                  // LE MÊME CHEMIN QU'À LA CRÉATION, donc l'ancien fichier est
+                  // écrasé (`upsert`). L'adresse rendue porte un horodatage,
+                  // qui sert de clé de cache : sans lui, expo-image
+                  // continuerait d'afficher l'ancienne image.
+                  path: `${userId}/${input.id}.jpg`,
+                  then: { table: 'factures', id: input.id, column: 'document_url' },
+                }),
+              ]
+            : []),
+        ],
+        // Le fichier local s'affiche tout de suite : il est déjà sur
+        // l'appareil, il n'y a aucune raison d'attendre l'envoi.
+        patches: [{ id: input.id, patch: remplace ? { ...champs, document_url: input.document } : champs }],
+        result: undefined,
+      };
+    },
   );
 }
 

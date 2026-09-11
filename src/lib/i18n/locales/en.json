@@ -815,6 +815,7 @@
       "edit_title": "Edit receipt",
       "document_label": "The document",
       "document_empty": "Photograph the receipt, or pick it from your images.",
+      "document_zoom": "View the receipt full screen",
       "take_photo": "Take a photo",
       "choose_file": "Choose an image",
       "vendor_label": "Seller",
@@ -835,7 +836,7 @@
       "missing_other": "{{count}} items with no proof"
     },
     "list": {
-      "title": "Claim file",
+      "title": "Receipts",
       "tab_with": "With receipt",
       "tab_without": "No receipt",
       "without_intro": "These items have no proof of purchase. Tap one to add it.",
@@ -852,7 +853,7 @@
       "intro": "What this home can prove, with the documents to back it.",
       "total_label": "Proven value",
       "no_amount": "No amount entered",
-      "open_document": "View receipt {{name}}"
+      "open_document": "Edit receipt {{name}}"
     }
   },
   "network": {

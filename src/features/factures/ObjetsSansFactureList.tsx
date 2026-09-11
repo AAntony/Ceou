@@ -9,6 +9,7 @@ import { useThemeColors } from '../../lib/theme';
 import { PLACEHOLDER_IMAGES } from '../inventory/placeholders';
 import { FactureFormSheet } from './FactureFormSheet';
 import { useCreateFacture, useObjetsSansFacture } from './queries';
+import { useFeuilleFacture } from './useFeuilleFacture';
 
 // CE QU'IL RESTE À PROUVER — la liste qu'on cherche à vider.
 //
@@ -48,18 +49,17 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
   const { t } = useTranslation();
   const creer = useCreateFacture();
 
-  const [ouvert, setOuvert] = useState(false);
   const [cible, setCible] = useState<ObjetSansFacture | null>(null);
-  // MÊME COMPTEUR DE REMONTAGE QUE SUR LA FICHE D'UN OBJET : la feuille lit
-  // ses valeurs à la construction, donc sans nouvelle clé la deuxième facture
-  // s'ouvrirait pré-remplie de la première.
-  const [ouvertures, setOuvertures] = useState(0);
+  const feuille = useFeuilleFacture();
 
-  const ouvrir = useCallback((objet: ObjetSansFacture) => {
-    setCible(objet);
-    setOuvertures((n) => n + 1);
-    setOuvert(true);
-  }, []);
+  const ouvrirFeuille = feuille.ouvrir;
+  const ouvrir = useCallback(
+    (objet: ObjetSansFacture) => {
+      setCible(objet);
+      ouvrirFeuille();
+    },
+    [ouvrirFeuille],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: ObjetSansFacture }) => <ObjetRow objet={item} onPress={() => ouvrir(item)} />,
@@ -83,15 +83,15 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
       />
 
       <FactureFormSheet
-        key={ouvertures}
-        visible={ouvert}
-        onClose={() => setOuvert(false)}
+        key={feuille.cle}
+        visible={feuille.visible}
+        onClose={feuille.fermer}
         onSubmit={(valeurs) => {
           // `habitationId` ne part pas en base : il dit seulement quelles
           // listes du dossier corriger sans attendre le réseau — la facture
           // entre dans l'une, l'objet sort de celle-ci.
           if (cible) creer.mutate({ objetId: cible.id, habitationId, ...valeurs });
-          setOuvert(false);
+          feuille.fermer();
         }}
         loading={creer.isPending}
       />

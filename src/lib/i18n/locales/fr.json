@@ -815,6 +815,7 @@
       "edit_title": "Modifier la facture",
       "document_label": "Le document",
       "document_empty": "Photographie la facture, ou choisis-la dans tes images.",
+      "document_zoom": "Voir la facture en grand",
       "take_photo": "Photographier",
       "choose_file": "Choisir une image",
       "vendor_label": "Vendeur",
@@ -835,7 +836,7 @@
       "missing_other": "{{count}} objets sans preuve"
     },
     "list": {
-      "title": "Dossier",
+      "title": "Factures",
       "tab_with": "Avec facture",
       "tab_without": "Sans facture",
       "without_intro": "Ces objets n'ont aucune preuve d'achat. Touche-en un pour en ajouter une.",
@@ -852,7 +853,7 @@
       "intro": "Ce que ce logement peut prouver, document à l'appui.",
       "total_label": "Valeur prouvée",
       "no_amount": "Montant non renseigné",
-      "open_document": "Voir la facture {{name}}"
+      "open_document": "Modifier la facture {{name}}"
     }
   },
   "network": {
