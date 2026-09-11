@@ -245,6 +245,12 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         <RattacherFactureModal
           visible={rattachement}
           objetId={objetId}
+          // Le nom et la photo viennent de la tuile qui a ouvert le choix :
+          // c'est la nouvelle ligne de la facture qui les portera, pour
+          // s'afficher ici meme sans reseau.
+          objetName={objet.name}
+          objetPhotoUrl={objet.photoUrl}
+          habitationId={habitationId}
           onClose={() => setRattachement(false)}
         />
         <ExportProgress travail={travail} />

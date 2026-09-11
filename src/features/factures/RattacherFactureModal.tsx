@@ -9,7 +9,7 @@ import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, fromIsoDate } from './dateField';
-import { useAttachFactureToObjet, useFacturesARattacher } from './queries';
+import { nomsDesObjets, useAttachFactureToObjet, useFacturesARattacher, type FactureARattacher } from './queries';
 
 // RATTACHER UN OBJET À UNE FACTURE DÉJÀ ENREGISTRÉE.
 //
@@ -33,10 +33,28 @@ import { useAttachFactureToObjet, useFacturesARattacher } from './queries';
 type RattacherFactureModalProps = {
   visible: boolean;
   objetId: string;
+  /**
+   * Le nom et la photo de l'objet qu'on rattache.
+   *
+   * Ils ne s'affichent pas ici — c'est la nouvelle ligne de la facture qui les
+   * porte, pour que la fiche de l'objet puisse la montrer sans attendre le
+   * serveur. Voir `useAttachFactureToObjet`.
+   */
+  objetName: string;
+  objetPhotoUrl: string | null;
+  /** Dit quelles listes du dossier corriger sans attendre le réseau. */
+  habitationId?: string;
   onClose: () => void;
 };
 
-export function RattacherFactureModal({ visible, objetId, onClose }: RattacherFactureModalProps) {
+export function RattacherFactureModal({
+  visible,
+  objetId,
+  objetName,
+  objetPhotoUrl,
+  habitationId,
+  onClose,
+}: RattacherFactureModalProps) {
   const { t, i18n } = useTranslation();
   const colors = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -52,7 +70,7 @@ export function RattacherFactureModal({ visible, objetId, onClose }: RattacherFa
     const terme = recherche.trim().toLowerCase();
     if (!terme) return data ?? [];
     return (data ?? []).filter((facture) =>
-      [facture.vendor ?? '', ...(facture.objet_names ?? [])].some((texte) => texte.toLowerCase().includes(terme)),
+      [facture.vendor ?? '', ...nomsDesObjets(facture.lignes)].some((texte) => texte.toLowerCase().includes(terme)),
     );
   }, [data, recherche]);
 
@@ -62,12 +80,16 @@ export function RattacherFactureModal({ visible, objetId, onClose }: RattacherFa
   };
 
   const choisir = useCallback(
-    (facture: { id: string; vendor: string | null }) => {
-      rattacher.mutate({ factureId: facture.id, objetId, vendor: facture.vendor });
+    (facture: FactureARattacher) => {
+      // LA FACTURE ENTIÈRE PART À LA MUTATION, pas son seul identifiant :
+      // c'est ce qui lui permet de l'afficher sur la fiche de l'objet avant
+      // même d'avoir parlé au serveur — donc aussi hors ligne, où le geste se
+      // fait le plus souvent.
+      rattacher.mutate({ facture, objetId, objetName, objetPhotoUrl, habitationId });
       setRecherche('');
       onClose();
     },
-    [objetId, onClose, rattacher],
+    [habitationId, objetId, objetName, objetPhotoUrl, onClose, rattacher],
   );
 
   const renderItem = useCallback(
@@ -123,22 +145,7 @@ export function RattacherFactureModal({ visible, objetId, onClose }: RattacherFa
   );
 }
 
-function Rangee({
-  facture,
-  langue,
-  onPress,
-}: {
-  facture: {
-    id: string;
-    document_url: string | null;
-    vendor: string | null;
-    purchase_date: string | null;
-    amount: number | null;
-    objet_names: string[] | null;
-  };
-  langue: string;
-  onPress: () => void;
-}) {
+function Rangee({ facture, langue, onPress }: { facture: FactureARattacher; langue: string; onPress: () => void }) {
   const { t } = useTranslation();
   const colors = useThemeColors();
   const vignette = useMediaSource(facture.document_url);
@@ -186,7 +193,7 @@ function Rangee({
             : t('factures.list.no_amount')}
         </Text>
         <Text numberOfLines={1} className="text-caption text-ink-soft">
-          {[facture.vendor && date ? date : null, (facture.objet_names ?? []).join(', ')].filter(Boolean).join(' · ')}
+          {[facture.vendor && date ? date : null, nomsDesObjets(facture.lignes).join(', ')].filter(Boolean).join(' · ')}
         </Text>
       </View>
 

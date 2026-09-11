@@ -127,6 +127,11 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
       <RattacherFactureModal
         visible={rattachement}
         objetId={cible?.id ?? ''}
+        objetName={cible?.name ?? ''}
+        objetPhotoUrl={cible?.photo_url ?? null}
+        // La rangee doit quitter CETTE liste des l'instant du rattachement :
+        // c'est une liste qu'on cherche a vider.
+        habitationId={habitationId}
         onClose={() => setRattachement(false)}
       />
     </>

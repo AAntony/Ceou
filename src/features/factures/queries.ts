@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../auth/SessionProvider';
 import { isLocalUri } from '../../lib/images/media';
@@ -70,6 +70,28 @@ export type FactureDuDossier = {
   facture_amount: number | null;
   purchase_date: string | null;
   vendor: string | null;
+  created_at: string;
+  lignes: FactureLigne[];
+};
+
+/**
+ * Une facture proposée au rattachement.
+ *
+ * ELLE PORTE SES LIGNES, et c'est la seule raison pour laquelle la fonction
+ * SQL les rend : sans elles, rattacher un objet ne pourrait rien afficher
+ * avant la réponse du serveur — donc rien du tout hors ligne. Voir
+ * `useAttachFactureToObjet`, et la migration qui les a ajoutées.
+ */
+export type FactureARattacher = {
+  id: string;
+  document_url: string | null;
+  document_kind: string;
+  vendor: string | null;
+  purchase_date: string | null;
+  /** La somme des lignes, à défaut le total du ticket. C'est ce qui s'affiche. */
+  amount: number | null;
+  /** Le total du ticket tel qu'il a été saisi : c'est lui que le formulaire rééditera. */
+  facture_amount: number | null;
   created_at: string;
   lignes: FactureLigne[];
 };
@@ -531,10 +553,14 @@ export function useDeleteFacture() {
 export function useFacturesARattacher(objetId: string, enabled: boolean) {
   return useQuery({
     queryKey: ['facturesARattacher', objetId],
-    queryFn: async () => {
+    queryFn: async (): Promise<FactureARattacher[]> => {
       const { data, error } = await supabase.rpc('factures_a_rattacher', { p_objet_id: objetId });
       if (error) throw error;
-      return data ?? [];
+      // LE TYPE EST ÉCRIT À LA MAIN, comme `ExportRow` : `lignes` arrive en
+      // `Json`, que TypeScript ne sait pas relire, et les types générés suivent
+      // la migration d'un cran — ils sont régénérés après qu'elle est appliquée.
+      const rangees = (data ?? []) as unknown as (Omit<FactureARattacher, 'lignes'> & { lignes: unknown })[];
+      return rangees.map((rangee) => ({ ...rangee, lignes: lignesDepuisJson(rangee.lignes) }));
     },
     enabled: enabled && Boolean(objetId),
   });
@@ -548,17 +574,161 @@ export function useFacturesARattacher(objetId: string, enabled: boolean) {
  * ensuite en ouvrant la facture, où l'on voit les autres lignes en face.
  */
 export function useAttachFactureToObjet() {
+  const client = useQueryClient();
+
   return useLocalFirstWrite(
-    (input: { factureId: string; objetId: string; vendor: string | null }) => ({
-      describe: { kind: 'update' as const, name: input.vendor ?? '' },
-      ops: [
-        insertOp('facture_objets', [
-          { id: newId(), facture_id: input.factureId, objet_id: input.objetId, amount: null, warranty_until: null },
-        ]),
-      ],
-      result: undefined,
-    }),
+    (input: {
+      /**
+       * LA FACTURE ENTIÈRE, et pas seulement son identifiant.
+       *
+       * C'est ce qui permet de la poser dans le cache tout de suite. Elle
+       * vient telle quelle de la liste de rattachement — qui la rend avec ses
+       * lignes précisément pour ça.
+       */
+      facture: FactureARattacher;
+      objetId: string;
+      /** Le nom et la photo de l'objet : c'est la nouvelle ligne qui les porte. */
+      objetName: string;
+      objetPhotoUrl: string | null;
+      /** Ne part pas en base : il dit quelles listes du dossier corriger. */
+      habitationId?: string;
+    }) => {
+      // L'identifiant est tiré ICI : il nomme la liaison en base, et sert de
+      // clé à la mise à jour du cache qui a lieu avant toute réponse.
+      const ligne: FactureLigne = {
+        id: newId(),
+        objetId: input.objetId,
+        name: input.objetName,
+        photoUrl: input.objetPhotoUrl,
+        // SANS MONTANT NI GARANTIE, et c'est voulu : on les renseigne ensuite
+        // en ouvrant la facture, où l'on voit les autres lignes en face.
+        amount: null,
+        warrantyUntil: null,
+      };
+      const lignes = [...input.facture.lignes, ligne];
+      const habitationId = input.habitationId ?? null;
+
+      // GARDE-FOU : une facture dont on ne connaît aucune ligne n'est pas
+      // affichable d'avance.
+      //
+      // Le cas n'existe pas côté base — un déclencheur purge les factures sans
+      // objet — mais il existe dans le TEMPS : un appareil qui reçoit la mise à
+      // jour JavaScript avant que la migration ne soit appliquée interroge
+      // encore l'ancienne fonction, qui ne rend pas les lignes. Poser alors la
+      // facture dans le cache avec sa seule ligne neuve ferait effacer les
+      // autres objets du ticket à la première modification (voir la migration).
+      // On préfère le rattachement muet d'avant, qui se rattrape au
+      // rechargement.
+      const affichable = input.facture.lignes.length > 0;
+
+      return {
+        describe: { kind: 'update' as const, name: input.facture.vendor ?? '' },
+        ops: [
+          insertOp('facture_objets', [
+            {
+              id: ligne.id,
+              facture_id: input.facture.id,
+              objet_id: input.objetId,
+              amount: null,
+              warranty_until: null,
+            },
+          ]),
+        ],
+        // ELLE DOIT APPARAÎTRE TOUT DE SUITE sur la fiche de l'objet. La forme
+        // est celle que rend `factures_for_objet` : la fiche la relira sans
+        // savoir qu'elle n'est pas encore passée par le serveur.
+        appends: affichable
+          ? [
+              {
+                key: ['facturesForObjet', input.objetId],
+                row: {
+                  id: input.facture.id,
+                  document_url: input.facture.document_url,
+                  document_kind: input.facture.document_kind,
+                  vendor: input.facture.vendor,
+                  purchase_date: input.facture.purchase_date,
+                  facture_amount: input.facture.facture_amount,
+                  created_at: input.facture.created_at,
+                  // La ligne de CET objet, celle qu'on vient de créer.
+                  amount: null,
+                  warranty_until: null,
+                  lignes,
+                } satisfies FactureDObjet,
+              },
+            ]
+          : [],
+        sets: [
+          ...(affichable ? reporterLaLigne(client, input.facture.id, ligne, habitationId) : []),
+          // L'OBJET QUITTE LA LISTE DES ORPHELINS : c'est la moitié du geste
+          // quand il part de l'onglet « Sans facture ».
+          ...retirerDesOrphelins(client, habitationId, [input.objetId]),
+          // ET LA FACTURE QUITTE LES CANDIDATES : la reproposer permettrait de
+          // la rattacher deux fois hors ligne, et la seconde liaison serait
+          // refusée des heures plus tard par la contrainte d'unicité.
+          ...retirerDesCandidates(client, input.objetId, input.facture.id),
+        ],
+        result: undefined,
+      };
+    },
   );
+}
+
+/**
+ * La nouvelle ligne, reportée dans toutes les copies de cette facture déjà en
+ * cache — la fiche des autres objets du ticket, et le dossier du logement.
+ *
+ * Écrit clé par clé plutôt qu'en `patches` : un patch s'applique partout où
+ * l'identifiant apparaît, et il faudrait alors lui donner une liste de lignes
+ * unique, alors qu'elle diffère d'une vue à l'autre. Le dossier d'un logement
+ * ne rend QUE les lignes qui s'y trouvent (voir factures_for_habitation) —
+ * d'où le logement écarté ci-dessous, et la liste rallongée à partir de celle
+ * que chaque copie porte déjà.
+ */
+function reporterLaLigne(
+  client: ReturnType<typeof useQueryClient>,
+  factureId: string,
+  ligne: FactureLigne,
+  habitationId: string | null,
+): { key: QueryKey; data: unknown }[] {
+  const sets: { key: QueryKey; data: unknown }[] = [];
+
+  for (const [key, data] of client.getQueriesData({})) {
+    if (!Array.isArray(data)) continue;
+    const nom = key[0];
+    if (nom !== 'facturesForObjet' && nom !== 'facturesForHabitation') continue;
+    // Le dossier d'un AUTRE logement ne doit pas voir cette ligne : il ne
+    // parle que des objets qui s'y trouvent.
+    if (nom === 'facturesForHabitation' && key[1] !== habitationId) continue;
+
+    let touchee = false;
+    const suite = data.map((rangee) => {
+      if (!rangee || typeof rangee !== 'object') return rangee;
+      const facture = rangee as { id?: string; lignes?: FactureLigne[] };
+      if (facture.id !== factureId) return rangee;
+      const deja = lignesDe(facture);
+      // Le même rattachement rejoué (une relecture du cache, un double appui)
+      // ne doit pas dédoubler la ligne.
+      if (deja.some((autre) => autre.id === ligne.id)) return rangee;
+      touchee = true;
+      return { ...facture, lignes: [...deja, ligne] };
+    });
+
+    if (touchee) sets.push({ key, data: suite });
+  }
+
+  return sets;
+}
+
+/** La liste des factures rattachables, privée de celle qu'on vient de rattacher. */
+function retirerDesCandidates(
+  client: ReturnType<typeof useQueryClient>,
+  objetId: string,
+  factureId: string,
+): { key: QueryKey; data: unknown }[] {
+  const key = ['facturesARattacher', objetId];
+  const liste = client.getQueryData<FactureARattacher[]>(key);
+  if (!liste) return [];
+  return [{ key, data: liste.filter((facture) => facture.id !== factureId) }];
 }
 
 /**
