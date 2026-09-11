@@ -120,7 +120,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
           {
             label: t('factures.delete.detach_confirm'),
             destructive: true,
-            onPress: () => detacher.mutate({ ligneId: ligne.id, vendor: facture.vendor }),
+            onPress: () => detacher.mutate({ facture, ligne, habitationId }),
           },
           { label: t('common.cancel'), cancel: true },
         ],
@@ -129,11 +129,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
     }
 
     confirmDelete(t, 'factures.delete.title', 'factures.delete.message_last', () =>
-      supprimer.mutate({
-        id: facture.id,
-        vendor: facture.vendor,
-        ligneIds: lignes.map((autre) => autre.id),
-      }),
+      supprimer.mutate({ id: facture.id, vendor: facture.vendor, lignes, habitationId }),
     );
   };
 

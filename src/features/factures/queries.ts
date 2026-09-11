@@ -8,6 +8,7 @@ import type { Facture } from '../../types/database';
 import { newId } from '../../lib/uuid';
 import { deleteOp, insertOp, updateOp, uploadOp, useLocalFirstWrite, type WriteOp } from '../../lib/writeQueue';
 import { cancelWarrantyReminder, scheduleWarrantyReminder } from '../notifications/warrantyReminders';
+import type { SearchIndexEntry } from '../search/queries';
 import type { ExportRow } from './exportTree';
 
 // LES FACTURES S'ÉCRIVENT COMME LE RESTE : par la file, jamais en direct.
@@ -558,21 +559,38 @@ export function useUpdateFacture() {
 }
 
 export function useDeleteFacture() {
-  return useLocalFirstWrite((input: { id: string; vendor: string | null; ligneIds: string[] }) => {
-    // Les rappels de garantie partent avec elle — un par ligne — et depuis la
-    // mutation plutôt que depuis un écran : on supprime une facture aussi bien
-    // depuis la fiche d'un objet que depuis le dossier.
-    for (const ligneId of input.ligneIds) void cancelWarrantyReminder(ligneId);
+  const client = useQueryClient();
 
-    return {
-      describe: { kind: 'delete' as const, name: input.vendor ?? '' },
-      // Les liaisons partent en cascade côté base (`on delete cascade`) : rien
-      // à supprimer ici. Le fichier du bucket, lui, reste — comme les photos
-      // d'objets supprimés. Le ménage se fait à la suppression du compte.
-      ops: [deleteOp('factures', input.id)],
-      result: undefined,
-    };
-  });
+  return useLocalFirstWrite(
+    (input: {
+      id: string;
+      vendor: string | null;
+      /** Les lignes qui partent avec elle : elles nomment les rappels ET les objets à libérer. */
+      lignes: FactureLigne[];
+      /** Ne part pas en base : il dit quelles listes du dossier corriger. */
+      habitationId?: string;
+    }) => {
+      // Les rappels de garantie partent avec elle — un par ligne — et depuis la
+      // mutation plutôt que depuis un écran : on supprime une facture aussi bien
+      // depuis la fiche d'un objet que depuis le dossier.
+      for (const ligne of input.lignes) void cancelWarrantyReminder(ligne.id);
+
+      return {
+        describe: { kind: 'delete' as const, name: input.vendor ?? '' },
+        // Les liaisons partent en cascade côté base (`on delete cascade`) : rien
+        // à supprimer ici. Le fichier du bucket, lui, reste — comme les photos
+        // d'objets supprimés. Le ménage se fait à la suppression du compte.
+        //
+        // La règle générale du cache fait sortir la facture de toutes les listes
+        // où elle apparaît : son identifiant est celui d'une ligne de premier
+        // niveau. Ce qu'elle ne sait pas, c'est que ses objets redeviennent des
+        // orphelins — même geste que le détachement, pour la même raison.
+        ops: [deleteOp('factures', input.id)],
+        sets: remettreDansLesOrphelins(client, input.habitationId ?? null, input.lignes),
+        result: undefined,
+      };
+    },
+  );
 }
 
 /**
@@ -774,12 +792,156 @@ function retirerDesCandidates(
  * suppression, et le dire, quand il ne reste qu'une ligne.
  */
 export function useDetachFactureFromObjet() {
-  return useLocalFirstWrite((input: { ligneId: string; vendor: string | null }) => {
-    void cancelWarrantyReminder(input.ligneId);
-    return {
-      describe: { kind: 'update' as const, name: input.vendor ?? '' },
-      ops: [deleteOp('facture_objets', input.ligneId)],
-      result: undefined,
-    };
-  });
+  const client = useQueryClient();
+
+  return useLocalFirstWrite(
+    (input: {
+      /** La facture telle que la fiche la connaît : elle porte toutes ses lignes. */
+      facture: FactureDObjet;
+      /** La ligne qui part. Elle porte l'objet, son nom et sa photo — de quoi le remettre dans la liste des orphelins. */
+      ligne: FactureLigne;
+      /** Ne part pas en base : il dit quelles listes du dossier corriger. */
+      habitationId?: string;
+    }) => {
+      void cancelWarrantyReminder(input.ligne.id);
+      const habitationId = input.habitationId ?? null;
+
+      return {
+        describe: { kind: 'update' as const, name: input.facture.vendor ?? '' },
+        ops: [deleteOp('facture_objets', input.ligne.id)],
+        // LA SUPPRESSION NE SE DÉDUIT PAS TOUTE SEULE, contrairement aux
+        // autres. La règle générale du cache retire les lignes dont
+        // l'IDENTIFIANT DE PREMIER NIVEAU correspond ; or celle-ci vit à
+        // l'intérieur du tableau `lignes` d'une facture, et son départ change
+        // en plus l'appartenance de l'objet. Rien de tout cela ne se lit dans
+        // l'opération.
+        sets: [
+          ...reporterLeDetachement(client, input.facture.id, input.ligne),
+          // L'OBJET REDEVIENT UN ORPHELIN, tout de suite. C'est le miroir exact
+          // du rattachement : sans ça, la liste qu'on cherche à vider ne se
+          // remplit à nouveau qu'au rechargement — donc jamais, hors ligne.
+          ...remettreDansLesOrphelins(client, habitationId, [input.ligne]),
+        ],
+        result: undefined,
+      };
+    },
+  );
+}
+
+/**
+ * Le départ d'une ligne, reporté dans toutes les copies de sa facture.
+ *
+ * ⚠️ SUR LA FICHE DE SON OBJET, C'EST LA FACTURE ENTIÈRE QUI S'EN VA ; partout
+ * ailleurs — la fiche des autres objets du ticket, le dossier du logement —
+ * seule la ligne disparaît. Le même geste ne se lit pas pareil selon la liste,
+ * et c'est ce qui interdit d'écrire ça en `patches`.
+ */
+function reporterLeDetachement(
+  client: ReturnType<typeof useQueryClient>,
+  factureId: string,
+  ligne: FactureLigne,
+): { key: QueryKey; data: unknown }[] {
+  const sets: { key: QueryKey; data: unknown }[] = [];
+
+  for (const [key, data] of client.getQueriesData({})) {
+    if (!Array.isArray(data)) continue;
+    const nom = key[0];
+    if (nom !== 'facturesForObjet' && nom !== 'facturesForHabitation') continue;
+
+    const saFiche = nom === 'facturesForObjet' && key[1] === ligne.objetId;
+    let touchee = false;
+    const suite: unknown[] = [];
+
+    for (const rangee of data) {
+      const facture = rangee as { id?: string; lignes?: FactureLigne[] } | null;
+      if (!facture || typeof facture !== 'object' || facture.id !== factureId) {
+        suite.push(rangee);
+        continue;
+      }
+      if (saFiche) {
+        touchee = true;
+        continue;
+      }
+      const avant = lignesDe(facture);
+      const restantes = avant.filter((autre) => autre.id !== ligne.id);
+      if (restantes.length === avant.length) {
+        suite.push(rangee);
+        continue;
+      }
+      touchee = true;
+      suite.push({ ...facture, lignes: restantes });
+    }
+
+    if (touchee) sets.push({ key, data: suite });
+  }
+
+  return sets;
+}
+
+/**
+ * Les objets qui viennent de perdre leur preuve d'achat, remis dans la liste
+ * de ce qui n'en a pas.
+ *
+ * OÙ ILS SONT POSÉS, C'EST L'INDEX DE RECHERCHE QUI LE SAIT — la ligne d'une
+ * facture porte le nom et la photo de l'objet, pas sa pièce. Et cet index sert
+ * de GARDE-FOU autant que de source : une facture peut être à cheval sur deux
+ * logements, et l'objet d'un autre logement n'a rien à faire dans cette
+ * liste-ci. Sans entrée dans l'index, on n'invente rien et le rechargement
+ * tranchera.
+ */
+function remettreDansLesOrphelins(
+  client: ReturnType<typeof useQueryClient>,
+  habitationId: string | null,
+  lignes: FactureLigne[],
+): { key: QueryKey; data: unknown }[] {
+  if (!habitationId || lignes.length === 0) return [];
+
+  const key = ['objetsSansFacture', habitationId];
+  const liste = client.getQueryData<ObjetSansFacture[]>(key);
+  if (!liste) return [];
+
+  const ajouts: ObjetSansFacture[] = [];
+  for (const ligne of lignes) {
+    if (liste.some((objet) => objet.id === ligne.objetId)) continue;
+    const place = placeDeLObjet(client, ligne.objetId);
+    if (!place || place.habitation_id !== habitationId) continue;
+    ajouts.push({
+      id: ligne.objetId,
+      name: ligne.name,
+      photo_url: ligne.photoUrl,
+      piece_name: place.piece_name,
+      parent_label: place.parent_label,
+    });
+  }
+  if (ajouts.length === 0) return [];
+
+  // PAR PIÈCE, PUIS PAR NOM — le même ordre que la fonction SQL. Ajouté en
+  // queue, l'objet atterrirait dans la mauvaise pièce d'une liste qu'on
+  // parcourt justement pièce par pièce.
+  const suite = [...liste, ...ajouts].sort(
+    (a, b) => a.piece_name.localeCompare(b.piece_name) || a.name.localeCompare(b.name),
+  );
+  return [{ key, data: suite }];
+}
+
+/** Un objet tel que `objets_sans_facture` le rend. */
+type ObjetSansFacture = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  piece_name: string;
+  parent_label: string | null;
+};
+
+/** Où un objet est posé, relu de l'index de recherche déjà en cache. */
+function placeDeLObjet(
+  client: ReturnType<typeof useQueryClient>,
+  objetId: string,
+): SearchIndexEntry | undefined {
+  for (const [, data] of client.getQueriesData({ queryKey: ['searchIndex'] })) {
+    if (!Array.isArray(data)) continue;
+    const trouve = (data as SearchIndexEntry[]).find((entree) => entree.kind === 'objet' && entree.id === objetId);
+    if (trouve) return trouve;
+  }
+  return undefined;
 }

@@ -157,7 +157,8 @@ export default function FacturesScreen() {
         supprimer.mutate({
           id: facture.id,
           vendor: facture.vendor,
-          ligneIds: lignesDe(facture).map((ligne) => ligne.id),
+          lignes: lignesDe(facture),
+          habitationId,
         }),
       { count: lignesDe(facture).length },
     );
