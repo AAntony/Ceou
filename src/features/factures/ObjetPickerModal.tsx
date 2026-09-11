@@ -35,7 +35,7 @@ type ObjetPickerModalProps = {
   /** Ceux déjà sur la facture : ils ne se proposent pas deux fois. */
   dejaChoisis: string[];
   onClose: () => void;
-  onValider: (objets: { objetId: string; name: string }[]) => void;
+  onValider: (objets: { objetId: string; name: string; photoUrl: string | null }[]) => void;
 };
 
 export function ObjetPickerModal({ visible, dejaChoisis, onClose, onValider }: ObjetPickerModalProps) {
@@ -45,7 +45,10 @@ export function ObjetPickerModal({ visible, dejaChoisis, onClose, onValider }: O
   const { data } = useSearchIndex();
 
   const [recherche, setRecherche] = useState('');
-  const [choisis, setChoisis] = useState<Map<string, string>>(new Map());
+  // La photo voyage avec le nom : la feuille la reaffiche sur la carte de
+  // l objet, et la redemander a l index de recherche pour ca seul serait un
+  // aller-retour de plus.
+  const [choisis, setChoisis] = useState<Map<string, { name: string; photoUrl: string | null }>>(new Map());
 
   const objets = useMemo(() => {
     const terme = recherche.trim().toLowerCase();
@@ -59,7 +62,7 @@ export function ObjetPickerModal({ visible, dejaChoisis, onClose, onValider }: O
     setChoisis((actuels) => {
       const suivants = new Map(actuels);
       if (suivants.has(entree.id)) suivants.delete(entree.id);
-      else suivants.set(entree.id, entree.name);
+      else suivants.set(entree.id, { name: entree.name, photoUrl: entree.photo_url });
       return suivants;
     });
   }, []);
@@ -71,7 +74,7 @@ export function ObjetPickerModal({ visible, dejaChoisis, onClose, onValider }: O
   };
 
   const valider = () => {
-    onValider([...choisis].map(([objetId, name]) => ({ objetId, name })));
+    onValider([...choisis].map(([objetId, objet]) => ({ objetId, ...objet })));
     setChoisis(new Map());
     setRecherche('');
   };

@@ -36,6 +36,8 @@ export type FactureLigne = {
   id: string;
   objetId: string;
   name: string;
+  /** De quoi reconnaitre l'objet d'un coup d'oeil, et pointer vers sa fiche. */
+  photoUrl: string | null;
   amount: number | null;
   warrantyUntil: string | null;
 };
@@ -171,25 +173,6 @@ export function useObjetsSansFacture(habitationId: string | undefined) {
 }
 
 /**
- * Les factures déjà enregistrées qu'on peut rattacher à cet objet.
- *
- * LES PLUS RÉCENTES D'ABORD, et celles déjà rattachées écartées. Un ticket
- * qu'on rattache à un deuxième objet vient presque toujours d'être saisi :
- * on sort du magasin avec quatre chaises et un seul ticket.
- */
-export function useFacturesARattacher(objetId: string, enabled: boolean) {
-  return useQuery({
-    queryKey: ['facturesARattacher', objetId],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('factures_a_rattacher', { p_objet_id: objetId });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: enabled && Boolean(objetId),
-  });
-}
-
-/**
  * Tout ce qu'il faut pour l'écran d'export : l'arbre ET les factures.
  *
  * UNE SEULE REQUÊTE POUR TOUS LES LOGEMENTS, et pas une par habitation. La
@@ -223,6 +206,8 @@ export type LigneSaisie = {
   id?: string;
   objetId: string;
   name: string;
+  /** Connue quand la ligne vient du formulaire ; relue du serveur sinon. */
+  photoUrl?: string | null;
   amount: number | null;
   warrantyUntil: string | null;
 };
@@ -265,6 +250,7 @@ export function useCreateFacture() {
       id: ligne.id ?? newId(),
       objetId: ligne.objetId,
       name: ligne.name,
+      photoUrl: ligne.photoUrl ?? null,
       amount: ligne.amount,
       warrantyUntil: ligne.warrantyUntil,
     }));
@@ -428,6 +414,7 @@ export function useUpdateFacture() {
         id: ligne.id ?? newId(),
         objetId: ligne.objetId,
         name: ligne.name,
+        photoUrl: ligne.photoUrl ?? null,
         amount: ligne.amount,
         warrantyUntil: ligne.warrantyUntil,
       }));
@@ -529,50 +516,6 @@ export function useDeleteFacture() {
       // à supprimer ici. Le fichier du bucket, lui, reste — comme les photos
       // d'objets supprimés. Le ménage se fait à la suppression du compte.
       ops: [deleteOp('factures', input.id)],
-      result: undefined,
-    };
-  });
-}
-
-/**
- * Rattacher une facture déjà enregistrée à un objet de plus.
- *
- * Le geste du ticket de caisse : quatre chaises, un seul document. La ligne
- * naît SANS montant ni garantie — on les renseigne ensuite dans la facture,
- * où l'on voit les autres lignes en face.
- */
-export function useAttachFactureToObjet() {
-  return useLocalFirstWrite(
-    (input: { factureId: string; objetId: string; objetName: string; vendor: string | null; habitationId?: string }) => {
-      const ligneId = newId();
-      return {
-        describe: { kind: 'update' as const, name: input.vendor ?? '' },
-        ops: [
-          insertOp('facture_objets', [
-            { id: ligneId, facture_id: input.factureId, objet_id: input.objetId, amount: null, warranty_until: null },
-          ]),
-        ],
-        result: { ligneId },
-      };
-    },
-  );
-}
-
-/**
- * Détacher un objet d'une facture, sans supprimer la facture.
- *
- * ATTENTION : détacher le DERNIER objet supprime la facture, côté base
- * (déclencheur purge_facture_sans_objet). Une facture qui ne couvrirait plus
- * rien n'apparaîtrait dans aucun dossier — c'est l'orpheline qu'on a corrigée.
- * L'écran doit donc proposer la suppression, pas le détachement, quand il ne
- * reste qu'une ligne.
- */
-export function useDetachFactureFromObjet() {
-  return useLocalFirstWrite((input: { ligneId: string; vendor: string | null }) => {
-    void cancelWarrantyReminder(input.ligneId);
-    return {
-      describe: { kind: 'update' as const, name: input.vendor ?? '' },
-      ops: [deleteOp('facture_objets', input.ligneId)],
       result: undefined,
     };
   });

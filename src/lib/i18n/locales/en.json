@@ -804,16 +804,11 @@
   "factures": {
     "block": {
       "title": "Receipts",
-      "empty": "No proof of purchase for this item.",
       "add": "Add a receipt",
-      "add_choice": "A new document, or a receipt you already saved?",
-      "add_new": "New receipt",
-      "add_existing": "One already saved",
       "untitled": "Receipt",
-      "covers_one": "{{count}} item",
-      "covers_other": "{{count}} items",
       "warranty_active": "Under warranty",
-      "warranty_over": "Warranty ended"
+      "open": "View receipt {{name}}",
+      "tap_to_edit": "Tap to edit"
     },
     "form": {
       "add_title": "Add a receipt",
@@ -827,20 +822,25 @@
       "amount_label": "Amount",
       "purchase_label": "Purchase date",
       "warranty_label": "Warranty ends",
-      "date_invalid": "Incomplete or impossible date."
-      ,"objets_title_one": "The item covered",
+      "date_invalid": "Incomplete or impossible date.",
+      "objets_title_one": "The item covered",
       "objets_title_other": "The {{count}} items covered",
       "add_objet": "Add an item",
       "remove_objet": "Remove {{name}} from this receipt",
       "total_label": "Receipt total",
       "total_hint": "Optional. Useful when you know what you paid without splitting it item by item.",
       "warranty_share": "Same warranty for all",
-      "warranty_split": "Different warranty per item"
+      "warranty_split": "Different warranty per item",
+      "section_ticket": "The receipt",
+      "section_objet": "This item",
+      "shared_note_one": "This document also covers {{count}} other item. Deleting it removes it from all of them.",
+      "shared_note_other": "This document also covers {{count}} other items. Deleting it removes it from all of them."
     },
     "delete": {
       "title": "Delete this receipt?",
-      "message": "The document will be removed from every item it covers."
-      ,"message_shared": "This receipt covers {{count}} items: it will disappear from all of them, not just this one."
+      "message": "The document will be removed from every item it covers.",
+      "message_shared": "This receipt covers {{count}} items: it will disappear from all of them, not just this one.",
+      "action": "Delete this receipt"
     },
     "entry": {
       "title": "Receipts for this home",
@@ -867,7 +867,9 @@
       "intro": "What this home can prove, with the documents to back it.",
       "total_label": "Proven value",
       "no_amount": "No amount entered",
-      "open_document": "Edit receipt {{name}}"
+      "open_document": "Edit receipt {{name}}",
+      "no_date": "No date entered",
+      "open_objet": "Open {{name}}"
     },
     "objets": {
       "title": "Add items",
@@ -875,12 +877,6 @@
       "empty": "No item matches.",
       "add_one": "Add {{count}} item",
       "add_other": "Add {{count}} items"
-    },
-    "picker": {
-      "title": "Choose a receipt",
-      "intro": "Attach this item to a document you already saved — the same till receipt, for instance.",
-      "search": "Search by seller or item",
-      "empty": "No receipt to attach."
     },
     "warranty": {
       "title": "A warranty ends soon",

@@ -804,16 +804,11 @@
   "factures": {
     "block": {
       "title": "Factures",
-      "empty": "Aucune preuve d'achat pour cet objet.",
       "add": "Ajouter une facture",
-      "add_choice": "Un nouveau document, ou une facture déjà enregistrée ?",
-      "add_new": "Nouvelle facture",
-      "add_existing": "Une déjà enregistrée",
       "untitled": "Facture",
-      "covers_one": "{{count}} objet",
-      "covers_other": "{{count}} objets",
       "warranty_active": "Sous garantie",
-      "warranty_over": "Garantie finie"
+      "open": "Voir la facture {{name}}",
+      "tap_to_edit": "Toucher pour modifier"
     },
     "form": {
       "add_title": "Ajouter une facture",
@@ -827,20 +822,25 @@
       "amount_label": "Montant",
       "purchase_label": "Date d'achat",
       "warranty_label": "Fin de garantie",
-      "date_invalid": "Date incomplète ou impossible."
-      ,"objets_title_one": "L'objet couvert",
+      "date_invalid": "Date incomplète ou impossible.",
+      "objets_title_one": "L'objet couvert",
       "objets_title_other": "Les {{count}} objets couverts",
       "add_objet": "Ajouter un objet",
       "remove_objet": "Retirer {{name}} de cette facture",
       "total_label": "Total du ticket",
       "total_hint": "Facultatif. Sert quand tu connais la somme payée sans avoir détaillé objet par objet.",
       "warranty_share": "Même garantie pour tous",
-      "warranty_split": "Garanties différentes selon l'objet"
+      "warranty_split": "Garanties différentes selon l'objet",
+      "section_ticket": "Le ticket",
+      "section_objet": "Cet objet",
+      "shared_note_one": "Ce document couvre aussi {{count}} autre objet. Le supprimer le retirera de tous.",
+      "shared_note_other": "Ce document couvre aussi {{count}} autres objets. Le supprimer le retirera de tous."
     },
     "delete": {
       "title": "Supprimer cette facture ?",
-      "message": "Le document sera retiré de tous les objets qu'il couvre."
-      ,"message_shared": "Cette facture couvre {{count}} objets : elle disparaîtra de tous, pas seulement de celui-ci."
+      "message": "Le document sera retiré de tous les objets qu'il couvre.",
+      "message_shared": "Cette facture couvre {{count}} objets : elle disparaîtra de tous, pas seulement de celui-ci.",
+      "action": "Supprimer cette facture"
     },
     "entry": {
       "title": "Factures de ce logement",
@@ -867,7 +867,9 @@
       "intro": "Ce que ce logement peut prouver, document à l'appui.",
       "total_label": "Valeur prouvée",
       "no_amount": "Montant non renseigné",
-      "open_document": "Modifier la facture {{name}}"
+      "open_document": "Modifier la facture {{name}}",
+      "no_date": "Date non renseignée",
+      "open_objet": "Ouvrir {{name}}"
     },
     "objets": {
       "title": "Ajouter des objets",
@@ -875,12 +877,6 @@
       "empty": "Aucun objet ne correspond.",
       "add_one": "Ajouter {{count}} objet",
       "add_other": "Ajouter {{count}} objets"
-    },
-    "picker": {
-      "title": "Choisir une facture",
-      "intro": "Rattache cet objet à un document déjà enregistré — le même ticket de caisse, par exemple.",
-      "search": "Chercher par vendeur ou par objet",
-      "empty": "Aucune facture à rattacher."
     },
     "warranty": {
       "title": "Une garantie se termine bientôt",

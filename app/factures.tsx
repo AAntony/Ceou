@@ -10,14 +10,15 @@ import { HeaderIconButton } from '../src/components/HeaderIconButton';
 import { Icon } from '../src/components/Icon';
 import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
+import { confirmDelete } from '../src/lib/confirmDelete';
 import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
 import { ExportProgress } from '../src/features/factures/ExportProgress';
 import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
 import {
   lignesDe,
-  nomsDesObjets,
   sousGarantie,
+  useDeleteFacture,
   useFacturesForHabitation,
   useObjetsSansFacture,
   useUpdateFacture,
@@ -27,6 +28,7 @@ import { useExportFactures } from '../src/features/factures/useExportFactures';
 import { useFeuilleFacture } from '../src/features/factures/useFeuilleFacture';
 import { syncWarrantyReminders } from '../src/features/notifications/warrantyReminders';
 import { useHabitationPermission } from '../src/features/sharing/queries';
+import { PLACEHOLDER_IMAGES } from '../src/features/inventory/placeholders';
 import { useMediaSource } from '../src/lib/images/media';
 import { useScaled } from '../src/lib/textScale';
 import { useThemeColors } from '../src/lib/theme';
@@ -59,8 +61,13 @@ import { useThemeColors } from '../src/lib/theme';
 // délibéré : une facture couvre souvent plusieurs objets (une livraison de
 // meubles, une commande en ligne). La lister par objet afficherait le même
 // ticket trois fois et compterait trois fois son montant dans le total. Chaque
-// carte nomme déjà les objets qu'elle couvre. L'autre onglet, lui, est bien
-// une liste d'objets : il n'y a rien d'autre à y montrer.
+// carte montre en revanche les objets qu'elle couvre, en photo et en lien vers
+// leur fiche. L'autre onglet, lui, est bien une liste d'objets : il n'y a rien
+// d'autre à y montrer.
+//
+// C'EST AUSSI ICI QU'ON GÈRE LES OBJETS D'UN TICKET — on en ajoute, on en
+// retire, depuis la feuille qu'ouvre une carte. La fiche d'un objet ne parle
+// que de lui : un ticket de caisse est une chose du dossier.
 
 type Tab = 'avec' | 'sans';
 
@@ -88,6 +95,7 @@ export default function FacturesScreen() {
   // mal saisie. La visionneuse n'est pas perdue pour autant — l'aperçu de la
   // feuille l'ouvre en plein écran.
   const modifier = useUpdateFacture();
+  const supprimer = useDeleteFacture();
   const [enEdition, setEnEdition] = useState<FactureEntry | null>(null);
   const feuille = useFeuilleFacture();
   const { demander, travail } = useExportFactures();
@@ -137,6 +145,22 @@ export default function FacturesScreen() {
       i18n.language,
     );
   }, [dossier.data, isOwner, habitationId, t, i18n.language]);
+
+  const supprimerCelleCi = (facture: FactureEntry) => {
+    feuille.fermer();
+    confirmDelete(
+      t,
+      'factures.delete.title',
+      lignesDe(facture).length > 1 ? 'factures.delete.message_shared' : 'factures.delete.message',
+      () =>
+        supprimer.mutate({
+          id: facture.id,
+          vendor: facture.vendor,
+          ligneIds: lignesDe(facture).map((ligne) => ligne.id),
+        }),
+      { count: lignesDe(facture).length },
+    );
+  };
 
   const exporterCelleCi = (facture: FactureEntry) => {
     feuille.fermer();
@@ -276,6 +300,7 @@ export default function FacturesScreen() {
           // des vues du système, et sur iOS en présenter une par-dessus une
           // modale ouverte ne fait rien du tout, en silence.
           onExport={enEdition ? () => exporterCelleCi(enEdition) : undefined}
+          onDelete={enEdition ? () => supprimerCelleCi(enEdition) : undefined}
           onClose={feuille.fermer}
           onSubmit={(valeurs) => {
             if (enEdition) {
@@ -374,57 +399,111 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
   // facture reste utile tant qu'une seule de ses garanties court.
   const couverte = sousGarantie(lignesDe(facture));
 
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('factures.list.open_document', { name: titre })}
-      onPress={onOpen}
-      className="mb-3 flex-row gap-3 rounded-2xl border border-ink/10 bg-surface p-3 active:opacity-70"
-    >
-      {/* PROPORTION D'UN TICKET, plus haute que large : c'est ce qui la fait
-          reconnaître comme un document et non comme la photo d'un objet. */}
-      <View
-        style={{ width: largeur, height: hauteur }}
-        className="overflow-hidden rounded-lg border border-ink/10 bg-sand-dark"
-      >
-        {document ? (
-          <Image source={document} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-        ) : (
-          <View className="flex-1 items-center justify-center">
-            <Icon name="facture" size={18} color={colors.inkFaint} />
-          </View>
-        )}
-      </View>
+  const lignes = lignesDe(facture);
 
-      {/* TROIS LIGNES, TOUJOURS. C'est ce qui donne à toutes les cartes la
-          même hauteur sans figer un nombre de pixels — donc une liste qui
-          reste régulière même à 200 % de texte. */}
-      <View className="flex-1 justify-center">
-        <View className="flex-row items-center gap-2">
-          <Text numberOfLines={1} className="flex-1 text-body font-semibold text-ink">
-            {titre}
-          </Text>
-          {couverte ? (
-            <View className="rounded-full bg-teal-light px-2 py-0.5">
-              <Text className="text-caption font-semibold text-teal-dark">{t('factures.block.warranty_active')}</Text>
+  return (
+    <View className="mb-3 overflow-hidden rounded-2xl border border-ink/10 bg-surface">
+      {/* LE HAUT OUVRE LE TICKET, LE BAS MÈNE AUX OBJETS. Deux gestes
+          distincts sur une même carte, séparés par un filet : sans lui, on ne
+          verrait pas que les vignettes du bas sont des liens. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('factures.list.open_document', { name: titre })}
+        onPress={onOpen}
+        className="flex-row gap-3 p-3 active:opacity-70"
+      >
+        {/* PROPORTION D'UN TICKET, plus haute que large : c'est ce qui la fait
+            reconnaître comme un document et non comme la photo d'un objet. */}
+        <View
+          style={{ width: largeur, height: hauteur }}
+          className="overflow-hidden rounded-lg border border-ink/10 bg-sand-dark"
+        >
+          {document ? (
+            <Image source={document} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+          ) : (
+            <View className="flex-1 items-center justify-center">
+              <Icon name="facture" size={18} color={colors.inkFaint} />
             </View>
-          ) : null}
+          )}
         </View>
 
-        {/* LE MONTANT EST LE HÉROS de la ligne, et il garde sa place même
-            absent : une ligne qui disparaîtrait ferait sauter la carte. */}
-        <Text
-          numberOfLines={1}
-          className={facture.amount != null ? 'text-subheading font-bold text-ink' : 'text-subheading text-ink-faint'}
-          style={{ fontVariant: ['tabular-nums'] }}
-        >
-          {facture.amount != null ? formatMontant(Number(facture.amount), i18n.language) : t('factures.list.no_amount')}
-        </Text>
+        {/* TROIS LIGNES, TOUJOURS. C'est ce qui donne à toutes les cartes la
+            même hauteur sans figer un nombre de pixels — donc une liste qui
+            reste régulière même à 200 % de texte. */}
+        <View className="flex-1 justify-center">
+          <View className="flex-row items-center gap-2">
+            <Text numberOfLines={1} className="flex-1 text-body font-semibold text-ink">
+              {titre}
+            </Text>
+            {couverte ? (
+              <View className="rounded-full bg-teal-light px-2 py-0.5">
+                <Text className="text-caption font-semibold text-teal-dark">{t('factures.block.warranty_active')}</Text>
+              </View>
+            ) : null}
+          </View>
 
-        <Text numberOfLines={1} className="text-caption text-ink-soft">
-          {[facture.vendor && date ? date : null, nomsDesObjets(lignesDe(facture)).join(', ')].filter(Boolean).join(' · ')}
-        </Text>
+          {/* LE MONTANT EST LE HÉROS de la ligne, et il garde sa place même
+              absent : une ligne qui disparaîtrait ferait sauter la carte. */}
+          <Text
+            numberOfLines={1}
+            className={facture.amount != null ? 'text-subheading font-bold text-ink' : 'text-subheading text-ink-faint'}
+            style={{ fontVariant: ['tabular-nums'] }}
+          >
+            {facture.amount != null ? formatMontant(Number(facture.amount), i18n.language) : t('factures.list.no_amount')}
+          </Text>
+
+          <Text numberOfLines={1} className="text-caption text-ink-soft">
+            {date || t('factures.list.no_date')}
+          </Text>
+        </View>
+
+        <View className="justify-center">
+          <Icon name="chevron" size={20} color={colors.inkFaint} />
+        </View>
+      </Pressable>
+
+      {/* CE QUE LA FACTURE COUVRE, EN IMAGES. Un nom ne suffit pas à
+          reconnaître ses affaires — « Chaise Ana » ne dit rien, la photo de la
+          chaise, si. Et chaque vignette mène à la fiche de l'objet : c'est le
+          chemin qu'on cherche quand on relit un dossier. */}
+      {lignes.length > 0 ? (
+        <View className="flex-row flex-wrap gap-2 border-t border-ink/10 bg-sand px-3 py-2.5">
+          {lignes.map((ligne) => (
+            <PastilleObjet key={ligne.id} ligne={ligne} />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** Un objet couvert, en pastille : sa photo, son nom, et le chemin vers sa fiche. */
+function PastilleObjet({ ligne }: { ligne: FactureLigne }) {
+  const { t } = useTranslation();
+  const photo = useMediaSource(ligne.photoUrl);
+  const taille = useScaled(20);
+  const largeurNom = useScaled(150);
+
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={t('factures.list.open_objet', { name: ligne.name })}
+      onPress={() => router.push(`/objet/${ligne.objetId}`)}
+      className="flex-row items-center gap-2 rounded-full border border-ink/10 bg-surface py-1 pl-1 pr-3 active:opacity-70"
+    >
+      <View style={{ width: taille, height: taille }} className="overflow-hidden rounded-full bg-sand">
+        <Image
+          source={photo ?? PLACEHOLDER_IMAGES.objet}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+        />
       </View>
+      {/* PLAFONNÉE, ET MISE À L'ÉCHELLE AVEC LE TEXTE : sans borne, un objet
+          au nom long prend toute la largeur et les pastilles suivantes se
+          retrouvent seules sur leur ligne. */}
+      <Text numberOfLines={1} style={{ maxWidth: largeurNom }} className="text-caption text-ink">
+        {ligne.name}
+      </Text>
     </Pressable>
   );
 }

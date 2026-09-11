@@ -57,6 +57,7 @@ export default function ObjetScreen() {
     liste: facturesListe,
     feuille: feuilleFacture,
     facturesPerdues,
+    dejaUneFacture,
   } = useFactures(id, permission === 'owner', habitationId);
 
   const [name, setName] = useState('');
@@ -255,12 +256,15 @@ export default function ObjetScreen() {
                   elle a leur taille, et l'espacement de la rangee. Un ami a
                   qui l'habitation est ouverte peut renommer un objet, mais les
                   factures ne lui appartiennent pas. */}
-              {permission === 'owner' ? (
+              {/* ELLE DISPARAIT DES QU IL Y EN A UNE : un objet n a qu une
+                  preuve d achat, et la facture deja posee se modifie en
+                  touchant sa carte au-dessus. */}
+              {permission === 'owner' && !dejaUneFacture ? (
                 <Button
                   variant="tile"
                   icon="facture"
                   label={t('factures.block.add')}
-                  onPress={() => ouvrirAjoutFacture(objet.name)}
+                  onPress={() => ouvrirAjoutFacture(objet.name, objet.photo_url)}
                 />
               ) : null}
             </ButtonRow>
