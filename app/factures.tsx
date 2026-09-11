@@ -3,6 +3,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSpaceForAppTabBar } from '../src/components/AppTabBar';
 import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
 import { HeaderIconButton } from '../src/components/HeaderIconButton';
@@ -68,6 +69,7 @@ export default function FacturesScreen() {
 
   const [tab, setTab] = useState<Tab>('avec');
   const refreshControl = usePullToRefresh();
+  const espaceBarre = useSpaceForAppTabBar();
 
   // TOUCHER UNE CARTE OUVRE LA MÊME FEUILLE QUE SUR LA FICHE D'UN OBJET.
   //
@@ -175,7 +177,12 @@ export default function FacturesScreen() {
           ) : (
             <ScrollView
               className="flex-1"
-              contentContainerClassName="px-6 pb-10 pt-1"
+              contentContainerClassName="px-6 pt-1"
+              // LA BARRE D'ONGLETS EST RENDUE PAR-DESSUS TOUT L'ÉCRAN (voir
+              // app/_layout.tsx) : sans cette réserve, la dernière carte se
+              // termine dessous. Calculée et non écrite en dur — la barre
+              // grandit avec le réglage de taille du texte.
+              contentContainerStyle={{ paddingBottom: espaceBarre + 16 }}
               refreshControl={refreshControl}
             >
               <Text className="mb-4 text-label leading-5 text-ink-soft">{t('factures.list.intro')}</Text>

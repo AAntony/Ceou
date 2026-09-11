@@ -1,7 +1,8 @@
 import { Image } from 'expo-image';
-import { useCallback, useState, type ReactElement } from 'react';
+import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
+import { useSpaceForAppTabBar } from '../../components/AppTabBar';
 import { Icon } from '../../components/Icon';
 import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
@@ -43,11 +44,19 @@ type ObjetsSansFactureListProps = {
   refreshControl: ReactElement<RefreshControlProps>;
 };
 
-const CONTENT_STYLE = { paddingHorizontal: 24, paddingTop: 4, paddingBottom: 40 };
-
 export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: ObjetsSansFactureListProps) {
   const { t } = useTranslation();
   const creer = useCreateFacture();
+
+  // LA BARRE D'ONGLETS EST RENDUE PAR-DESSUS TOUT L'ÉCRAN (voir
+  // app/_layout.tsx) : sans cette réserve, la dernière rangée se termine
+  // dessous. Calculée et non écrite en dur — la barre grandit avec le
+  // réglage de taille du texte.
+  const espaceBarre = useSpaceForAppTabBar();
+  const contentStyle = useMemo(
+    () => ({ paddingHorizontal: 24, paddingTop: 4, paddingBottom: espaceBarre + 16 }),
+    [espaceBarre],
+  );
 
   const [cible, setCible] = useState<ObjetSansFacture | null>(null);
   const feuille = useFeuilleFacture();
@@ -74,7 +83,7 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
         refreshControl={refreshControl}
         keyExtractor={(objet) => objet.id}
         renderItem={renderItem}
-        contentContainerStyle={CONTENT_STYLE}
+        contentContainerStyle={contentStyle}
         ListHeaderComponent={
           <Text className="mb-4 text-label leading-5 text-ink-soft">{t('factures.list.without_intro')}</Text>
         }

@@ -49,6 +49,30 @@ export function useAppTabBarHeight(): number {
 }
 
 /**
+ * La place à réserver en bas d'un écran pour ne pas passer sous la barre.
+ *
+ * ELLE EST RENDUE DEPUIS `app/_layout.tsx`, DONC PAR-DESSUS TOUT. Un écran
+ * qui pose une barre d'action collée en bas, ou une liste qui se termine au
+ * ras de l'écran, disparaît dessous — c'est le défaut signalé sur l'export
+ * des factures, où le bouton « Envoyer » était tout simplement invisible.
+ *
+ * CALCULÉE, ET SURTOUT PAS ÉCRITE EN DUR. La barre GRANDIT avec le réglage de
+ * taille du texte (voir useAppTabBarHeight) : un `pb-24` qui suffit à
+ * l'échelle normale laisse repasser le contenu dessous dès « Grande ». C'est
+ * la même raison qui a fait extraire useAppTabBarHeight pour le bouton de
+ * l'assistant — deux calculs séparés finissent toujours par diverger.
+ *
+ * L'encart système est compté dans les deux cas : là où la barre est masquée,
+ * c'est lui seul qui garde le contenu au-dessus des boutons du téléphone.
+ */
+export function useSpaceForAppTabBar(): number {
+  const insets = useSafeAreaInsets();
+  const height = useAppTabBarHeight();
+  const visible = useAppTabBarVisible();
+  return insets.bottom + (visible ? height : 0);
+}
+
+/**
  * Vrai sur les écrans où la barre d'onglets est réellement affichée.
  *
  * Extrait du rendu de AppTabBar plutôt que recopié : le bandeau « hors

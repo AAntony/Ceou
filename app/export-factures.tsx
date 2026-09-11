@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
+import { useSpaceForAppTabBar } from '../src/components/AppTabBar';
 import { Button } from '../src/components/Button';
 import { ButtonRow } from '../src/components/ButtonRow';
 import { EmptyState } from '../src/components/EmptyState';
@@ -54,6 +55,7 @@ export default function ExportFacturesScreen() {
   const { t } = useTranslation();
   const { habitationId } = useLocalSearchParams<{ habitationId?: string }>();
   const offline = useIsOffline();
+  const espaceBarre = useSpaceForAppTabBar();
 
   const { data, isLoading, isError, refetch } = useFacturesExportRows(true);
   const rows = useMemo(() => data ?? [], [data]);
@@ -166,7 +168,13 @@ export default function ExportFacturesScreen() {
                 au moment de décider : le nombre de cases cochées, lui, ne veut
                 rien dire, puisqu'une facture peut couvrir plusieurs objets et
                 ne s'imprime qu'une fois. */}
-            <View className="border-t border-ink/10 bg-surface px-6 pb-8 pt-4">
+            {/* ELLE MONTE AU-DESSUS DE LA BARRE D'ONGLETS, par un rembourrage
+                et non une marge : le fond continue ainsi derrière la barre,
+                au lieu de laisser une bande de sable entre les deux. */}
+            <View
+              className="border-t border-ink/10 bg-surface px-6 pt-4"
+              style={{ paddingBottom: espaceBarre + 16 }}
+            >
               <Text className="mb-3 text-center text-label text-ink">
                 {t('factures.export.selected', { count: choisies.length })}
               </Text>
