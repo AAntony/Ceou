@@ -56,7 +56,7 @@ export default function ObjetScreen() {
     ouvrirAjout: ouvrirAjoutFacture,
     liste: facturesListe,
     feuille: feuilleFacture,
-  } = useFactures(id, permission === 'owner');
+  } = useFactures(id, permission === 'owner', habitationId);
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');

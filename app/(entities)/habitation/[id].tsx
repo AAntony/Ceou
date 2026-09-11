@@ -82,10 +82,10 @@ export default function HabitationScreen() {
       <View className="flex-1 bg-sand">
         <View className="px-6 pt-4">
           {/* AU-DESSUS DES ONGLETS, ET SEULEMENT QUAND ELLE A QUELQUE CHOSE A
-              DIRE. Elle ne s'affiche pas tant qu'aucune facture n'existe dans
-              ce logement : on n'en ajoute pas depuis la, mais depuis la fiche
-              d'un objet. Vide, elle ne menerait nulle part tout en prenant sa
-              place en haut de la surface la plus parcourue de l'app. */}
+              DIRE — c'est-a-dire des factures, OU des objets qui n'en ont pas
+              encore. Seul un logement sans aucun objet la fait disparaitre :
+              la, elle ne menerait nulle part tout en prenant sa place en haut
+              de la surface la plus parcourue de l'app. */}
           <FacturesEntryCard habitationId={id} isOwner={permission === 'owner'} />
           <SegmentedTabs
             options={[

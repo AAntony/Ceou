@@ -830,12 +830,22 @@
     "entry": {
       "title": "Factures de ce logement",
       "count_one": "{{count}} facture",
-      "count_other": "{{count}} factures"
+      "count_other": "{{count}} factures",
+      "missing_one": "{{count}} objet sans preuve",
+      "missing_other": "{{count}} objets sans preuve"
     },
     "list": {
       "title": "Dossier",
+      "tab_with": "Avec facture",
+      "tab_without": "Sans facture",
+      "without_intro": "Ces objets n'ont aucune preuve d'achat. Touche-en un pour en ajouter une.",
+      "without_empty_title": "Tout est couvert",
+      "without_empty_hint": "Chaque objet de ce logement a sa preuve d'achat.",
+      "no_objet_title": "Ce logement est vide",
+      "no_objet_hint": "Ajoute des objets, puis leurs preuves d'achat.",
+      "add_for": "Ajouter une facture à {{name}}",
       "empty_title": "Aucune facture ici",
-      "empty_hint": "Les preuves d'achat s'ajoutent depuis la fiche d'un objet.",
+      "empty_hint": "Touche « Sans facture » pour en ajouter une, ou passe par la fiche d'un objet.",
       "total_on_one": "Total sur {{count}} facture chiffrée, sur {{sur}}",
       "total_on_other": "Total sur {{count}} factures chiffrées, sur {{sur}}",
       "warranty_until": "Sous garantie jusqu'au {{date}}",

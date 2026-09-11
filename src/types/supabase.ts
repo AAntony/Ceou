@@ -1140,6 +1140,16 @@ export type Database = {
           preset_key: string
         }[]
       }
+      objets_sans_facture: {
+        Args: { p_habitation_id: string }
+        Returns: {
+          id: string
+          name: string
+          parent_label: string
+          photo_url: string
+          piece_name: string
+        }[]
+      }
       piece_habitation: { Args: { p_piece_id: string }; Returns: string }
       piece_object_counts: {
         Args: { p_habitation_id: string }

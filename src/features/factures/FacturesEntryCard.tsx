@@ -3,19 +3,28 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { useThemeColors } from '../../lib/theme';
-import { useFacturesForHabitation } from './queries';
+import { useFacturesForHabitation, useObjetsSansFacture } from './queries';
 
 // LA PORTE D'ENTRÉE DU DOSSIER, POSÉE SUR L'HABITATION.
 //
 // Pourquoi là : on déclare un sinistre PAR LOGEMENT. La portée est donc
 // naturelle, et il n'y a aucun filtre à construire ni à comprendre.
 //
-// ELLE N'APPARAÎT QUE QUAND IL Y A QUELQUE CHOSE DEDANS, et ce n'est pas de
-// la timidité. On n'ajoute pas une facture depuis cette liste — ça se fait
-// depuis la fiche d'un objet, là où naît l'intention. Cette entrée-ci ne sert
-// qu'à RELIRE : vide, elle ne mènerait nulle part tout en prenant sa place en
-// haut de l'écran d'inventaire, qui est la surface la plus parcourue de
-// l'app. Même principe que la carte des prêts sur l'onglet Amis.
+// ELLE APPARAÎT DÈS QU'IL Y A QUELQUE CHOSE À DIRE — et depuis que le dossier
+// montre aussi ce qui MANQUE, « quelque chose à dire » veut dire : des
+// factures, ou des objets qui n'en ont pas.
+//
+// Elle ne s'affichait auparavant qu'à partir de la première facture, ce qui
+// rendait le second onglet inatteignable exactement pour qui en a le plus
+// besoin : quelqu'un qui a rempli son inventaire et n'a encore photographié
+// aucun ticket. Seul un logement réellement vide la fait disparaître — là,
+// elle ne mènerait nulle part tout en prenant sa place en haut de l'écran
+// d'inventaire, qui est la surface la plus parcourue de l'app.
+//
+// LE SOUS-TITRE DIT LES DEUX CHIFFRES quand les deux existent. Celui qui
+// compte est le second : « 34 objets sans preuve » est la seule information
+// qui appelle une action, et elle n'a aucune raison d'attendre qu'on ouvre
+// l'écran pour se montrer.
 
 type FacturesEntryCardProps = {
   habitationId: string;
@@ -26,10 +35,17 @@ type FacturesEntryCardProps = {
 export function FacturesEntryCard({ habitationId, isOwner }: FacturesEntryCardProps) {
   const { t } = useTranslation();
   const colors = useThemeColors();
-  const { data } = useFacturesForHabitation(isOwner ? habitationId : undefined);
+  const { data: factures } = useFacturesForHabitation(isOwner ? habitationId : undefined);
+  const { data: sansFacture } = useObjetsSansFacture(isOwner ? habitationId : undefined);
 
-  const factures = data ?? [];
-  if (!isOwner || factures.length === 0) return null;
+  const nbFactures = factures?.length ?? 0;
+  const nbManquants = sansFacture?.length ?? 0;
+  if (!isOwner || nbFactures + nbManquants === 0) return null;
+
+  const details = [
+    nbFactures > 0 ? t('factures.entry.count', { count: nbFactures }) : null,
+    nbManquants > 0 ? t('factures.entry.missing', { count: nbManquants }) : null,
+  ].filter(Boolean);
 
   return (
     <Pressable
@@ -41,7 +57,7 @@ export function FacturesEntryCard({ habitationId, isOwner }: FacturesEntryCardPr
       <Icon name="facture" size={20} color={colors.accentDark} />
       <View className="flex-1">
         <Text className="text-body text-ink">{t('factures.entry.title')}</Text>
-        <Text className="text-caption text-ink-soft">{t('factures.entry.count', { count: factures.length })}</Text>
+        <Text className="text-caption text-ink-soft">{details.join(' · ')}</Text>
       </View>
       <Icon name="chevron" size={18} color={colors.inkFaint} />
     </Pressable>

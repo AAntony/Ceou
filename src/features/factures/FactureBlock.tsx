@@ -28,7 +28,7 @@ import { useCreateFacture, useDeleteFacture, useFacturesForObjet, useUpdateFactu
 // morceaux à poser où il faut. Le projet a déjà ce motif : `usePullToRefresh`
 // rend un `<RefreshControl>`.
 
-export function useFactures(objetId: string, isOwner: boolean) {
+export function useFactures(objetId: string, isOwner: boolean, habitationId?: string) {
   const { t } = useTranslation();
   const { data } = useFacturesForObjet(isOwner ? objetId : '');
   const creer = useCreateFacture();
@@ -60,7 +60,9 @@ export function useFactures(objetId: string, isOwner: boolean) {
         warrantyUntil: valeurs.warrantyUntil,
       });
     } else {
-      creer.mutate({ objetId, ...valeurs });
+      // `habitationId` ne part pas en base : il dit seulement quel dossier
+      // rafraîchir sans attendre le réseau (voir useCreateFacture).
+      creer.mutate({ objetId, habitationId, ...valeurs });
     }
     setSheetOpen(false);
   };

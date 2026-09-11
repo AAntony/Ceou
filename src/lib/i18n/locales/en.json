@@ -830,12 +830,22 @@
     "entry": {
       "title": "Receipts for this home",
       "count_one": "{{count}} receipt",
-      "count_other": "{{count}} receipts"
+      "count_other": "{{count}} receipts",
+      "missing_one": "{{count}} item with no proof",
+      "missing_other": "{{count}} items with no proof"
     },
     "list": {
       "title": "Claim file",
+      "tab_with": "With receipt",
+      "tab_without": "No receipt",
+      "without_intro": "These items have no proof of purchase. Tap one to add it.",
+      "without_empty_title": "Everything is covered",
+      "without_empty_hint": "Every item in this home has its proof of purchase.",
+      "no_objet_title": "This home is empty",
+      "no_objet_hint": "Add items, then their proofs of purchase.",
+      "add_for": "Add a receipt to {{name}}",
       "empty_title": "No receipt here",
-      "empty_hint": "Proofs of purchase are added from an item's page.",
+      "empty_hint": "Tap “No receipt” to add one, or go through an item's page.",
       "total_on_one": "Total over {{count}} priced receipt, out of {{sur}}",
       "total_on_other": "Total over {{count}} priced receipts, out of {{sur}}",
       "warranty_until": "Under warranty until {{date}}",

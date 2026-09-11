@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '../auth/SessionProvider';
 import { isLocalUri } from '../../lib/images/media';
 import { supabase } from '../../lib/supabase/client';
@@ -64,9 +64,44 @@ export function useFacturesForHabitation(habitationId: string | undefined) {
   });
 }
 
+/**
+ * Ce qui MANQUE au dossier : les objets de ce logement qu'aucune facture ne
+ * couvre.
+ *
+ * L'envers de `useFacturesForHabitation`, et la moitié utile un mardi
+ * ordinaire : la liste des factures dit ce qu'on a fait, celle-ci dit ce qu'il
+ * reste à faire. Personne ne se souvient de ce qu'il n'a PAS photographié.
+ *
+ * RÉSERVÉE AU PROPRIÉTAIRE, et pas par pudeur : les liaisons facture/objet ne
+ * sont visibles que de lui (RLS), donc pour quelqu'un d'autre la fonction
+ * rendrait TOUT l'inventaire comme « sans facture ». Ce serait faux et
+ * inquiétant.
+ */
+export function useObjetsSansFacture(habitationId: string | undefined) {
+  return useQuery({
+    queryKey: ['objetsSansFacture', habitationId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('objets_sans_facture', { p_habitation_id: habitationId! });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: Boolean(habitationId),
+  });
+}
+
 type NouvelleFacture = {
   /** L'objet depuis lequel on l'ajoute : une facture n'est jamais orpheline. */
   objetId: string;
+  /**
+   * Le logement où se trouve cet objet, quand l'écran appelant le connaît.
+   *
+   * IL NE SERT QU'AU CACHE, jamais à l'écriture — une facture n'appartient à
+   * aucun logement, elle en hérite par ses objets (voir la migration). Mais
+   * les DEUX listes du dossier changent au moment où on en ajoute une : la
+   * facture entre dans l'une, l'objet sort de l'autre. Hors ligne, rien ne se
+   * rechargera pour le dire.
+   */
+  habitationId?: string;
   /** Chemin local du document choisi, ou adresse déjà connue. */
   document: string;
   amount: number | null;
@@ -77,6 +112,7 @@ type NouvelleFacture = {
 
 export function useCreateFacture() {
   const { session } = useSession();
+  const client = useQueryClient();
 
   return useLocalFirstWrite((input: NouvelleFacture) => {
     const id = newId();
@@ -137,10 +173,65 @@ export function useCreateFacture() {
           key: ['facturesForObjet', input.objetId],
           row: { ...facture, document_url: input.document, objets: [] },
         },
+        // ET DANS LE DOSSIER DU LOGEMENT, quand l'écran a dit lequel. La forme
+        // est celle que rend `factures_for_habitation` : un objet couvert, le
+        // nom de celui-là. L'écran retrie la liste lui-même, sinon la nouvelle
+        // venue s'ajouterait en queue au lieu de sa place chronologique.
+        ...(input.habitationId
+          ? [
+              {
+                key: ['facturesForHabitation', input.habitationId],
+                row: {
+                  ...facture,
+                  document_url: input.document,
+                  objet_count: 1,
+                  objet_names: [nomObjetEnCache(client, input.objetId)].filter(Boolean),
+                },
+              },
+            ]
+          : []),
       ],
+      // L'OBJET QUITTE LA LISTE DES ORPHELINS, tout de suite. C'est la moitié
+      // du geste : on vient de rayer une ligne d'une liste qu'on cherche à
+      // vider, et la voir rester donnerait le sentiment que rien n'a marché.
+      sets: retirerDesOrphelins(client, input.habitationId, input.objetId),
       result: facture,
     };
   });
+}
+
+/**
+ * Le nom d'un objet tel que le cache le connaît déjà.
+ *
+ * Il sert à nommer l'objet couvert dans la carte du dossier. Pris dans le
+ * cache et non demandé au réseau : ce geste doit marcher hors ligne, et
+ * l'écran qui l'a déclenché affichait le nom une seconde plus tôt.
+ */
+function nomObjetEnCache(client: ReturnType<typeof useQueryClient>, objetId: string): string {
+  const fiche = client.getQueryData<{ name?: string }>(['objet', objetId]);
+  if (fiche?.name) return fiche.name;
+
+  // Rien en cache si la facture est ajoutée depuis le dossier sans être
+  // jamais passé par la fiche : la liste des orphelins, elle, porte le nom.
+  const orphelins = client.getQueriesData<{ id: string; name: string }[]>({ queryKey: ['objetsSansFacture'] });
+  for (const [, liste] of orphelins) {
+    const trouve = liste?.find((objet) => objet.id === objetId);
+    if (trouve) return trouve.name;
+  }
+  return '';
+}
+
+/** La liste des objets sans facture, privée de celui qui vient d'en recevoir une. */
+function retirerDesOrphelins(
+  client: ReturnType<typeof useQueryClient>,
+  habitationId: string | undefined,
+  objetId: string,
+): { key: string[]; data: unknown }[] {
+  if (!habitationId) return [];
+  const key = ['objetsSansFacture', habitationId];
+  const liste = client.getQueryData<{ id: string }[]>(key);
+  if (!liste) return [];
+  return [{ key, data: liste.filter((objet) => objet.id !== objetId) }];
 }
 
 export function useUpdateFacture() {

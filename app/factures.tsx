@@ -1,20 +1,24 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
 import { Icon } from '../src/components/Icon';
 import { PhotoViewerModal } from '../src/components/PhotoViewerModal';
+import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
-import { useFacturesForHabitation } from '../src/features/factures/queries';
+import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
+import { useFacturesForHabitation, useObjetsSansFacture } from '../src/features/factures/queries';
+import { useHabitationPermission } from '../src/features/sharing/queries';
 import { useMediaSource } from '../src/lib/images/media';
 import { useScaled } from '../src/lib/textScale';
 import { useThemeColors } from '../src/lib/theme';
 
-// LE DOSSIER D'UN LOGEMENT : tout ce qui y est prouvé.
+// LE DOSSIER D'UN LOGEMENT : tout ce qui y est prouvé, et tout ce qui ne
+// l'est pas.
 //
 // C'est l'écran qu'on ouvre après un cambriolage, un incendie ou un dégât des
 // eaux — donc pressé, et dans un mauvais jour. Trois choix en découlent :
@@ -29,19 +33,59 @@ import { useThemeColors } from '../src/lib/theme';
 //  - LES MONTANTS S'ALIGNENT, en chiffres à chasse fixe. C'est ce qui permet
 //    de lire une colonne de sommes plutôt qu'une suite de nombres.
 //
-// Pas de bouton « ajouter » ici : une facture s'attache depuis la fiche de
-// l'objet qu'elle prouve. Cet écran-ci relit.
+// ═══ POURQUOI DEUX ONGLETS ═══
+//
+// Une liste de factures ne dit QUE ce qu'on a pensé à y mettre : elle paraît
+// toujours complète, puisqu'elle ne montre que ses propres lignes. Le trou —
+// les objets sans aucune preuve — ne se découvrait donc que le jour du
+// sinistre. Le second onglet le rend visible, et surtout traitable : chaque
+// rangée s'y règle sur place, sans quitter l'écran.
+//
+// L'ONGLET « AVEC FACTURE » LISTE DES FACTURES, PAS DES OBJETS, et c'est
+// délibéré : une facture couvre souvent plusieurs objets (une livraison de
+// meubles, une commande en ligne). La lister par objet afficherait le même
+// ticket trois fois et compterait trois fois son montant dans le total. Chaque
+// carte nomme déjà les objets qu'elle couvre. L'autre onglet, lui, est bien
+// une liste d'objets : il n'y a rien d'autre à y montrer.
+
+type Tab = 'avec' | 'sans';
 
 type FactureEntry = NonNullable<ReturnType<typeof useFacturesForHabitation>['data']>[number];
 
 export default function FacturesScreen() {
   const { t, i18n } = useTranslation();
   const { habitationId } = useLocalSearchParams<{ habitationId: string }>();
-  const { data, isLoading, isError, refetch } = useFacturesForHabitation(habitationId);
+  const { data: permission } = useHabitationPermission(habitationId);
+  // LES FACTURES SONT PRIVÉES À LEUR PROPRIÉTAIRE, et c'est ce qui interdit
+  // le second onglet à quiconque d'autre : les liaisons facture/objet lui
+  // étant invisibles (RLS), TOUT l'inventaire lui ressortirait « sans
+  // facture ». Un écran qui ment vaut moins qu'un écran qui manque.
+  const isOwner = permission === 'owner';
+
+  const [tab, setTab] = useState<Tab>('avec');
   const refreshControl = usePullToRefresh();
   const [apercu, setApercu] = useState<string | null>(null);
 
-  const factures = data ?? [];
+  const dossier = useFacturesForHabitation(habitationId);
+  const orphelins = useObjetsSansFacture(isOwner ? habitationId : undefined);
+
+  // LE MÊME ORDRE QUE CELUI DU SERVEUR, retenu ici aussi. Une facture ajoutée
+  // hors ligne est posée en fin de liste par la mise à jour optimiste : sans
+  // ce tri, elle apparaîtrait tout en bas du dossier au lieu de sa place
+  // chronologique, et on la croirait mal enregistrée.
+  const factures = useMemo(
+    () => [...(dossier.data ?? [])].sort((a, b) => cleDeTri(b).localeCompare(cleDeTri(a))),
+    [dossier.data],
+  );
+  const objets = orphelins.data ?? [];
+
+  const courant = tab === 'avec' ? dossier : orphelins;
+  // ON ATTEND LES DEUX, PAS SEULEMENT L'ONGLET REGARDÉ. Les deux listes se
+  // répondent : les compteurs des pastilles s'afficheraient l'un après
+  // l'autre, et surtout l'onglet « Sans facture » vide doit savoir si le
+  // dossier est vide lui aussi pour choisir ce qu'il annonce. Elles partent
+  // ensemble, donc l'attente ne coûte rien.
+  const chargement = dossier.isLoading || orphelins.isLoading;
   const chiffrees = factures.filter((f) => f.amount != null);
   const total = chiffrees.reduce((somme, f) => somme + Number(f.amount), 0);
 
@@ -52,37 +96,87 @@ export default function FacturesScreen() {
           retour. Même réabonnement que l'écran des prêts. */}
       <Stack.Screen options={{ headerShown: true, title: t('factures.list.title') }} />
 
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center bg-sand">
-          <ActivityIndicator />
-        </View>
-      ) : isError ? (
-        <View className="flex-1 bg-sand">
-          <ErrorState onRetry={() => refetch()} />
-        </View>
-      ) : factures.length === 0 ? (
-        <View className="flex-1 bg-sand">
-          <EmptyState icon="facture" title={t('factures.list.empty_title')} subtitle={t('factures.list.empty_hint')} />
-        </View>
-      ) : (
-        <ScrollView
-          className="flex-1 bg-sand"
-          contentContainerClassName="px-6 pb-10 pt-4"
-          refreshControl={refreshControl}
-        >
-          <Text className="mb-4 text-label leading-5 text-ink-soft">{t('factures.list.intro')}</Text>
+      <View className="flex-1 bg-sand">
+        {isOwner ? (
+          <View className="px-6 pt-4">
+            {/* LES COMPTEURS SONT DANS LES PASTILLES, et ce sont eux qui font
+                le travail : « Sans facture (34) » est l'information qu'on
+                vient chercher, elle ne devrait pas demander d'ouvrir
+                l'onglet. Ils n'apparaissent qu'une fois la liste chargée —
+                un « (0) » transitoire dirait le contraire de la vérité. */}
+            <SegmentedTabs
+              options={[
+                { value: 'avec', label: avecCompteur(t('factures.list.tab_with'), dossier.data?.length) },
+                { value: 'sans', label: avecCompteur(t('factures.list.tab_without'), orphelins.data?.length) },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+          </View>
+        ) : null}
 
-          <TotalCard total={total} chiffrees={chiffrees.length} sur={factures.length} langue={i18n.language} />
+        {chargement ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator />
+          </View>
+        ) : courant.isError ? (
+          <ErrorState onRetry={() => courant.refetch()} />
+        ) : tab === 'avec' ? (
+          factures.length === 0 ? (
+            <EmptyState icon="facture" title={t('factures.list.empty_title')} subtitle={t('factures.list.empty_hint')} />
+          ) : (
+            <ScrollView
+              className="flex-1"
+              contentContainerClassName="px-6 pb-10 pt-1"
+              refreshControl={refreshControl}
+            >
+              <Text className="mb-4 text-label leading-5 text-ink-soft">{t('factures.list.intro')}</Text>
 
-          {factures.map((facture) => (
-            <FactureCard key={facture.id} facture={facture} onOpen={() => setApercu(facture.document_url)} />
-          ))}
-        </ScrollView>
-      )}
+              <TotalCard total={total} chiffrees={chiffrees.length} sur={factures.length} langue={i18n.language} />
+
+              {factures.map((facture) => (
+                <FactureCard key={facture.id} facture={facture} onOpen={() => setApercu(facture.document_url)} />
+              ))}
+            </ScrollView>
+          )
+        ) : objets.length === 0 ? (
+          // DEUX VIDES DIFFÉRENTS, ET ILS NE DISENT PAS LA MÊME CHOSE. Aucun
+          // objet découvert alors qu'aucune facture n'existe non plus : le
+          // logement est vide, il n'y a rien à prouver. Aucun objet découvert
+          // alors que des factures existent : tout est couvert, et c'est une
+          // bonne nouvelle qu'il faut annoncer comme telle.
+          factures.length === 0 ? (
+            <EmptyState title={t('factures.list.no_objet_title')} subtitle={t('factures.list.no_objet_hint')} />
+          ) : (
+            <EmptyState
+              icon="validate"
+              title={t('factures.list.without_empty_title')}
+              subtitle={t('factures.list.without_empty_hint')}
+            />
+          )
+        ) : (
+          // ELLE PORTE SON PROPRE DÉFILEMENT, et c'est la seule des deux :
+          // cette liste-ci n'est bornée par rien — elle contient tous les
+          // objets du logement — donc elle est virtualisée. Le dossier, lui,
+          // compte autant de lignes qu'on a photographié de tickets, c'est-à-
+          // dire quelques dizaines au plus : un ScrollView y suffit.
+          <ObjetsSansFactureList habitationId={habitationId} objets={objets} refreshControl={refreshControl} />
+        )}
+      </View>
 
       <PhotoViewerModal visible={apercu !== null} uri={apercu} onClose={() => setApercu(null)} />
     </>
   );
+}
+
+/** Ce sur quoi le serveur trie le dossier : la date d'achat, à défaut celle de saisie. */
+function cleDeTri(facture: FactureEntry): string {
+  return facture.purchase_date ?? facture.created_at.slice(0, 10);
+}
+
+/** « Sans facture (34) », ou le seul libellé tant que le compte est inconnu. */
+function avecCompteur(libelle: string, compte: number | undefined): string {
+  return compte === undefined ? libelle : `${libelle} (${compte})`;
 }
 
 /**
