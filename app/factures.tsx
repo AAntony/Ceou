@@ -15,6 +15,7 @@ import { ExportProgress } from '../src/features/factures/ExportProgress';
 import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
 import {
+  lignesDe,
   nomsDesObjets,
   sousGarantie,
   useFacturesForHabitation,
@@ -125,7 +126,7 @@ export default function FacturesScreen() {
       // UN RAPPEL PAR LIGNE, pas par facture : deux objets du meme ticket
       // n'ont pas la meme duree de garantie.
       dossier.data.flatMap((facture) =>
-        facture.lignes.map((ligne) => ({
+        lignesDe(facture).map((ligne) => ({
           id: ligne.id,
           objet: ligne.name,
           warrantyUntil: ligne.warrantyUntil,
@@ -147,10 +148,10 @@ export default function FacturesScreen() {
         purchaseDate: facture.purchase_date,
         // LA PLUS LOINTAINE DES GARANTIES de la facture : le PDF en affiche
         // une par document, et c'est celle qui court encore qui renseigne.
-        warrantyUntil: garantieLaPlusLointaine(facture.lignes),
+        warrantyUntil: garantieLaPlusLointaine(lignesDe(facture)),
         documentUrl: facture.document_url,
         documentKind: facture.document_kind,
-        lignes: facture.lignes.map((ligne) => ({
+        lignes: lignesDe(facture).map((ligne) => ({
           name: ligne.name,
           amount: ligne.amount,
           warrantyUntil: ligne.warrantyUntil,
@@ -371,7 +372,7 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
   const titre = facture.vendor || date || t('factures.block.untitled');
   // AU MOINS UN OBJET ENCORE COUVERT suffit a allumer la pastille : la
   // facture reste utile tant qu'une seule de ses garanties court.
-  const couverte = sousGarantie(facture.lignes);
+  const couverte = sousGarantie(lignesDe(facture));
 
   return (
     <Pressable
@@ -421,7 +422,7 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
         </Text>
 
         <Text numberOfLines={1} className="text-caption text-ink-soft">
-          {[facture.vendor && date ? date : null, nomsDesObjets(facture.lignes).join(', ')].filter(Boolean).join(' · ')}
+          {[facture.vendor && date ? date : null, nomsDesObjets(lignesDe(facture)).join(', ')].filter(Boolean).join(' · ')}
         </Text>
       </View>
     </Pressable>

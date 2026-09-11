@@ -80,19 +80,36 @@ export type FactureDuDossier = {
  * et on se protège d'un `null` (une facture sans ligne n'existe pas, mais
  * `jsonb_agg` d'un ensemble vide rend `null`, pas `[]`).
  */
-function lignesDe(valeur: unknown): FactureLigne[] {
+function lignesDepuisJson(valeur: unknown): FactureLigne[] {
   return Array.isArray(valeur) ? (valeur as FactureLigne[]) : [];
 }
 
+/**
+ * Les lignes d'une facture, MÊME RELUE D'UN CACHE ÉCRIT AVANT ELLES.
+ *
+ * À utiliser partout plutôt que `facture.lignes` directement. Le type promet
+ * un tableau, le disque ne le promet pas : le cache est persisté sur sept
+ * jours, et une facture écrite par la version d'avant l'en-tête/lignes n'a pas
+ * ce champ. Le rendu y lisait `.length` et s'arrêtait avant d'afficher quoi
+ * que ce soit — c'est le défaut qui a fait planter chaque fiche d'objet.
+ *
+ * Le jeton de version du cache (voir queryClient) jette ces lignes-là au
+ * démarrage suivant ; ce garde-fou couvre l'instant d'avant, et le prochain
+ * changement de forme qu'on oubliera de lui signaler.
+ */
+export function lignesDe(facture: { lignes?: FactureLigne[] }): FactureLigne[] {
+  return Array.isArray(facture.lignes) ? facture.lignes : [];
+}
+
 /** Les lignes encore sous garantie à cet instant. */
-export function sousGarantie(lignes: FactureLigne[]): boolean {
+export function sousGarantie(lignes: FactureLigne[] | undefined): boolean {
   const maintenant = Date.now();
-  return lignes.some((ligne) => ligne.warrantyUntil && new Date(ligne.warrantyUntil).getTime() > maintenant);
+  return (lignes ?? []).some((ligne) => ligne.warrantyUntil && new Date(ligne.warrantyUntil).getTime() > maintenant);
 }
 
 /** Les noms des objets couverts, dans l'ordre où la fonction SQL les rend. */
-export function nomsDesObjets(lignes: FactureLigne[]): string[] {
-  return lignes.map((ligne) => ligne.name);
+export function nomsDesObjets(lignes: FactureLigne[] | undefined): string[] {
+  return (lignes ?? []).map((ligne) => ligne.name);
 }
 
 /**
@@ -109,7 +126,7 @@ export function useFacturesForObjet(objetId: string) {
     queryFn: async (): Promise<FactureDObjet[]> => {
       const { data, error } = await supabase.rpc('factures_for_objet', { p_objet_id: objetId });
       if (error) throw error;
-      return (data ?? []).map((row) => ({ ...row, lignes: lignesDe(row.lignes) }) as FactureDObjet);
+      return (data ?? []).map((row) => ({ ...row, lignes: lignesDepuisJson(row.lignes) }) as FactureDObjet);
     },
     enabled: Boolean(objetId),
   });
@@ -122,7 +139,7 @@ export function useFacturesForHabitation(habitationId: string | undefined) {
     queryFn: async (): Promise<FactureDuDossier[]> => {
       const { data, error } = await supabase.rpc('factures_for_habitation', { p_habitation_id: habitationId! });
       if (error) throw error;
-      return (data ?? []).map((row) => ({ ...row, lignes: lignesDe(row.lignes) }) as FactureDuDossier);
+      return (data ?? []).map((row) => ({ ...row, lignes: lignesDepuisJson(row.lignes) }) as FactureDuDossier);
     },
     enabled: Boolean(habitationId),
   });
@@ -363,8 +380,8 @@ function enLigneDeBase(factureId: string) {
 }
 
 /** La somme des lignes chiffrées, ou `null` si aucune ne l'est. */
-export function totalDesLignes(lignes: FactureLigne[]): number | null {
-  const chiffrees = lignes.filter((ligne) => ligne.amount != null);
+export function totalDesLignes(lignes: FactureLigne[] | undefined): number | null {
+  const chiffrees = (lignes ?? []).filter((ligne) => ligne.amount != null);
   if (chiffrees.length === 0) return null;
   return chiffrees.reduce((somme, ligne) => somme + Number(ligne.amount), 0);
 }

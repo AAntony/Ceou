@@ -236,7 +236,15 @@ const persister = createAsyncStoragePersister({
 // tels quels et replanterait — c'est exactement le cas que ce jeton existe
 // pour traiter. Les appareils déjà touchés repartent donc d'un cache vide,
 // qui se regarnit au premier démarrage avec du réseau.
-const CACHE_VERSION = 'v2';
+// v2 -> v3 : les factures ont changé de forme en passant en en-tête/lignes.
+// Les caches déjà écrits contiennent des lignes SANS `lignes` — le nouveau
+// rendu y lit `facture.lignes.length` et plante avant même d'afficher l'objet.
+// C'est le cas exact que ce jeton existe pour traiter, et il a été oublié : la
+// mise à jour est partie sans lui et l'app s'est arrêtée sur chaque fiche
+// d'objet. Les lectures de `lignes` sont depuis passées par un garde-fou, mais
+// jeter le cache reste le bon geste — un cache dans une forme périmée
+// afficherait des chiffres faux plutôt qu'une erreur franche.
+const CACHE_VERSION = 'v3';
 
 // LES MUTATIONS EN ATTENTE PARTENT SUR LE DISQUE ELLES AUSSI, et c'est ce qui
 // fait qu'une modification saisie hors-ligne survit à la fermeture de

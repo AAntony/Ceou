@@ -16,7 +16,7 @@ import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, datePlaceholder, formatDateInput, fromIsoDate, isDateIncomplete, toIsoDate } from './dateField';
 import { ObjetPickerModal } from './ObjetPickerModal';
-import type { FactureLigne, LigneSaisie } from './queries';
+import { lignesDe, type FactureLigne, type LigneSaisie } from './queries';
 
 // AJOUTER UNE FACTURE DOIT PRENDRE DIX SECONDES.
 //
@@ -380,7 +380,7 @@ function lignesInitiales(
   order: ReturnType<typeof dateOrderFor>,
 ): LigneEtat[] {
   if (facture) {
-    return facture.lignes.map((ligne) => ({
+    return lignesDe(facture).map((ligne) => ({
       id: ligne.id,
       objetId: ligne.objetId,
       name: ligne.name,

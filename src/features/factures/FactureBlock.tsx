@@ -12,6 +12,7 @@ import { ExportProgress } from './ExportProgress';
 import { FacturePickerModal } from './FacturePickerModal';
 import { FactureFormSheet, type ValeursFacture } from './FactureFormSheet';
 import {
+  lignesDe,
   useAttachFactureToObjet,
   useCreateFacture,
   useDeleteFacture,
@@ -95,7 +96,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         warrantyUntil: facture.warranty_until,
         documentUrl: facture.document_url,
         documentKind: facture.document_kind,
-        lignes: facture.lignes.map((ligne) => ({
+        lignes: lignesDe(facture).map((ligne) => ({
           name: ligne.name,
           amount: ligne.amount,
           warrantyUntil: ligne.warrantyUntil,
@@ -146,14 +147,14 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
                   confirmDelete(
                     t,
                     'factures.delete.title',
-                    facture.lignes.length > 1 ? 'factures.delete.message_shared' : 'factures.delete.message',
+                    lignesDe(facture).length > 1 ? 'factures.delete.message_shared' : 'factures.delete.message',
                     () =>
                       supprimer.mutate({
                         id: facture.id,
                         vendor: facture.vendor,
-                        ligneIds: facture.lignes.map((ligne) => ligne.id),
+                        ligneIds: lignesDe(facture).map((ligne) => ligne.id),
                       }),
-                    { count: facture.lignes.length },
+                    { count: lignesDe(facture).length },
                   )
                 }
               />
@@ -171,7 +172,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
      * une fausse alerte, et une fausse alerte dans une boîte de suppression
      * apprend à ne plus la lire.
      */
-    facturesPerdues: factures.filter((facture) => facture.lignes.length <= 1).length,
+    facturesPerdues: factures.filter((facture) => lignesDe(facture).length <= 1).length,
 
     /** À poser n'importe où : ce sont des modales. */
     feuille: isOwner ? (
@@ -234,7 +235,7 @@ function FactureRow({
   const date = fromIsoDate(facture.purchase_date, order);
   const titre = facture.vendor || date || t('factures.block.untitled');
   const garantieFinie = facture.warranty_until ? new Date(facture.warranty_until) < new Date() : null;
-  const partagee = facture.lignes.length > 1;
+  const partagee = lignesDe(facture).length > 1;
 
   return (
     <Pressable
@@ -280,7 +281,7 @@ function FactureRow({
           aussi les autres objets. */}
       {partagee ? (
         <View className="rounded-full bg-sand-dark px-2 py-0.5">
-          <Text className="text-caption text-ink-soft">{t('factures.block.covers', { count: facture.lignes.length })}</Text>
+          <Text className="text-caption text-ink-soft">{t('factures.block.covers', { count: lignesDe(facture).length })}</Text>
         </View>
       ) : null}
 
