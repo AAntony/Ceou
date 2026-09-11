@@ -1032,6 +1032,20 @@ export type Database = {
           warranty_until: string
         }[]
       }
+      factures_for_habitation: {
+        Args: { p_habitation_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          document_kind: string
+          document_url: string
+          facture_amount: number
+          id: string
+          lignes: Json
+          purchase_date: string
+          vendor: string
+        }[]
+      }
       factures_for_objet: {
         Args: { p_objet_id: string }
         Returns: {
@@ -1045,20 +1059,6 @@ export type Database = {
           purchase_date: string
           vendor: string
           warranty_until: string
-        }[]
-      }
-      factures_for_habitation: {
-        Args: { p_habitation_id: string }
-        Returns: {
-          amount: number
-          created_at: string
-          document_kind: string
-          document_url: string
-          facture_amount: number
-          id: string
-          lignes: Json
-          purchase_date: string
-          vendor: string
         }[]
       }
       friend_shared_habitation_counts: {
