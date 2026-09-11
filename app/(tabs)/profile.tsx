@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
-import { useNavigation } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
@@ -220,6 +220,24 @@ export default function ProfileScreen() {
         <View className="flex-1">
           <Text className="text-label font-semibold text-ink">{t('onboarding.replay')}</Text>
           <Text className="mt-0.5 text-caption text-ink-soft">{t('onboarding.entry_hint')}</Text>
+        </View>
+        <Icon name="chevron" size={20} color={colors.inkFaint} />
+      </Pressable>
+
+      {/* LES TUTORIELS JUSTE SOUS LE GUIDE, et pas ailleurs : les deux
+          apprennent l'app, et c'est ici qu'on vient quand on ne sait plus
+          comment on fait. Ils ne font pas double emploi — le guide se FAIT une
+          fois le premier jour et n'enseigne que le rangement ; les tutoriels
+          se RELISENT, et couvrent tout le reste. */}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/tutoriels')}
+        className="mt-3 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+      >
+        <Icon name="help" size={22} color={colors.accentDark} />
+        <View className="flex-1">
+          <Text className="text-label font-semibold text-ink">{t('tutoriels.entry_title')}</Text>
+          <Text className="mt-0.5 text-caption text-ink-soft">{t('tutoriels.entry_hint')}</Text>
         </View>
         <Icon name="chevron" size={20} color={colors.inkFaint} />
       </Pressable>

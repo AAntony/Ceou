@@ -280,6 +280,12 @@
       "search_hint": "La prochaine fois que tu cherches {{name}}, tape son nom sur l’accueil. Voilà ce que Céoù te répondra :",
       "voice_hint": "Tu peux aussi appuyer sur le micro et demander à voix haute : « où sont mes ciseaux ? »",
       "next_steps": "À toi de jouer : ajoute tes autres pièces, tes autres rangements, et tout ce que tu mets dedans. Plus Céoù en sait, plus il te fait gagner du temps.",
+      "more_title": "Céoù sait aussi…",
+      "more_factures": "Garder tes preuves d’achat, et te prévenir avant la fin d’une garantie.",
+      "more_partage": "Partager un logement avec tes proches, ou donner un accès limité.",
+      "more_prets": "Retenir ce que tu as prêté, et à qui.",
+      "more_plan": "Dessiner le plan de ton logement et y poser tes affaires.",
+      "more_link": "Voir les tutoriels",
       "finish": "Voir mon inventaire",
       "cycle_title": "Le tour est bouclé",
       "cycle_search": "Tu tapes le nom de ton objet sur l'accueil.",
@@ -967,6 +973,98 @@
       "delete": "La suppression de « {{name}} »",
       "move": "Le déplacement de « {{name}} »",
       "photo": "La photo de « {{name}} »"
+    }
+  },
+  "tutoriels": {
+    "entry_title": "Tutoriels",
+    "entry_hint": "Chaque fonctionnalité expliquée pas à pas, avec des exemples.",
+    "title": "Tutoriels",
+    "intro": "Prends-les dans l’ordre, ou pioche celui dont tu as besoin. Céoù retient ce que tu as lu.",
+    "search": "Chercher un tutoriel",
+    "search_empty": "Aucun tutoriel ne parle de ça.",
+    "progress_zero": "Aucun chapitre lu sur {{total}}",
+    "progress_one": "{{count}} chapitre lu sur {{total}}",
+    "progress_other": "{{count}} chapitres lus sur {{total}}",
+    "progress_all": "Tu as tout lu.",
+    "read": "Lu",
+    "mark_read": "J’ai lu ce chapitre",
+    "marked_read": "Chapitre lu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "goal": "Objectif",
+    "steps": "Étapes",
+    "tip": "Astuce",
+    "result": "Résultat",
+    "open_chapter": "Ouvrir le tutoriel {{name}}",
+    "demos": {
+      "rangement": {
+        "caption": "Chaque niveau contient le suivant. C’est ce chemin que Céoù te répondra.",
+        "habitation": "Maison",
+        "piece": "Cuisine",
+        "emplacement": "Commode",
+        "conteneur": "Boîte",
+        "objet": "Ciseaux"
+      },
+      "recherche": {
+        "caption": "Tape un nom sur l’accueil : la réponse est le chemin complet.",
+        "query": "ciseaux",
+        "result": "Ciseaux",
+        "path": "Maison › Cuisine › Commode › Boîte"
+      },
+      "tuile_facture": {
+        "caption": "Sur la fiche d’un objet, la tuile « Ajouter une facture ».",
+        "objet": "Perceuse",
+        "lieu": "Garage › Établi",
+        "move": "Déplacer",
+        "facture": "Ajouter une facture"
+      },
+      "dossier": {
+        "caption": "L’écran Factures d’un logement : ce qui est prouvé, et ce qui ne l’est pas.",
+        "tab_with": "Avec facture",
+        "tab_without": "Sans facture",
+        "vendor": "Darty",
+        "date": "12/09/2026",
+        "amount": "249,00 €",
+        "objet_1": "Perceuse",
+        "objet_2": "Scie sauteuse"
+      },
+      "export": {
+        "caption": "Le bouton d’export, en haut de l’écran Factures.",
+        "title": "Factures"
+      }
+    },
+    "chapters": {
+      "demarrer": {
+        "title": "Bien démarrer",
+        "summary": "Comprendre comment Céoù range, et ranger ton premier objet.",
+        "goal": "Ranger ta première affaire, et savoir la retrouver en tapant son nom.",
+        "steps": [
+          "Crée ton logement. Une maison, un appartement — mais aussi un garage, une cave ou un véhicule.",
+          "Ajoute une pièce : la cuisine, ta chambre. Un garage ou une cave n’en ont pas, on y range directement.",
+          "Ajoute un rangement dans cette pièce : une commode, une étagère, un placard, un bureau.",
+          "Si tes affaires sont dans une boîte, ajoute la boîte. Sinon, saute cette étape : elle n’est pas obligatoire.",
+          "Pose ton objet dedans, avec sa photo. Puis cherche-le depuis l’accueil."
+        ],
+        "tip": "Ne range pas tout d’un coup. Commence par ce que tu cherches le plus souvent : les papiers, les outils, les câbles, les chargeurs.",
+        "result": "Tu tapes « ciseaux » sur l’accueil, et Céoù te répond par le chemin complet. Tu peux aussi le lui demander à voix haute.",
+        "action": "Faire le guide de démarrage",
+        "action_hint": "Deux minutes, et il crée tout avec toi."
+      },
+      "factures": {
+        "title": "Tes factures et tes garanties",
+        "summary": "Garder la preuve de ce que tu possèdes, et l’envoyer d’un seul fichier.",
+        "goal": "Rattacher une preuve d’achat à tes objets, être prévenu avant la fin d’une garantie, et pouvoir tout envoyer à ton assureur.",
+        "steps": [
+          "Ouvre la fiche d’un objet et appuie sur « Ajouter une facture ».",
+          "Photographie le ticket — ou importe le PDF que le magasin t’a envoyé par courriel.",
+          "Note le vendeur, la date d’achat, le montant, et la fin de garantie si l’objet en a une.",
+          "Un même ticket peut couvrir plusieurs objets. Ouvre-le depuis l’écran Factures du logement et ajoute-les : chacun garde son montant et sa garantie.",
+          "Depuis la fiche d’un autre objet, choisis « Une déjà enregistrée » pour le rattacher au même ticket sans rephotographier le papier.",
+          "L’onglet « Sans facture » liste tout ce qui n’a pas encore de preuve. Le bouton d’export, en haut, fabrique le dossier complet."
+        ],
+        "tip": "Renseigne la fin de garantie même si elle te paraît lointaine. Céoù te prévient trente jours avant — c’est le seul moment où elle sert encore à quelque chose.",
+        "result": "Un seul PDF : le récapitulatif chiffré de tes achats, puis chaque document à l’appui. Prêt à partir par mail à ton assureur."
+      }
     }
   }
 }

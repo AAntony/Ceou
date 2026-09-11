@@ -280,6 +280,12 @@
       "search_hint": "Next time you look for {{name}}, type its name on the home screen. Here is what Céoù will answer:",
       "voice_hint": "You can also tap the microphone and ask out loud: \"where are my scissors?\"",
       "next_steps": "Over to you: add your other rooms, your other storage spots, and everything you put inside them. The more Céoù knows, the more time it saves you.",
+      "more_title": "Céoù can also…",
+      "more_factures": "Keep your proofs of purchase, and warn you before a warranty ends.",
+      "more_partage": "Share a home with people close to you, or grant limited access.",
+      "more_prets": "Remember what you lent, and to whom.",
+      "more_plan": "Draw your home’s floor plan and place your belongings on it.",
+      "more_link": "See the tutorials",
       "finish": "See my inventory",
       "cycle_title": "Full circle",
       "cycle_search": "You type your item name on the home screen.",
@@ -967,6 +973,98 @@
       "delete": "Deleting “{{name}}”",
       "move": "Moving “{{name}}”",
       "photo": "The photo of “{{name}}”"
+    }
+  },
+  "tutoriels": {
+    "entry_title": "Tutorials",
+    "entry_hint": "Every feature explained step by step, with examples.",
+    "title": "Tutorials",
+    "intro": "Take them in order, or pick the one you need. Céoù remembers what you have read.",
+    "search": "Search the tutorials",
+    "search_empty": "No tutorial covers that.",
+    "progress_zero": "No chapter read out of {{total}}",
+    "progress_one": "{{count}} chapter read out of {{total}}",
+    "progress_other": "{{count}} chapters read out of {{total}}",
+    "progress_all": "You have read everything.",
+    "read": "Read",
+    "mark_read": "I have read this chapter",
+    "marked_read": "Chapter read",
+    "previous": "Previous",
+    "next": "Next",
+    "goal": "Goal",
+    "steps": "Steps",
+    "tip": "Tip",
+    "result": "Result",
+    "open_chapter": "Open the {{name}} tutorial",
+    "demos": {
+      "rangement": {
+        "caption": "Each level holds the next. That path is what Céoù answers with.",
+        "habitation": "House",
+        "piece": "Kitchen",
+        "emplacement": "Dresser",
+        "conteneur": "Box",
+        "objet": "Scissors"
+      },
+      "recherche": {
+        "caption": "Type a name on the home screen: the answer is the full path.",
+        "query": "scissors",
+        "result": "Scissors",
+        "path": "House › Kitchen › Dresser › Box"
+      },
+      "tuile_facture": {
+        "caption": "On an item page, the “Add a receipt” tile.",
+        "objet": "Drill",
+        "lieu": "Garage › Workbench",
+        "move": "Move",
+        "facture": "Add a receipt"
+      },
+      "dossier": {
+        "caption": "A home’s Receipts screen: what is proven, and what is not.",
+        "tab_with": "With receipt",
+        "tab_without": "Without receipt",
+        "vendor": "Darty",
+        "date": "12/09/2026",
+        "amount": "€249.00",
+        "objet_1": "Drill",
+        "objet_2": "Jigsaw"
+      },
+      "export": {
+        "caption": "The export button, at the top of the Receipts screen.",
+        "title": "Receipts"
+      }
+    },
+    "chapters": {
+      "demarrer": {
+        "title": "Getting started",
+        "summary": "Understand how Céoù stores things, and put your first item away.",
+        "goal": "Put your first belonging away, and know how to find it by typing its name.",
+        "steps": [
+          "Create your home. A house, a flat — but also a garage, a cellar or a vehicle.",
+          "Add a room: the kitchen, your bedroom. A garage or a cellar has none, you store things directly there.",
+          "Add a storage unit in that room: a dresser, a shelf, a cupboard, a desk.",
+          "If your things are in a box, add the box. Otherwise skip this step: it is not required.",
+          "Put your item inside, with its photo. Then search for it from the home screen."
+        ],
+        "tip": "Do not store everything at once. Start with what you look for most often: papers, tools, cables, chargers.",
+        "result": "You type “scissors” on the home screen, and Céoù answers with the full path. You can also ask out loud.",
+        "action": "Run the getting-started guide",
+        "action_hint": "Two minutes, and it creates everything with you."
+      },
+      "factures": {
+        "title": "Your receipts and warranties",
+        "summary": "Keep proof of what you own, and send it as a single file.",
+        "goal": "Attach proof of purchase to your items, get warned before a warranty ends, and be able to send it all to your insurer.",
+        "steps": [
+          "Open an item page and tap “Add a receipt”.",
+          "Photograph the till receipt — or import the PDF the shop emailed you.",
+          "Note the seller, the purchase date, the amount, and the warranty end date if the item has one.",
+          "One receipt can cover several items. Open it from the home’s Receipts screen and add them: each keeps its own amount and warranty.",
+          "From another item page, choose “One already saved” to attach it to the same receipt without photographing the paper again.",
+          "The “Without receipt” tab lists everything with no proof yet. The export button, at the top, builds the complete file."
+        ],
+        "tip": "Fill in the warranty end date even when it feels far off. Céoù warns you thirty days before — the only moment it can still be of use.",
+        "result": "A single PDF: the itemised summary of your purchases, then every supporting document. Ready to email your insurer."
+      }
     }
   }
 }
