@@ -36,7 +36,11 @@ export function Button({ label, loading, variant = 'primary', icon, disabled, ..
   // Le tourniquet doit se voir SUR le bouton, pas dedans : sa couleur suit
   // celle du libelle qu'il remplace le temps de l'attente.
   const spinnerColor =
-    variant === 'primary' || variant === 'danger' ? '#fff' : variant === 'outline' ? colors.accentDark : colors.ink;
+    variant === 'primary' || variant === 'danger' || variant === 'destructive'
+      ? '#fff'
+      : variant === 'outline'
+        ? colors.accentDark
+        : colors.ink;
 
   return (
     <Pressable

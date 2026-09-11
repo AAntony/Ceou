@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/Icon';
@@ -15,6 +15,7 @@ import { useHabitations } from '../inventory/queries';
 import { defaultReminderDays, scheduleInviteReminder } from '../notifications/inviteReminders';
 import { expiryInDays, formatInviteQrValue, useCreateShareInvite } from './queries';
 import { useThemeColors } from '../../lib/theme';
+import { showMessage } from '../../lib/dialog';
 
 type ShareInviteModalProps = {
   visible: boolean;
@@ -120,7 +121,7 @@ export function ShareInviteModal({ visible, onClose }: ShareInviteModalProps) {
       );
     } catch (err) {
       logClientError(err, { source: 'share_invite', habitationCount: selectedHabitationIds.length });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

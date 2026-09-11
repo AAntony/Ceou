@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   KeyboardAvoidingView,
   Modal,
@@ -43,6 +42,7 @@ import { ChoiceStep, type ChoiceOption } from './ChoiceStep';
 import { PathRail, levelChipClass, useLevelColor, type RailItem } from './PathRail';
 import { Pop } from './Pop';
 import type { LocationType } from '../../types/database';
+import { showMessage } from '../../lib/dialog';
 
 // LE GUIDE DE DÉMARRAGE.
 //
@@ -474,7 +474,7 @@ function HabitationStep({ onPicked }: { onPicked: (picked: PickedHabitation) => 
       onPicked({ id: created.id, name: created.name, icon: definition.icon, type: definition.key });
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'habitation' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -545,7 +545,7 @@ function PieceStep({
       .catch((err) => {
         resolved.current = false;
         logClientError(err, { source: 'onboarding', step: 'piece_repair' });
-        Alert.alert(t('common.error_generic'));
+        showMessage(t('common.error_generic'));
       });
   }, [singleSpace, isSuccess, pieces, onPicked, createPiece, habitation.name, t]);
 
@@ -555,7 +555,7 @@ function PieceStep({
       onPicked({ id: created.id, name: created.name, icon: option.icon, hidden: false });
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'piece' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -619,7 +619,7 @@ function EmplacementStep({ piece, onPicked }: { piece: PickedPiece; onPicked: (p
       onPicked({ id: created.id, name: created.name, icon: option.icon });
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'emplacement' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -675,7 +675,7 @@ function ConteneurStep({
       onPicked({ id: created.id, name: created.name, icon: option.icon });
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'conteneur' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -744,7 +744,7 @@ function ObjetStep({
       onCreated({ id: created.id, name: created.name, icon: 'objet' });
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'objet' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -806,7 +806,7 @@ function PlanStep({
       onCreated(created);
     } catch (err) {
       logClientError(err, { source: 'onboarding', step: 'plan' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

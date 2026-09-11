@@ -845,6 +845,7 @@
       "message_shared": "Cette facture couvre {{count}} objets : elle disparaîtra de tous, pas seulement de celui-ci.",
       "action": "Supprimer cette facture",
       "detach": "Retirer cet objet de la facture",
+      "detach_confirm": "Retirer",
       "detach_title": "Retirer cet objet ?",
       "detach_message_one": "La facture reste, avec son autre objet.",
       "detach_message_other": "La facture reste, avec ses {{count}} autres objets.",

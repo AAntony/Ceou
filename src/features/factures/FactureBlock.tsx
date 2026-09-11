@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { confirmDelete } from '../../lib/confirmDelete';
+import { showDialog } from '../../lib/dialog';
 import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
@@ -108,13 +109,23 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
 
     const ligne = lignes.find((candidate) => candidate.objetId === objetId);
     if (partagee && ligne) {
-      confirmDelete(
-        t,
-        'factures.delete.detach_title',
-        'factures.delete.detach_message',
-        () => detacher.mutate({ ligneId: ligne.id, vendor: facture.vendor }),
-        { count: lignes.length - 1 },
-      );
+      // PAS `confirmDelete` ICI : son bouton dit « Supprimer », et ce n'est
+      // pas ce qui se passe — la facture reste, seul cet objet s'en detache.
+      // Meme regle que le libelle rouge qui ouvre cette boite (plus bas) : le
+      // bouton doit dire ce qu'il fait. Il reste rouge, parce que c'est le
+      // meme geste vu a deux moments.
+      showDialog({
+        title: t('factures.delete.detach_title'),
+        message: t('factures.delete.detach_message', { count: lignes.length - 1 }),
+        actions: [
+          {
+            label: t('factures.delete.detach_confirm'),
+            destructive: true,
+            onPress: () => detacher.mutate({ ligneId: ligne.id, vendor: facture.vendor }),
+          },
+          { label: t('common.cancel'), cancel: true },
+        ],
+      });
       return;
     }
 
@@ -164,11 +175,15 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
       // magasin avec quatre chaises et un seul document. La deuxieme chaise ne
       // doit pas rephotographier le meme papier — elle se rattache a la
       // facture deja saisie. Le geste courant reste en tete de liste.
-      Alert.alert(t('factures.block.add'), t('factures.block.add_choice'), [
-        { text: t('factures.block.add_new'), onPress: () => feuilleEtat.ouvrir() },
-        { text: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
-        { text: t('common.cancel'), style: 'cancel' },
-      ]);
+      showDialog({
+        title: t('factures.block.add'),
+        message: t('factures.block.add_choice'),
+        actions: [
+          { label: t('factures.block.add_new'), onPress: () => feuilleEtat.ouvrir() },
+          { label: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
+          { label: t('common.cancel'), cancel: true },
+        ],
+      });
     },
 
     /** Vrai quand l'objet en a déjà une : la tuile d'ajout n'a plus lieu d'être. */

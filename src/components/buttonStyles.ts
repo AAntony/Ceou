@@ -30,13 +30,19 @@
 //                partage par toutes les fiches (Groupe, Ami, Objet, forme du
 //                Plan, pastille d'Emplacement) pour rester homogene d'un
 //                ecran a l'autre plutot que chacun sa variante de texte rouge.
+// - `destructive` : la CONFIRMATION du geste irreversible, dans la boite de
+//                dialogue ou elle est l'action principale. Meme forme que
+//                `primary`, en rouge. La nuance avec `danger` tient en un mot :
+//                `danger` DEMANDE la suppression depuis une fiche,
+//                `destructive` la VALIDE depuis la boite qui s'ouvre ensuite —
+//                d'ou la meme couleur, et la forme du bouton principal.
 // - `tile`     : carte-bouton avec pastille d'icone, pour deux ou trois
 //                actions de MEME RANG posees cote a cote (Deplacer / Preter
 //                sur la fiche d'un objet). L'icone fait le travail que le
 //                libelle seul ne faisait pas : reperer l'action sans lire.
 //                A poser dans un ButtonRow, qui gere la mise cote a cote et
 //                l'empilement en gros texte.
-export type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'danger' | 'tile';
+export type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'danger' | 'destructive' | 'tile';
 
 // Le socle commun : tout bouton de l'app centre son contenu et s'attenue
 // sous le doigt. Une pression qui ne repond pas laisse croire au bouton mort.
@@ -58,6 +64,9 @@ export const BUTTON_SURFACE: Record<ButtonVariant, string> = {
   ghost: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-transparent`,
   outline: `${BUTTON_BASE} ${BUTTON_BLOCK} border-2 border-coral bg-coral-light`,
   danger: `${BUTTON_BASE} ${BUTTON_PILL} bg-red-500`,
+  // Le MEME rouge que la pastille, volontairement : c'est le meme geste, vu a
+  // deux moments. Un second rouge ferait douter qu'il s'agisse du meme.
+  destructive: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-red-500`,
   tile: `${BUTTON_BASE} ${BUTTON_TILE} border border-ink/10 bg-surface`,
 };
 
@@ -68,6 +77,7 @@ export const BUTTON_LABEL: Record<ButtonVariant, string> = {
   ghost: 'text-center text-body font-semibold text-ink',
   outline: 'text-center text-body font-semibold text-coral-dark',
   danger: 'text-center text-label font-semibold text-white',
+  destructive: 'text-center text-body font-semibold text-white',
   tile: 'text-center text-label font-semibold text-ink',
 };
 

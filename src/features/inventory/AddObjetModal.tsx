@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { logClientError } from '../../lib/errorLogging';
 import type { LocationType } from '../../types/database';
@@ -11,6 +11,7 @@ import { ObjetFormBody, type CollectedObjet } from './ObjetFormBody';
 import { useCreateObjet, useCreateObjetsBulk } from './queries';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
+import { showMessage } from '../../lib/dialog';
 
 type AddObjetModalProps = {
   visible: boolean;
@@ -79,13 +80,13 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
       } else if (pendingScan) {
         const result = await createObjetsBulk.mutateAsync({ parentType: type, parentId: id, items: pendingScan });
         if (result.photoFailures > 0) {
-          Alert.alert(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
+          showMessage(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
         }
       }
       onClose();
     } catch (err) {
       logClientError(err, { source: 'add_objet_modal', step: 'save', mode: pendingScan ? 'scan' : 'manual' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     } finally {
       setSaving(false);
     }

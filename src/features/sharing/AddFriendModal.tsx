@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import { looksLikeInviteCode, parseScannedCode, useRedeemShareInvite, useSendFriendRequest } from './queries';
 import { rpcErrorCode } from './rpcError';
 import { QrScanner } from './QrScanner';
+import { showMessage } from '../../lib/dialog';
 
 type AddFriendModalProps = {
   visible: boolean;
@@ -61,14 +62,14 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
     // avant l'aller-retour, et surtout le dire précisément — « aucun compte
     // ne correspond » laisserait croire à une faute de frappe.
     if (looksLikeInviteCode(code)) {
-      Alert.alert(t('friends.add.error_guest_code'));
+      showMessage(t('friends.add.error_guest_code'));
       return;
     }
     try {
       await sendRequest.mutateAsync(code.trim());
       onClose();
     } catch (error) {
-      Alert.alert(t(friendlyErrorKey(error)));
+      showMessage(t(friendlyErrorKey(error)));
     }
   };
 
@@ -83,14 +84,14 @@ export function AddFriendModal({ visible, onClose }: AddFriendModalProps) {
         // Aucun ami n'a été ajouté : ce QR ouvrait un accès invité. Sans ce
         // message, la feuille se refermait et une habitation inconnue
         // apparaissait sur l'accueil sans explication.
-        if (result.type === 'guest') Alert.alert(t('friends.add.guest_redeemed'));
+        if (result.type === 'guest') showMessage(t('friends.add.guest_redeemed'));
       } else {
-        Alert.alert(t('friends.add.invalid_qr'));
+        showMessage(t('friends.add.invalid_qr'));
         return;
       }
       onClose();
     } catch (error) {
-      Alert.alert(t(friendlyErrorKey(error)));
+      showMessage(t(friendlyErrorKey(error)));
     }
   };
 

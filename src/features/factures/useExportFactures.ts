@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert } from 'react-native';
+import { showDialog, showMessage } from '../../lib/dialog';
 import { logClientError } from '../../lib/errorLogging';
 import { dateOrderFor, fromIsoDate } from './dateField';
 import { envoyerParMail, partager } from './exportDelivery';
@@ -102,7 +102,7 @@ export function useExportFactures() {
         );
       } catch (error) {
         logClientError(error, { source: 'facture_export', count: cibles.length });
-        Alert.alert(t('factures.export.error'));
+        showMessage(t('factures.export.error'));
         return;
       } finally {
         setTravail(null);
@@ -114,11 +114,15 @@ export function useExportFactures() {
       // sert plus à rien.
       if (resultat.manquants > 0) {
         await new Promise<void>((resoudre) => {
-          Alert.alert(
-            t('factures.export.missing', { count: resultat.manquants }),
-            t('factures.export.missing_hint'),
-            [{ text: t('common.done'), onPress: () => resoudre() }],
-          );
+          showDialog({
+            title: t('factures.export.missing', { count: resultat.manquants }),
+            message: t('factures.export.missing_hint'),
+            actions: [{ label: t('common.done'), onPress: () => resoudre() }],
+            // L'APPUI À CÔTÉ RÉPOND LUI AUSSI. Une promesse attend cette
+            // boîte : refermée sans réponse, l'export resterait suspendu pour
+            // toujours — écran figé sur un PDF déjà écrit.
+            onDismiss: () => resoudre(),
+          });
         });
       }
 
@@ -126,13 +130,13 @@ export function useExportFactures() {
         if (mode === 'mail') {
           await envoyerParMail(resultat.uri, { sujet: titre, corps: t('factures.export.mail_body') });
         } else if (!(await partager(resultat.uri, titre))) {
-          Alert.alert(t('factures.export.no_share'));
+          showMessage(t('factures.export.no_share'));
         }
       } catch (error) {
         // Le fichier EXISTE : seul l'acheminement a échoué. On le dit, mais on
         // ne prétend pas que l'export n'a pas eu lieu.
         logClientError(error, { source: 'facture_export_livraison', mode });
-        Alert.alert(t('factures.export.no_share'));
+        showMessage(t('factures.export.no_share'));
       }
     },
     [i18n.language, t],
@@ -142,11 +146,15 @@ export function useExportFactures() {
   const demander = useCallback(
     (cibles: FactureACibler[]) => {
       if (cibles.length === 0) return;
-      Alert.alert(t('factures.export.title'), t('factures.export.choose'), [
-        { text: t('factures.export.mail'), onPress: () => void exporter(cibles, 'mail') },
-        { text: t('factures.export.save'), onPress: () => void exporter(cibles, 'partage') },
-        { text: t('common.cancel'), style: 'cancel' },
-      ]);
+      showDialog({
+        title: t('factures.export.title'),
+        message: t('factures.export.choose'),
+        actions: [
+          { label: t('factures.export.mail'), onPress: () => exporter(cibles, 'mail') },
+          { label: t('factures.export.save'), onPress: () => exporter(cibles, 'partage') },
+          { label: t('common.cancel'), cancel: true },
+        ],
+      });
     },
     [exporter, t],
   );

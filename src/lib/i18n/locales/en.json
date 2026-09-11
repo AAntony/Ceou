@@ -845,6 +845,7 @@
       "message_shared": "This receipt covers {{count}} items: it will disappear from all of them, not just this one.",
       "action": "Delete this receipt",
       "detach": "Remove this item from the receipt",
+      "detach_confirm": "Remove",
       "detach_title": "Remove this item?",
       "detach_message_one": "The receipt stays, with its other item.",
       "detach_message_other": "The receipt stays, with its {{count}} other items.",

@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { ButtonRow } from '../../components/ButtonRow';
@@ -19,6 +19,7 @@ import { PLACEHOLDER_IMAGES } from '../inventory/placeholders';
 import { dateOrderFor, datePlaceholder, formatDateInput, fromIsoDate, isDateIncomplete, toIsoDate } from './dateField';
 import { ObjetPickerModal } from './ObjetPickerModal';
 import { lignesDe, type FactureLigne, type LigneSaisie } from './queries';
+import { showMessage } from '../../lib/dialog';
 
 // AJOUTER UNE FACTURE DOIT PRENDRE DIX SECONDES.
 //
@@ -162,7 +163,7 @@ export function FactureFormSheet({
       if (uri) setDocument(uri);
     } catch (error) {
       logClientError(error, { source: 'facture_form', step: source });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

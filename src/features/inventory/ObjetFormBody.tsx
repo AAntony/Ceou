@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { FormActions } from '../../components/FormActions';
 import { TextField } from '../../components/TextField';
@@ -12,6 +12,7 @@ import type { LocationType } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
 import { BarcodeScanner } from './BarcodeScanner';
 import { useCreateObjet } from './queries';
+import { showMessage } from '../../lib/dialog';
 
 export type CollectedObjet = { name: string; description: string | null; localPhotoUri: string | null; barcode: string | null };
 
@@ -71,7 +72,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
       const result = await lookupBarcode(code);
       if (result?.title) setName(result.title);
       if (result?.imageUrl) setLocalPhotoUri(result.imageUrl);
-      if (!result?.title) Alert.alert(t('inventory.objet.scan_not_found'));
+      if (!result?.title) showMessage(t('inventory.objet.scan_not_found'));
     } finally {
       setLookupLoading(false);
     }
@@ -100,7 +101,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
       });
     } catch (err) {
       logClientError(err, { source: 'objet_form', step: 'create', parentType });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
       return;
     }
 

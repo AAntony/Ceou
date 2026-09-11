@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Share, Text, View } from 'react-native';
 import { BottomSheetModal } from '../src/components/BottomSheetModal';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
@@ -12,6 +12,7 @@ import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { TextField } from '../src/components/TextField';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { syncInviteReminders } from '../src/features/notifications/inviteReminders';
+import { showDialog, showMessage } from '../src/lib/dialog';
 import { logClientError } from '../src/lib/errorLogging';
 import { STACK_SCALE, useTextScale } from '../src/lib/textScale';
 import { useThemeColors } from '../src/lib/theme';
@@ -188,7 +189,7 @@ export default function InvitesScreen() {
       setRenewEntry(null);
     } catch (error) {
       logClientError(error, { source: 'renew_invite' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -197,27 +198,28 @@ export default function InvitesScreen() {
   // modèle choisi (« l'accès suit le code ») mais ce n'est pas devinable
   // depuis un bouton « Supprimer ».
   const confirmDelete = (entry: ShareInviteEntry) => {
-    Alert.alert(
-      t('invites.delete_title'),
-      entry.useCount > 0
-        ? t('invites.delete_body_used', { used: entry.useCount })
-        : t('invites.delete_body_unused'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
+    showDialog({
+      title: t('invites.delete_title'),
+      message:
+        entry.useCount > 0
+          ? t('invites.delete_body_used', { used: entry.useCount })
+          : t('invites.delete_body_unused'),
+      actions: [
         {
-          text: t('common.delete'),
-          style: 'destructive',
+          label: t('common.delete'),
+          destructive: true,
           onPress: async () => {
             try {
               await deleteInvite.mutateAsync(entry.id);
             } catch (error) {
               logClientError(error, { source: 'delete_invite' });
-              Alert.alert(t('common.error_generic'));
+              showMessage(t('common.error_generic'));
             }
           },
         },
+        { label: t('common.cancel'), cancel: true },
       ],
-    );
+    });
   };
 
   const shareEntry = async (entry: ShareInviteEntry) => {

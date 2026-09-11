@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { FormActions } from '../../components/FormActions';
@@ -8,6 +8,7 @@ import { TextField } from '../../components/TextField';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { logClientError } from '../../lib/errorLogging';
 import { useCreateFriendCategory, useDeleteFriendCategory, useRenameFriendCategory, type FriendCategory } from './categories';
+import { showMessage } from '../../lib/dialog';
 
 // Création et modification d'une catégorie d'amis.
 //
@@ -48,7 +49,7 @@ export function FriendCategorySheet({ visible, category, onClose }: FriendCatego
       onClose();
     } catch (error) {
       logClientError(error, { source: 'friend_category_sheet' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
@@ -60,7 +61,7 @@ export function FriendCategorySheet({ visible, category, onClose }: FriendCatego
         onClose();
       } catch (error) {
         logClientError(error, { source: 'friend_category_sheet_delete' });
-        Alert.alert(t('common.error_generic'));
+        showMessage(t('common.error_generic'));
       }
     });
   };

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { PLACEHOLDER_IMAGES, type EntityLevel } from '../features/inventory/placeholders';
 import { logClientError } from '../lib/errorLogging';
 import { useMediaSource } from '../lib/images/media';
@@ -8,6 +8,7 @@ import { pickImage, takePhoto } from '../lib/images/pickAndUploadImage';
 import { STACK_SCALE, useScaled, useTextScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon } from './Icon';
+import { showMessage } from '../lib/dialog';
 
 // Choix de photo, commun aux quatre niveaux de l'inventaire.
 //
@@ -60,7 +61,7 @@ export function EntityPhotoField({ level, photoUri, onChange }: EntityPhotoField
       if (uri) onChange(uri);
     } catch (error) {
       logClientError(error, { source: 'entity_photo_field', level });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

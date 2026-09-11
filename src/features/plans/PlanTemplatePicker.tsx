@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { logClientError } from '../../lib/errorLogging';
 import { useApplyPlanTemplate } from './queries';
 import { PLAN_TEMPLATES, TEMPLATE_BLOCK, templateRoomsForWorld, type PlanTemplate } from './templates';
 import { useThemeColors } from '../../lib/theme';
+import { showMessage } from '../../lib/dialog';
 
 // État vide d'un plan : on propose des logements types au lieu d'une feuille
 // blanche.
@@ -59,7 +60,7 @@ export function PlanTemplatePicker({ planId }: { planId: string }) {
       await applyTemplate.mutateAsync(templateRoomsForWorld(selected));
     } catch (error) {
       logClientError(error, { source: 'apply_plan_template', template: selected.id });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

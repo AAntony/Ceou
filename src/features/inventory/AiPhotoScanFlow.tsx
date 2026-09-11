@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
@@ -16,6 +16,7 @@ import { useProfile, useSetAiConsent } from '../profile/useProfile';
 import { useCreateObjetsBulk } from './queries';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
+import { showMessage } from '../../lib/dialog';
 
 export type CollectedScanItem = { name: string; localPhotoUri: string };
 
@@ -73,7 +74,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
     try {
       const detections = await detectObjects(uri);
       if (detections.length === 0) {
-        Alert.alert(t('inventory.aiScan.no_detections'));
+        showMessage(t('inventory.aiScan.no_detections'));
         setStep('capture');
         return;
       }
@@ -98,7 +99,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       if (!(err instanceof RateLimitedError)) {
         logClientError(err, { source: 'ai_photo_scan', step: 'detect' });
       }
-      Alert.alert(
+      showMessage(
         err instanceof RateLimitedError
           ? t('inventory.aiScan.rate_limited', { seconds: err.retryAfterSeconds })
           : t('common.error_generic'),
@@ -135,7 +136,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       await setAiPhotoConsent.mutateAsync();
     } catch (err) {
       logClientError(err, { source: 'ai_photo_scan', step: 'consent' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
       return;
     }
     if (source) startCapture(source);
@@ -164,11 +165,11 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
     try {
       const result = await createObjetsBulk.mutateAsync({ parentType, parentId, items: collected });
       if (result.photoFailures > 0) {
-        Alert.alert(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
+        showMessage(t('inventory.aiScan.saved_with_photo_failures', { count: result.photoFailures }));
       }
     } catch (err) {
       logClientError(err, { source: 'ai_photo_scan', step: 'bulk_create', count: collected.length });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
       return;
     }
     onDone();

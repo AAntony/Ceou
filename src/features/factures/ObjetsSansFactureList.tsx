@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
+import { FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
 import { useSpaceForAppTabBar } from '../../components/AppTabBar';
 import { Icon } from '../../components/Icon';
+import { showDialog } from '../../lib/dialog';
 import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
@@ -71,11 +72,15 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
       // ou un ticket deja saisi. On vide cette liste apres une course, et les
       // objets d'une meme course partagent leur facture — ne proposer que la
       // creation obligerait a rephotographier le meme papier autant de fois.
-      Alert.alert(t('factures.block.add'), t('factures.block.add_choice'), [
-        { text: t('factures.block.add_new'), onPress: () => ouvrirFeuille() },
-        { text: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
-        { text: t('common.cancel'), style: 'cancel' },
-      ]);
+      showDialog({
+        title: t('factures.block.add'),
+        message: t('factures.block.add_choice'),
+        actions: [
+          { label: t('factures.block.add_new'), onPress: () => ouvrirFeuille() },
+          { label: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
+          { label: t('common.cancel'), cancel: true },
+        ],
+      });
     },
     [ouvrirFeuille, t],
   );

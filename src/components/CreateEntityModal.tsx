@@ -1,11 +1,12 @@
 import { type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { logClientError } from '../lib/errorLogging';
 import { BottomSheetModal } from './BottomSheetModal';
 import { Button } from './Button';
 import { FormActions } from './FormActions';
 import { TextField } from './TextField';
+import { showMessage } from '../lib/dialog';
 
 type CreateEntityModalProps = {
   visible: boolean;
@@ -62,7 +63,7 @@ export function CreateEntityModal({
       await onSubmit(name.trim());
     } catch (err) {
       logClientError(err, { source: 'create_entity_modal', title });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 

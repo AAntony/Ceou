@@ -8,6 +8,7 @@ import { AppState, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedSplash } from '../src/components/AnimatedSplash';
+import { AppDialogHost } from '../src/components/AppDialogHost';
 import { AppTabBar } from '../src/components/AppTabBar';
 import { OfflineBanner, useHasTopBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -148,6 +149,11 @@ function AppShell() {
       {splashDone ? null : (
         <AnimatedSplash ready={!isLoading} onFinish={markSplashDone} onPainted={hideNativeSplash} />
       )}
+
+      {/* APRES LE CALQUE, et monte ici plutot que dans un ecran : toute l'app
+          demande ses confirmations et ses messages par `showDialog`, y compris
+          depuis des hooks qui n'ont pas d'ecran a eux (voir lib/dialog.ts). */}
+      <AppDialogHost />
     </>
   );
 }

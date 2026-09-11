@@ -1,7 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-speech-recognition';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
 import { normalize } from '../../lib/text/match';
@@ -16,6 +15,7 @@ import { parseMove, splitClosing } from './phrase';
 import { locationSentence, normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
 import { pickVariant } from './wording';
+import { showMessage } from '../../lib/dialog';
 
 // L'ASSISTANT EST UNE SESSION, PAS UNE QUESTION.
 //
@@ -711,7 +711,7 @@ export function useAssistant() {
       return;
     }
     endSession(null);
-    Alert.alert(i18n.t('home.voice_search_error'));
+    showMessage(i18n.t('home.voice_search_error'));
   });
 
   /**
@@ -806,7 +806,7 @@ export function useAssistant() {
       if (!granted) {
         activeRef.current = false;
         setState(EMPTY);
-        Alert.alert(i18n.t('home.voice_search_permission_message'));
+        showMessage(i18n.t('home.voice_search_permission_message'));
         return;
       }
       microphoneGranted = true;

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Animated, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
@@ -26,6 +26,7 @@ import {
 } from '../../lib/textScale';
 import { logClientError } from '../../lib/errorLogging';
 import { useThemeColors } from '../../lib/theme';
+import { showMessage } from '../../lib/dialog';
 
 // En dessous de cette taille, un "mot" est presque toujours un mot de
 // liaison (un, le, la, de...) plutôt qu'un vrai terme de recherche — la
@@ -352,7 +353,7 @@ export function HomeDashboard() {
       await setAssistantConsent.mutateAsync();
     } catch (err) {
       logClientError(err, { source: 'assistant', step: 'consent' });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
       return;
     }
     setAssistantConsentOpen(false);

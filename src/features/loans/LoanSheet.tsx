@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { FormActions } from '../../components/FormActions';
 import { SegmentedTabs } from '../../components/SegmentedTabs';
@@ -9,6 +9,7 @@ import { logClientError } from '../../lib/errorLogging';
 import { scheduleLoanReminder } from '../notifications/loanReminders';
 import { useFriendships } from '../sharing/queries';
 import { dueInDays, useCreatePret, type PretDirection } from './queries';
+import { showMessage } from '../../lib/dialog';
 
 type LoanSheetProps = {
   visible: boolean;
@@ -106,7 +107,7 @@ export function LoanSheet({ visible, onClose, objetId, objetName }: LoanSheetPro
       onClose();
     } catch (err) {
       logClientError(err, { source: 'loan_create', direction });
-      Alert.alert(t('common.error_generic'));
+      showMessage(t('common.error_generic'));
     }
   };
 
