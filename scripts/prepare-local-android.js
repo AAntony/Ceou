@@ -37,6 +37,7 @@ const ROOT = path.join(__dirname, '..');
 const CHANNEL = process.argv[2] || 'preview';
 
 const CREDENTIALS = path.join(ROOT, 'credentials.json');
+const LOCAL_PROPS = path.join(ROOT, 'android', 'local.properties');
 const GRADLE_PROPS = path.join(ROOT, 'android', 'gradle.properties');
 const APP_GRADLE = path.join(ROOT, 'android', 'app', 'build.gradle');
 const MANIFEST = path.join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
@@ -61,7 +62,32 @@ if (!keystore || !keystore.keystorePath) fail('credentials.json ne contient pas 
 const storePath = path.resolve(ROOT, keystore.keystorePath);
 if (!fs.existsSync(storePath)) fail(`Magasin de cles introuvable : ${keystore.keystorePath}`);
 
-// === 1. Les secrets dans gradle.properties ===============================
+// === 1. Le chemin du SDK Android =========================================
+// Gradle le cherche dans `local.properties` ou dans ANDROID_HOME, et sur
+// cette machine ni l'un ni l'autre n'existe : le SDK est bien installé, au
+// chemin standard d'Android Studio, mais aucune variable d'environnement ne
+// le désigne. Sans cette ligne, le build s'arrête sur « SDK location not
+// found », qui est l'échec le plus fréquent d'un premier build local — et
+// celui qui ressemble le moins à sa cause.
+//
+// `local.properties` vit dans android/, donc hors du dépôt, et disparaît à
+// chaque prebuild comme le reste : il se réécrit ici.
+const sdk =
+  process.env.ANDROID_HOME ||
+  process.env.ANDROID_SDK_ROOT ||
+  (process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Android', 'Sdk') : '');
+
+if (!sdk || !fs.existsSync(sdk)) {
+  fail(
+    'SDK Android introuvable. Installe-le par Android Studio, ou designe-le\n' +
+      '  avec la variable ANDROID_HOME.',
+  );
+}
+// Barres obliques, pour la même raison que le chemin du magasin de clés
+// ci-dessous : un .properties lit l'antislash comme une échappée.
+fs.writeFileSync(LOCAL_PROPS, `sdk.dir=${sdk.replace(/\\/g, '/')}\n`);
+
+// === 2. Les secrets dans gradle.properties ===============================
 // Plutôt qu'en arguments de ligne de commande : ils y apparaîtraient dans
 // l'historique du terminal et dans la liste des processus. gradle.properties
 // vit dans android/, donc hors du dépôt.
@@ -82,7 +108,7 @@ props =
   `CEOU_KEY_PASSWORD=${keystore.keyPassword}\n`;
 fs.writeFileSync(GRADLE_PROPS, props);
 
-// === 2. La configuration de signature dans app/build.gradle ==============
+// === 3. La configuration de signature dans app/build.gradle ==============
 let gradle = fs.readFileSync(APP_GRADLE, 'utf8');
 
 if (!gradle.includes('ceouRelease')) {
@@ -118,7 +144,7 @@ if (gradle.includes(releaseSigning)) {
 }
 fs.writeFileSync(APP_GRADLE, gradle);
 
-// === 3. Lint désactivé sur les variantes release =========================
+// === 4. Lint désactivé sur les variantes release =========================
 // `lintVital` casse ici sur react-native-screens, et c'est de l'analyse
 // statique : elle ne dit rien de la validité de l'APK. L'exclure en ligne de
 // commande ne marche pas — retirer la tâche qui PRODUIT le rapport laisse
@@ -138,7 +164,7 @@ ${lintAnchor}`,
   fs.writeFileSync(APP_GRADLE, gradle);
 }
 
-// === 4. Le canal de mise à jour dans le manifeste ========================
+// === 5. Le canal de mise à jour dans le manifeste ========================
 // expo-updates lit une carte d'en-têtes HTTP sérialisée en JSON sous cette
 // clé, et transmet le canal via l'en-tête `expo-channel-name` (voir
 // UpdatesConfiguration.kt dans expo-updates).
@@ -155,6 +181,7 @@ const lineEnd = manifest.indexOf('\n', urlTagAt) + 1;
 manifest = manifest.slice(0, lineEnd) + headersTag + manifest.slice(lineEnd);
 fs.writeFileSync(MANIFEST, manifest);
 
+console.log(`  SDK Android : ${sdk}`);
 console.log(`  Signature   : cle EAS, alias ${keystore.keyAlias}`);
 console.log(`  Canal OTA   : ${CHANNEL}`);
 console.log('  Pret. Construis avec : cd android && ./gradlew assembleRelease');

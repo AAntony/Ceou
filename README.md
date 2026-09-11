@@ -29,10 +29,52 @@ npx supabase db push              # applique les migrations
 npx supabase gen types typescript --project-id neessqtornvankriouwd > src/types/supabase.ts
 ```
 
-## EAS
+## Build Android
 
-Le projet est lié à `@m-ajestic/ceou`. Profils de build dans `eas.json` (`development`, `preview`, `production`).
+**En local, par défaut.** Un build sur les serveurs EAS est réservé à la
+production.
 
 ```bash
-npx eas-cli build --profile development --platform android
+npx expo prebuild --platform android --clean
+node scripts/prepare-local-android.js
+cd android && ./gradlew assembleRelease
+```
+
+L'APK sort dans `android/app/build/outputs/apk/release/`.
+
+`android/` est ignoré par git et entièrement regénéré par `prebuild` : le
+script est donc à relancer **après chaque prebuild**. Il rebranche trois
+choses que le gabarit d'Expo ne connaît pas et dont l'absence ne se voit pas
+tout de suite — le chemin du SDK, la vraie clé de signature (sans elle, l'APK
+est signé avec la clé de debug et refuse de s'installer par-dessus un build
+EAS), et le canal de mise à jour (sans lui, l'APK ne reçoit jamais d'OTA).
+Les raisons sont écrites en tête du script.
+
+Prérequis, une fois : JDK 17, le SDK Android, et les identifiants de signature
+récupérés depuis EAS.
+
+```bash
+npx eas-cli credentials
+```
+
+*Android > credentials.json > Download*. Ça dépose `credentials.json` et le
+magasin de clés, qui portent le mot de passe en clair — les deux sont ignorés
+par git, ne jamais les versionner.
+
+Un autre canal que `preview` se passe en argument :
+`node scripts/prepare-local-android.js production`.
+
+## EAS
+
+Le projet est lié à `@m-ajestic/ceou`. Profils de build dans `eas.json`
+(`development`, `preview`, `production`). À réserver à la production.
+
+```bash
+npx eas-cli build --profile production --platform android
+```
+
+Les mises à jour OTA, elles, passent toujours par EAS Update.
+
+```bash
+npx eas-cli update --branch preview --environment preview --message "..."
 ```
