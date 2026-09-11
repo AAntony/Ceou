@@ -588,11 +588,9 @@ export function useFacturesARattacher(objetId: string, enabled: boolean) {
     queryFn: async (): Promise<FactureARattacher[]> => {
       const { data, error } = await supabase.rpc('factures_a_rattacher', { p_objet_id: objetId });
       if (error) throw error;
-      // LE TYPE EST ÉCRIT À LA MAIN, comme `ExportRow` : `lignes` arrive en
-      // `Json`, que TypeScript ne sait pas relire, et les types générés suivent
-      // la migration d'un cran — ils sont régénérés après qu'elle est appliquée.
-      const rangees = (data ?? []) as unknown as (Omit<FactureARattacher, 'lignes'> & { lignes: unknown })[];
-      return rangees.map((rangee) => ({ ...rangee, lignes: lignesDepuisJson(rangee.lignes) }));
+      // `lignes` arrive en `Json`, que TypeScript ne sait pas relire : on la
+      // ramène à sa forme ici, comme les deux autres lectures de facture.
+      return (data ?? []).map((row) => ({ ...row, lignes: lignesDepuisJson(row.lignes) }) as FactureARattacher);
     },
     enabled: enabled && Boolean(objetId),
   });

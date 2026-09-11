@@ -1008,9 +1008,11 @@ export type Database = {
         Returns: {
           amount: number
           created_at: string
+          document_kind: string
           document_url: string
+          facture_amount: number
           id: string
-          objet_names: string[]
+          lignes: Json
           purchase_date: string
           vendor: string
         }[]
