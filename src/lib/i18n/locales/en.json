@@ -604,6 +604,8 @@
       "history_empty": "No move yet.",
       "delete_confirm_title": "Delete this item?",
       "delete_confirm_message": "This action cannot be undone.",
+      "delete_confirm_factures_one": "This action cannot be undone. {{count}} proof of purchase covers only this item: it will be deleted with it. Export it first if you want to keep it.",
+      "delete_confirm_factures_other": "This action cannot be undone. {{count}} proofs of purchase cover only this item: they will be deleted with it. Export them first if you want to keep them.",
       "view_on_plan": "View on plan",
       "view_on_plan_hint": "Tap here to see it on the plan."
     },

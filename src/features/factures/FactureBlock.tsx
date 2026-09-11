@@ -88,6 +88,17 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
     ouvrirAjout: () => ouvrir(undefined),
 
     /**
+     * Combien de preuves d'achat disparaîtraient avec cet objet.
+     *
+     * CELLES QUI NE COUVRENT QUE LUI, et elles seules : une facture partagée
+     * avec d'autres objets leur survit (voir le déclencheur
+     * purge_facture_sans_objet). Annoncer « 3 factures seront supprimées »
+     * quand deux resteront serait une fausse alerte, et une fausse alerte
+     * dans une boîte de suppression apprend à ne plus la lire.
+     */
+    facturesPerdues: factures.filter((facture) => facture.objets.length <= 1).length,
+
+    /**
      * La liste, ou `null` quand il n'y a rien.
      *
      * LES FACTURES D'AUTRUI N'EXISTENT PAS POUR LUI, et il ne faut pas le lui

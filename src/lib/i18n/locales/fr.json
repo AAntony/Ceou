@@ -604,6 +604,8 @@
       "history_empty": "Aucun déplacement pour l'instant.",
       "delete_confirm_title": "Supprimer cet objet ?",
       "delete_confirm_message": "Cette action est irréversible.",
+      "delete_confirm_factures_one": "Cette action est irréversible. {{count}} preuve d'achat ne couvre que cet objet : elle sera supprimée avec lui. Exporte-la avant si tu veux la garder.",
+      "delete_confirm_factures_other": "Cette action est irréversible. {{count}} preuves d'achat ne couvrent que cet objet : elles seront supprimées avec lui. Exporte-les avant si tu veux les garder.",
       "view_on_plan": "Voir sur le plan",
       "view_on_plan_hint": "Appuie ici pour le voir sur le plan."
     },

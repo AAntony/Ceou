@@ -56,6 +56,7 @@ export default function ObjetScreen() {
     ouvrirAjout: ouvrirAjoutFacture,
     liste: facturesListe,
     feuille: feuilleFacture,
+    facturesPerdues,
   } = useFactures(id, permission === 'owner', habitationId);
 
   const [name, setName] = useState('');
@@ -109,10 +110,20 @@ export default function ObjetScreen() {
   };
 
   const handleDelete = () => {
-    confirmDelete(t, 'inventory.objet.delete_confirm_title', 'inventory.objet.delete_confirm_message', async () => {
-      await deleteObjet.mutateAsync(id);
-      router.back();
-    });
+    // LA SUPPRESSION EN ENTRAINE UNE AUTRE, ET ELLE DOIT LE DIRE. Une preuve
+    // d'achat qui ne couvre que cet objet part avec lui (declencheur
+    // purge_facture_sans_objet). C'est irreversible et ca ne se devine pas :
+    // la boite le nomme, et invite a exporter avant.
+    confirmDelete(
+      t,
+      'inventory.objet.delete_confirm_title',
+      facturesPerdues > 0 ? 'inventory.objet.delete_confirm_factures' : 'inventory.objet.delete_confirm_message',
+      async () => {
+        await deleteObjet.mutateAsync(id);
+        router.back();
+      },
+      { count: facturesPerdues },
+    );
   };
 
   if (isError) {
