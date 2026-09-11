@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '../auth/SessionProvider';
 import { isLocalUri } from '../../lib/images/media';
 import { supabase } from '../../lib/supabase/client';
 import type { Facture } from '../../types/database';
 import { newId } from '../../lib/uuid';
 import { deleteOp, deleteWhereOp, insertOp, updateOp, uploadOp, useLocalFirstWrite } from '../../lib/writeQueue';
+import { cancelWarrantyReminder, scheduleWarrantyReminder } from '../notifications/warrantyReminders';
 import type { ExportRow } from './exportTree';
 
 // LES FACTURES S'ÉCRIVENT COMME LE RESTE : par la file, jamais en direct.
@@ -138,11 +140,28 @@ type NouvelleFacture = {
 export function useCreateFacture() {
   const { session } = useSession();
   const client = useQueryClient();
+  const { t, i18n } = useTranslation();
 
   return useLocalFirstWrite((input: NouvelleFacture) => {
     const id = newId();
     const userId = session!.user.id;
     const local = isLocalUri(input.document);
+
+    // LE RAPPEL DE GARANTIE SE POSE ICI, PAS DEPUIS L'ÉCRAN. Une facture
+    // s'ajoute depuis la fiche d'un objet comme depuis le dossier d'un
+    // logement : le poser dans chaque écran, c'est l'oublier dans le
+    // prochain. Programmé sur l'appareil, il ne dépend ni du réseau ni du
+    // serveur — voir warrantyReminders.
+    void scheduleWarrantyReminder(
+      {
+        id,
+        objets: [nomObjetEnCache(client, input.objetId)].filter(Boolean),
+        warrantyUntil: input.warrantyUntil,
+        habitationId: input.habitationId ?? null,
+      },
+      t,
+      i18n.language,
+    );
 
     const facture: Facture = {
       id,
@@ -261,6 +280,7 @@ function retirerDesOrphelins(
 
 export function useUpdateFacture() {
   const { session } = useSession();
+  const { t, i18n } = useTranslation();
 
   return useLocalFirstWrite(
     (input: {
@@ -274,8 +294,29 @@ export function useUpdateFacture() {
        * n'y a pas touché, un chemin local si on vient de le rephotographier.
        */
       document?: string;
+      /**
+       * Les deux seuls champs qui ne partent PAS en base : de quoi réécrire le
+       * rappel de garantie, qui doit nommer l'objet et savoir où renvoyer.
+       *
+       * Corriger une date de fin de garantie doit déplacer le rappel tout de
+       * suite — et l'effacer doit le retirer. Sans ça, le téléphone
+       * continuerait d'annoncer une échéance que la facture ne porte plus.
+       */
+      objets?: string[];
+      habitationId?: string;
     }) => {
       const userId = session!.user.id;
+
+      void scheduleWarrantyReminder(
+        {
+          id: input.id,
+          objets: input.objets ?? [],
+          warrantyUntil: input.warrantyUntil,
+          habitationId: input.habitationId ?? null,
+        },
+        t,
+        i18n.language,
+      );
       // REMPLACER LE DOCUMENT, ET PAS SEULEMENT LES QUATRE CHAMPS. La feuille
       // montre « Photographier » et « Choisir une image » en modification
       // aussi : sans cette branche, on reprenait en photo une facture floue,
@@ -321,14 +362,21 @@ export function useUpdateFacture() {
 }
 
 export function useDeleteFacture() {
-  return useLocalFirstWrite((input: { id: string; vendor: string | null }) => ({
-    describe: { kind: 'delete' as const, name: input.vendor ?? '' },
-    // La liaison part en cascade côté base (`on delete cascade`) : rien à
-    // supprimer ici. Le fichier du bucket, lui, reste — comme les photos
-    // d'objets supprimés. Le ménage se fait à la suppression du compte.
-    ops: [deleteOp('factures', input.id)],
-    result: undefined,
-  }));
+  return useLocalFirstWrite((input: { id: string; vendor: string | null }) => {
+    // Le rappel de garantie part avec elle, et depuis la mutation plutôt que
+    // depuis un écran : on supprime une facture aussi bien depuis la fiche
+    // d'un objet que depuis le dossier.
+    void cancelWarrantyReminder(input.id);
+
+    return {
+      describe: { kind: 'delete' as const, name: input.vendor ?? '' },
+      // La liaison part en cascade côté base (`on delete cascade`) : rien à
+      // supprimer ici. Le fichier du bucket, lui, reste — comme les photos
+      // d'objets supprimés. Le ménage se fait à la suppression du compte.
+      ops: [deleteOp('factures', input.id)],
+      result: undefined,
+    };
+  });
 }
 
 /** Rattacher la même facture à un autre objet qu'elle couvre. */

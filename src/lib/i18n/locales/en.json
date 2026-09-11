@@ -857,6 +857,12 @@
       "no_amount": "No amount entered",
       "open_document": "Edit receipt {{name}}"
     },
+    "warranty": {
+      "title": "A warranty ends soon",
+      "body": "The warranty on {{objet}} ends on {{date}}. If something is wrong, now is the time.",
+      "objets_one": "{{name}} and {{count}} other",
+      "objets_other": "{{name}} and {{count}} others"
+    },
     "export": {
       "title": "Export",
       "entry": "Export receipts",

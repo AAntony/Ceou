@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSpaceForAppTabBar } from '../src/components/AppTabBar';
@@ -17,6 +17,7 @@ import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactur
 import { useFacturesForHabitation, useObjetsSansFacture, useUpdateFacture } from '../src/features/factures/queries';
 import { useExportFactures } from '../src/features/factures/useExportFactures';
 import { useFeuilleFacture } from '../src/features/factures/useFeuilleFacture';
+import { syncWarrantyReminders } from '../src/features/notifications/warrantyReminders';
 import { useHabitationPermission } from '../src/features/sharing/queries';
 import { useMediaSource } from '../src/lib/images/media';
 import { useScaled } from '../src/lib/textScale';
@@ -105,6 +106,25 @@ export default function FacturesScreen() {
   const chargement = dossier.isLoading || orphelins.isLoading;
   const chiffrees = factures.filter((f) => f.amount != null);
   const total = chiffrees.reduce((somme, f) => somme + Number(f.amount), 0);
+
+  // REMET LES RAPPELS DE GARANTIE EN PHASE AVEC LA REALITE. Ils sont
+  // programmes sur l'appareil : une date corrigee ailleurs, une facture
+  // supprimee depuis un autre telephone, ou l'app reinstallee — et ce qui
+  // etait pose ne correspond plus. Repartir de la liste evite d'avoir a
+  // traiter chacun de ces cas. Meme montage que l'ecran des prets.
+  useEffect(() => {
+    if (!dossier.data || !isOwner) return;
+    void syncWarrantyReminders(
+      dossier.data.map((facture) => ({
+        id: facture.id,
+        objets: facture.objet_names,
+        warrantyUntil: facture.warranty_until,
+        habitationId,
+      })),
+      t,
+      i18n.language,
+    );
+  }, [dossier.data, isOwner, habitationId, t, i18n.language]);
 
   const exporterCelleCi = (facture: FactureEntry) => {
     feuille.fermer();
@@ -248,6 +268,10 @@ export default function FacturesScreen() {
                 purchaseDate: valeurs.purchaseDate,
                 warrantyUntil: valeurs.warrantyUntil,
                 document: valeurs.document,
+                // Ces deux-là ne partent pas en base : ils servent à replacer
+                // le rappel de garantie.
+                objets: enEdition.objet_names,
+                habitationId,
               });
             }
             feuille.fermer();

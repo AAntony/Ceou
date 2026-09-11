@@ -70,9 +70,23 @@ function NotificationRouter({ userId }: { userId: string | undefined }) {
     queryClient.invalidateQueries({ queryKey: ['friendships'] });
     queryClient.invalidateQueries({ queryKey: ['habitationShares'] });
     queryClient.invalidateQueries({ queryKey: ['prets'] });
+    queryClient.invalidateQueries({ queryKey: ['facturesForHabitation'] });
 
-    const url = lastResponse.notification.request.content.data?.url;
+    const data = lastResponse.notification.request.content.data;
+
+    const url = data?.url;
     if (typeof url === 'string' && ALLOWED_ROUTES.has(url)) router.push(url);
+
+    // LE DOSSIER D'UN LOGEMENT NE PEUT PAS TENIR DANS LA LISTE BLANCHE : sa
+    // route porte un identifiant, et une liste d'adresses exactes ne peut pas
+    // les prévoir. On garde pourtant la règle qui la justifie — le message ne
+    // nomme JAMAIS d'écran. Il annonce ce dont il parle (`kind`) et de quoi,
+    // et c'est cette ligne-ci, écrite dans l'app, qui décide où aller. Un
+    // identifiant fabriqué ne mènerait qu'à un dossier vide : la RLS ne rend
+    // que les factures de son propriétaire.
+    if (data?.kind === 'warranty_ending' && typeof data.habitationId === 'string') {
+      router.push({ pathname: '/factures', params: { habitationId: data.habitationId } });
+    }
     // `queryClient` est une référence stable, mais le lister évite qu'une
     // relecture future prenne son absence pour un oubli.
   }, [lastResponse, userId, queryClient]);

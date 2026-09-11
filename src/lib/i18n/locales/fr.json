@@ -857,6 +857,12 @@
       "no_amount": "Montant non renseigné",
       "open_document": "Modifier la facture {{name}}"
     },
+    "warranty": {
+      "title": "Une garantie se termine bientôt",
+      "body": "La garantie de {{objet}} se termine le {{date}}. Si quelque chose cloche, c'est le moment.",
+      "objets_one": "{{name}} et {{count}} autre",
+      "objets_other": "{{name}} et {{count}} autres"
+    },
     "export": {
       "title": "Exporter",
       "entry": "Exporter les factures",

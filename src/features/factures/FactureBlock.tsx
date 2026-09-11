@@ -58,6 +58,10 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         purchaseDate: valeurs.purchaseDate,
         warrantyUntil: valeurs.warrantyUntil,
         document: valeurs.document,
+        // Ces deux-là ne partent pas en base : ils servent à replacer le
+        // rappel de garantie, qui doit nommer l'objet et savoir où renvoyer.
+        objets: enEdition.objets.map((objet) => objet.name),
+        habitationId,
       });
     } else {
       // `habitationId` ne part pas en base : il dit seulement quel dossier
