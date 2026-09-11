@@ -29,7 +29,8 @@ export type FactureACibler = {
   warrantyUntil: string | null;
   documentUrl: string | null;
   documentKind: string;
-  objets: string[];
+  /** Ce que la facture couvre, avec le prix et la garantie de chaque objet. */
+  lignes: { name: string; amount: number | null; warrantyUntil: string | null }[];
 };
 
 export type ModeSortie = 'mail' | 'partage';
@@ -66,7 +67,14 @@ export function useExportFactures() {
           warrantyLabel: fromIsoDate(cible.warrantyUntil, order),
           documentUrl: cible.documentUrl,
           documentKind: cible.documentKind,
-          objets: cible.objets,
+          objets: cible.lignes.map((ligne) => ligne.name),
+          detailObjets: cible.lignes.map((ligne) => ({
+            name: ligne.name,
+            montant: ligne.amount != null ? formaterMontant(Number(ligne.amount)) : '—',
+            garantie: ligne.warrantyUntil
+              ? `${t('factures.pdf.warranty_short')} ${fromIsoDate(ligne.warrantyUntil, order)}`
+              : '',
+          })),
         }));
 
         resultat = await genererPdfFactures(

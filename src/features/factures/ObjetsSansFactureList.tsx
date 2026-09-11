@@ -94,12 +94,16 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
       <FactureFormSheet
         key={feuille.cle}
         visible={feuille.visible}
+        // LA PREMIÈRE LIGNE EST DÉJÀ LÀ : on vient d'appuyer sur un objet
+        // précis, la feuille n'a pas à redemander lequel. On peut en ajouter
+        // d'autres ensuite, si le même ticket en couvre plusieurs.
+        objetInitial={cible ? { objetId: cible.id, name: cible.name } : undefined}
         onClose={feuille.fermer}
         onSubmit={(valeurs) => {
           // `habitationId` ne part pas en base : il dit seulement quelles
           // listes du dossier corriger sans attendre le réseau — la facture
           // entre dans l'une, l'objet sort de celle-ci.
-          if (cible) creer.mutate({ objetId: cible.id, habitationId, ...valeurs });
+          creer.mutate({ habitationId, ...valeurs });
           feuille.fermer();
         }}
         loading={creer.isPending}

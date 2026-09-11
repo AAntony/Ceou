@@ -260,7 +260,7 @@ export default function ObjetScreen() {
                   variant="tile"
                   icon="facture"
                   label={t('factures.block.add')}
-                  onPress={ouvrirAjoutFacture}
+                  onPress={() => ouvrirAjoutFacture(objet.name)}
                 />
               ) : null}
             </ButtonRow>

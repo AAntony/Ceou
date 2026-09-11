@@ -50,7 +50,18 @@ export type FactureAExporter = {
   warrantyLabel: string;
   documentUrl: string | null;
   documentKind: string;
+  /** Les noms seuls, pour la colonne du récapitulatif. */
   objets: string[];
+  /**
+   * Le détail par objet, pour la page qui porte le document.
+   *
+   * UN TICKET DE CAISSE N'EST PAS UN MONTANT. Le récapitulatif donne le total
+   * de chaque facture ; la page du document, elle, doit dire ce que CHAQUE
+   * chose a coûté et jusqu'à quand elle est couverte — c'est exactement ce
+   * qu'un assureur regarde quand il conteste une ligne. Déjà mis en forme par
+   * l'appelant, qui connaît la langue.
+   */
+  detailObjets: { name: string; montant: string; garantie: string }[];
 };
 
 /** Les textes du PDF, déjà traduits : ce module ne connaît pas i18n. */
@@ -244,6 +255,8 @@ const STYLE = `
   .doc { margin-top: 16px; text-align: center; }
   .doc img { max-width: 100%; max-height: 590px; border: 1px solid #D8D2C8; }
   .absent { padding: 40px 16px; border: 1px dashed #C9C2B6; color: #8C857A; font-size: 11px; text-align: center; }
+  .lignes { width: 100%; margin-top: 6px; border-collapse: collapse; font-size: 10.5px; }
+  .lignes td { padding: 4px 6px; border-bottom: 1px solid #EDE7DE; }
 `;
 
 function construireHtml(
@@ -322,7 +335,18 @@ function pageFacture(
   return `<section class="page">
     <h2>${escape(titre)}</h2>
     ${details.length > 0 ? `<p class="meta">${escape(details.join(' · '))}</p>` : ''}
-    <p class="meta">${escape(l.objetsCouverts)} ${escape(f.objets.join(', '))}</p>
+    <p class="meta">${escape(l.objetsCouverts)}</p>
+    <table class="lignes">
+      ${f.detailObjets
+        .map(
+          (objet) => `<tr>
+            <td>${escape(objet.name)}</td>
+            <td class="num faint">${escape(objet.garantie)}</td>
+            <td class="num">${escape(objet.montant)}</td>
+          </tr>`,
+        )
+        .join('')}
+    </table>
     <div class="doc">${document}</div>
   </section>`;
 }

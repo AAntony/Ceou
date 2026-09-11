@@ -14,7 +14,8 @@ import {
   etatDe,
   facturesSelectionnees,
   nodeKey,
-  objetsDeLaFacture,
+  lignesDeLaFacture,
+  montantDeLaFacture,
   toutesLesFeuilles,
   type TreeNode,
 } from '../src/features/factures/exportTree';
@@ -105,7 +106,9 @@ export default function ExportFacturesScreen() {
     const cibles: FactureACibler[] = choisies.map((row) => ({
       id: row.facture_id,
       vendor: row.vendor,
-      amount: row.amount,
+      // LE TOTAL DE LA FACTURE, pas le montant de sa première ligne : un
+      // ticket de 840 € ne vaut pas le prix du grille-pain.
+      amount: montantDeLaFacture(rows, row.facture_id, courant.selection),
       purchaseDate: row.purchase_date,
       warrantyUntil: row.warranty_until,
       documentUrl: row.document_url,
@@ -113,7 +116,7 @@ export default function ExportFacturesScreen() {
       // CE QU'ON A DEMANDÉ, ET RIEN DE PLUS. Une facture peut couvrir des
       // objets hors sélection ; les nommer dans le PDF révélerait qu'on
       // possède autre chose, à quelqu'un à qui on n'exportait qu'un salon.
-      objets: objetsDeLaFacture(rows, row.facture_id, courant.selection),
+      lignes: lignesDeLaFacture(rows, row.facture_id, courant.selection),
     }));
     void exporter(cibles, mode);
   };

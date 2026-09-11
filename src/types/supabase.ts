@@ -175,16 +175,25 @@ export type Database = {
       }
       facture_objets: {
         Row: {
+          amount: number | null
           facture_id: string
+          id: string
           objet_id: string
+          warranty_until: string | null
         }
         Insert: {
+          amount?: number | null
           facture_id: string
+          id?: string
           objet_id: string
+          warranty_until?: string | null
         }
         Update: {
+          amount?: number | null
           facture_id?: string
+          id?: string
           objet_id?: string
+          warranty_until?: string | null
         }
         Relationships: [
           {
@@ -213,7 +222,6 @@ export type Database = {
           purchase_date: string | null
           user_id: string
           vendor: string | null
-          warranty_until: string | null
         }
         Insert: {
           amount?: number | null
@@ -224,7 +232,6 @@ export type Database = {
           purchase_date?: string | null
           user_id: string
           vendor?: string | null
-          warranty_until?: string | null
         }
         Update: {
           amount?: number | null
@@ -235,7 +242,6 @@ export type Database = {
           purchase_date?: string | null
           user_id?: string
           vendor?: string | null
-          warranty_until?: string | null
         }
         Relationships: []
       }
@@ -997,6 +1003,18 @@ export type Database = {
         Args: { p_emplacement_id: string }
         Returns: string
       }
+      factures_a_rattacher: {
+        Args: { p_limite?: number; p_objet_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          document_url: string
+          id: string
+          objet_names: string[]
+          purchase_date: string
+          vendor: string
+        }[]
+      }
       factures_export_rows: {
         Args: never
         Returns: {
@@ -1005,9 +1023,25 @@ export type Database = {
           created_at: string
           document_kind: string
           document_url: string
+          facture_amount: number
           facture_id: string
           objet_id: string
           objet_name: string
+          purchase_date: string
+          vendor: string
+          warranty_until: string
+        }[]
+      }
+      factures_for_objet: {
+        Args: { p_objet_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          document_kind: string
+          document_url: string
+          facture_amount: number
+          id: string
+          lignes: Json
           purchase_date: string
           vendor: string
           warranty_until: string
@@ -1020,12 +1054,11 @@ export type Database = {
           created_at: string
           document_kind: string
           document_url: string
+          facture_amount: number
           id: string
-          objet_count: number
-          objet_names: string[]
+          lignes: Json
           purchase_date: string
           vendor: string
-          warranty_until: string
         }[]
       }
       friend_shared_habitation_counts: {

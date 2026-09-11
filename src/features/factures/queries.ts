@@ -5,7 +5,7 @@ import { isLocalUri } from '../../lib/images/media';
 import { supabase } from '../../lib/supabase/client';
 import type { Facture } from '../../types/database';
 import { newId } from '../../lib/uuid';
-import { deleteOp, deleteWhereOp, insertOp, updateOp, uploadOp, useLocalFirstWrite } from '../../lib/writeQueue';
+import { deleteOp, insertOp, updateOp, uploadOp, useLocalFirstWrite, type WriteOp } from '../../lib/writeQueue';
 import { cancelWarrantyReminder, scheduleWarrantyReminder } from '../notifications/warrantyReminders';
 import type { ExportRow } from './exportTree';
 
@@ -15,40 +15,101 @@ import type { ExportRow } from './exportTree';
 // garage ou une cave — c'est-à-dire souvent sans réseau. Une écriture qui
 // exigerait la connexion perdrait le document au moment précis où on vient de
 // le photographier.
+//
+// ═══ EN-TÊTE ET LIGNES ═══
+//
+// Le TICKET porte le document, le vendeur et la date d'achat. Chaque CHOSE
+// ACHETÉE porte son montant et sa fin de garantie. Un ticket de caisse avec un
+// frigo à 800 € et un grille-pain à 40 € : un seul document, deux lignes.
+//
+// Toutes les écritures d'ici manipulent donc les deux tables ensemble, et dans
+// le même lot — la liaison référence la facture, les séparer laisserait la
+// seconde partir avant que la première ne soit acceptée.
 
-/** Ce qu'un écran connaît d'une facture, plus les objets qu'elle couvre. */
-export type FactureWithObjets = Facture & {
-  objets: { id: string; name: string }[];
+/**
+ * Ce qu'un objet a coûté sur une facture, et jusqu'à quand il est couvert.
+ *
+ * `id` est celui de la LIAISON et non de l'objet : c'est lui qu'on modifie,
+ * et c'est lui qui nomme le rappel de garantie.
+ */
+export type FactureLigne = {
+  id: string;
+  objetId: string;
+  name: string;
+  amount: number | null;
+  warrantyUntil: string | null;
 };
+
+/** Une facture telle que la fiche d'un objet la connaît. */
+export type FactureDObjet = {
+  id: string;
+  document_url: string | null;
+  document_kind: string;
+  vendor: string | null;
+  purchase_date: string | null;
+  /** Total du ticket, facultatif : il sert quand aucune ligne n'est chiffrée. */
+  facture_amount: number | null;
+  created_at: string;
+  /** Ce que CET objet a coûté. */
+  amount: number | null;
+  /** Jusqu'à quand CET objet est couvert. */
+  warranty_until: string | null;
+  lignes: FactureLigne[];
+};
+
+/** Une facture telle que le dossier d'un logement la connaît. */
+export type FactureDuDossier = {
+  id: string;
+  document_url: string | null;
+  document_kind: string;
+  /** Somme des lignes de ce logement, à défaut le total du ticket. */
+  amount: number | null;
+  /** Le total du ticket tel qu'il a été saisi : c'est lui que le formulaire rééditera. */
+  facture_amount: number | null;
+  purchase_date: string | null;
+  vendor: string | null;
+  created_at: string;
+  lignes: FactureLigne[];
+};
+
+/**
+ * Les lignes telles que le SQL les rend, re-typées.
+ *
+ * `jsonb` arrive en `Json` : une valeur dont TypeScript ne sait rien. On la
+ * ramène à la forme attendue en un seul endroit plutôt qu'à chaque lecture —
+ * et on se protège d'un `null` (une facture sans ligne n'existe pas, mais
+ * `jsonb_agg` d'un ensemble vide rend `null`, pas `[]`).
+ */
+function lignesDe(valeur: unknown): FactureLigne[] {
+  return Array.isArray(valeur) ? (valeur as FactureLigne[]) : [];
+}
+
+/** Les lignes encore sous garantie à cet instant. */
+export function sousGarantie(lignes: FactureLigne[]): boolean {
+  const maintenant = Date.now();
+  return lignes.some((ligne) => ligne.warrantyUntil && new Date(ligne.warrantyUntil).getTime() > maintenant);
+}
+
+/** Les noms des objets couverts, dans l'ordre où la fonction SQL les rend. */
+export function nomsDesObjets(lignes: FactureLigne[]): string[] {
+  return lignes.map((ligne) => ligne.name);
+}
 
 /**
  * Les factures qui prouvent l'achat d'un objet.
  *
  * Un objet peut en avoir plusieurs : l'achat, puis la réparation, puis
- * l'extension de garantie.
+ * l'extension de garantie. Chaque facture arrive avec la ligne DE CET OBJET
+ * — c'est elle qui s'affiche sur sa fiche — et avec toutes ses autres lignes,
+ * pour pouvoir l'ouvrir entière en modification.
  */
 export function useFacturesForObjet(objetId: string) {
   return useQuery({
     queryKey: ['facturesForObjet', objetId],
-    queryFn: async (): Promise<FactureWithObjets[]> => {
-      // `!inner` sur la liaison : sans lui, PostgREST rendrait aussi les
-      // factures sans lien avec cet objet, avec un tableau vide à côté.
-      const { data, error } = await supabase
-        .from('factures')
-        .select('*, facture_objets!inner(objet_id), objets:facture_objets(objets(id, name))')
-        .eq('facture_objets.objet_id', objetId)
-        .order('purchase_date', { ascending: false, nullsFirst: false });
+    queryFn: async (): Promise<FactureDObjet[]> => {
+      const { data, error } = await supabase.rpc('factures_for_objet', { p_objet_id: objetId });
       if (error) throw error;
-
-      return (data ?? []).map((row) => {
-        const { facture_objets: _lien, objets, ...facture } = row as typeof row & {
-          objets: { objets: { id: string; name: string } | null }[];
-        };
-        return {
-          ...(facture as Facture),
-          objets: objets.map((entry) => entry.objets).filter((o): o is { id: string; name: string } => o !== null),
-        };
-      });
+      return (data ?? []).map((row) => ({ ...row, lignes: lignesDe(row.lignes) }) as FactureDObjet);
     },
     enabled: Boolean(objetId),
   });
@@ -58,10 +119,10 @@ export function useFacturesForObjet(objetId: string) {
 export function useFacturesForHabitation(habitationId: string | undefined) {
   return useQuery({
     queryKey: ['facturesForHabitation', habitationId],
-    queryFn: async () => {
+    queryFn: async (): Promise<FactureDuDossier[]> => {
       const { data, error } = await supabase.rpc('factures_for_habitation', { p_habitation_id: habitationId! });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []).map((row) => ({ ...row, lignes: lignesDe(row.lignes) }) as FactureDuDossier);
     },
     enabled: Boolean(habitationId),
   });
@@ -93,6 +154,25 @@ export function useObjetsSansFacture(habitationId: string | undefined) {
 }
 
 /**
+ * Les factures déjà enregistrées qu'on peut rattacher à cet objet.
+ *
+ * LES PLUS RÉCENTES D'ABORD, et celles déjà rattachées écartées. Un ticket
+ * qu'on rattache à un deuxième objet vient presque toujours d'être saisi :
+ * on sort du magasin avec quatre chaises et un seul ticket.
+ */
+export function useFacturesARattacher(objetId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['facturesARattacher', objetId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('factures_a_rattacher', { p_objet_id: objetId });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: enabled && Boolean(objetId),
+  });
+}
+
+/**
  * Tout ce qu'il faut pour l'écran d'export : l'arbre ET les factures.
  *
  * UNE SEULE REQUÊTE POUR TOUS LES LOGEMENTS, et pas une par habitation. La
@@ -116,25 +196,38 @@ export function useFacturesExportRows(enabled: boolean) {
   });
 }
 
-type NouvelleFacture = {
-  /** L'objet depuis lequel on l'ajoute : une facture n'est jamais orpheline. */
+// ═══════════════════════════════════════════════════════════════════════
+// LES ÉCRITURES
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Une ligne telle que le formulaire la rend : sans identifiant si elle est neuve. */
+export type LigneSaisie = {
+  /** Absent pour une ligne qu'on vient d'ajouter. */
+  id?: string;
   objetId: string;
+  name: string;
+  amount: number | null;
+  warrantyUntil: string | null;
+};
+
+type NouvelleFacture = {
   /**
-   * Le logement où se trouve cet objet, quand l'écran appelant le connaît.
+   * Le logement où se trouvent ces objets, quand l'écran appelant le connaît.
    *
-   * IL NE SERT QU'AU CACHE, jamais à l'écriture — une facture n'appartient à
-   * aucun logement, elle en hérite par ses objets (voir la migration). Mais
-   * les DEUX listes du dossier changent au moment où on en ajoute une : la
-   * facture entre dans l'une, l'objet sort de l'autre. Hors ligne, rien ne se
-   * rechargera pour le dire.
+   * IL NE SERT QU'AU CACHE ET AUX RAPPELS, jamais à l'écriture — une facture
+   * n'appartient à aucun logement, elle en hérite par ses objets (voir la
+   * migration). Mais les DEUX listes du dossier changent au moment où on en
+   * ajoute une : la facture entre dans l'une, les objets sortent de l'autre.
+   * Hors ligne, rien ne se rechargera pour le dire.
    */
   habitationId?: string;
   /** Chemin local du document choisi, ou adresse déjà connue. */
   document: string;
-  amount: number | null;
-  purchaseDate: string | null;
-  warrantyUntil: string | null;
   vendor: string | null;
+  purchaseDate: string | null;
+  /** Total du ticket, facultatif. */
+  factureAmount: number | null;
+  lignes: LigneSaisie[];
 };
 
 export function useCreateFacture() {
@@ -146,22 +239,31 @@ export function useCreateFacture() {
     const id = newId();
     const userId = session!.user.id;
     const local = isLocalUri(input.document);
+    const habitationId = input.habitationId ?? null;
+
+    // Les identifiants sont tirés ICI et non par la base : ils servent aussi
+    // de clé aux rappels de garantie et aux mises à jour optimistes, qui ont
+    // lieu avant que le serveur n'ait vu quoi que ce soit.
+    const lignes: FactureLigne[] = input.lignes.map((ligne) => ({
+      id: ligne.id ?? newId(),
+      objetId: ligne.objetId,
+      name: ligne.name,
+      amount: ligne.amount,
+      warrantyUntil: ligne.warrantyUntil,
+    }));
 
     // LE RAPPEL DE GARANTIE SE POSE ICI, PAS DEPUIS L'ÉCRAN. Une facture
     // s'ajoute depuis la fiche d'un objet comme depuis le dossier d'un
     // logement : le poser dans chaque écran, c'est l'oublier dans le
-    // prochain. Programmé sur l'appareil, il ne dépend ni du réseau ni du
-    // serveur — voir warrantyReminders.
-    void scheduleWarrantyReminder(
-      {
-        id,
-        objets: [nomObjetEnCache(client, input.objetId)].filter(Boolean),
-        warrantyUntil: input.warrantyUntil,
-        habitationId: input.habitationId ?? null,
-      },
-      t,
-      i18n.language,
-    );
+    // prochain. Un par LIGNE, puisque deux objets du même ticket n'ont pas la
+    // même durée de garantie.
+    for (const ligne of lignes) {
+      void scheduleWarrantyReminder(
+        { id: ligne.id, objet: ligne.name, warrantyUntil: ligne.warrantyUntil, habitationId },
+        t,
+        i18n.language,
+      );
+    }
 
     const facture: Facture = {
       id,
@@ -172,9 +274,8 @@ export function useCreateFacture() {
       // qu'aucun autre appareil ne saurait ouvrir. Même règle que les photos.
       document_url: local ? null : input.document,
       document_kind: 'image',
-      amount: input.amount,
+      amount: input.factureAmount,
       purchase_date: input.purchaseDate,
-      warranty_until: input.warrantyUntil,
       vendor: input.vendor,
       created_at: new Date().toISOString(),
     };
@@ -183,11 +284,11 @@ export function useCreateFacture() {
       describe: { kind: 'create' as const, name: input.vendor ?? '' },
       ops: [
         insertOp('factures', [facture]),
-        // LES DEUX INSERTIONS DANS LE MÊME LOT, dans cet ordre. La liaison
-        // référence la facture : séparées, la seconde pourrait partir avant
-        // que la première ne soit acceptée — c'est exactement la course qui
-        // faisait refuser un déplacement au retour du réseau.
-        insertOp('facture_objets', [{ facture_id: id, objet_id: input.objetId }]),
+        // LES INSERTIONS DANS LE MÊME LOT, dans cet ordre. Les liaisons
+        // référencent la facture : séparées, les secondes pourraient partir
+        // avant que la première ne soit acceptée — c'est exactement la course
+        // qui faisait refuser un déplacement au retour du réseau.
+        insertOp('facture_objets', lignes.map(enLigneDeBase(id))),
         ...(local
           ? [
               uploadOp({
@@ -203,79 +304,82 @@ export function useCreateFacture() {
             ]
           : []),
       ],
-      // ELLE DOIT APPARAITRE DANS LA LISTE DE L'OBJET TOUT DE SUITE.
+      // ELLE DOIT APPARAITRE TOUT DE SUITE, sur la fiche de CHAQUE objet
+      // qu'elle couvre. Sans ça, la facture n'existe que côté serveur : hors
+      // ligne la liste ne se recharge jamais, et on vient de photographier un
+      // document qui n'apparaît nulle part.
       //
-      // Sans cet ajout, la facture n'existe que cote serveur : hors ligne la
-      // liste ne se recharge jamais, et on vient de photographier un document
-      // qui n'apparait nulle part. C'est le defaut corrige la semaine derniere
-      // sur les objets, dans sa version facture.
-      //
-      // Le document montre est le fichier LOCAL, deja sur l'appareil : il n'y
+      // Le document montré est le fichier LOCAL, déjà sur l'appareil : il n'y
       // a aucune raison d'attendre l'envoi pour l'afficher.
       appends: [
-        {
-          key: ['facturesForObjet', input.objetId],
-          row: { ...facture, document_url: input.document, objets: [] },
-        },
+        ...lignes.map((ligne) => ({
+          key: ['facturesForObjet', ligne.objetId],
+          row: {
+            ...facture,
+            document_url: input.document,
+            facture_amount: input.factureAmount,
+            amount: ligne.amount,
+            warranty_until: ligne.warrantyUntil,
+            lignes,
+          },
+        })),
         // ET DANS LE DOSSIER DU LOGEMENT, quand l'écran a dit lequel. La forme
-        // est celle que rend `factures_for_habitation` : un objet couvert, le
-        // nom de celui-là. L'écran retrie la liste lui-même, sinon la nouvelle
-        // venue s'ajouterait en queue au lieu de sa place chronologique.
-        ...(input.habitationId
+        // est celle que rend `factures_for_habitation`. L'écran retrie la
+        // liste lui-même, sinon la nouvelle venue s'ajouterait en queue au
+        // lieu de sa place chronologique.
+        ...(habitationId
           ? [
               {
-                key: ['facturesForHabitation', input.habitationId],
+                key: ['facturesForHabitation', habitationId],
                 row: {
                   ...facture,
                   document_url: input.document,
-                  objet_count: 1,
-                  objet_names: [nomObjetEnCache(client, input.objetId)].filter(Boolean),
+                  amount: totalDesLignes(lignes) ?? input.factureAmount,
+                  lignes,
                 },
               },
             ]
           : []),
       ],
-      // L'OBJET QUITTE LA LISTE DES ORPHELINS, tout de suite. C'est la moitié
-      // du geste : on vient de rayer une ligne d'une liste qu'on cherche à
-      // vider, et la voir rester donnerait le sentiment que rien n'a marché.
-      sets: retirerDesOrphelins(client, input.habitationId, input.objetId),
+      // LES OBJETS QUITTENT LA LISTE DES ORPHELINS, tout de suite. C'est la
+      // moitié du geste : on vient de rayer des lignes d'une liste qu'on
+      // cherche à vider, et les voir rester donnerait le sentiment que rien
+      // n'a marché.
+      sets: retirerDesOrphelins(client, habitationId, lignes.map((ligne) => ligne.objetId)),
       result: facture,
     };
   });
 }
 
-/**
- * Le nom d'un objet tel que le cache le connaît déjà.
- *
- * Il sert à nommer l'objet couvert dans la carte du dossier. Pris dans le
- * cache et non demandé au réseau : ce geste doit marcher hors ligne, et
- * l'écran qui l'a déclenché affichait le nom une seconde plus tôt.
- */
-function nomObjetEnCache(client: ReturnType<typeof useQueryClient>, objetId: string): string {
-  const fiche = client.getQueryData<{ name?: string }>(['objet', objetId]);
-  if (fiche?.name) return fiche.name;
-
-  // Rien en cache si la facture est ajoutée depuis le dossier sans être
-  // jamais passé par la fiche : la liste des orphelins, elle, porte le nom.
-  const orphelins = client.getQueriesData<{ id: string; name: string }[]>({ queryKey: ['objetsSansFacture'] });
-  for (const [, liste] of orphelins) {
-    const trouve = liste?.find((objet) => objet.id === objetId);
-    if (trouve) return trouve.name;
-  }
-  return '';
+/** La ligne telle que la base l'attend. */
+function enLigneDeBase(factureId: string) {
+  return (ligne: FactureLigne) => ({
+    id: ligne.id,
+    facture_id: factureId,
+    objet_id: ligne.objetId,
+    amount: ligne.amount,
+    warranty_until: ligne.warrantyUntil,
+  });
 }
 
-/** La liste des objets sans facture, privée de celui qui vient d'en recevoir une. */
+/** La somme des lignes chiffrées, ou `null` si aucune ne l'est. */
+export function totalDesLignes(lignes: FactureLigne[]): number | null {
+  const chiffrees = lignes.filter((ligne) => ligne.amount != null);
+  if (chiffrees.length === 0) return null;
+  return chiffrees.reduce((somme, ligne) => somme + Number(ligne.amount), 0);
+}
+
+/** La liste des objets sans facture, privée de ceux qui viennent d'en recevoir une. */
 function retirerDesOrphelins(
   client: ReturnType<typeof useQueryClient>,
-  habitationId: string | undefined,
-  objetId: string,
+  habitationId: string | null,
+  objetIds: string[],
 ): { key: string[]; data: unknown }[] {
   if (!habitationId) return [];
   const key = ['objetsSansFacture', habitationId];
   const liste = client.getQueryData<{ id: string }[]>(key);
   if (!liste) return [];
-  return [{ key, data: liste.filter((objet) => objet.id !== objetId) }];
+  return [{ key, data: liste.filter((objet) => !objetIds.includes(objet.id)) }];
 }
 
 export function useUpdateFacture() {
@@ -286,41 +390,47 @@ export function useUpdateFacture() {
     (input: {
       id: string;
       vendor: string | null;
-      amount: number | null;
       purchaseDate: string | null;
-      warrantyUntil: string | null;
+      factureAmount: number | null;
       /**
        * Le document tel que la feuille le rend : l'adresse déjà connue si on
        * n'y a pas touché, un chemin local si on vient de le rephotographier.
        */
       document?: string;
-      /**
-       * Les deux seuls champs qui ne partent PAS en base : de quoi réécrire le
-       * rappel de garantie, qui doit nommer l'objet et savoir où renvoyer.
-       *
-       * Corriger une date de fin de garantie doit déplacer le rappel tout de
-       * suite — et l'effacer doit le retirer. Sans ça, le téléphone
-       * continuerait d'annoncer une échéance que la facture ne porte plus.
-       */
-      objets?: string[];
+      /** L'état voulu des lignes. Celles sans `id` sont nouvelles. */
+      lignes: LigneSaisie[];
+      /** Les liaisons retirées, par leur identifiant. */
+      lignesSupprimees?: string[];
+      /** Ne part pas en base : il dit où renvoyer depuis un rappel. */
       habitationId?: string;
     }) => {
       const userId = session!.user.id;
+      const habitationId = input.habitationId ?? null;
 
-      void scheduleWarrantyReminder(
-        {
-          id: input.id,
-          objets: input.objets ?? [],
-          warrantyUntil: input.warrantyUntil,
-          habitationId: input.habitationId ?? null,
-        },
-        t,
-        i18n.language,
-      );
-      // REMPLACER LE DOCUMENT, ET PAS SEULEMENT LES QUATRE CHAMPS. La feuille
-      // montre « Photographier » et « Choisir une image » en modification
-      // aussi : sans cette branche, on reprenait en photo une facture floue,
-      // on enregistrait, et rien ne changeait — en silence.
+      const lignes: FactureLigne[] = input.lignes.map((ligne) => ({
+        id: ligne.id ?? newId(),
+        objetId: ligne.objetId,
+        name: ligne.name,
+        amount: ligne.amount,
+        warrantyUntil: ligne.warrantyUntil,
+      }));
+
+      // Corriger une date de fin de garantie doit déplacer le rappel tout de
+      // suite, et l'effacer doit le retirer — c'est `scheduleWarrantyReminder`
+      // qui tranche entre les deux. Une ligne retirée perd le sien.
+      for (const ligne of lignes) {
+        void scheduleWarrantyReminder(
+          { id: ligne.id, objet: ligne.name, warrantyUntil: ligne.warrantyUntil, habitationId },
+          t,
+          i18n.language,
+        );
+      }
+      for (const ligneId of input.lignesSupprimees ?? []) void cancelWarrantyReminder(ligneId);
+
+      // REMPLACER LE DOCUMENT, ET PAS SEULEMENT LES CHAMPS. La feuille montre
+      // « Photographier » et « Choisir une image » en modification aussi :
+      // sans cette branche, on reprenait en photo une facture floue, on
+      // enregistrait, et rien ne changeait — en silence.
       //
       // C'est `isLocalUri` qui tranche, pas un drapeau posé par l'écran : une
       // adresse http est celle qui était déjà là, il n'y a rien à envoyer.
@@ -328,33 +438,61 @@ export function useUpdateFacture() {
 
       const champs = {
         vendor: input.vendor,
-        amount: input.amount,
+        amount: input.factureAmount,
         purchase_date: input.purchaseDate,
-        warranty_until: input.warrantyUntil,
       };
+
+      // LES LIGNES DÉJÀ CONNUES SE MODIFIENT, LES NEUVES S'INSÈRENT. La
+      // distinction tient au seul `id` rendu par le formulaire : il vient de
+      // la base pour les premières, il n'existe pas pour les secondes.
+      const connues = new Set(input.lignes.filter((ligne) => ligne.id).map((ligne) => ligne.id));
+      const aInserer = lignes.filter((ligne) => !connues.has(ligne.id));
+
+      const ops: WriteOp[] = [
+        updateOp('factures', input.id, champs),
+        ...lignes
+          .filter((ligne) => connues.has(ligne.id))
+          .map((ligne) => updateOp('facture_objets', ligne.id, {
+            amount: ligne.amount,
+            warranty_until: ligne.warrantyUntil,
+          })),
+        ...(aInserer.length > 0 ? [insertOp('facture_objets', aInserer.map(enLigneDeBase(input.id)))] : []),
+        ...(input.lignesSupprimees ?? []).map((ligneId) => deleteOp('facture_objets', ligneId)),
+        ...(remplace
+          ? [
+              uploadOp({
+                uri: input.document!,
+                bucket: 'factures',
+                // LE MÊME CHEMIN QU'À LA CRÉATION, donc l'ancien fichier est
+                // écrasé (`upsert`). L'adresse rendue porte un horodatage,
+                // qui sert de clé de cache : sans lui, expo-image continuerait
+                // d'afficher l'ancienne image.
+                path: `${userId}/${input.id}.jpg`,
+                then: { table: 'factures', id: input.id, column: 'document_url' },
+              }),
+            ]
+          : []),
+      ];
 
       return {
         describe: { kind: 'update' as const, name: input.vendor ?? '' },
-        ops: [
-          updateOp('factures', input.id, champs),
-          ...(remplace
-            ? [
-                uploadOp({
-                  uri: input.document!,
-                  bucket: 'factures',
-                  // LE MÊME CHEMIN QU'À LA CRÉATION, donc l'ancien fichier est
-                  // écrasé (`upsert`). L'adresse rendue porte un horodatage,
-                  // qui sert de clé de cache : sans lui, expo-image
-                  // continuerait d'afficher l'ancienne image.
-                  path: `${userId}/${input.id}.jpg`,
-                  then: { table: 'factures', id: input.id, column: 'document_url' },
-                }),
-              ]
-            : []),
-        ],
+        ops,
         // Le fichier local s'affiche tout de suite : il est déjà sur
         // l'appareil, il n'y a aucune raison d'attendre l'envoi.
-        patches: [{ id: input.id, patch: remplace ? { ...champs, document_url: input.document } : champs }],
+        //
+        // Les lignes sont écrasées en bloc plutôt que rapiécées : leur nombre
+        // a pu changer, et la règle générale du cache ne sait déduire que ce
+        // qui porte un identifiant qu'elle reconnaît.
+        patches: [
+          {
+            id: input.id,
+            patch: {
+              ...champs,
+              lignes,
+              ...(remplace ? { document_url: input.document } : {}),
+            },
+          },
+        ],
         result: undefined,
       };
     },
@@ -362,16 +500,16 @@ export function useUpdateFacture() {
 }
 
 export function useDeleteFacture() {
-  return useLocalFirstWrite((input: { id: string; vendor: string | null }) => {
-    // Le rappel de garantie part avec elle, et depuis la mutation plutôt que
-    // depuis un écran : on supprime une facture aussi bien depuis la fiche
-    // d'un objet que depuis le dossier.
-    void cancelWarrantyReminder(input.id);
+  return useLocalFirstWrite((input: { id: string; vendor: string | null; ligneIds: string[] }) => {
+    // Les rappels de garantie partent avec elle — un par ligne — et depuis la
+    // mutation plutôt que depuis un écran : on supprime une facture aussi bien
+    // depuis la fiche d'un objet que depuis le dossier.
+    for (const ligneId of input.ligneIds) void cancelWarrantyReminder(ligneId);
 
     return {
       describe: { kind: 'delete' as const, name: input.vendor ?? '' },
-      // La liaison part en cascade côté base (`on delete cascade`) : rien à
-      // supprimer ici. Le fichier du bucket, lui, reste — comme les photos
+      // Les liaisons partent en cascade côté base (`on delete cascade`) : rien
+      // à supprimer ici. Le fichier du bucket, lui, reste — comme les photos
       // d'objets supprimés. Le ménage se fait à la suppression du compte.
       ops: [deleteOp('factures', input.id)],
       result: undefined,
@@ -379,22 +517,46 @@ export function useDeleteFacture() {
   });
 }
 
-/** Rattacher la même facture à un autre objet qu'elle couvre. */
+/**
+ * Rattacher une facture déjà enregistrée à un objet de plus.
+ *
+ * Le geste du ticket de caisse : quatre chaises, un seul document. La ligne
+ * naît SANS montant ni garantie — on les renseigne ensuite dans la facture,
+ * où l'on voit les autres lignes en face.
+ */
 export function useAttachFactureToObjet() {
-  return useLocalFirstWrite((input: { factureId: string; objetId: string; vendor: string | null }) => ({
-    describe: { kind: 'update' as const, name: input.vendor ?? '' },
-    ops: [insertOp('facture_objets', [{ facture_id: input.factureId, objet_id: input.objetId }])],
-    result: undefined,
-  }));
+  return useLocalFirstWrite(
+    (input: { factureId: string; objetId: string; objetName: string; vendor: string | null; habitationId?: string }) => {
+      const ligneId = newId();
+      return {
+        describe: { kind: 'update' as const, name: input.vendor ?? '' },
+        ops: [
+          insertOp('facture_objets', [
+            { id: ligneId, facture_id: input.factureId, objet_id: input.objetId, amount: null, warranty_until: null },
+          ]),
+        ],
+        result: { ligneId },
+      };
+    },
+  );
 }
 
-/** Détacher un objet d'une facture, sans supprimer la facture. */
+/**
+ * Détacher un objet d'une facture, sans supprimer la facture.
+ *
+ * ATTENTION : détacher le DERNIER objet supprime la facture, côté base
+ * (déclencheur purge_facture_sans_objet). Une facture qui ne couvrirait plus
+ * rien n'apparaîtrait dans aucun dossier — c'est l'orpheline qu'on a corrigée.
+ * L'écran doit donc proposer la suppression, pas le détachement, quand il ne
+ * reste qu'une ligne.
+ */
 export function useDetachFactureFromObjet() {
-  return useLocalFirstWrite((input: { factureId: string; objetId: string; vendor: string | null }) => ({
-    describe: { kind: 'update' as const, name: input.vendor ?? '' },
-    // `deleteWhereOp` et non `deleteOp` : la clé de cette table est composite,
-    // il n'y a pas d'`id` à viser.
-    ops: [deleteWhereOp('facture_objets', { facture_id: input.factureId, objet_id: input.objetId })],
-    result: undefined,
-  }));
+  return useLocalFirstWrite((input: { ligneId: string; vendor: string | null }) => {
+    void cancelWarrantyReminder(input.ligneId);
+    return {
+      describe: { kind: 'update' as const, name: input.vendor ?? '' },
+      ops: [deleteOp('facture_objets', input.ligneId)],
+      result: undefined,
+    };
+  });
 }

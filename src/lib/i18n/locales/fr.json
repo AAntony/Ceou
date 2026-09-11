@@ -806,6 +806,9 @@
       "title": "Factures",
       "empty": "Aucune preuve d'achat pour cet objet.",
       "add": "Ajouter une facture",
+      "add_choice": "Un nouveau document, ou une facture déjà enregistrée ?",
+      "add_new": "Nouvelle facture",
+      "add_existing": "Une déjà enregistrée",
       "untitled": "Facture",
       "covers_one": "{{count}} objet",
       "covers_other": "{{count}} objets",
@@ -825,10 +828,19 @@
       "purchase_label": "Date d'achat",
       "warranty_label": "Fin de garantie",
       "date_invalid": "Date incomplète ou impossible."
+      ,"objets_title_one": "L'objet couvert",
+      "objets_title_other": "Les {{count}} objets couverts",
+      "add_objet": "Ajouter un objet",
+      "remove_objet": "Retirer {{name}} de cette facture",
+      "total_label": "Total du ticket",
+      "total_hint": "Facultatif. Sert quand tu connais la somme payée sans avoir détaillé objet par objet.",
+      "warranty_share": "Même garantie pour tous",
+      "warranty_split": "Garanties différentes selon l'objet"
     },
     "delete": {
       "title": "Supprimer cette facture ?",
       "message": "Le document sera retiré de tous les objets qu'il couvre."
+      ,"message_shared": "Cette facture couvre {{count}} objets : elle disparaîtra de tous, pas seulement de celui-ci."
     },
     "entry": {
       "title": "Factures de ce logement",
@@ -857,11 +869,22 @@
       "no_amount": "Montant non renseigné",
       "open_document": "Modifier la facture {{name}}"
     },
+    "objets": {
+      "title": "Ajouter des objets",
+      "search": "Chercher un objet",
+      "empty": "Aucun objet ne correspond.",
+      "add_one": "Ajouter {{count}} objet",
+      "add_other": "Ajouter {{count}} objets"
+    },
+    "picker": {
+      "title": "Choisir une facture",
+      "intro": "Rattache cet objet à un document déjà enregistré — le même ticket de caisse, par exemple.",
+      "search": "Chercher par vendeur ou par objet",
+      "empty": "Aucune facture à rattacher."
+    },
     "warranty": {
       "title": "Une garantie se termine bientôt",
-      "body": "La garantie de {{objet}} se termine le {{date}}. Si quelque chose cloche, c'est le moment.",
-      "objets_one": "{{name}} et {{count}} autre",
-      "objets_other": "{{name}} et {{count}} autres"
+      "body": "La garantie de {{objet}} se termine le {{date}}. Si quelque chose cloche, c'est le moment."
     },
     "export": {
       "title": "Exporter",
@@ -904,6 +927,7 @@
       "without_amount_other": "{{count}} factures sans montant renseigné n'entrent pas dans ce total.",
       "bought_on": "Acheté le",
       "warranty_until": "Sous garantie jusqu'au",
+      "warranty_short": "garantie",
       "covers": "Objets :",
       "document_missing": "Document non joint : il n'a pas pu être récupéré.",
       "document_pdf": "Document PDF, à joindre séparément."

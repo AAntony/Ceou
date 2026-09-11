@@ -806,6 +806,9 @@
       "title": "Receipts",
       "empty": "No proof of purchase for this item.",
       "add": "Add a receipt",
+      "add_choice": "A new document, or a receipt you already saved?",
+      "add_new": "New receipt",
+      "add_existing": "One already saved",
       "untitled": "Receipt",
       "covers_one": "{{count}} item",
       "covers_other": "{{count}} items",
@@ -825,10 +828,19 @@
       "purchase_label": "Purchase date",
       "warranty_label": "Warranty ends",
       "date_invalid": "Incomplete or impossible date."
+      ,"objets_title_one": "The item covered",
+      "objets_title_other": "The {{count}} items covered",
+      "add_objet": "Add an item",
+      "remove_objet": "Remove {{name}} from this receipt",
+      "total_label": "Receipt total",
+      "total_hint": "Optional. Useful when you know what you paid without splitting it item by item.",
+      "warranty_share": "Same warranty for all",
+      "warranty_split": "Different warranty per item"
     },
     "delete": {
       "title": "Delete this receipt?",
       "message": "The document will be removed from every item it covers."
+      ,"message_shared": "This receipt covers {{count}} items: it will disappear from all of them, not just this one."
     },
     "entry": {
       "title": "Receipts for this home",
@@ -857,11 +869,22 @@
       "no_amount": "No amount entered",
       "open_document": "Edit receipt {{name}}"
     },
+    "objets": {
+      "title": "Add items",
+      "search": "Search for an item",
+      "empty": "No item matches.",
+      "add_one": "Add {{count}} item",
+      "add_other": "Add {{count}} items"
+    },
+    "picker": {
+      "title": "Choose a receipt",
+      "intro": "Attach this item to a document you already saved — the same till receipt, for instance.",
+      "search": "Search by seller or item",
+      "empty": "No receipt to attach."
+    },
     "warranty": {
       "title": "A warranty ends soon",
-      "body": "The warranty on {{objet}} ends on {{date}}. If something is wrong, now is the time.",
-      "objets_one": "{{name}} and {{count}} other",
-      "objets_other": "{{name}} and {{count}} others"
+      "body": "The warranty on {{objet}} ends on {{date}}. If something is wrong, now is the time."
     },
     "export": {
       "title": "Export",
@@ -904,6 +927,7 @@
       "without_amount_other": "{{count}} receipts with no amount entered are not counted in this total.",
       "bought_on": "Purchased on",
       "warranty_until": "Under warranty until",
+      "warranty_short": "warranty",
       "covers": "Items:",
       "document_missing": "Document not attached: it could not be retrieved.",
       "document_pdf": "PDF document, to be attached separately."

@@ -13,10 +13,17 @@ import { jourLocal, warrantyReminderDate } from './warrantyDate';
  * que loanReminders, pour la même raison.
  */
 export type WarrantyReminderTarget = {
-  /** L'identifiant de la facture : c'est lui qui fait l'identifiant du rappel. */
+  /**
+   * L'identifiant de la LIAISON facture/objet, et non de la facture.
+   *
+   * UN RAPPEL PAR LIGNE, parce que la garantie est par ligne : deux objets du
+   * meme ticket de caisse n'ont pas la meme duree — deux ans pour un frigo, un
+   * an pour un grille-pain. Un seul rappel pour les deux serait faux pour l'un
+   * des deux, et on ne saurait pas lequel.
+   */
   id: string;
-  /** Les objets qu'elle couvre, pour pouvoir nommer ce dont on parle. */
-  objets: string[];
+  /** L'objet dont on parle. */
+  objet: string;
   warrantyUntil: string | null;
   /** Où renvoyer à l'appui sur la notification. */
   habitationId: string | null;
@@ -39,8 +46,8 @@ export type WarrantyReminderTarget = {
 
 const IDENTIFIER_PREFIX = 'warranty-reminder-';
 
-function identifierFor(factureId: string): string {
-  return `${IDENTIFIER_PREFIX}${factureId}`;
+function identifierFor(ligneId: string): string {
+  return `${IDENTIFIER_PREFIX}${ligneId}`;
 }
 
 /** Instant du rappel, ou `null` si cette facture n'en mérite aucun. */
@@ -48,12 +55,6 @@ function reminderDateFor(entry: WarrantyReminderTarget): Date | null {
   return warrantyReminderDate(entry.warrantyUntil, new Date());
 }
 
-/** « Lave-linge », ou « Lave-linge et 3 autres » quand la facture en couvre plusieurs. */
-function nommer(objets: string[], t: TFunction): string {
-  if (objets.length === 0) return t('factures.block.untitled');
-  if (objets.length === 1) return objets[0];
-  return t('factures.warranty.objets', { name: objets[0], count: objets.length - 1 });
-}
 
 async function scheduleOne(
   entry: WarrantyReminderTarget,
@@ -68,7 +69,7 @@ async function scheduleOne(
     identifier: identifierFor(entry.id),
     content: {
       title: t('factures.warranty.title'),
-      body: t('factures.warranty.body', { objet: nommer(entry.objets, t), date: fin }),
+      body: t('factures.warranty.body', { objet: entry.objet || t('factures.block.untitled'), date: fin }),
       // PAS D'ADRESSE DANS LA CHARGE UTILE, juste de quoi en construire une.
       //
       // PushRegistrar ne navigue que vers des routes qu'il connaît lui-même —
@@ -78,7 +79,7 @@ async function scheduleOne(
       // blanche ne peut pas le prévoir. C'est donc PushRegistrar qui assemble
       // la route, à partir de ce `kind` et de cet identifiant : le nom de
       // l'écran reste écrit dans le code de l'app, jamais dans le message.
-      data: { kind: 'warranty_ending', factureId: entry.id, habitationId: entry.habitationId },
+      data: { kind: 'warranty_ending', ligneId: entry.id, habitationId: entry.habitationId },
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
   });
@@ -127,11 +128,11 @@ export async function syncWarrantyReminders(
     const programmes = await Notifications.getAllScheduledNotificationsAsync();
     for (const demande of programmes) {
       if (!demande.identifier.startsWith(IDENTIFIER_PREFIX)) continue;
-      const factureId = demande.identifier.slice(IDENTIFIER_PREFIX.length);
+      const ligneId = demande.identifier.slice(IDENTIFIER_PREFIX.length);
       // SEULEMENT CE QUE CETTE LISTE COUVRE. Annuler tout ce qui n'y figure
       // pas effacerait les rappels des autres logements à chaque visite.
-      if (!vus.has(factureId)) continue;
-      if (!voulus.has(factureId)) await Notifications.cancelScheduledNotificationAsync(demande.identifier);
+      if (!vus.has(ligneId)) continue;
+      if (!voulus.has(ligneId)) await Notifications.cancelScheduledNotificationAsync(demande.identifier);
     }
 
     for (const entry of entries) {
@@ -185,10 +186,10 @@ export async function scheduleWarrantyReminder(
  * une facture aussi bien depuis la fiche d'un objet que depuis le dossier, et
  * le rappel ne doit survivre ni à l'un ni à l'autre.
  */
-export async function cancelWarrantyReminder(factureId: string): Promise<void> {
+export async function cancelWarrantyReminder(ligneId: string): Promise<void> {
   if (Platform.OS === 'web') return;
   try {
-    await Notifications.cancelScheduledNotificationAsync(identifierFor(factureId));
+    await Notifications.cancelScheduledNotificationAsync(identifierFor(ligneId));
   } catch (error) {
     logClientError(error, { source: 'warranty_reminder_cancel' });
   }

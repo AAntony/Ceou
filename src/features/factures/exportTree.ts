@@ -28,7 +28,10 @@ type ChainLink = { kind: ChainKind; id: string; name: string; is_default: boolea
 export type ExportRow = {
   facture_id: string;
   vendor: string | null;
+  /** Ce que CET objet a coute. */
   amount: number | null;
+  /** Le total du ticket, quand il a ete saisi sans repartition. */
+  facture_amount: number | null;
   purchase_date: string | null;
   warranty_until: string | null;
   document_url: string | null;
@@ -236,11 +239,39 @@ export function facturesSelectionnees(rows: ExportRow[], selection: Set<string>)
  * facture couvre aussi quelque chose de la chambre.
  */
 export function objetsDeLaFacture(rows: ExportRow[], factureId: string, selection: Set<string>): string[] {
-  const noms: string[] = [];
+  return lignesDeLaFacture(rows, factureId, selection).map((ligne) => ligne.name);
+}
+
+/** Ce qu'une facture couvre DANS LA SÉLECTION, chiffres et garanties compris. */
+export function lignesDeLaFacture(
+  rows: ExportRow[],
+  factureId: string,
+  selection: Set<string>,
+): { name: string; amount: number | null; warrantyUntil: string | null }[] {
+  const vues = new Set<string>();
+  const lignes: { name: string; amount: number | null; warrantyUntil: string | null }[] = [];
   for (const row of rows) {
     if (row.facture_id !== factureId) continue;
     if (!selection.has(nodeKey('objet', row.objet_id))) continue;
-    if (!noms.includes(row.objet_name)) noms.push(row.objet_name);
+    if (vues.has(row.objet_id)) continue;
+    vues.add(row.objet_id);
+    lignes.push({ name: row.objet_name, amount: row.amount, warrantyUntil: row.warranty_until });
   }
-  return noms.sort((a, b) => a.localeCompare(b));
+  return lignes.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Ce que la facture pèse dans l'export.
+ *
+ * LA SOMME DES LIGNES RETENUES, et le total du ticket à défaut. Prendre le
+ * montant de la première ligne — ce que faisait la version d'avant les
+ * montants par objet — donnerait le prix du grille-pain pour un ticket de
+ * 840 €. Et quand rien n'est détaillé, le total saisi reste le seul chiffre
+ * connu.
+ */
+export function montantDeLaFacture(rows: ExportRow[], factureId: string, selection: Set<string>): number | null {
+  const lignes = lignesDeLaFacture(rows, factureId, selection);
+  const chiffrees = lignes.filter((ligne) => ligne.amount != null);
+  if (chiffrees.length > 0) return chiffrees.reduce((somme, ligne) => somme + Number(ligne.amount), 0);
+  return rows.find((row) => row.facture_id === factureId)?.facture_amount ?? null;
 }

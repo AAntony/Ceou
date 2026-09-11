@@ -14,7 +14,14 @@ import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
 import { ExportProgress } from '../src/features/factures/ExportProgress';
 import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
-import { useFacturesForHabitation, useObjetsSansFacture, useUpdateFacture } from '../src/features/factures/queries';
+import {
+  nomsDesObjets,
+  sousGarantie,
+  useFacturesForHabitation,
+  useObjetsSansFacture,
+  useUpdateFacture,
+  type FactureLigne,
+} from '../src/features/factures/queries';
 import { useExportFactures } from '../src/features/factures/useExportFactures';
 import { useFeuilleFacture } from '../src/features/factures/useFeuilleFacture';
 import { syncWarrantyReminders } from '../src/features/notifications/warrantyReminders';
@@ -115,12 +122,16 @@ export default function FacturesScreen() {
   useEffect(() => {
     if (!dossier.data || !isOwner) return;
     void syncWarrantyReminders(
-      dossier.data.map((facture) => ({
-        id: facture.id,
-        objets: facture.objet_names,
-        warrantyUntil: facture.warranty_until,
-        habitationId,
-      })),
+      // UN RAPPEL PAR LIGNE, pas par facture : deux objets du meme ticket
+      // n'ont pas la meme duree de garantie.
+      dossier.data.flatMap((facture) =>
+        facture.lignes.map((ligne) => ({
+          id: ligne.id,
+          objet: ligne.name,
+          warrantyUntil: ligne.warrantyUntil,
+          habitationId,
+        })),
+      ),
       t,
       i18n.language,
     );
@@ -134,10 +145,16 @@ export default function FacturesScreen() {
         vendor: facture.vendor,
         amount: facture.amount,
         purchaseDate: facture.purchase_date,
-        warrantyUntil: facture.warranty_until,
+        // LA PLUS LOINTAINE DES GARANTIES de la facture : le PDF en affiche
+        // une par document, et c'est celle qui court encore qui renseigne.
+        warrantyUntil: garantieLaPlusLointaine(facture.lignes),
         documentUrl: facture.document_url,
         documentKind: facture.document_kind,
-        objets: facture.objet_names,
+        lignes: facture.lignes.map((ligne) => ({
+          name: ligne.name,
+          amount: ligne.amount,
+          warrantyUntil: ligne.warrantyUntil,
+        })),
       },
     ]);
   };
@@ -264,13 +281,12 @@ export default function FacturesScreen() {
               modifier.mutate({
                 id: enEdition.id,
                 vendor: valeurs.vendor,
-                amount: valeurs.amount,
                 purchaseDate: valeurs.purchaseDate,
-                warrantyUntil: valeurs.warrantyUntil,
+                factureAmount: valeurs.factureAmount,
                 document: valeurs.document,
-                // Ces deux-là ne partent pas en base : ils servent à replacer
-                // le rappel de garantie.
-                objets: enEdition.objet_names,
+                lignes: valeurs.lignes,
+                lignesSupprimees: valeurs.lignesSupprimees,
+                // Ne part pas en base : il dit ou renvoyer depuis un rappel.
                 habitationId,
               });
             }
@@ -353,7 +369,9 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
 
   const date = fromIsoDate(facture.purchase_date, order);
   const titre = facture.vendor || date || t('factures.block.untitled');
-  const garantieFinie = facture.warranty_until ? new Date(facture.warranty_until) < new Date() : null;
+  // AU MOINS UN OBJET ENCORE COUVERT suffit a allumer la pastille : la
+  // facture reste utile tant qu'une seule de ses garanties court.
+  const couverte = sousGarantie(facture.lignes);
 
   return (
     <Pressable
@@ -385,7 +403,7 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
           <Text numberOfLines={1} className="flex-1 text-body font-semibold text-ink">
             {titre}
           </Text>
-          {garantieFinie === false ? (
+          {couverte ? (
             <View className="rounded-full bg-teal-light px-2 py-0.5">
               <Text className="text-caption font-semibold text-teal-dark">{t('factures.block.warranty_active')}</Text>
             </View>
@@ -403,11 +421,17 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
         </Text>
 
         <Text numberOfLines={1} className="text-caption text-ink-soft">
-          {[facture.vendor && date ? date : null, facture.objet_names.join(', ')].filter(Boolean).join(' · ')}
+          {[facture.vendor && date ? date : null, nomsDesObjets(facture.lignes).join(', ')].filter(Boolean).join(' · ')}
         </Text>
       </View>
     </Pressable>
   );
+}
+
+/** La fin de garantie la plus lointaine d'une facture, ou null si aucune. */
+function garantieLaPlusLointaine(lignes: FactureLigne[]): string | null {
+  const dates = lignes.map((ligne) => ligne.warrantyUntil).filter((date): date is string => date !== null);
+  return dates.length === 0 ? null : dates.reduce((a, b) => (a > b ? a : b));
 }
 
 function formatMontant(montant: number, langue: string): string {
