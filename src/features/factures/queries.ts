@@ -520,3 +520,66 @@ export function useDeleteFacture() {
     };
   });
 }
+
+/**
+ * Les factures déjà enregistrées auxquelles on peut rattacher cet objet.
+ *
+ * LES PLUS RÉCENTES D'ABORD, et celles déjà rattachées écartées. Un
+ * rattachement suit presque toujours une saisie de la minute précédente : on
+ * sort du magasin avec quatre chaises et un seul ticket.
+ */
+export function useFacturesARattacher(objetId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['facturesARattacher', objetId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('factures_a_rattacher', { p_objet_id: objetId });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: enabled && Boolean(objetId),
+  });
+}
+
+/**
+ * Rattacher CET objet à une facture déjà enregistrée.
+ *
+ * Le geste du ticket de caisse, vu depuis l'objet : « celui-ci était sur le
+ * même ticket ». La ligne naît sans montant ni garantie — on les renseigne
+ * ensuite en ouvrant la facture, où l'on voit les autres lignes en face.
+ */
+export function useAttachFactureToObjet() {
+  return useLocalFirstWrite(
+    (input: { factureId: string; objetId: string; vendor: string | null }) => ({
+      describe: { kind: 'update' as const, name: input.vendor ?? '' },
+      ops: [
+        insertOp('facture_objets', [
+          { id: newId(), facture_id: input.factureId, objet_id: input.objetId, amount: null, warranty_until: null },
+        ]),
+      ],
+      result: undefined,
+    }),
+  );
+}
+
+/**
+ * Retirer un objet d'une facture, sans toucher aux autres.
+ *
+ * C'EST LE GESTE DE LA FICHE D'UN OBJET, et il ne doit surtout pas être
+ * confondu avec la suppression du document. Un ticket de caisse couvre
+ * plusieurs choses : se débarrasser de l'une ne doit pas priver les autres de
+ * leur preuve d'achat.
+ *
+ * ATTENTION : retirer le DERNIER objet supprime la facture, côté base
+ * (déclencheur purge_facture_sans_objet). L'écran doit donc proposer la
+ * suppression, et le dire, quand il ne reste qu'une ligne.
+ */
+export function useDetachFactureFromObjet() {
+  return useLocalFirstWrite((input: { ligneId: string; vendor: string | null }) => {
+    void cancelWarrantyReminder(input.ligneId);
+    return {
+      describe: { kind: 'update' as const, name: input.vendor ?? '' },
+      ops: [deleteOp('facture_objets', input.ligneId)],
+      result: undefined,
+    };
+  });
+}

@@ -808,7 +808,10 @@
       "untitled": "Facture",
       "warranty_active": "Sous garantie",
       "open": "Voir la facture {{name}}",
-      "tap_to_edit": "Toucher pour modifier"
+      "tap_to_edit": "Toucher pour modifier",
+      "add_choice": "Un nouveau document, ou une facture déjà enregistrée ?",
+      "add_new": "Nouvelle facture",
+      "add_existing": "Une déjà enregistrée"
     },
     "form": {
       "add_title": "Ajouter une facture",
@@ -840,7 +843,12 @@
       "title": "Supprimer cette facture ?",
       "message": "Le document sera retiré de tous les objets qu'il couvre.",
       "message_shared": "Cette facture couvre {{count}} objets : elle disparaîtra de tous, pas seulement de celui-ci.",
-      "action": "Supprimer cette facture"
+      "action": "Supprimer cette facture",
+      "detach": "Retirer cet objet de la facture",
+      "detach_title": "Retirer cet objet ?",
+      "detach_message_one": "La facture reste, avec son autre objet.",
+      "detach_message_other": "La facture reste, avec ses {{count}} autres objets.",
+      "message_last": "Cette facture ne couvre que cet objet : le document sera supprimé."
     },
     "entry": {
       "title": "Factures de ce logement",
@@ -927,6 +935,12 @@
       "covers": "Objets :",
       "document_missing": "Document non joint : il n'a pas pu être récupéré.",
       "document_pdf": "Document PDF, à joindre séparément."
+    },
+    "picker": {
+      "title": "Choisir une facture",
+      "intro": "Rattache cet objet à un document déjà enregistré — le même ticket de caisse, par exemple.",
+      "search": "Chercher par vendeur ou par objet",
+      "empty": "Aucune facture à rattacher."
     }
   },
   "network": {

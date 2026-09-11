@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { useMediaSource } from '../../lib/images/media';
@@ -10,10 +10,12 @@ import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, fromIsoDate } from './dateField';
 import { ExportProgress } from './ExportProgress';
 import { FactureFormSheet, type ValeursFacture } from './FactureFormSheet';
+import { RattacherFactureModal } from './RattacherFactureModal';
 import {
   lignesDe,
   useCreateFacture,
   useDeleteFacture,
+  useDetachFactureFromObjet,
   useFacturesForObjet,
   useUpdateFacture,
   type FactureDObjet,
@@ -51,8 +53,10 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
   const creer = useCreateFacture();
   const modifier = useUpdateFacture();
   const supprimer = useDeleteFacture();
+  const detacher = useDetachFactureFromObjet();
 
   const [objet, setObjet] = useState<{ name: string; photoUrl: string | null }>({ name: '', photoUrl: null });
+  const [rattachement, setRattachement] = useState(false);
   const feuilleEtat = useFeuilleFacture();
   const { demander, travail } = useExportFactures();
 
@@ -79,20 +83,47 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
     feuilleEtat.fermer();
   };
 
-  const supprimerCelleCi = () => {
+  const lignes = facture ? lignesDe(facture) : [];
+  // PARTAGÉE : le document couvre d'autres objets que celui-ci. C'est ce qui
+  // décide de tout le geste destructeur ci-dessous.
+  const partagee = lignes.length > 1;
+
+  /**
+   * RETIRER CET OBJET — pas supprimer le document.
+   *
+   * C'est le défaut signalé à l'usage, et il était grave : depuis la fiche
+   * d'une chaise, on supprimait le ticket de caisse des quatre. Un ticket
+   * couvre plusieurs choses, se débarrasser de l'une ne doit pas priver les
+   * autres de leur preuve d'achat.
+   *
+   * Quand la facture ne couvre QUE cet objet, retirer la ligne revient à la
+   * supprimer — la base s'en charge (purge_facture_sans_objet). Autant passer
+   * par la vraie suppression, qui annule aussi le rappel de garantie et fait
+   * sortir la ligne du cache, et surtout autant le DIRE : le libellé et la
+   * boîte changent tous les deux.
+   */
+  const retirerDeCetteFacture = () => {
     if (!facture) return;
     feuilleEtat.fermer();
-    confirmDelete(
-      t,
-      'factures.delete.title',
-      lignesDe(facture).length > 1 ? 'factures.delete.message_shared' : 'factures.delete.message',
-      () =>
-        supprimer.mutate({
-          id: facture.id,
-          vendor: facture.vendor,
-          ligneIds: lignesDe(facture).map((ligne) => ligne.id),
-        }),
-      { count: lignesDe(facture).length },
+
+    const ligne = lignes.find((candidate) => candidate.objetId === objetId);
+    if (partagee && ligne) {
+      confirmDelete(
+        t,
+        'factures.delete.detach_title',
+        'factures.delete.detach_message',
+        () => detacher.mutate({ ligneId: ligne.id, vendor: facture.vendor }),
+        { count: lignes.length - 1 },
+      );
+      return;
+    }
+
+    confirmDelete(t, 'factures.delete.title', 'factures.delete.message_last', () =>
+      supprimer.mutate({
+        id: facture.id,
+        vendor: facture.vendor,
+        ligneIds: lignes.map((autre) => autre.id),
+      }),
     );
   };
 
@@ -129,7 +160,15 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
      */
     ouvrirAjout: (nom: string, photoUrl: string | null) => {
       setObjet({ name: nom, photoUrl });
-      feuilleEtat.ouvrir();
+      // DEUX CHEMINS, ET LE SECOND EST CELUI DU TICKET DE CAISSE : on sort du
+      // magasin avec quatre chaises et un seul document. La deuxieme chaise ne
+      // doit pas rephotographier le meme papier — elle se rattache a la
+      // facture deja saisie. Le geste courant reste en tete de liste.
+      Alert.alert(t('factures.block.add'), t('factures.block.add_choice'), [
+        { text: t('factures.block.add_new'), onPress: () => feuilleEtat.ouvrir() },
+        { text: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]);
     },
 
     /** Vrai quand l'objet en a déjà une : la tuile d'ajout n'a plus lieu d'être. */
@@ -179,10 +218,19 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
           // des vues du système, et sur iOS en présenter une par-dessus une
           // modale ouverte ne fait rien du tout.
           onExport={facture ? exporterCelleCi : undefined}
-          onDelete={facture ? supprimerCelleCi : undefined}
+          onDelete={facture ? retirerDeCetteFacture : undefined}
+          // « Retirer cet objet » quand le document en couvre d'autres,
+          // « Supprimer » quand il n'y a que lui : le bouton doit dire ce
+          // qu'il fait, pas ce qu'il fait la plupart du temps.
+          deleteLabel={t(partagee ? 'factures.delete.detach' : 'factures.delete.action')}
           onClose={feuilleEtat.fermer}
           onSubmit={enregistrer}
           loading={creer.isPending || modifier.isPending}
+        />
+        <RattacherFactureModal
+          visible={rattachement}
+          objetId={objetId}
+          onClose={() => setRattachement(false)}
         />
         <ExportProgress travail={travail} />
       </>

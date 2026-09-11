@@ -95,8 +95,15 @@ type FactureFormSheetProps = {
   objetId?: string;
   onClose: () => void;
   onSubmit: (valeurs: ValeursFacture) => void;
-  /** Supprimer la facture entière. Absent en création : il n'y a rien à supprimer. */
+  /**
+   * Le geste destructeur, absent en création : il n'y a rien à supprimer.
+   *
+   * Ce qu'il fait DÉPEND DE L'ÉCRAN : depuis le dossier il supprime le
+   * document, depuis la fiche d'un objet il en retire seulement cet objet.
+   * D'où le libellé passé par l'appelant plutôt que décidé ici.
+   */
   onDelete?: () => void;
+  deleteLabel?: string;
   loading?: boolean;
   /** Sortir CETTE facture en PDF, depuis le coin de la feuille. */
   onExport?: () => void;
@@ -111,6 +118,7 @@ export function FactureFormSheet({
   onClose,
   onSubmit,
   onDelete,
+  deleteLabel,
   loading,
   onExport,
 }: FactureFormSheetProps) {
@@ -401,7 +409,7 @@ export function FactureFormSheet({
             partout ailleurs dans l'app. */}
         {onDelete ? (
           <View className="mt-8 items-center border-t border-ink/10 pt-6">
-            <Button label={t('factures.delete.action')} variant="danger" onPress={onDelete} />
+            <Button label={deleteLabel ?? t('factures.delete.action')} variant="danger" onPress={onDelete} />
           </View>
         ) : null}
       </BottomSheetModal>

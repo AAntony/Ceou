@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useCallback, useMemo, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
+import { Alert, FlatList, Pressable, Text, View, type RefreshControlProps } from 'react-native';
 import { useSpaceForAppTabBar } from '../../components/AppTabBar';
 import { Icon } from '../../components/Icon';
 import { useMediaSource } from '../../lib/images/media';
@@ -9,6 +9,7 @@ import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 import { PLACEHOLDER_IMAGES } from '../inventory/placeholders';
 import { FactureFormSheet } from './FactureFormSheet';
+import { RattacherFactureModal } from './RattacherFactureModal';
 import { useCreateFacture, useObjetsSansFacture } from './queries';
 import { useFeuilleFacture } from './useFeuilleFacture';
 
@@ -59,15 +60,24 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
   );
 
   const [cible, setCible] = useState<ObjetSansFacture | null>(null);
+  const [rattachement, setRattachement] = useState(false);
   const feuille = useFeuilleFacture();
 
   const ouvrirFeuille = feuille.ouvrir;
   const ouvrir = useCallback(
     (objet: ObjetSansFacture) => {
       setCible(objet);
-      ouvrirFeuille();
+      // MEMES DEUX CHEMINS QUE SUR LA FICHE D'UN OBJET : un nouveau document,
+      // ou un ticket deja saisi. On vide cette liste apres une course, et les
+      // objets d'une meme course partagent leur facture — ne proposer que la
+      // creation obligerait a rephotographier le meme papier autant de fois.
+      Alert.alert(t('factures.block.add'), t('factures.block.add_choice'), [
+        { text: t('factures.block.add_new'), onPress: () => ouvrirFeuille() },
+        { text: t('factures.block.add_existing'), onPress: () => setRattachement(true) },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]);
     },
-    [ouvrirFeuille],
+    [ouvrirFeuille, t],
   );
 
   const renderItem = useCallback(
@@ -97,7 +107,7 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
         // LA PREMIÈRE LIGNE EST DÉJÀ LÀ : on vient d'appuyer sur un objet
         // précis, la feuille n'a pas à redemander lequel. On peut en ajouter
         // d'autres ensuite, si le même ticket en couvre plusieurs.
-        objetInitial={cible ? { objetId: cible.id, name: cible.name } : undefined}
+        objetInitial={cible ? { objetId: cible.id, name: cible.name, photoUrl: cible.photo_url } : undefined}
         onClose={feuille.fermer}
         onSubmit={(valeurs) => {
           // `habitationId` ne part pas en base : il dit seulement quelles
@@ -107,6 +117,12 @@ export function ObjetsSansFactureList({ habitationId, objets, refreshControl }: 
           feuille.fermer();
         }}
         loading={creer.isPending}
+      />
+
+      <RattacherFactureModal
+        visible={rattachement}
+        objetId={cible?.id ?? ''}
+        onClose={() => setRattachement(false)}
       />
     </>
   );

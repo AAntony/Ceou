@@ -808,7 +808,10 @@
       "untitled": "Receipt",
       "warranty_active": "Under warranty",
       "open": "View receipt {{name}}",
-      "tap_to_edit": "Tap to edit"
+      "tap_to_edit": "Tap to edit",
+      "add_choice": "A new document, or a receipt you already saved?",
+      "add_new": "New receipt",
+      "add_existing": "One already saved"
     },
     "form": {
       "add_title": "Add a receipt",
@@ -840,7 +843,12 @@
       "title": "Delete this receipt?",
       "message": "The document will be removed from every item it covers.",
       "message_shared": "This receipt covers {{count}} items: it will disappear from all of them, not just this one.",
-      "action": "Delete this receipt"
+      "action": "Delete this receipt",
+      "detach": "Remove this item from the receipt",
+      "detach_title": "Remove this item?",
+      "detach_message_one": "The receipt stays, with its other item.",
+      "detach_message_other": "The receipt stays, with its {{count}} other items.",
+      "message_last": "This receipt covers only this item: the document will be deleted."
     },
     "entry": {
       "title": "Receipts for this home",
@@ -927,6 +935,12 @@
       "covers": "Items:",
       "document_missing": "Document not attached: it could not be retrieved.",
       "document_pdf": "PDF document, to be attached separately."
+    },
+    "picker": {
+      "title": "Choose a receipt",
+      "intro": "Attach this item to a document you already saved — the same till receipt, for instance.",
+      "search": "Search by seller or item",
+      "empty": "No receipt to attach."
     }
   },
   "network": {
