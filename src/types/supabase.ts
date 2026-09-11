@@ -997,6 +997,22 @@ export type Database = {
         Args: { p_emplacement_id: string }
         Returns: string
       }
+      factures_export_rows: {
+        Args: never
+        Returns: {
+          amount: number
+          chain: Json
+          created_at: string
+          document_kind: string
+          document_url: string
+          facture_id: string
+          objet_id: string
+          objet_name: string
+          purchase_date: string
+          vendor: string
+          warranty_until: string
+        }[]
+      }
       factures_for_habitation: {
         Args: { p_habitation_id: string }
         Returns: {

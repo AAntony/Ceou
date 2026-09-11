@@ -3,7 +3,13 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image as RNImage } from 'react-native';
 import { supabase } from '../supabase/client';
 
-function getImageSize(uri: string): Promise<{ width: number; height: number }> {
+/**
+ * Les dimensions d'une image locale.
+ *
+ * Exportee pour l'export PDF, qui a le meme besoin : ne JAMAIS agrandir une
+ * image plus petite que la cible, un upscale ressortant flou.
+ */
+export function getImageSize(uri: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
     RNImage.getSize(uri, (width, height) => resolve({ width, height }), reject);
   });

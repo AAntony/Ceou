@@ -109,6 +109,18 @@ module.exports = {
       'expo-image',
       'expo-secure-store',
       'expo-localization',
+      // DECLARES POUR ANDROID, PAS POUR IOS. Depuis Android 11, une
+      // application ne voit plus les autres : elle doit annoncer a l'avance
+      // les intentions qu'elle compte lancer, dans un bloc <queries> du
+      // manifeste. Sans ces deux plugins, `Sharing.isAvailableAsync()` et
+      // `MailComposer.isAvailableAsync()` repondent faussement non — l'export
+      // d'un dossier de factures se terminerait par « aucune application ne
+      // peut recevoir ce fichier », sur un telephone qui en a cinq.
+      //
+      // Ils ne posent aucune permission ni aucun texte a traduire : ils ne
+      // font qu'ouvrir la vue.
+      'expo-sharing',
+      'expo-mail-composer',
       [
         'expo-camera',
         {

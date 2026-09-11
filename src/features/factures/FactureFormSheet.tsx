@@ -6,10 +6,12 @@ import { BottomSheetModal } from '../../components/BottomSheetModal';
 import { Button } from '../../components/Button';
 import { ButtonRow } from '../../components/ButtonRow';
 import { FormActions } from '../../components/FormActions';
+import { Icon } from '../../components/Icon';
 import { PhotoViewerModal } from '../../components/PhotoViewerModal';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
 import { useMediaSource } from '../../lib/images/media';
+import { useThemeColors } from '../../lib/theme';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import type { Facture } from '../../types/database';
 import { dateOrderFor, datePlaceholder, formatDateInput, fromIsoDate, isDateIncomplete, toIsoDate } from './dateField';
@@ -52,10 +54,30 @@ type FactureFormSheetProps = {
     vendor: string | null;
   }) => void;
   loading?: boolean;
+  /**
+   * Sortir CETTE facture en PDF, depuis le coin de la feuille.
+   *
+   * POURQUOI ICI ET PAS DANS UNE LISTE. On regarde une facture précise — on
+   * vient de relire son montant — et c'est exactement le moment où l'on se
+   * dit « il faut que je l'envoie ». Obliger à ressortir, ouvrir l'export et
+   * la retrouver dans l'arbre pour une seule facture serait trois pas pour un
+   * geste.
+   *
+   * Absent en création : il n'y a encore rien à exporter.
+   */
+  onExport?: () => void;
 };
 
-export function FactureFormSheet({ visible, facture, onClose, onSubmit, loading }: FactureFormSheetProps) {
+export function FactureFormSheet({
+  visible,
+  facture,
+  onClose,
+  onSubmit,
+  loading,
+  onExport,
+}: FactureFormSheetProps) {
   const { t, i18n } = useTranslation();
+  const colors = useThemeColors();
   const order = dateOrderFor(i18n.language);
 
   // L'ETAT SE CONSTRUIT UNE FOIS, IL NE SE REMET PAS A JOUR PAR EFFET.
@@ -110,9 +132,26 @@ export function FactureFormSheet({ visible, facture, onClose, onSubmit, loading 
         sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6"
         scrollable
       >
-        <Text className="mb-4 text-subheading font-bold text-ink">
-          {t(facture ? 'factures.form.edit_title' : 'factures.form.add_title')}
-        </Text>
+        {/* LE TITRE ET L'EXPORT SUR LA MÊME LIGNE, l'action dans le coin haut
+            droit. C'est la place qu'occupe une action secondaire dans toutes
+            les feuilles du système : elle ne dispute rien au contenu, et on
+            la trouve sans la chercher. */}
+        <View className="mb-4 flex-row items-center gap-3">
+          <Text className="flex-1 text-subheading font-bold text-ink">
+            {t(facture ? 'factures.form.edit_title' : 'factures.form.add_title')}
+          </Text>
+          {onExport ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('factures.export.one')}
+              onPress={onExport}
+              hitSlop={10}
+              className="rounded-full border border-ink/10 p-2 active:opacity-60"
+            >
+              <Icon name="export" size={20} color={colors.accentDark} />
+            </Pressable>
+          ) : null}
+        </View>
 
         {/* APPUYER SUR LE DOCUMENT L'OUVRE EN GRAND — tant qu'il y en a un.
             Cette zone ouvrait la galerie, ce qui doublait inutilement les deux

@@ -1,17 +1,20 @@
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
+import { HeaderIconButton } from '../src/components/HeaderIconButton';
 import { Icon } from '../src/components/Icon';
 import { SegmentedTabs } from '../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
+import { ExportProgress } from '../src/features/factures/ExportProgress';
 import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
 import { useFacturesForHabitation, useObjetsSansFacture, useUpdateFacture } from '../src/features/factures/queries';
+import { useExportFactures } from '../src/features/factures/useExportFactures';
 import { useFeuilleFacture } from '../src/features/factures/useFeuilleFacture';
 import { useHabitationPermission } from '../src/features/sharing/queries';
 import { useMediaSource } from '../src/lib/images/media';
@@ -76,6 +79,7 @@ export default function FacturesScreen() {
   const modifier = useUpdateFacture();
   const [enEdition, setEnEdition] = useState<FactureEntry | null>(null);
   const feuille = useFeuilleFacture();
+  const { demander, travail } = useExportFactures();
 
   const dossier = useFacturesForHabitation(habitationId);
   const orphelins = useObjetsSansFacture(isOwner ? habitationId : undefined);
@@ -100,12 +104,45 @@ export default function FacturesScreen() {
   const chiffrees = factures.filter((f) => f.amount != null);
   const total = chiffrees.reduce((somme, f) => somme + Number(f.amount), 0);
 
+  const exporterCelleCi = (facture: FactureEntry) => {
+    feuille.fermer();
+    demander([
+      {
+        id: facture.id,
+        vendor: facture.vendor,
+        amount: facture.amount,
+        purchaseDate: facture.purchase_date,
+        warrantyUntil: facture.warranty_until,
+        documentUrl: facture.document_url,
+        documentKind: facture.document_kind,
+        objets: facture.objet_names,
+      },
+    ]);
+  };
+
   return (
     <>
       {/* `headerShown` EXPLICITE : le Stack racine les masque par défaut, et
           une destination de premier rang sans en-tête n'a plus ni titre ni
           retour. Même réabonnement que l'écran des prêts. */}
-      <Stack.Screen options={{ headerShown: true, title: t('factures.list.title') }} />
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: t('factures.list.title'),
+          // L'EXPORT PART D'ICI, ET SEULEMENT QUAND IL Y A QUELQUE CHOSE À
+          // EXPORTER. C'est l'écran où l'on relit son dossier : c'est là que
+          // vient l'idée de l'envoyer. L'arbre s'ouvrira déjà coché sur ce
+          // logement, sans cesser de montrer les autres.
+          headerRight: () =>
+            isOwner && factures.length > 0 ? (
+              <HeaderIconButton
+                icon="export"
+                label={t('factures.export.entry')}
+                onPress={() => router.push({ pathname: '/export-factures', params: { habitationId } })}
+              />
+            ) : null,
+        }}
+      />
 
       <View className="flex-1 bg-sand">
         {isOwner ? (
@@ -189,6 +226,11 @@ export default function FacturesScreen() {
           key={feuille.cle}
           visible={feuille.visible}
           facture={enEdition ?? undefined}
+          // LA FEUILLE SE FERME AVANT L'EXPORT, et ce n'est pas de la
+          // cosmétique : la feuille de partage et le brouillon de mail sont
+          // des vues du système, et sur iOS en présenter une par-dessus une
+          // modale ouverte ne fait rien du tout, en silence.
+          onExport={enEdition ? () => exporterCelleCi(enEdition) : undefined}
           onClose={feuille.fermer}
           onSubmit={(valeurs) => {
             if (enEdition) {
@@ -206,6 +248,8 @@ export default function FacturesScreen() {
           loading={modifier.isPending}
         />
       ) : null}
+
+      <ExportProgress travail={travail} />
     </>
   );
 }

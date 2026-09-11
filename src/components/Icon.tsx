@@ -84,6 +84,7 @@ export type IconName =
   | 'addFriend'
   | 'qrcode'
   | 'share'
+  | 'export'
   | 'star'
   | 'starOutline'
   | 'alert'
@@ -216,6 +217,10 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   // pas des colonnes — ce n'est pas un tableau.
   list: 'format-list-bulleted',
   share: 'share-variant',
+  // Distincte de `share` a dessein : « partager » envoie un lien vers ce qui
+  // reste dans l'app, « exporter » en fait sortir un fichier. Les deux
+  // coexistent sur les factures, il ne faut pas les confondre.
+  export: 'file-export-outline',
   star: 'star',
   starOutline: 'star-outline',
   alert: 'alert-circle-outline',

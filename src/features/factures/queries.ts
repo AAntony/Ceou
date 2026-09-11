@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase/client';
 import type { Facture } from '../../types/database';
 import { newId } from '../../lib/uuid';
 import { deleteOp, deleteWhereOp, insertOp, updateOp, uploadOp, useLocalFirstWrite } from '../../lib/writeQueue';
+import type { ExportRow } from './exportTree';
 
 // LES FACTURES S'ÉCRIVENT COMME LE RESTE : par la file, jamais en direct.
 //
@@ -86,6 +87,30 @@ export function useObjetsSansFacture(habitationId: string | undefined) {
       return data ?? [];
     },
     enabled: Boolean(habitationId),
+  });
+}
+
+/**
+ * Tout ce qu'il faut pour l'écran d'export : l'arbre ET les factures.
+ *
+ * UNE SEULE REQUÊTE POUR TOUS LES LOGEMENTS, et pas une par habitation. La
+ * sélection se promène d'un logement à l'autre — on peut vouloir tout le
+ * dossier d'assurance d'un coup — et la découper obligerait à recharger à
+ * chaque dépliage, c'est-à-dire à attendre au milieu d'un geste de sélection.
+ * Le volume est celui des factures saisies à la main : quelques dizaines.
+ *
+ * `enabled` plutôt qu'un identifiant optionnel : cette requête ne dépend de
+ * rien, c'est l'écran qui dit quand elle a lieu d'être.
+ */
+export function useFacturesExportRows(enabled: boolean) {
+  return useQuery({
+    queryKey: ['facturesExportRows'],
+    queryFn: async (): Promise<ExportRow[]> => {
+      const { data, error } = await supabase.rpc('factures_export_rows');
+      if (error) throw error;
+      return (data ?? []) as ExportRow[];
+    },
+    enabled,
   });
 }
 

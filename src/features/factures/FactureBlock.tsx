@@ -8,8 +8,10 @@ import { useMediaSource } from '../../lib/images/media';
 import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, fromIsoDate } from './dateField';
+import { ExportProgress } from './ExportProgress';
 import { FactureFormSheet } from './FactureFormSheet';
 import { useCreateFacture, useDeleteFacture, useFacturesForObjet, useUpdateFacture, type FactureWithObjets } from './queries';
+import { useExportFactures } from './useExportFactures';
 import { useFeuilleFacture } from './useFeuilleFacture';
 
 // LES PREUVES D'ACHAT D'UN OBJET, SUR SA FICHE.
@@ -38,6 +40,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
 
   const [enEdition, setEnEdition] = useState<FactureWithObjets | undefined>(undefined);
   const feuilleEtat = useFeuilleFacture();
+  const { demander, travail } = useExportFactures();
 
   const factures = data ?? [];
 
@@ -62,6 +65,22 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
       creer.mutate({ objetId, habitationId, ...valeurs });
     }
     feuilleEtat.fermer();
+  };
+
+  const exporterCelleCi = (facture: FactureWithObjets) => {
+    feuilleEtat.fermer();
+    demander([
+      {
+        id: facture.id,
+        vendor: facture.vendor,
+        amount: facture.amount,
+        purchaseDate: facture.purchase_date,
+        warrantyUntil: facture.warranty_until,
+        documentUrl: facture.document_url,
+        documentKind: facture.document_kind,
+        objets: facture.objets.map((objet) => objet.name),
+      },
+    ]);
   };
 
   return {
@@ -102,16 +121,28 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         </View>
       ),
 
-    /** À poser n'importe où : c'est une modale. */
+    /** À poser n'importe où : ce sont des modales. */
     feuille: isOwner ? (
-      <FactureFormSheet
-        key={feuilleEtat.cle}
-        visible={feuilleEtat.visible}
-        facture={enEdition}
-        onClose={feuilleEtat.fermer}
-        onSubmit={enregistrer}
-        loading={creer.isPending || modifier.isPending}
-      />
+      <>
+        <FactureFormSheet
+          key={feuilleEtat.cle}
+          visible={feuilleEtat.visible}
+          facture={enEdition}
+          // EN MODIFICATION SEULEMENT : en création il n'y a pas encore de
+          // facture à sortir. C'est ici qu'on relit un montant, donc ici que
+          // vient l'idée de l'envoyer.
+          //
+          // LA FEUILLE SE FERME AVANT, et ce n'est pas de la cosmétique : la
+          // feuille de partage et le brouillon de mail sont des vues du
+          // système, et sur iOS en présenter une par-dessus une modale
+          // ouverte ne fait rien du tout, en silence.
+          onExport={enEdition ? () => exporterCelleCi(enEdition) : undefined}
+          onClose={feuilleEtat.fermer}
+          onSubmit={enregistrer}
+          loading={creer.isPending || modifier.isPending}
+        />
+        <ExportProgress travail={travail} />
+      </>
     ) : null,
   };
 }
