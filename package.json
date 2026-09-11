@@ -39,6 +39,7 @@
     "expo-updates": "~57.0.13",
     "i18next": "^26.3.6",
     "nativewind": "^4.2.6",
+    "pdf-lib": "^1.17.1",
     "qrcode-generator": "^2.0.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",

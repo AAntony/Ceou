@@ -1,17 +1,15 @@
-import { Image } from 'expo-image';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { showDialog } from '../../lib/dialog';
-import { useMediaSource } from '../../lib/images/media';
-import { useScaled } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 import { dateOrderFor, fromIsoDate } from './dateField';
 import { ExportProgress } from './ExportProgress';
 import { FactureFormSheet, type ValeursFacture } from './FactureFormSheet';
 import { RattacherFactureModal } from './RattacherFactureModal';
+import { VignetteDocument } from './VignetteDocument';
 import {
   lignesDe,
   useCreateFacture,
@@ -74,6 +72,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
         purchaseDate: valeurs.purchaseDate,
         factureAmount: valeurs.factureAmount,
         document: valeurs.document,
+        documentKind: valeurs.documentKind,
         lignes: valeurs.lignes,
         lignesSupprimees: valeurs.lignesSupprimees,
         habitationId,
@@ -269,13 +268,7 @@ export function useFactures(objetId: string, isOwner: boolean, habitationId?: st
 function FactureCarte({ facture, onPress }: { facture: FactureDObjet; onPress: () => void }) {
   const { t, i18n } = useTranslation();
   const colors = useThemeColors();
-  const vignette = useMediaSource(facture.document_url);
   const order = dateOrderFor(i18n.language);
-
-  // Proportion d'un ticket, plus haute que large : c'est ce qui la fait
-  // reconnaître comme un document et non comme la photo d'un objet.
-  const largeur = useScaled(48);
-  const hauteur = useScaled(62);
 
   const date = fromIsoDate(facture.purchase_date, order);
   const titre = facture.vendor || date || t('factures.block.untitled');
@@ -288,18 +281,13 @@ function FactureCarte({ facture, onPress }: { facture: FactureDObjet; onPress: (
       onPress={onPress}
       className="flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface p-3 active:opacity-70"
     >
-      <View
-        style={{ width: largeur, height: hauteur }}
-        className="overflow-hidden rounded-lg border border-ink/10 bg-sand-dark"
-      >
-        {vignette ? (
-          <Image source={vignette} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-        ) : (
-          <View className="flex-1 items-center justify-center">
-            <Icon name="facture" size={18} color={colors.inkFaint} />
-          </View>
-        )}
-      </View>
+      <VignetteDocument
+        documentUrl={facture.document_url}
+        documentKind={facture.document_kind}
+        width={48}
+        height={62}
+        iconSize={18}
+      />
 
       <View className="flex-1">
         <Text numberOfLines={1} className="text-body font-semibold text-ink">

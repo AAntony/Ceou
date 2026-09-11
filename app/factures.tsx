@@ -15,6 +15,7 @@ import { dateOrderFor, fromIsoDate } from '../src/features/factures/dateField';
 import { ExportProgress } from '../src/features/factures/ExportProgress';
 import { FactureFormSheet } from '../src/features/factures/FactureFormSheet';
 import { ObjetsSansFactureList } from '../src/features/factures/ObjetsSansFactureList';
+import { VignetteDocument } from '../src/features/factures/VignetteDocument';
 import {
   lignesDe,
   sousGarantie,
@@ -310,6 +311,7 @@ export default function FacturesScreen() {
                 purchaseDate: valeurs.purchaseDate,
                 factureAmount: valeurs.factureAmount,
                 document: valeurs.document,
+                documentKind: valeurs.documentKind,
                 lignes: valeurs.lignes,
                 lignesSupprimees: valeurs.lignesSupprimees,
                 // Ne part pas en base : il dit ou renvoyer depuis un rappel.
@@ -385,13 +387,7 @@ function TotalCard({
 function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () => void }) {
   const { t, i18n } = useTranslation();
   const colors = useThemeColors();
-  const document = useMediaSource(facture.document_url);
   const order = dateOrderFor(i18n.language);
-
-  // La vignette est dessinée en pixels et suit donc le réglage de taille :
-  // sinon elle deviendrait un timbre à côté d'un texte doublé.
-  const largeur = useScaled(52);
-  const hauteur = useScaled(68);
 
   const date = fromIsoDate(facture.purchase_date, order);
   const titre = facture.vendor || date || t('factures.block.untitled');
@@ -412,20 +408,13 @@ function FactureCard({ facture, onOpen }: { facture: FactureEntry; onOpen: () =>
         onPress={onOpen}
         className="flex-row gap-3 p-3 active:opacity-70"
       >
-        {/* PROPORTION D'UN TICKET, plus haute que large : c'est ce qui la fait
-            reconnaître comme un document et non comme la photo d'un objet. */}
-        <View
-          style={{ width: largeur, height: hauteur }}
-          className="overflow-hidden rounded-lg border border-ink/10 bg-sand-dark"
-        >
-          {document ? (
-            <Image source={document} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-          ) : (
-            <View className="flex-1 items-center justify-center">
-              <Icon name="facture" size={18} color={colors.inkFaint} />
-            </View>
-          )}
-        </View>
+        <VignetteDocument
+          documentUrl={facture.document_url}
+          documentKind={facture.document_kind}
+          width={52}
+          height={68}
+          iconSize={20}
+        />
 
         {/* TROIS LIGNES, TOUJOURS. C'est ce qui donne à toutes les cartes la
             même hauteur sans figer un nombre de pixels — donc une liste qui

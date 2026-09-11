@@ -60,6 +60,7 @@ export type IconName =
   | 'move'
   | 'history'
   | 'facture'
+  | 'pdf'
   | 'plan'
   | 'piece'
   | 'conteneur'
@@ -171,6 +172,9 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   // Le ticket de caisse plutot qu'un document generique : c'est la forme
   // qu'on reconnait sans lire, et elle distingue une facture d'une note.
   facture: 'receipt-text-outline',
+  // Un PDF ne se montre pas en vignette : c'est cette icone qui le represente
+  // partout ou une photo de ticket s'afficherait.
+  pdf: 'file-pdf-box',
   plan: 'floor-plan',
   piece: 'door-open',
   conteneur: 'archive',

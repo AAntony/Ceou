@@ -817,10 +817,14 @@
       "add_title": "Ajouter une facture",
       "edit_title": "Modifier la facture",
       "document_label": "Le document",
-      "document_empty": "Photographie la facture, ou choisis-la dans tes images.",
+      "document_empty": "Photographie la facture, choisis-la dans tes images, ou importe un PDF.",
       "document_zoom": "Voir la facture en grand",
       "take_photo": "Photographier",
       "choose_file": "Choisir une image",
+      "choose_pdf": "Importer un PDF",
+      "document_pdf": "Document PDF",
+      "document_open": "Ouvrir le PDF",
+      "document_no_viewer": "Aucune application de cet appareil ne sait ouvrir un PDF.",
       "vendor_label": "Vendeur",
       "amount_label": "Montant",
       "purchase_label": "Date d'achat",
@@ -935,7 +939,7 @@
       "warranty_short": "garantie",
       "covers": "Objets :",
       "document_missing": "Document non joint : il n'a pas pu être récupéré.",
-      "document_pdf": "Document PDF, à joindre séparément."
+      "document_pdf": "Document PDF, joint à la fin de ce dossier."
     },
     "picker": {
       "title": "Choisir une facture",

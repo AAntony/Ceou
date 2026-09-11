@@ -817,10 +817,14 @@
       "add_title": "Add a receipt",
       "edit_title": "Edit receipt",
       "document_label": "The document",
-      "document_empty": "Photograph the receipt, or pick it from your images.",
+      "document_empty": "Photograph the receipt, pick it from your images, or import a PDF.",
       "document_zoom": "View the receipt full screen",
       "take_photo": "Take a photo",
       "choose_file": "Choose an image",
+      "choose_pdf": "Import a PDF",
+      "document_pdf": "PDF document",
+      "document_open": "Open the PDF",
+      "document_no_viewer": "No app on this device can open a PDF.",
       "vendor_label": "Seller",
       "amount_label": "Amount",
       "purchase_label": "Purchase date",
@@ -935,7 +939,7 @@
       "warranty_short": "warranty",
       "covers": "Items:",
       "document_missing": "Document not attached: it could not be retrieved.",
-      "document_pdf": "PDF document, to be attached separately."
+      "document_pdf": "PDF document, attached at the end of this file."
     },
     "picker": {
       "title": "Choose a receipt",

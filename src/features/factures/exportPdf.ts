@@ -4,6 +4,7 @@ import * as Print from 'expo-print';
 import { getImageSize } from '../../lib/images/pickAndUploadImage';
 import { parseStoredMedia } from '../../lib/images/media';
 import { signMedia } from '../../lib/images/signMedia';
+import { collerLesAnnexes, rassemblerLesAnnexes } from './exportAnnexes';
 
 // LE DOSSIER QU'ON ENVOIE À UN ASSUREUR, EN UN SEUL FICHIER.
 //
@@ -115,6 +116,9 @@ export async function genererPdfFactures(
   if (!dossier.exists) dossier.create({ intermediates: true, idempotent: true });
 
   const documents = new Map<string, string>();
+  // LES PDF NE S'INCORPORENT PAS AU HTML : ils sont téléchargés ici, collés à
+  // la fin du dossier après l'impression (voir exportAnnexes).
+  const sourcesPdf: { id: string; fichier: File }[] = [];
   let manquants = 0;
 
   // SÉQUENTIEL, ET C'EST DÉLIBÉRÉ. Un `Promise.all` téléchargerait et
@@ -124,48 +128,94 @@ export async function genererPdfFactures(
   for (let i = 0; i < factures.length; i += 1) {
     const facture = factures[i];
     onProgress?.(i, factures.length);
+
+    if (facture.documentKind === 'pdf') {
+      const fichier = await telechargerDocument(facture, dossier, 'pdf');
+      if (fichier) sourcesPdf.push({ id: facture.id, fichier });
+      else manquants += 1;
+      continue;
+    }
+
     const base64 = await documentEnBase64(facture, dossier, largeur);
     if (base64) documents.set(facture.id, base64);
     else manquants += 1;
   }
   onProgress?.(factures.length, factures.length);
 
-  const html = construireHtml(factures, documents, libelles, formaterMontant);
+  // AVANT LE HTML : c'est ce qui permet à chaque ligne de dire la vérité sur
+  // sa pièce jointe. Voir exportAnnexes.
+  const annexe = await rassemblerLesAnnexes(sourcesPdf);
+  manquants += annexe.echecs;
+  for (const source of sourcesPdf) {
+    try {
+      if (source.fichier.exists) source.fichier.delete();
+    } catch {
+      // Le ménage du cache n'a pas à faire échouer un export réussi.
+    }
+  }
+
+  const html = construireHtml(factures, documents, annexe.jointes, libelles, formaterMontant);
 
   // A4 ET NON US LETTER (612x792, le défaut) : l'app est écrite pour la
   // France, et un PDF au format américain s'imprime de travers sur tout ce
   // qui se trouve dans un bureau ici. 595x842 points, soit A4 à 72 ppp.
   const { uri } = await Print.printToFileAsync({ html, width: 595, height: 842 });
 
+  await collerLesAnnexes(uri, annexe);
+
   return { uri: await renommer(uri, dossier, libelles.titre), manquants };
 }
 
 /**
- * Le document d'une facture, réduit et encodé.
+ * Le document d'une facture, rapatrié dans le cache.
  *
- * Rend `null` quand il n'y a rien à joindre — document jamais envoyé (créé
- * hors ligne), adresse illisible, signature refusée, ou PDF, que l'imprimante
- * ne sait pas incorporer. L'export CONTINUE dans tous ces cas : perdre le
- * dossier entier parce qu'une image manque serait la pire des réponses.
+ * Rend `null` quand il n'y a rien à rapatrier — document jamais envoyé (créé
+ * hors ligne), adresse illisible, signature refusée, réseau coupé au milieu.
+ * L'export CONTINUE dans tous ces cas : perdre le dossier entier parce qu'une
+ * pièce manque serait la pire des réponses.
+ *
+ * Le ménage est à L'APPELANT : une image se supprime aussitôt encodée, un PDF
+ * doit survivre jusqu'à la fusion.
+ */
+async function telechargerDocument(
+  facture: FactureAExporter,
+  dossier: Directory,
+  extension: string,
+): Promise<File | null> {
+  if (!facture.documentUrl) return null;
+
+  const stored = parseStoredMedia(facture.documentUrl);
+  if (!stored) return null;
+
+  try {
+    const signee = await signMedia(stored.bucket, stored.path);
+    if (!signee) return null;
+
+    const fichier = new File(dossier, `${facture.id}.${extension}`);
+    if (fichier.exists) fichier.delete();
+    return await File.downloadFileAsync(signee, fichier);
+  } catch {
+    // Volontairement muet : l'appelant compte les manquants et le dit à la
+    // personne. Une exception ici n'est pas une anomalie de code, c'est un
+    // fichier absent ou un réseau qui coupe au milieu.
+    return null;
+  }
+}
+
+/**
+ * Le document d'une facture image, réduit et encodé pour le HTML.
+ *
+ * Rend `null` dès que quoi que ce soit manque — voir `telechargerDocument`.
  */
 async function documentEnBase64(
   facture: FactureAExporter,
   dossier: Directory,
   largeur: number,
 ): Promise<string | null> {
-  if (!facture.documentUrl || facture.documentKind !== 'image') return null;
+  const telecharge = await telechargerDocument(facture, dossier, 'jpg');
+  if (!telecharge) return null;
 
-  const stored = parseStoredMedia(facture.documentUrl);
-  if (!stored) return null;
-
-  const fichier = new File(dossier, `${facture.id}.jpg`);
   try {
-    const signee = await signMedia(stored.bucket, stored.path);
-    if (!signee) return null;
-
-    if (fichier.exists) fichier.delete();
-    const telecharge = await File.downloadFileAsync(signee, fichier);
-
     // NE JAMAIS AGRANDIR : un upscale ressort flou, et le document devient
     // moins lisible qu'avant d'avoir été « amélioré ». Même garde-fou que
     // l'envoi d'une photo (uploadImage).
@@ -179,13 +229,10 @@ async function documentEnBase64(
     });
     return reduit.base64 ?? null;
   } catch {
-    // Volontairement muet : l'appelant compte les manquants et le dit à la
-    // personne. Une exception ici n'est pas une anomalie de code, c'est un
-    // fichier absent ou un réseau qui coupe au milieu.
     return null;
   } finally {
     try {
-      if (fichier.exists) fichier.delete();
+      if (telecharge.exists) telecharge.delete();
     } catch {
       // Le ménage du cache n'a pas à faire échouer un export réussi.
     }
@@ -262,6 +309,8 @@ const STYLE = `
 function construireHtml(
   factures: FactureAExporter[],
   documents: Map<string, string>,
+  /** Les factures dont le PDF est réellement collé à la fin du dossier. */
+  annexees: Set<string>,
   l: LibellesPdf,
   formaterMontant: (montant: number) => string,
 ): string {
@@ -309,7 +358,9 @@ function construireHtml(
     }
   </section>`;
 
-  const pages = factures.map((f) => pageFacture(f, documents.get(f.id), l, formaterMontant)).join('');
+  const pages = factures
+    .map((f) => pageFacture(f, documents.get(f.id), annexees.has(f.id), l, formaterMontant))
+    .join('');
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>${recapitulatif}${pages}</body></html>`;
 }
@@ -317,6 +368,7 @@ function construireHtml(
 function pageFacture(
   f: FactureAExporter,
   base64: string | undefined,
+  annexee: boolean,
   l: LibellesPdf,
   formaterMontant: (montant: number) => string,
 ): string {
@@ -330,7 +382,11 @@ function pageFacture(
 
   const document = base64
     ? `<img src="data:image/jpeg;base64,${base64}" />`
-    : `<div class="absent">${escape(f.documentKind === 'pdf' ? l.documentPdf : l.documentManquant)}</div>`;
+    // ANNEXÉ OU MANQUANT, ET RIEN ENTRE LES DEUX. La distinction ne vient pas
+    // du type du document mais de ce qui s'est RÉELLEMENT passé : un PDF
+    // illisible doit se dire manquant, sans quoi le dossier promet une pièce
+    // qu'il ne contient pas.
+    : `<div class="absent">${escape(annexee ? l.documentPdf : l.documentManquant)}</div>`;
 
   return `<section class="page">
     <h2>${escape(titre)}</h2>

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '../auth/SessionProvider';
+import { PDF_MIME } from '../../lib/files/document';
 import { isLocalUri } from '../../lib/images/media';
 import { supabase } from '../../lib/supabase/client';
 import type { Facture } from '../../types/database';
@@ -41,6 +42,25 @@ export type FactureLigne = {
   amount: number | null;
   warrantyUntil: string | null;
 };
+
+/**
+ * De quoi est fait le document d'une facture.
+ *
+ * `image` : une photo du ticket, redimensionnée et ré-encodée à l'envoi.
+ * `pdf`   : un fichier reçu par courriel, envoyé tel quel — le ré-encoder le
+ *           détruirait, et il peut compter plusieurs pages.
+ */
+export type DocumentKind = 'image' | 'pdf';
+
+/** L'extension du fichier stocké. Elle suit le type, sinon le PDF s'appelle .jpg. */
+function extensionDe(kind: DocumentKind): string {
+  return kind === 'pdf' ? 'pdf' : 'jpg';
+}
+
+/** Le type MIME à poser sur l'envoi, ou `undefined` pour laisser passer une image. */
+function contentTypeDe(kind: DocumentKind): string | undefined {
+  return kind === 'pdf' ? PDF_MIME : undefined;
+}
 
 /** Une facture telle que la fiche d'un objet la connaît. */
 export type FactureDObjet = {
@@ -247,6 +267,8 @@ type NouvelleFacture = {
   habitationId?: string;
   /** Chemin local du document choisi, ou adresse déjà connue. */
   document: string;
+  /** Une photo du ticket, ou un PDF reçu par courriel. */
+  documentKind: DocumentKind;
   vendor: string | null;
   purchaseDate: string | null;
   /** Total du ticket, facultatif. */
@@ -298,7 +320,7 @@ export function useCreateFacture() {
       // laisserait un `file://` en base si le lot échouait — une adresse
       // qu'aucun autre appareil ne saurait ouvrir. Même règle que les photos.
       document_url: local ? null : input.document,
-      document_kind: 'image',
+      document_kind: input.documentKind,
       amount: input.factureAmount,
       purchase_date: input.purchaseDate,
       vendor: input.vendor,
@@ -323,7 +345,10 @@ export function useCreateFacture() {
                 // préfixe, et lui seul, qui autorise la lecture du fichier
                 // (voir can_read_media). Une facture n'est donc lisible que
                 // par son propriétaire, par construction.
-                path: `${userId}/${id}.jpg`,
+                path: `${userId}/${id}.${extensionDe(input.documentKind)}`,
+                // Absent pour une image : elle doit passer par le
+                // redimensionnement. Présent pour un PDF : il part tel quel.
+                contentType: contentTypeDe(input.documentKind),
                 then: { table: 'factures', id, column: 'document_url' },
               }),
             ]
@@ -422,6 +447,8 @@ export function useUpdateFacture() {
        * n'y a pas touché, un chemin local si on vient de le rephotographier.
        */
       document?: string;
+      /** Ce qu'est le document ci-dessus. Ignoré quand il n'a pas changé. */
+      documentKind: DocumentKind;
       /** L'état voulu des lignes. Celles sans `id` sont nouvelles. */
       lignes: LigneSaisie[];
       /** Les liaisons retirées, par leur identifiant. */
@@ -466,6 +493,10 @@ export function useUpdateFacture() {
         vendor: input.vendor,
         amount: input.factureAmount,
         purchase_date: input.purchaseDate,
+        // ÉCRIT SEULEMENT QUAND LE DOCUMENT CHANGE. Le réécrire à chaque
+        // modification de vendeur ferait passer pour une image un PDF envoyé
+        // depuis une version qui ne savait pas encore les distinguer.
+        ...(remplace ? { document_kind: input.documentKind } : {}),
       };
 
       // LES LIGNES DÉJÀ CONNUES SE MODIFIENT, LES NEUVES S'INSÈRENT. La
@@ -493,7 +524,8 @@ export function useUpdateFacture() {
                 // écrasé (`upsert`). L'adresse rendue porte un horodatage,
                 // qui sert de clé de cache : sans lui, expo-image continuerait
                 // d'afficher l'ancienne image.
-                path: `${userId}/${input.id}.jpg`,
+                path: `${userId}/${input.id}.${extensionDe(input.documentKind)}`,
+                contentType: contentTypeDe(input.documentKind),
                 then: { table: 'factures', id: input.id, column: 'document_url' },
               }),
             ]

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { uploadDocument } from './files/document';
 import { uploadImage } from './images/pickAndUploadImage';
 import { supabase } from './supabase/client';
 import type { Database } from '../types/supabase';
@@ -82,6 +83,14 @@ export type WriteOp =
       uri: string;
       bucket: string;
       path: string;
+      /**
+       * Présent = le fichier part TEL QUEL, avec ce type.
+       *
+       * Absent = c'est une image, et elle passe par le redimensionnement et le
+       * ré-encodage JPEG d'`uploadImage`. Le distinguo n'est pas cosmétique :
+       * ré-encoder un PDF en JPEG le détruit.
+       */
+      contentType?: string;
       then: { table: WriteTable; id: string; column: string };
     };
 
@@ -145,7 +154,9 @@ async function runBatch({ ops }: WriteBatch): Promise<void> {
     }
 
     if (op.kind === 'upload') {
-      const url = await uploadImage(op.uri, { bucket: op.bucket, path: op.path });
+      const url = op.contentType
+        ? await uploadDocument(op.uri, { bucket: op.bucket, path: op.path, contentType: op.contentType })
+        : await uploadImage(op.uri, { bucket: op.bucket, path: op.path });
       const target = supabase.from(op.then.table) as unknown as UntypedTable;
       const { error } = await target.update({ [op.then.column]: url }).eq('id', op.then.id);
       if (error) throw error;
@@ -265,6 +276,8 @@ export function uploadOp(input: {
   uri: string;
   bucket: string;
   path: string;
+  /** Voir le type : présent, le fichier part tel quel au lieu d'être ré-encodé. */
+  contentType?: string;
   then: { table: WriteTable; id: string; column: string };
 }): WriteOp {
   return { kind: 'upload', ...input };

@@ -11,6 +11,7 @@ import { PhotoViewerModal } from '../../components/PhotoViewerModal';
 import { SegmentedTabs } from '../../components/SegmentedTabs';
 import { TextField } from '../../components/TextField';
 import { logClientError } from '../../lib/errorLogging';
+import { ouvrirPdf, pickPdf } from '../../lib/files/document';
 import { useMediaSource } from '../../lib/images/media';
 import { pickImage, takePhoto } from '../../lib/images/pickAndUploadImage';
 import { useScaled } from '../../lib/textScale';
@@ -18,7 +19,7 @@ import { useThemeColors } from '../../lib/theme';
 import { PLACEHOLDER_IMAGES } from '../inventory/placeholders';
 import { dateOrderFor, datePlaceholder, formatDateInput, fromIsoDate, isDateIncomplete, toIsoDate } from './dateField';
 import { ObjetPickerModal } from './ObjetPickerModal';
-import { lignesDe, type FactureLigne, type LigneSaisie } from './queries';
+import { lignesDe, type DocumentKind, type FactureLigne, type LigneSaisie } from './queries';
 import { showMessage } from '../../lib/dialog';
 
 // AJOUTER UNE FACTURE DOIT PRENDRE DIX SECONDES.
@@ -55,6 +56,8 @@ import { showMessage } from '../../lib/dialog';
 /** Ce que la feuille lit d'une facture, et rien de plus. */
 export type FactureEnEdition = {
   document_url: string | null;
+  /** Une photo de ticket, ou un PDF : les deux ne s'affichent pas pareil. */
+  document_kind: string;
   vendor: string | null;
   purchase_date: string | null;
   facture_amount: number | null;
@@ -63,6 +66,7 @@ export type FactureEnEdition = {
 
 export type ValeursFacture = {
   document: string;
+  documentKind: DocumentKind;
   vendor: string | null;
   purchaseDate: string | null;
   factureAmount: number | null;
@@ -132,6 +136,11 @@ export function FactureFormSheet({
   // useFeuilleFacture) : ces valeurs initiales sont donc relues a chaque fois,
   // sans le rendu en cascade qu'un effet de reinitialisation provoque.
   const [document, setDocument] = useState<string | null>(facture?.document_url ?? null);
+  const [documentKind, setDocumentKind] = useState<DocumentKind>(facture?.document_kind === 'pdf' ? 'pdf' : 'image');
+  // Le nom du fichier choisi, le temps de la saisie : un PDF n'a pas de
+  // vignette, et « Facture Darty.pdf » est tout ce qui permet de reconnaître
+  // celui qu'on vient d'importer.
+  const [nomPdf, setNomPdf] = useState<string | null>(null);
   const [vendor, setVendor] = useState(facture?.vendor ?? '');
   const [purchase, setPurchase] = useState(() => fromIsoDate(facture?.purchase_date ?? null, order));
   const [total, setTotal] = useState(facture?.facture_amount != null ? String(facture.facture_amount) : '');
@@ -160,9 +169,56 @@ export function FactureFormSheet({
       // facture est un document : rogner au format d'une vignette couperait le
       // montant ou l'en-tête, c'est-à-dire ce qu'on garde le document pour lire.
       const uri = source === 'camera' ? await takePhoto(undefined, false) : await pickImage(undefined, false);
-      if (uri) setDocument(uri);
+      if (!uri) return;
+      setDocument(uri);
+      setDocumentKind('image');
+      setNomPdf(null);
     } catch (error) {
       logClientError(error, { source: 'facture_form', step: source });
+      showMessage(t('common.error_generic'));
+    }
+  };
+
+  /**
+   * IMPORTER UN PDF — le cas de la facture qui n'a jamais été du papier.
+   *
+   * Amazon, la Fnac, une garantie constructeur, un contrat d'assurance : ces
+   * documents-là arrivent par courriel. Les rephotographier à l'écran perdait
+   * les pages suivantes et la moitié de la lisibilité.
+   */
+  const choisirPdf = async () => {
+    try {
+      const fichier = await pickPdf();
+      if (!fichier) return;
+      setDocument(fichier.uri);
+      setDocumentKind('pdf');
+      setNomPdf(fichier.name);
+    } catch (error) {
+      logClientError(error, { source: 'facture_form', step: 'pdf' });
+      showMessage(t('common.error_generic'));
+    }
+  };
+
+  /**
+   * Ouvrir le document en grand — chacun à sa façon.
+   *
+   * Une image s'agrandit DANS l'app : c'est ici qu'on vient lire un montant,
+   * et un aperçu de 176 points ne le laisse pas déchiffrer. Un PDF passe au
+   * système, qui sait le rendre — l'app n'embarque pas de lecteur.
+   */
+  const ouvrirDocument = async () => {
+    if (!document) {
+      void choisir('library');
+      return;
+    }
+    if (documentKind !== 'pdf') {
+      setVisionneuse(true);
+      return;
+    }
+    try {
+      if (!(await ouvrirPdf(document, aperçu?.uri ?? null))) showMessage(t('factures.form.document_no_viewer'));
+    } catch (error) {
+      logClientError(error, { source: 'facture_form', step: 'open_pdf' });
       showMessage(t('common.error_generic'));
     }
   };
@@ -201,6 +257,7 @@ export function FactureFormSheet({
     if (!document || lignes.length === 0) return;
     onSubmit({
       document,
+      documentKind,
       vendor: vendor.trim() || null,
       purchaseDate: toIsoDate(purchase, order),
       // LE TOTAL DU TICKET N'A DE SENS QU'À PLUSIEURS. Avec un seul objet il
@@ -255,11 +312,28 @@ export function FactureFormSheet({
             raccourci évident vers le choix d'une image. */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={t(document ? 'factures.form.document_zoom' : 'factures.form.document_label')}
-          onPress={() => (document ? setVisionneuse(true) : choisir('library'))}
+          accessibilityLabel={t(
+            document
+              ? documentKind === 'pdf'
+                ? 'factures.form.document_open'
+                : 'factures.form.document_zoom'
+              : 'factures.form.document_label',
+          )}
+          onPress={ouvrirDocument}
           className="mb-3 h-44 items-center justify-center overflow-hidden rounded-2xl border border-ink/10 bg-sand"
         >
-          {aperçu ? (
+          {document && documentKind === 'pdf' ? (
+            // UN PDF N'A PAS DE VIGNETTE, et en fabriquer une demanderait un
+            // lecteur embarqué. On montre donc ce qui suffit à le reconnaître
+            // — son nom — et on dit que le toucher l'ouvre.
+            <View className="items-center px-6">
+              <Icon name="pdf" size={32} color={colors.accentDark} />
+              <Text numberOfLines={2} className="mt-2 text-center text-label font-semibold text-ink">
+                {nomPdf ?? t('factures.form.document_pdf')}
+              </Text>
+              <Text className="mt-1 text-center text-caption text-ink-soft">{t('factures.form.document_open')}</Text>
+            </View>
+          ) : aperçu ? (
             // `contain` et non `cover` : on doit voir la facture ENTIÈRE, pas
             // un cadrage esthétique qui en coupe le montant.
             <Image source={aperçu} style={{ width: '100%', height: '100%' }} contentFit="contain" />
@@ -271,9 +345,30 @@ export function FactureFormSheet({
           )}
         </Pressable>
 
+        {/* TROIS SOURCES, ET LA TROISIÈME N'EST PAS UN LUXE : une bonne part
+            des achats d'aujourd'hui n'ont jamais eu de ticket papier.
+
+            EN TUILES, PAS EN LIBELLÉS SEULS. À deux, deux libellés de texte
+            tenaient sur la largeur ; à trois, « Choisir une image » se coupait
+            sur trois lignes et la rangée devenait illisible (constaté dans
+            l'aperçu). La tuile est la variante que l'app destine justement à
+            deux ou trois actions de MÊME RANG posées côte à côte, et son
+            icône fait le travail que le libellé seul ne faisait plus : on
+            reconnaît la source sans lire. */}
         <ButtonRow>
-          <Button label={t('factures.form.take_photo')} variant="ghost" onPress={() => choisir('camera')} />
-          <Button label={t('factures.form.choose_file')} variant="ghost" onPress={() => choisir('library')} />
+          <Button
+            label={t('factures.form.take_photo')}
+            variant="tile"
+            icon="camera"
+            onPress={() => choisir('camera')}
+          />
+          <Button
+            label={t('factures.form.choose_file')}
+            variant="tile"
+            icon="addPhoto"
+            onPress={() => choisir('library')}
+          />
+          <Button label={t('factures.form.choose_pdf')} variant="tile" icon="pdf" onPress={choisirPdf} />
         </ButtonRow>
 
         {/* ═══ LE TICKET : ce qui vaut pour tout ce qu'il y a dessus ═══ */}
