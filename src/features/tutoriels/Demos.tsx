@@ -33,12 +33,23 @@ import { Pulse } from './Pulse';
 // dans une boîte, une perceuse achetée chez Darty. Changer d'exemple à chaque
 // chapitre obligerait à réapprendre le décor avant de lire la leçon.
 
+// UN AIGUILLAGE PLAT plutot qu'une table : chaque branche rend un composant
+// different, et une table de composants obligerait a les declarer avant leur
+// usage ou a les hisser dans un objet en tete de fichier.
 export function Demo({ id }: { id: DemoId }) {
   if (id === 'rangement') return <DemoRangement />;
   if (id === 'recherche') return <DemoRecherche />;
   if (id === 'tuile-facture') return <DemoTuileFacture />;
   if (id === 'dossier') return <DemoDossier />;
-  return <DemoExport />;
+  if (id === 'export') return <DemoExport />;
+  if (id === 'voix') return <DemoVoix />;
+  if (id === 'scan-ia') return <DemoScanIa />;
+  if (id === 'plan') return <DemoPlan />;
+  if (id === 'pret') return <DemoPret />;
+  if (id === 'amis') return <DemoAmis />;
+  if (id === 'invite') return <DemoInvite />;
+  if (id === 'affichage') return <DemoAffichage />;
+  return <DemoHorsLigne />;
 }
 
 /** Le cadre commun : un aplat de la couleur de FOND de l'app, pour qu'on lise « un écran ». */
@@ -217,6 +228,239 @@ function DemoExport() {
             <Icon name="export" size={18} color={colors.accentDark} />
           </View>
         </Pulse>
+      </View>
+    </Ecran>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Les huit chapitres suivants
+// ═══════════════════════════════════════════════════════════════════════
+
+function DemoVoix() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+  const micro = useScaled(40);
+
+  return (
+    <Ecran legende={t('tutoriels.demos.voix.caption')}>
+      <View className="flex-row items-center gap-3">
+        {/* LE MICRO BAT : c'est le seul bouton de cet écran, et l'étape qu'on
+            lit dit « appuie dessus ». */}
+        <Pulse radius={999}>
+          <View
+            style={{ width: micro, height: micro, borderRadius: micro / 2 }}
+            className="items-center justify-center bg-coral"
+          >
+            <Icon name="microphone" size={18} color="#fff" />
+          </View>
+        </Pulse>
+        <Text className="flex-1 text-label font-semibold text-ink">{t('tutoriels.demos.voix.question')}</Text>
+      </View>
+
+      {/* LA RÉPONSE EST UNE PHRASE, pas une liste : Céoù la dit à voix haute,
+          et une liste ne se dit pas. */}
+      <View className="mt-3 flex-row items-start gap-2 rounded-2xl bg-teal-light px-3 py-2">
+        <Icon name="validate" size={16} color={colors.tealDark} />
+        <Text className="flex-1 text-label text-teal-dark">{t('tutoriels.demos.voix.answer')}</Text>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoScanIa() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+  const hauteur = useScaled(56);
+
+  return (
+    <Ecran legende={t('tutoriels.demos.scan_ia.caption')}>
+      <View style={{ height: hauteur }} className="mb-2 items-center justify-center rounded-xl bg-sand-dark">
+        <Icon name="camera" size={20} color={colors.inkFaint} />
+      </View>
+
+      <Text className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-ink-faint">
+        {t('tutoriels.demos.scan_ia.title')}
+      </Text>
+      {['objet_1', 'objet_2', 'objet_3'].map((cle) => (
+        <View key={cle} className="mb-1 flex-row items-center gap-2 rounded-lg bg-surface px-2 py-1.5">
+          <Icon name="included" size={14} color={colors.tealDark} />
+          <Text className="flex-1 text-caption text-ink">{t(`tutoriels.demos.scan_ia.${cle}`)}</Text>
+        </View>
+      ))}
+
+      <View className="mt-2 items-center rounded-xl bg-coral py-2">
+        <Text className="text-caption font-semibold text-white">{t('tutoriels.demos.scan_ia.confirm')}</Text>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoPlan() {
+  const { t } = useTranslation();
+  const hauteur = useScaled(96);
+
+  return (
+    <Ecran legende={t('tutoriels.demos.plan.caption')}>
+      {/* DEUX FORMES ET TROIS PUCES, et rien de plus : ce qu'il faut
+          comprendre, c'est qu'une pièce est une FORME et qu'un rangement est
+          un POINT posé dedans. Un plan réaliste noierait cette idée. */}
+      <View style={{ height: hauteur }} className="rounded-xl bg-surface p-2">
+        <View className="flex-1 flex-row gap-2">
+          <View className="flex-1 justify-between rounded-lg bg-teal-light p-1.5">
+            <Text className="text-caption font-semibold text-teal-dark">{t('tutoriels.demos.plan.piece_1')}</Text>
+            <View className="flex-row gap-1">
+              <Puce />
+              <Puce />
+            </View>
+          </View>
+          <View className="flex-1 justify-between rounded-lg bg-mustard-light p-1.5">
+            <Text className="text-caption font-semibold text-mustard-dark">{t('tutoriels.demos.plan.piece_2')}</Text>
+            <Puce />
+          </View>
+        </View>
+      </View>
+
+      <View className="mt-2 self-start rounded-full bg-sand-dark px-3 py-1">
+        <Text className="text-caption font-semibold text-ink">{t('tutoriels.demos.plan.mode')}</Text>
+      </View>
+    </Ecran>
+  );
+}
+
+/** Une puce de rangement sur le plan : un point, pas une étiquette. */
+function Puce() {
+  const colors = useThemeColors();
+  const taille = useScaled(14);
+  return (
+    <View
+      style={{ width: taille, height: taille, borderRadius: taille / 2 }}
+      className="items-center justify-center bg-surface"
+    >
+      <Icon name="etagere" size={8} color={colors.inkSoft} />
+    </View>
+  );
+}
+
+function DemoPret() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+
+  return (
+    <Ecran legende={t('tutoriels.demos.pret.caption')}>
+      <View className="rounded-xl border border-ink/10 bg-surface p-3">
+        <Text className="text-label font-semibold text-ink">{t('tutoriels.demos.pret.objet')}</Text>
+        <View className="mt-1 flex-row items-center gap-2">
+          <Icon name="pret" size={14} color={colors.accentDark} />
+          <Text className="text-caption text-ink-soft">{t('tutoriels.demos.pret.who')}</Text>
+        </View>
+        <Text className="mt-0.5 text-caption text-ink-soft">{t('tutoriels.demos.pret.due')}</Text>
+
+        <View className="mt-2 self-start rounded-full border border-ink/10 px-3 py-1">
+          <Text className="text-caption font-semibold text-ink">{t('tutoriels.demos.pret.action')}</Text>
+        </View>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoAmis() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+
+  return (
+    <Ecran legende={t('tutoriels.demos.amis.caption')}>
+      <Text className="mb-1 text-caption text-ink-soft">{t('tutoriels.demos.amis.code_label')}</Text>
+      <View className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-surface px-3 py-2">
+        <Text className="text-body font-bold tracking-widest text-ink">{t('tutoriels.demos.amis.code')}</Text>
+        <Icon name="qrcode" size={16} color={colors.inkSoft} />
+      </View>
+
+      {/* LE DROIT SE RÈGLE PAR HABITATION : la rangée le montre mieux qu'une
+          phrase, parce qu'elle met le logement et le droit sur la même ligne. */}
+      <View className="mt-2 flex-row items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 py-2">
+        <Icon name="maison" size={14} color={colors.accentDark} />
+        <Text className="flex-1 text-caption text-ink">{t('tutoriels.demos.amis.habitation')}</Text>
+        <View className="rounded-full bg-coral-light px-2 py-0.5">
+          <Text className="text-caption font-semibold text-coral-dark">{t('tutoriels.demos.amis.permission')}</Text>
+        </View>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoInvite() {
+  const { t } = useTranslation();
+
+  return (
+    <Ecran legende={t('tutoriels.demos.invite.caption')}>
+      <View className="items-center rounded-xl border border-ink/10 bg-surface px-3 py-3">
+        <Text className="text-caption text-ink-soft">{t('tutoriels.demos.invite.label')}</Text>
+        <Text className="mt-1 text-heading font-bold tracking-widest text-ink">
+          {t('tutoriels.demos.invite.code')}
+        </Text>
+        <Text className="mt-1 text-center text-caption text-ink-faint">{t('tutoriels.demos.invite.note')}</Text>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoAffichage() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+
+  return (
+    <Ecran legende={t('tutoriels.demos.affichage.caption')}>
+      <Text className="mb-1.5 text-caption text-ink-soft">{t('tutoriels.demos.affichage.title')}</Text>
+      <View className="flex-row gap-1 rounded-full bg-sand-dark p-1">
+        {[
+          { cle: 'normal', actif: false },
+          { cle: 'large', actif: true },
+          { cle: 'huge', actif: false },
+        ].map(({ cle, actif }) => (
+          <View key={cle} className={`flex-1 items-center rounded-full py-1 ${actif ? 'bg-surface' : ''}`}>
+            <Text className={`text-caption ${actif ? 'font-semibold text-ink' : 'text-ink-soft'}`}>
+              {t(`tutoriels.demos.affichage.${cle}`)}
+            </Text>
+          </View>
+        ))}
+      </View>
+
+      {/* L'APERÇU EST CE QUI REND LE RÉGLAGE COMPRÉHENSIBLE : « grande » ne
+          veut rien dire tant qu'on n'a pas vu une vraie rangée grandir. */}
+      <View className="mt-2 flex-row items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 py-2">
+        <Icon name="objet" size={16} color={colors.inkFaint} />
+        <View className="flex-1">
+          <Text className="text-label font-semibold text-ink">{t('tutoriels.demos.affichage.preview_name')}</Text>
+          <Text className="text-caption text-ink-soft">{t('tutoriels.demos.affichage.preview_location')}</Text>
+        </View>
+      </View>
+    </Ecran>
+  );
+}
+
+function DemoHorsLigne() {
+  const { t } = useTranslation();
+  const colors = useThemeColors();
+
+  return (
+    <Ecran legende={t('tutoriels.demos.hors_ligne.caption')}>
+      <View className="mb-2 flex-row items-center gap-2 rounded-lg bg-mustard-light px-3 py-1.5">
+        <Icon name="alert" size={14} color={colors.mustardDark} />
+        <Text className="text-caption font-semibold text-mustard-dark">
+          {t('tutoriels.demos.hors_ligne.banner')}
+        </Text>
+      </View>
+
+      {/* L'OBJET EST DÉJÀ LÀ, bandeau ou pas : c'est toute la leçon du
+          chapitre, et un écran vide ne l'aurait pas dite. */}
+      <View className="flex-row items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 py-2">
+        <Icon name="objet" size={16} color={colors.inkFaint} />
+        <View className="flex-1">
+          <Text className="text-label font-semibold text-ink">{t('tutoriels.demos.hors_ligne.objet')}</Text>
+          <Text className="text-caption text-ink-soft">{t('tutoriels.demos.hors_ligne.lieu')}</Text>
+        </View>
+        <Icon name="validate" size={16} color={colors.tealDark} />
       </View>
     </Ecran>
   );

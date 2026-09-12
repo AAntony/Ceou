@@ -20,7 +20,20 @@ import type { IconName } from '../../components/Icon';
 // ceux qu'on découvre ensuite.
 
 /** Les mini-écrans simulés. Voir Demos.tsx pour ce que chacun dessine. */
-export type DemoId = 'rangement' | 'recherche' | 'tuile-facture' | 'dossier' | 'export';
+export type DemoId =
+  | 'rangement'
+  | 'recherche'
+  | 'tuile-facture'
+  | 'dossier'
+  | 'export'
+  | 'voix'
+  | 'scan-ia'
+  | 'plan'
+  | 'pret'
+  | 'amis'
+  | 'invite'
+  | 'affichage'
+  | 'hors-ligne';
 
 export type Chapitre = {
   /** Sert de segment d'URL et de racine de clé i18n (`tutoriels.chapters.<id>`). */
@@ -43,6 +56,12 @@ export type Chapitre = {
   action?: 'guide';
 };
 
+// L'ORDRE SUIT CE QU'ON FAIT, PAS CE QUE L'APP CONTIENT. On range d'abord,
+// on retrouve ensuite — c'est la récompense, et elle vient tout de suite après
+// la leçon. Vient alors ce qui fait passer à l'échelle (ajouter vite), puis ce
+// qui se greffe sur un inventaire déjà là : les preuves d'achat, le plan, les
+// prêts, le partage. Les deux derniers ne parlent plus d'affaires du tout,
+// mais de l'app elle-même — c'est bien leur place, à la fin.
 export const CHAPITRES: Chapitre[] = [
   {
     id: 'demarrer',
@@ -52,10 +71,51 @@ export const CHAPITRES: Chapitre[] = [
     action: 'guide',
   },
   {
+    id: 'retrouver',
+    icon: 'search',
+    demo: 'recherche',
+    demosEtapes: { 2: 'voix' },
+  },
+  {
+    id: 'ajouter-vite',
+    icon: 'scan',
+    demo: 'scan-ia',
+  },
+  {
     id: 'factures',
     icon: 'facture',
     demo: 'tuile-facture',
     demosEtapes: { 3: 'dossier', 5: 'export' },
+  },
+  {
+    id: 'plan',
+    icon: 'plan',
+    demo: 'plan',
+  },
+  {
+    id: 'prets',
+    icon: 'pret',
+    demo: 'pret',
+  },
+  {
+    id: 'amis',
+    icon: 'friends',
+    demo: 'amis',
+  },
+  {
+    id: 'invites',
+    icon: 'qrcode',
+    demo: 'invite',
+  },
+  {
+    id: 'affichage',
+    icon: 'textSize',
+    demo: 'affichage',
+  },
+  {
+    id: 'hors-ligne',
+    icon: 'alert',
+    demo: 'hors-ligne',
   },
 ];
 

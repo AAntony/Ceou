@@ -1031,6 +1031,60 @@
       "export": {
         "caption": "Le bouton d’export, en haut de l’écran Factures.",
         "title": "Factures"
+      },
+      "voix": {
+        "caption": "Appuie sur le micro et parle. Céoù répond à voix haute.",
+        "question": "« Où sont mes ciseaux ? »",
+        "answer": "Les ciseaux sont dans Boîte, Commode, Cuisine."
+      },
+      "scan_ia": {
+        "caption": "Une photo d’étagère, et chaque objet devient une ligne à cocher.",
+        "title": "Objets détectés",
+        "objet_1": "Perceuse",
+        "objet_2": "Marteau",
+        "objet_3": "Niveau à bulle",
+        "confirm": "Ajouter (3)"
+      },
+      "plan": {
+        "caption": "Chaque pièce est une forme. Les puces sont tes rangements.",
+        "piece_1": "Cuisine",
+        "piece_2": "Salon",
+        "mode": "Explorer"
+      },
+      "pret": {
+        "caption": "Un objet prêté garde sa place dans l’inventaire.",
+        "objet": "Perceuse",
+        "who": "Prêté à Marc",
+        "due": "Retour prévu le 30/09/2026",
+        "action": "Il m’a été rendu"
+      },
+      "amis": {
+        "caption": "Un code par personne, et un droit par habitation.",
+        "code": "ABCD2345",
+        "code_label": "Mon code ami",
+        "habitation": "Maison",
+        "permission": "Modification"
+      },
+      "invite": {
+        "caption": "Un code de consultation, sans compte à créer.",
+        "label": "Locataires de juillet",
+        "code": "K7P2M9",
+        "note": "Consultation seule · expire le 30/09/2026"
+      },
+      "affichage": {
+        "caption": "La taille du texte entraîne tout le reste avec elle.",
+        "title": "Taille du texte",
+        "normal": "Normale",
+        "large": "Grande",
+        "huge": "Très grande",
+        "preview_name": "Clés de voiture",
+        "preview_location": "Tiroir du buffet · Cuisine"
+      },
+      "hors_ligne": {
+        "caption": "Sans réseau, l’app écrit quand même. Elle enverra plus tard.",
+        "banner": "Hors connexion",
+        "objet": "Perceuse",
+        "lieu": "Garage › Établi"
       }
     },
     "chapters": {
@@ -1064,6 +1118,118 @@
         ],
         "tip": "Renseigne la fin de garantie même si elle te paraît lointaine. Céoù te prévient trente jours avant — c’est le seul moment où elle sert encore à quelque chose.",
         "result": "Un seul PDF : le récapitulatif chiffré de tes achats, puis chaque document à l’appui. Prêt à partir par mail à ton assureur."
+      },
+      "retrouver": {
+        "title": "Retrouver une affaire",
+        "summary": "Par la recherche, ou en le demandant à voix haute.",
+        "goal": "Poser la question « où est… » et obtenir le chemin exact, les mains prises ou non.",
+        "steps": [
+          "Sur l’accueil, tape le début du nom. La liste se réduit à chaque lettre.",
+          "Chaque résultat affiche son chemin complet : le logement, la pièce, le meuble, la boîte.",
+          "Les mains prises, appuie plutôt sur le micro et demande : « où sont mes ciseaux ? ». Céoù répond à voix haute.",
+          "Tu peux aussi ranger à la voix : « range la perceuse dans l’établi ». Céoù le fait, et propose d’annuler si tu t’es trompé.",
+          "S’il hésite entre deux objets ou deux endroits, il te le demande au lieu de choisir tout seul."
+        ],
+        "tip": "Céoù n’invente jamais un endroit. S’il ne trouve pas le meuble que tu nommes, il te le dit et ne range rien — mieux vaut un refus qu’un objet posé n’importe où.",
+        "result": "Tu sais où se trouve une affaire en trois secondes, sans ouvrir un seul écran."
+      },
+      "ajouter-vite": {
+        "title": "Ajouter beaucoup d’objets",
+        "summary": "Scanner une photo ou un code-barre plutôt que tout taper.",
+        "goal": "Remplir une étagère entière sans écrire trente noms à la main.",
+        "steps": [
+          "Depuis un rangement, choisis « Scanner une photo ».",
+          "Photographie l’étagère ou le tiroir ouvert, en cadrant large.",
+          "Céoù propose une ligne par objet reconnu. Décoche ce qui n’en est pas, corrige les noms, et valide d’un coup.",
+          "Pour un produit du commerce, il y a plus simple : « Scanner un code-barre » remplit le nom et la photo tout seul.",
+          "Si le code est inconnu, il est quand même conservé : tu complètes le reste à la main."
+        ],
+        "tip": "La détection passe par un service extérieur, et Céoù te demande ton accord la première fois. Le code-barre, lui, ne consulte qu’un annuaire public de produits.",
+        "result": "Une étagère de quinze objets entre dans l’inventaire en une photo et deux corrections."
+      },
+      "plan": {
+        "title": "Le plan de ton logement",
+        "summary": "Dessiner tes pièces, et voir où tes affaires sont posées.",
+        "goal": "Passer du texte au dessin : montrer où une chose se trouve, au lieu de la décrire.",
+        "steps": [
+          "Depuis une habitation, ouvre « Plan ». Si tu pars de zéro, choisis un logement type — studio, deux pièces, maison — et tout est dessiné d’avance.",
+          "En mode « Modifier », appuie sur une pièce pour la sélectionner, glisse-la pour la déplacer, tire les points bleus pour l’agrandir.",
+          "« Porte » puis un appui sur un mur y perce une ouverture ; garde le doigt posé et glisse pour la déplacer le long du mur.",
+          "Les puces sont tes rangements. Un appui en désigne une, un glissé la pose dans la pièce, un double-appui la retire du plan.",
+          "En mode « Explorer », un appui sur une pièce dit ce qu’elle contient — et depuis la fiche d’un objet, « Voir sur le plan » t’y emmène directement."
+        ],
+        "tip": "Le bouton « Voir en liste » raconte le même plan en mots — « en haut à gauche », « au centre ». C’est plus rapide à parcourir qu’un dessin, et ça reste lisible quand on ne voit pas bien.",
+        "result": "Tu ouvres le plan, tu appuies sur la cuisine, et tu vois les quatre rangements qu’elle contient."
+      },
+      "prets": {
+        "title": "Prêter et emprunter",
+        "summary": "Retenir ce qui est sorti de chez toi, et ce que tu dois rendre.",
+        "goal": "Ne plus chercher qui a ta perceuse, ni oublier le livre qu’on t’a confié.",
+        "steps": [
+          "Sur la fiche d’un objet, appuie sur « Prêter ou emprunter ».",
+          "Dis dans quel sens ça va : tu le prêtes, ou tu l’as emprunté.",
+          "Choisis un ami dans la liste, ou tape simplement un nom — la personne n’a pas besoin d’avoir Céoù.",
+          "Mets une date de retour si tu en as une : Céoù te le rappellera le jour venu. Sans date, le prêt reste dans la liste jusqu’à ce que tu le clôtures.",
+          "Quand l’objet revient, un bouton sur sa fiche ou dans l’écran Prêts referme le prêt."
+        ],
+        "tip": "Un objet prêté ne quitte pas ton inventaire : il garde sa place, c’est là qu’il retournera. Un bandeau sur sa fiche rappelle seulement qu’il n’y est pas en ce moment.",
+        "result": "L’écran Prêts liste ce qui circule, les retards en tête."
+      },
+      "amis": {
+        "title": "Partager avec tes proches",
+        "summary": "Donner accès à un logement, et choisir jusqu’où.",
+        "goal": "Qu’une autre personne voie — ou modifie — l’inventaire d’un logement que vous partagez.",
+        "steps": [
+          "Dans Profil, montre ton code ami : huit caractères, ou son QR. Il ne change jamais.",
+          "Ton proche le saisit dans « Ajouter un ami », ou scanne le QR. Une demande t’arrive.",
+          "Tant que tu n’as rien partagé, il ne voit rien : accepter quelqu’un ne donne accès à aucun logement.",
+          "Ouvre sa fiche, et choisis pour chaque habitation : aucun accès, consultation, modification, ou propriétaire.",
+          "Range tes amis en catégories — famille, colocataires, voisins — si la liste s’allonge."
+        ],
+        "tip": "Le droit se règle par HABITATION, pas par personne. Ton conjoint peut modifier la maison et ne rien voir du garage.",
+        "result": "La personne voit ton logement sur son accueil, avec exactement les droits que tu lui as donnés."
+      },
+      "invites": {
+        "title": "Un accès sans compte",
+        "summary": "Un code de consultation pour un locataire, un artisan, un gardien.",
+        "goal": "Montrer un logement à quelqu’un qui n’a pas Céoù, et ne veut pas l’installer.",
+        "steps": [
+          "Dans Profil, choisis « Générer un code d’accès ».",
+          "Coche les habitations concernées. Un invité n’a que la consultation : il ne peut rien modifier ni ajouter.",
+          "Règle la durée et le nombre d’utilisations — ou rends le code permanent, si c’est pour quelqu’un qui reste.",
+          "Donne-lui un nom, « Locataires de juillet » par exemple : c’est ce qui te permettra de le reconnaître plus tard.",
+          "Partage le lien ou le code. La personne l’entre dans « J’ai un code d’invitation », sans créer de compte."
+        ],
+        "tip": "Tes codes vivent dans « Mes codes d’invitation ». En supprimer un coupe l’accès immédiatement, y compris à ceux qui s’en servent déjà.",
+        "result": "Ton locataire parcourt l’inventaire du logement depuis son téléphone, sans compte et sans rien pouvoir changer."
+      },
+      "affichage": {
+        "title": "Régler l’affichage",
+        "summary": "Thème, taille du texte, langue.",
+        "goal": "Adapter Céoù à tes yeux et à ta lumière, pas l’inverse.",
+        "steps": [
+          "Dans Profil, ouvre « Affichage ».",
+          "Choisis la taille du texte : normale, grande, très grande. Ce n’est pas que le texte — les boutons, les images et les espaces grandissent avec.",
+          "Un aperçu montre le résultat avant que tu ne quittes l’écran.",
+          "Le mode sombre suit ton téléphone par défaut. Tu peux le forcer dans un sens ou dans l’autre.",
+          "La langue se change au même endroit, et s’applique tout de suite."
+        ],
+        "tip": "Si ton téléphone est déjà réglé sur un texte agrandi, Céoù le suit sans que tu aies rien à faire — et te le dit dans l’écran Affichage.",
+        "result": "L’app entière se retaille : les listes, les fiches, le plan, les tutoriels."
+      },
+      "hors-ligne": {
+        "title": "Sans réseau",
+        "summary": "Ce que Céoù sait faire dans une cave ou un garage.",
+        "goal": "Ranger, photographier et chercher là où il n’y a pas de réseau — c’est-à-dire là où on range.",
+        "steps": [
+          "Un bandeau apparaît en haut quand la connexion tombe. Tu vois les dernières données chargées.",
+          "Tu peux quand même créer, renommer, déplacer, photographier : tout s’écrit sur le téléphone et s’affiche immédiatement.",
+          "Céoù garde ces modifications en file et les envoie tout seul au retour du réseau.",
+          "La recherche fonctionne aussi : ton inventaire est chargé d’avance, y compris les fiches que tu n’as jamais ouvertes.",
+          "Si le serveur refuse une modification, elle n’est pas perdue : un bandeau la signale et tu peux réessayer ou l’abandonner."
+        ],
+        "tip": "Deux choses seulement demandent du réseau : l’export de tes factures, qui doit retélécharger les documents, et la reconnaissance vocale.",
+        "result": "Tu ranges ta cave sans une barre de réseau, et tout remonte quand tu ressors."
       }
     }
   }
