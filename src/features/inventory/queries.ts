@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase/client';
 import type { Conteneur, Emplacement, Habitation, HabitationFavorite, LocationType, Objet, ObjetDeplacement, Piece } from '../../types/database';
 import { newId } from '../../lib/uuid';
 import { deleteOp, insertOp, rpcOp, updateOp, uploadOp, useLocalFirstWrite, type WriteTable } from '../../lib/writeQueue';
+import { deposerOp } from '../corbeille/queries';
 import { isSingleSpaceHabitation } from './constants';
 import { planEntityPhoto } from './entityPhoto';
 import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
@@ -249,7 +250,11 @@ export function useDeleteHabitation() {
   const queryClient = useQueryClient();
   return useLocalFirstWrite((id: string) => ({
     describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['habitation', id]) },
-    ops: [deleteOp('habitations', id)],
+    // L'INSTANTANÉ PART AVANT LA SUPPRESSION, dans le même lot : la file exécute
+    // ses opérations dans l'ordre, et si l'instantané échoue le lot entier
+    // échoue. On préfère une suppression qui n'a pas eu lieu à une suppression
+    // sans filet. Voir features/corbeille.
+    ops: [deposerOp('habitation', id), deleteOp('habitations', id)],
     result: undefined,
   }));
 }
@@ -415,7 +420,7 @@ export function useDeletePiece(_habitationId: string) {
   const queryClient = useQueryClient();
   return useLocalFirstWrite((id: string) => ({
     describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['piece', id]) },
-    ops: [deleteOp('pieces', id)],
+    ops: [deposerOp('piece', id), deleteOp('pieces', id)],
     result: undefined,
   }));
 }
@@ -521,7 +526,7 @@ export function useDeleteEmplacement(_pieceId: string) {
   const queryClient = useQueryClient();
   return useLocalFirstWrite((id: string) => ({
     describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['emplacement', id]) },
-    ops: [deleteOp('emplacements', id)],
+    ops: [deposerOp('emplacement', id), deleteOp('emplacements', id)],
     result: undefined,
   }));
 }
@@ -649,7 +654,7 @@ export function useDeleteConteneur() {
   const queryClient = useQueryClient();
   return useLocalFirstWrite((id: string) => ({
     describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['conteneur', id]) },
-    ops: [deleteOp('conteneurs', id)],
+    ops: [deposerOp('conteneur', id), deleteOp('conteneurs', id)],
     result: undefined,
   }));
 }
@@ -920,7 +925,7 @@ export function useDeleteObjet() {
   const queryClient = useQueryClient();
   return useLocalFirstWrite((id: string) => ({
     describe: { kind: 'delete' as const, name: nameFromCache(queryClient, ['objet', id]) },
-    ops: [deleteOp('objets', id)],
+    ops: [deposerOp('objet', id), deleteOp('objets', id)],
     result: undefined,
   }));
 }

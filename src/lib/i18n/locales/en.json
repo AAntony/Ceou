@@ -975,6 +975,45 @@
       "photo": "The photo of “{{name}}”"
     }
   },
+  "corbeille": {
+    "entry_title": "Bin",
+    "entry_hint": "What you delete lands here, and can be put back.",
+    "title": "Bin",
+    "intro": "Nothing leaves on its own. Put back what you want, or empty it for good.",
+    "empty": "The bin is empty",
+    "empty_hint": "What you delete lands here. As long as it is here, nothing is lost.",
+    "offline_hint": "The bin lives on the server. It will load again when the network returns.",
+    "restore": "Put back",
+    "restored": "Put back",
+    "deleted_on": "Deleted on {{date}}",
+    "untitled": "Untitled",
+    "with_contents": "With {{contents}}",
+    "vider": "Empty the bin",
+    "vider_title": "Empty the bin?",
+    "vider_message": "Everything in it will be deleted for good. It is the one thing in this app that cannot be undone.",
+    "parent_missing_title": "Its storage is missing",
+    "parent_missing_message": "The place this was stored in was deleted too. Put that back first, then come back here.",
+    "kinds": {
+      "habitation": "Home",
+      "piece": "Room",
+      "emplacement": "Storage",
+      "conteneur": "Box",
+      "objet": "Item",
+      "facture": "Receipt"
+    },
+    "count": {
+      "pieces_one": "{{count}} room",
+      "pieces_other": "{{count}} rooms",
+      "emplacements_one": "{{count}} storage unit",
+      "emplacements_other": "{{count}} storage units",
+      "conteneurs_one": "{{count}} box",
+      "conteneurs_other": "{{count}} boxes",
+      "objets_one": "{{count}} item",
+      "objets_other": "{{count}} items",
+      "factures_one": "{{count}} receipt",
+      "factures_other": "{{count}} receipts"
+    }
+  },
   "tutoriels": {
     "entry_title": "Tutorials",
     "entry_hint": "Every feature explained step by step, with examples.",

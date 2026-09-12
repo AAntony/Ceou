@@ -975,6 +975,45 @@
       "photo": "La photo de « {{name}} »"
     }
   },
+  "corbeille": {
+    "entry_title": "Corbeille",
+    "entry_hint": "Ce que tu supprimes atterrit ici, et se remet en place.",
+    "title": "Corbeille",
+    "intro": "Rien n’en sort tout seul. Tu remets en place ce que tu veux, ou tu vides pour de bon.",
+    "empty": "La corbeille est vide",
+    "empty_hint": "Ce que tu supprimes atterrit ici. Tant qu’il y est, rien n’est perdu.",
+    "offline_hint": "La corbeille vit sur le serveur. Elle se relira quand le réseau reviendra.",
+    "restore": "Remettre en place",
+    "restored": "Remis en place",
+    "deleted_on": "Supprimé le {{date}}",
+    "untitled": "Sans nom",
+    "with_contents": "Avec {{contents}}",
+    "vider": "Vider la corbeille",
+    "vider_title": "Vider la corbeille ?",
+    "vider_message": "Tout ce qu’elle contient sera supprimé pour de bon. C’est le seul geste de l’app qu’on ne peut pas défaire.",
+    "parent_missing_title": "Il manque son rangement",
+    "parent_missing_message": "L’endroit où cette chose était rangée a été supprimé lui aussi. Remets-le en place d’abord, puis reviens ici.",
+    "kinds": {
+      "habitation": "Logement",
+      "piece": "Pièce",
+      "emplacement": "Rangement",
+      "conteneur": "Boîte",
+      "objet": "Objet",
+      "facture": "Facture"
+    },
+    "count": {
+      "pieces_one": "{{count}} pièce",
+      "pieces_other": "{{count}} pièces",
+      "emplacements_one": "{{count}} rangement",
+      "emplacements_other": "{{count}} rangements",
+      "conteneurs_one": "{{count}} boîte",
+      "conteneurs_other": "{{count}} boîtes",
+      "objets_one": "{{count}} objet",
+      "objets_other": "{{count}} objets",
+      "factures_one": "{{count}} facture",
+      "factures_other": "{{count}} factures"
+    }
+  },
   "tutoriels": {
     "entry_title": "Tutoriels",
     "entry_hint": "Chaque fonctionnalité expliquée pas à pas, avec des exemples.",

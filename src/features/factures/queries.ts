@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase/client';
 import type { Facture } from '../../types/database';
 import { newId } from '../../lib/uuid';
 import { deleteOp, insertOp, updateOp, uploadOp, useLocalFirstWrite, type WriteOp } from '../../lib/writeQueue';
+import { deposerOp } from '../corbeille/queries';
 import { cancelWarrantyReminder, scheduleWarrantyReminder } from '../notifications/warrantyReminders';
 import type { SearchIndexEntry } from '../search/queries';
 import type { ExportRow } from './exportTree';
@@ -585,7 +586,10 @@ export function useDeleteFacture() {
         // où elle apparaît : son identifiant est celui d'une ligne de premier
         // niveau. Ce qu'elle ne sait pas, c'est que ses objets redeviennent des
         // orphelins — même geste que le détachement, pour la même raison.
-        ops: [deleteOp('factures', input.id)],
+        //
+        // L'INSTANTANÉ D'ABORD : le document et ses lignes partent ensemble,
+        // et la corbeille est le seul endroit où on pourra les retrouver.
+        ops: [deposerOp('facture', input.id), deleteOp('factures', input.id)],
         sets: remettreDansLesOrphelins(client, input.habitationId ?? null, input.lignes),
         result: undefined,
       };

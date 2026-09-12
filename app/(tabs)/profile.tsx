@@ -282,13 +282,30 @@ export default function ProfileScreen() {
         textClassName="text-label font-semibold text-ink"
       />
 
+      {/* LA CORBEILLE EST RANGÉE AVEC LES RÉGLAGES, pas avec l'inventaire : on
+          n'y va pas pour consulter ses affaires, on y va parce qu'on vient
+          d'en perdre. C'est l'endroit où l'on cherche quand quelque chose a
+          disparu — donc le même endroit que le reste de ce qui répare. */}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push('/corbeille')}
+        className="mt-8 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+      >
+        <Icon name="delete" size={22} color={colors.inkSoft} />
+        <View className="flex-1">
+          <Text className="text-label font-semibold text-ink">{t('corbeille.entry_title')}</Text>
+          <Text className="mt-0.5 text-caption text-ink-soft">{t('corbeille.entry_hint')}</Text>
+        </View>
+        <Icon name="chevron" size={20} color={colors.inkFaint} />
+      </Pressable>
+
       {/* Adresse, mot de passe et suppression vivent sur un écran à part :
           cet écran-ci porte l'identité PUBLIQUE (nom affiché, avatar, code
           ami, langue), pas les clés d'accès. */}
       <TextLink
         href="/account"
         label={t('account.entry')}
-        className="mt-8 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
+        className="mt-3 items-center rounded-2xl border border-ink/10 bg-surface px-4 py-3"
         textClassName="text-label font-semibold text-ink"
       />
 
