@@ -145,6 +145,7 @@ export type Database = {
           kind: string
           label: string
           payload: Json
+          photo_url: string | null
           resume: Json
           user_id: string
         }
@@ -154,6 +155,7 @@ export type Database = {
           kind: string
           label: string
           payload: Json
+          photo_url?: string | null
           resume?: Json
           user_id: string
         }
@@ -163,6 +165,7 @@ export type Database = {
           kind?: string
           label?: string
           payload?: Json
+          photo_url?: string | null
           resume?: Json
           user_id?: string
         }
@@ -1009,6 +1012,7 @@ export type Database = {
           id: string
           kind: string
           label: string
+          photo_url: string
           resume: Json
         }[]
       }
