@@ -85,7 +85,9 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           // grossit. Sans effet sur mobile, ou c'est deja la valeur par
           // defaut de Yoga.
           className="min-w-0 flex-1 px-4 py-3 text-body text-ink"
-          placeholderTextColor={colors.inkFaint}
+          placeholderTextColor={colors.inkSoft}
+          accessibilityLabel={label}
+          accessibilityHint={error}
           autoCapitalize="none"
           autoCorrect={false}
           spellCheck={false}
@@ -120,7 +122,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           </Pressable>
         ) : null}
       </View>
-      {error ? <Text className="mt-1 text-label text-danger">{error}</Text> : null}
+      {error ? <Text accessibilityLiveRegion="polite" className="mt-1 text-label text-danger">{error}</Text> : null}
     </View>
   );
 });

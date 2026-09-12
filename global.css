@@ -24,24 +24,24 @@
  * valeurs sombres manquantes retombent automatiquement sur les claires.
  */
 :root {
-  --color-sand: 255 251 248;
-  --color-sand-dark: 245 238 230;
+  --color-sand: 250 248 245;
+  --color-sand-dark: 240 236 230;
   /* Le blanc des cartes. Nommé « surface » et non « white » parce qu'en
      sombre il ne l'est plus — un `bg-white` qui rend du gris foncé serait
      un piège pour la prochaine personne qui lit le code. */
   --color-surface: 255 255 255;
 
-  --color-ink: 45 42 38;
-  --color-ink-soft: 107 100 89;
+  --color-ink: 32 42 50;
+  --color-ink-soft: 86 97 106;
   /* Traits et séparations les plus discrets (anciens #A39C8F / #D9D2C4). */
-  --color-ink-faint: 163 156 143;
+  --color-ink-faint: 106 115 123;
 
-  --color-coral: 21 145 234;
-  --color-coral-dark: 11 94 158;
+  --color-coral: 8 103 172;
+  --color-coral-dark: 7 92 152;
   --color-coral-light: 216 232 243;
 
   --color-teal: 46 196 182;
-  --color-teal-dark: 33 148 136;
+  --color-teal-dark: 19 118 109;
   --color-teal-light: 219 247 244;
 
   --color-mustard: 255 200 87;
@@ -51,11 +51,11 @@
      moitié de ce que donnent déjà coral-dark et teal-dark sur les leurs.
      Repéré en posant les premières pastilles moutarde portant du texte
      (le fil du guide de démarrage). */
-  --color-mustard-dark: 146 112 40;
+  --color-mustard-dark: 128 95 26;
   --color-mustard-light: 255 243 218;
 
   --color-sky: 91 155 224;
-  --color-sky-dark: 63 123 192;
+  --color-sky-dark: 45 104 168;
   --color-sky-light: 220 235 251;
 
   /* ROUGE D'ALERTE, ET C'EST UNE COULEUR DE TEXTE AVANT TOUT.
@@ -71,13 +71,13 @@
   /* Fonds légèrement CHAUDS et non gris neutres : le thème clair est un
      sable, sa version nocturne doit rester la même pièce éteinte, pas une
      autre app. */
-  --color-sand: 25 23 20;
-  --color-sand-dark: 38 35 31;
-  --color-surface: 32 30 26;
+  --color-sand: 24 27 30;
+  --color-sand-dark: 43 48 53;
+  --color-surface: 34 39 43;
 
-  --color-ink: 244 240 233;
-  --color-ink-soft: 168 160 148;
-  --color-ink-faint: 122 115 105;
+  --color-ink: 243 245 247;
+  --color-ink-soft: 188 197 204;
+  --color-ink-faint: 164 175 184;
 
   /* Les teintes VIVES ne bougent pas : un bouton corail reste corail, c'est
      l'identité. Seules basculent les déclinaisons `light` (fonds de pastille)

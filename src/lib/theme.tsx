@@ -117,35 +117,35 @@ export type ThemeColors = {
 };
 
 const LIGHT: ThemeColors = {
-  sand: '#FFFBF8',
-  sandDark: '#F5EEE6',
+  sand: '#FAF8F5',
+  sandDark: '#F0ECE6',
   surface: '#FFFFFF',
-  ink: '#2D2A26',
-  inkSoft: '#6B6459',
-  inkFaint: '#A39C8F',
+  ink: '#202A32',
+  inkSoft: '#56616A',
+  inkFaint: '#6A737B',
   // Les vives sont communes aux deux thèmes — d'où leur absence de la partie
   // sombre de global.css.
-  accent: '#1591EA',
-  accentDark: '#0B5E9E',
+  accent: '#0867AC',
+  accentDark: '#075C98',
   accentLight: '#D8E8F3',
   teal: '#2EC4B6',
-  tealDark: '#219488',
+  tealDark: '#13766D',
   mustard: '#FFC857',
-  mustardDark: '#927028',
-  skyDark: '#3F7BC0',
+  mustardDark: '#805F1A',
+  skyDark: '#2D68A8',
   // Aligne sur --color-danger (global.css) : l'orange precedent ne donnait
   // que 3,63:1 sur le fond clair, insuffisant des qu'il porte du texte.
   danger: '#B91C1C',
 };
 
 const DARK: ThemeColors = {
-  sand: '#191714',
-  sandDark: '#26231F',
-  surface: '#201E1A',
-  ink: '#F4F0E9',
-  inkSoft: '#A8A094',
-  inkFaint: '#7A7369',
-  accent: '#1591EA',
+  sand: '#181B1E',
+  sandDark: '#2B3035',
+  surface: '#22272B',
+  ink: '#F3F5F7',
+  inkSoft: '#BCC5CC',
+  inkFaint: '#A4AFB8',
+  accent: '#0867AC',
   accentDark: '#8FCBF7',
   accentLight: '#12324D',
   teal: '#2EC4B6',

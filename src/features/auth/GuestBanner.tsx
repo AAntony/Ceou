@@ -78,9 +78,10 @@ export function GuestBanner() {
   // ecriture), donc pas de "cree un compte pour ne rien perdre" ici -- il n'a
   // rien a perdre, et lui dire le contraire serait faux.
   return (
-    <View className="mb-6 flex-row items-center gap-2 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3">
-      <Icon name="profile" size={18} color="#2EC4B6" />
-      <Text className="flex-1 text-caption leading-4 text-ink-soft">{t('guest.banner')}</Text>
+    <View className="mb-5 rounded-2xl bg-coral-light px-4 py-4">
+      <Text accessibilityRole="header" className="text-heading font-semibold text-coral-dark">{t('redesign.guestWelcome')}</Text>
+      <Text className="mt-2 text-body text-ink">{t('redesign.guestHint')}</Text>
+      <Text className="mt-2 text-label text-ink-soft">{t('guest.banner')}</Text>
     </View>
   );
 }

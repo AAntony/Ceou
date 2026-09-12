@@ -278,5 +278,5 @@ export function Icon({ name, size = 22, color, fixedSize }: IconProps) {
   // useScaled, c'est ce qui garde l'icone et le rembourrage qui l'entoure
   // synchrones.
   const scaled = useScaled(size);
-  return <MaterialCommunityIcons name={GLYPHS[name]} size={fixedSize ? size : scaled} color={color ?? colors.ink} />;
+  return <MaterialCommunityIcons accessible={false} importantForAccessibility="no" name={GLYPHS[name]} size={fixedSize ? size : scaled} color={color ?? colors.ink} />;
 }

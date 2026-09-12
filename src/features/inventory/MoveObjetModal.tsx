@@ -1,3 +1,6 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReducedMotion } from '../../lib/useReducedMotion';
+import { showMessage } from '../../lib/dialog';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
@@ -15,26 +18,28 @@ type MoveObjetModalProps = {
 
 export function MoveObjetModal({ visible, onClose, objetId }: MoveObjetModalProps) {
   const colors = useThemeColors();
-  const spacerWidth = useScaled(22);
+  const spacerWidth = useScaled(48);
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
   const moveObjet = useMoveObjet(objetId);
 
   const handleChoose = async (type: LocationType, id: string) => {
-    await moveObjet.mutateAsync({ type, id });
-    onClose();
+    try { await moveObjet.mutateAsync({ type, id }); onClose(); }
+    catch { showMessage(t('common.error_generic')); }
   };
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-sand pt-16">
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose}>
+      <View className="flex-1 bg-sand" style={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom }}>
         <View className="mb-2 flex-row items-center justify-between px-6">
           {/* Espaceur de la largeur de la croix d'en face, pour que le titre
               reste centre. Mis a l'echelle comme elle. */}
           <View style={{ width: spacerWidth }} />
-          <Text numberOfLines={1} className="flex-1 px-2 text-center text-subheading font-bold text-ink">
+          <Text className="flex-1 px-2 text-center text-subheading font-bold text-ink">
             {t('inventory.objet.move_title')}
           </Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} className="min-h-[48px] min-w-[48px] items-center justify-center">
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>

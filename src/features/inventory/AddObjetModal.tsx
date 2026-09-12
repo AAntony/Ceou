@@ -1,3 +1,5 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useReducedMotion } from '../../lib/useReducedMotion';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
@@ -30,7 +32,9 @@ type Step = 'choice' | 'manual' | 'scan' | 'destination';
 
 export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
   const colors = useThemeColors();
-  const spacerWidth = useScaled(22);
+  const spacerWidth = useScaled(48);
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
   const { session } = useSession();
   const createObjet = useCreateObjet();
@@ -102,11 +106,11 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
           : t('home.choose_location');
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-sand pt-16">
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose}>
+      <View className="flex-1 bg-sand" style={{ paddingTop: insets.top + 16, paddingBottom: insets.bottom }}>
         <View className="mb-2 flex-row items-center justify-between px-6">
           {step !== 'choice' ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={handleBack} hitSlop={8}>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('common.back')} onPress={handleBack} className="min-h-[48px] min-w-[48px] items-center justify-center">
               <Icon name="back" size={22} color={colors.ink} />
             </Pressable>
           ) : (
@@ -119,11 +123,12 @@ export function AddObjetModal({ visible, onClose }: AddObjetModalProps) {
           <Text numberOfLines={2} className="flex-1 px-2 text-center text-subheading font-bold text-ink">
             {title}
           </Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} className="min-h-[48px] min-w-[48px] items-center justify-center">
             <Icon name="close" size={22} color={colors.ink} />
           </Pressable>
         </View>
 
+        {step !== 'choice' ? <Text accessibilityLiveRegion="polite" className="mb-4 px-6 text-center text-label text-ink-soft">{t('redesign.step', { current: step === 'destination' ? 2 : 1, total: 2 })}</Text> : null}
         <View style={{ flex: 1, display: step === 'choice' ? 'flex' : 'none' }}>
           <ModeChoiceStep onChooseManual={() => setStep('manual')} onChooseScan={() => setStep('scan')} />
         </View>
@@ -185,8 +190,8 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
         <Icon name="scan" size={32} color={colors.accentDark} />
         {/* Le titre de chacune des deux seules options de l'ecran : c'est le
             texte qu'on lit en premier, il porte donc un role de titre. */}
-        <Text className="text-center text-subheading font-bold text-coral-dark">{t('inventory.aiScan.entry_title')}</Text>
-        <Text className="text-center text-label text-coral-dark/80">{t('inventory.aiScan.entry_hint')}</Text>
+        <Text className="text-center text-subheading font-bold text-coral-dark">{t('redesign.scan')}</Text>
+        <Text className="text-center text-label text-coral-dark/80">{t('redesign.scanHint')}</Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"
@@ -200,9 +205,9 @@ function ModeChoiceStep({ onChooseManual, onChooseScan }: { onChooseManual: () =
             part et d'autre, pour qu'on choisisse entre deux methodes
             decrites plutot qu'entre une methode et un intitule d'ecran. */}
         <Text className="text-center text-subheading font-bold text-ink">
-          {t('inventory.aiScan.manual_entry_title')}
+          {t('redesign.manual')}
         </Text>
-        <Text className="text-center text-label text-ink-soft">{t('inventory.aiScan.manual_entry_hint')}</Text>
+        <Text className="text-center text-label text-ink-soft">{t('redesign.manualHint')}</Text>
       </Pressable>
     </ScrollView>
   );

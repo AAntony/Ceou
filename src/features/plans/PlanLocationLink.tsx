@@ -5,6 +5,7 @@ import { Animated, Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
 import { usePieceLocationOnPlan } from './queries';
 import { useThemeColors } from '../../lib/theme';
+import { useReducedMotion } from '../../lib/useReducedMotion';
 
 type PlanLocationLinkProps = {
   pieceId?: string;
@@ -31,6 +32,7 @@ const PULSE_MS = 700;
 // peut-être pas encore utilisée.
 export function PlanLocationLink({ pieceId, emplacementId, emphasis }: PlanLocationLinkProps) {
   const colors = useThemeColors();
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
   const { data } = usePieceLocationOnPlan(pieceId ?? '');
 
@@ -38,7 +40,8 @@ export function PlanLocationLink({ pieceId, emplacementId, emphasis }: PlanLocat
   // pas changer le nombre de hooks appelés d'un rendu à l'autre.
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!emphasis) return;
+    pulse.setValue(0);
+    if (!emphasis || reducedMotion) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: PULSE_MS, useNativeDriver: true }),
@@ -48,7 +51,7 @@ export function PlanLocationLink({ pieceId, emplacementId, emphasis }: PlanLocat
     );
     loop.start();
     return () => loop.stop();
-  }, [emphasis, pulse]);
+  }, [emphasis, pulse, reducedMotion]);
 
   if (!pieceId || !data) return null;
 

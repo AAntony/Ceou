@@ -238,8 +238,8 @@ export default function FriendsScreen() {
             accessibilityRole="button"
             className="mb-6 flex-row items-center justify-center gap-2 rounded-2xl border border-dashed border-ink/25 px-3 py-3.5 active:opacity-70"
           >
-            <Icon name="add" size={20} color={colors.accent} />
-            <Text className="shrink text-body font-semibold text-coral">{t('friends.categories.new')}</Text>
+            <Icon name="add" size={20} color={colors.accentDark} />
+            <Text className="shrink text-body font-semibold text-coral-dark">{t('friends.categories.new')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

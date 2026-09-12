@@ -38,7 +38,7 @@ export function useHeaderOptions() {
 
   return {
     headerStyle: { backgroundColor: colors.sand },
-    headerTintColor: colors.accent,
+    headerTintColor: colors.accentDark,
     headerTitleStyle: {
       color: colors.ink,
       ...(chrome > 1 ? { fontSize: Math.round(HEADER_TITLE_SIZE * chrome) } : {}),

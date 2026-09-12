@@ -1,3 +1,4 @@
+import { RecentLocations, useRecentLocations } from './RecentLocations';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -82,10 +83,15 @@ type LocationTreePickerProps = {
 // habiter) va même jusqu'à appeler `onChoose` directement : un
 // emplacement/conteneur tout juste créé est forcément vide, l'étape de
 // confirmation intermédiaire n'apporterait rien.
-export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: LocationTreePickerProps) {
+export function LocationTreePicker({ active, confirmLabel, loading, onChoose: chooseDestination }: LocationTreePickerProps) {
   const colors = useThemeColors();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { remember } = useRecentLocations();
+  const onChoose = (type: LocationType, id: string) => {
+    remember(type, id);
+    chooseDestination(type, id);
+  };
   const [stack, setStack] = useState<Step[]>([{ level: 'habitations' }]);
 
   useEffect(() => {
@@ -140,7 +146,7 @@ export function LocationTreePicker({ active, confirmLabel, loading, onChoose }: 
         </Pressable>
       ) : null}
 
-      {current.level === 'habitations' && <HabitationsStep onSelect={handleSelectHabitation} />}
+      {current.level === 'habitations' ? <><RecentLocations onSelect={(type, id, name) => push({ level: 'container', type, id, name })} /><HabitationsStep onSelect={handleSelectHabitation} /></> : null}
       {current.level === 'pieces' && (
         <PiecesStep habitationId={current.habitationId} onSelect={(piece) => push({ level: 'emplacements', pieceId: piece.id })} />
       )}

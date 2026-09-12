@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react';
+import { useReducedMotion } from '../lib/useReducedMotion';
 import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
@@ -113,9 +114,10 @@ export function BottomSheetModal({
   children,
 }: BottomSheetModalProps) {
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1, justifyContent: 'flex-end' }}
@@ -132,6 +134,7 @@ export function BottomSheetModal({
         />
 
         <View
+          accessibilityViewIsModal
           className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
           // Le style de l'appelant passe EN DERNIER : il peut donc imposer
           // sa propre hauteur par-dessus le plafond.

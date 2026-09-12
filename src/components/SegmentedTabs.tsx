@@ -41,7 +41,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Se
             disabled={disabled}
             accessibilityRole="tab"
             accessibilityState={{ selected: active, disabled }}
-            className={`items-center rounded-xl border px-4 py-3 ${stacked ? '' : 'flex-1'} ${
+            className={`min-h-[48px] items-center justify-center rounded-xl border px-4 py-3 ${stacked ? '' : 'flex-1'} ${
               active ? 'border-coral bg-coral-light' : 'border-ink/10'
             } ${disabled ? 'opacity-40' : ''}`}
           >

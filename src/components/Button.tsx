@@ -46,6 +46,7 @@ export function Button({ label, loading, variant = 'primary', icon, disabled, ..
     <Pressable
       disabled={inactive}
       accessibilityRole="button"
+      accessibilityLabel={label}
       // `busy` fait annoncer « en cours » pendant l'attente : sans lui, un
       // bouton qui tourne est simplement un bouton qui ne repond pas.
       accessibilityState={{ disabled: inactive, busy: loading }}

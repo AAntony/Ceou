@@ -64,11 +64,11 @@ export function HeaderSaveButton({ onPress, dirty, loading, label }: HeaderSaveB
       className="active:opacity-60"
     >
       {loading ? (
-        <ActivityIndicator size="small" color={colors.accent} style={{ width: size, height: size }} />
+        <ActivityIndicator size="small" color={colors.accentDark} style={{ width: size, height: size }} />
       ) : (
         // `fixedSize` : la taille porte deja le plafond du mobilier, Icon ne
         // doit pas la remultiplier par le facteur entier.
-        <Icon name="save" size={size} color={dirty ? colors.accent : colors.inkFaint} fixedSize />
+        <Icon name="save" size={size} color={dirty ? colors.accentDark : colors.inkFaint} fixedSize />
       )}
     </Pressable>
   );

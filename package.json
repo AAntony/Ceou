@@ -73,7 +73,8 @@
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
     "site": "node scripts/build-site.mjs",
-    "site:serve": "node scripts/serve-site.mjs"
+    "site:serve": "node scripts/serve-site.mjs",
+    "test:redesign": "node --test scripts/test-redesign.mjs"
   },
   "private": true
 }

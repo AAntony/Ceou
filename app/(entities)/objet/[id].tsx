@@ -1,15 +1,16 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
 import { ButtonRow } from '../../../src/components/ButtonRow';
 import { ErrorState } from '../../../src/components/ErrorState';
-import { HeaderSaveButton } from '../../../src/components/HeaderSaveButton';
+import { HeaderIconButton } from '../../../src/components/HeaderIconButton';
+import { useSpaceForAppTabBar } from '../../../src/components/AppTabBar';
+import { ObjetEditSheet } from '../../../src/features/inventory/ObjetEditSheet';
 import { Icon } from '../../../src/components/Icon';
 import { PhotoViewerModal } from '../../../src/components/PhotoViewerModal';
-import { TextField } from '../../../src/components/TextField';
 import { useSession } from '../../../src/features/auth/SessionProvider';
 import { useFactures } from '../../../src/features/factures/FactureBlock';
 import { LoanBanner } from '../../../src/features/loans/LoanBanner';
@@ -17,7 +18,7 @@ import { LoanSheet } from '../../../src/features/loans/LoanSheet';
 import { useClosePret, useObjetPret } from '../../../src/features/loans/queries';
 import { LocationBreadcrumb } from '../../../src/features/inventory/LocationBreadcrumb';
 import { MoveObjetModal } from '../../../src/features/inventory/MoveObjetModal';
-import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useSetObjetPhotoFromLocal, useUpdateObjet } from '../../../src/features/inventory/queries';
+import { useDeleteObjet, useObjet, useObjetHistory, useObjetLocationChain, useSetObjetPhotoFromLocal } from '../../../src/features/inventory/queries';
 import { PlanLocationLink } from '../../../src/features/plans/PlanLocationLink';
 import { canModify, useHabitationPermission } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
@@ -44,7 +45,9 @@ export default function ObjetScreen() {
   const habitationId = locationChain?.find((node) => node.kind === 'habitation')?.id;
   const { data: permission } = useHabitationPermission(habitationId);
   const editable = canModify(permission);
-  const updateObjet = useUpdateObjet(id);
+  const bottomSpace = useSpaceForAppTabBar();
+  const [editing, setEditing] = useState(false);
+  const [fullHistory, setFullHistory] = useState(false);
   const deleteObjet = useDeleteObjet();
   const setObjetPhoto = useSetObjetPhotoFromLocal(id);
   const { pret } = useObjetPret(id);
@@ -60,45 +63,11 @@ export default function ObjetScreen() {
     dejaUneFacture,
   } = useFactures(id, permission === 'owner', habitationId);
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+
   const [moveModalOpen, setMoveModalOpen] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
 
-  useEffect(() => {
-    if (objet) {
-      setName(objet.name);
-      setDescription(objet.description ?? '');
-    }
-  }, [objet]);
-
-  // CE QUI REND LA DISQUETTE DE L'EN-TETE ACTIVE. Elle ne compare que les deux
-  // champs de TEXTE : la photo, elle, part en base des qu'elle est choisie
-  // (voir handleChangePhoto), il n'y a rien a confirmer apres coup.
-  //
-  // `?? ''` des deux cotes : la base stocke une description absente en `null`
-  // et le champ de saisie ne connait que la chaine vide — sans cette
-  // normalisation, ouvrir un objet sans description suffirait a allumer la
-  // disquette, ce qui est exactement le defaut qu'on corrige.
-  const dirty = !!objet && (name !== objet.name || description !== (objet.description ?? ''));
-
-  const handleSave = () => {
-    updateObjet.mutate({ name, description: description || null });
-  };
-
-  // ON CHOISIT, ON AFFICHE, ON ENVOIE — dans cet ordre, et c'est le correctif.
-  //
-  // L'écran téléversait d'abord et n'écrivait qu'ensuite : sans réseau, le
-  // téléversement échouait et il ne restait RIEN — ni photo à l'écran, ni
-  // écriture en attente. Défaut signalé à l'usage.
-  //
-  // Le fichier choisi est déjà sur l'appareil : il s'affiche donc tout de
-  // suite, et la file se charge de l'envoyer puis d'écrire son adresse
-  // définitive dès qu'il y a du réseau.
-  //
-  // `photoUploading` ne couvre plus que la SÉLECTION, qui est brève. C'est
-  // juste : il n'y a plus d'attente réseau à signaler ici.
   const handleChangePhoto = async () => {
     if (!session) return;
     setPhotoUploading(true);
@@ -154,21 +123,11 @@ export default function ObjetScreen() {
           // partagee en lecture seule, un bouton grise en permanence ne
           // dirait rien de plus que les champs deja non modifiables.
           headerRight: editable
-            ? () => (
-                <HeaderSaveButton
-                  onPress={handleSave}
-                  dirty={dirty}
-                  // Croisé avec `dirty` : la même mutation sert à écrire la
-                  // photo, et la disquette n'a pas à se mettre à tourner
-                  // pour un téléversement qui ne la concerne pas.
-                  loading={updateObjet.isPending && dirty}
-                  label={t('a11y.save_changes')}
-                />
-              )
+            ? () => <HeaderIconButton icon="pencil" label={t('redesign.edit')} onPress={() => setEditing(true)} />
             : undefined,
         }}
       />
-      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pb-40 pt-6" refreshControl={refreshControl}>
+      <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-6" contentContainerStyle={{ paddingBottom: bottomSpace + 32 }} refreshControl={refreshControl}>
         <View className="mb-6 self-center">
           <Pressable
             onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : editable ? handleChangePhoto() : undefined)}
@@ -209,18 +168,12 @@ export default function ObjetScreen() {
           />
         ) : null}
 
+        <Text accessibilityRole="header" className="mb-4 text-title font-bold text-ink">{objet.name}</Text>
         <LocationBreadcrumb objetId={id} />
         <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} emphasis={!!highlightPlanLink} />
 
-        <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} editable={editable} />
-        <TextField
-          label={t('inventory.objet.description_label')}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={3}
-          editable={editable}
-        />
+        <Text accessibilityRole="header" className="mb-3 text-heading font-bold text-ink">{t('redesign.details')}</Text>
+        {objet.description ? <Text className="mb-5 text-body text-ink-soft">{objet.description}</Text> : null}
 
         {/* LA LISTE DES FACTURES DECRIT L'OBJET — ce qu'il a coute, quand,
             chez qui — donc sa place est avec les informations. Le GESTE
@@ -273,7 +226,7 @@ export default function ObjetScreen() {
 
         <Text className="mb-2 text-body font-bold text-ink">{t('inventory.objet.history_title')}</Text>
         {history && history.length > 0 ? (
-          history.map((entry) => (
+          (fullHistory ? history : history.slice(0, 3)).map((entry) => (
             <View key={entry.id} className="mb-2 rounded-xl border border-ink/10 px-4 py-3">
               <Text className="text-label text-ink">
                 {entry.from_location_label} → {entry.to_location_label}
@@ -285,6 +238,8 @@ export default function ObjetScreen() {
           <Text className="text-label text-ink-soft">{t('inventory.objet.history_empty')}</Text>
         )}
 
+        {history && history.length > 3 ? <Button label={t(fullHistory ? 'redesign.lessHistory' : 'redesign.moreHistory')} variant="ghost" onPress={() => setFullHistory(!fullHistory)} /> : null}
+        {editable ? <View className="mt-6"><Button label={t('redesign.edit')} variant="outline" onPress={() => setEditing(true)} /></View> : null}
         {editable ? (
           <View className="mt-10">
             <Button label={t('common.delete')} variant="danger" onPress={handleDelete} />
@@ -295,6 +250,7 @@ export default function ObjetScreen() {
       <MoveObjetModal visible={moveModalOpen} onClose={() => setMoveModalOpen(false)} objetId={id} />
       <LoanSheet visible={loanSheetOpen} onClose={() => setLoanSheetOpen(false)} objetId={id} objetName={objet.name} />
       <PhotoViewerModal visible={photoViewerOpen} uri={objet.photo_url} onClose={() => setPhotoViewerOpen(false)} />
+      {editing && editable ? <ObjetEditSheet key={id} id={id} name={objet.name} description={objet.description} onClose={() => setEditing(false)} /> : null}
       {feuilleFacture}
     </>
   );

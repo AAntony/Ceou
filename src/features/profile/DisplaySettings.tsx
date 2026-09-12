@@ -99,7 +99,7 @@ export function DisplaySettings() {
             className="mt-2 self-start py-1"
             accessibilityRole="button"
           >
-            <Text className="text-caption font-semibold text-coral">{t('profile.theme.follow_system')}</Text>
+            <Text className="text-caption font-semibold text-coral-dark">{t('profile.theme.follow_system')}</Text>
           </Pressable>
         )}
 

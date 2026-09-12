@@ -79,7 +79,7 @@ export default function TabsLayout() {
           bouton "Ajouter" à droite, trait de séparation sous l'en-tête.
           Le bouton lui-même est posé par l'écran via setOptions : c'est lui
           qui porte l'état de la modale d'ajout. */}
-      <Tabs.Screen name="friends" options={{ ...headerOptions, title: t('friends.tab_title') }} />
+      <Tabs.Screen name="friends" options={{ ...headerOptions, title: t('redesign.shares') }} />
       {/* Le Profil n'avait rien à mettre dans un en-tête tant que son
           « Enregistrer » vivait au milieu du formulaire. Il porte maintenant
           la disquette, posée par l'écran via setOptions comme le "Ajouter"

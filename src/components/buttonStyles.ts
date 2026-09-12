@@ -46,7 +46,7 @@ export type ButtonVariant = 'primary' | 'ghost' | 'outline' | 'danger' | 'destru
 
 // Le socle commun : tout bouton de l'app centre son contenu et s'attenue
 // sous le doigt. Une pression qui ne repond pas laisse croire au bouton mort.
-export const BUTTON_BASE = 'items-center justify-center active:opacity-80';
+export const BUTTON_BASE = 'min-h-[48px] items-center justify-center active:opacity-80';
 
 // Les trois GABARITS de forme, separes des couleurs : c'est ce qui permet de
 // dire « meme forme que primary, autre couleur » sans recopier les mesures.
@@ -63,10 +63,10 @@ export const BUTTON_SURFACE: Record<ButtonVariant, string> = {
   primary: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-coral`,
   ghost: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-transparent`,
   outline: `${BUTTON_BASE} ${BUTTON_BLOCK} border-2 border-coral bg-coral-light`,
-  danger: `${BUTTON_BASE} ${BUTTON_PILL} bg-red-500`,
+  danger: `${BUTTON_BASE} ${BUTTON_PILL} bg-red-700`,
   // Le MEME rouge que la pastille, volontairement : c'est le meme geste, vu a
   // deux moments. Un second rouge ferait douter qu'il s'agisse du meme.
-  destructive: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-red-500`,
+  destructive: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-red-700`,
   tile: `${BUTTON_BASE} ${BUTTON_TILE} border border-ink/10 bg-surface`,
 };
 

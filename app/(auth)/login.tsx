@@ -23,8 +23,10 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
-        <Text className="mb-8 text-display font-bold text-ink">{t('auth.login.title')}</Text>
+      <ScrollView contentContainerClassName="grow justify-center px-6 py-10" keyboardShouldPersistTaps="handled">
+        <Text className="mb-2 text-display font-bold text-coral-dark">Céoù</Text>
+        <Text className="mb-8 text-body text-ink-soft">{t('redesign.loginTagline')}</Text>
+        <Text accessibilityRole="header" className="mb-6 text-title font-bold text-ink">{t('auth.login.title')}</Text>
 
         <TextField
           label={t('auth.email')}

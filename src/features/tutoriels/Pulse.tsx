@@ -85,7 +85,7 @@ export function Pulse({ radius = 16, children }: PulseProps) {
     bottom: -ECART,
     borderRadius: radius + ECART,
     borderWidth: 2,
-    borderColor: colors.accent,
+    borderColor: colors.accentDark,
   };
 
   return (

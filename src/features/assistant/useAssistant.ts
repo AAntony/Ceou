@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import i18n from '../../lib/i18n';
 import { logClientError } from '../../lib/errorLogging';
 import { normalize } from '../../lib/text/match';
+import { wordCount } from '../../lib/text/words';
 import { supabase } from '../../lib/supabase/client';
 import type { EffectiveHabitationPermission } from '../../types/database';
 import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
@@ -543,7 +544,7 @@ export function useAssistant() {
 
       // 2. Une dictée très courte est un nom d'objet : on y répond localement,
       //    sans appel à l'IA, exactement comme le ferait la barre de recherche.
-      if (text.split(/s+/).length <= SHORT_QUERY_MAX_WORDS) {
+      if (wordCount(text) <= SHORT_QUERY_MAX_WORDS) {
         const found = resolveIntent(
           { action: 'locate', object_query: text, room_query: '', destination_query: '', scope: 'one' },
           indexRef.current ?? [],

@@ -11,14 +11,14 @@ import { MAX_CHROME_SCALE, useChromeScale } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import { Icon, type IconName } from './Icon';
 
-const ACTIVE_COLOR = '#1591EA';
+
 const AVATAR_SIZE = 24;
 const ICON_SIZE = 22;
-const LABEL_SIZE = 11;
+const LABEL_SIZE = 12;
 
 // Hauteur de la rangée d'onglets, hors zone système, à taille de texte
 // normale.
-const BASE_TAB_BAR_HEIGHT = 64;
+const BASE_TAB_BAR_HEIGHT = 72;
 
 // LA BARRE GRANDIT MOINS QUE LE RESTE DE L'APP (voir MAX_CHROME_SCALE).
 //
@@ -117,7 +117,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
   const colors = useThemeColors();
   const chrome = useChromeScale();
   const avatar = useMediaSource(avatarUrl);
-  const color = active ? ACTIVE_COLOR : colors.inkFaint;
+  const color = active ? colors.accentDark : colors.inkSoft;
   const avatarSize = Math.round(AVATAR_SIZE * chrome);
   // `fixedSize` a l'usage : la taille porte deja le plafond de la barre,
   // Icon ne doit pas la remultiplier par le reglage de l'app.
@@ -126,10 +126,10 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole="tab"
       accessibilityState={{ selected: active }}
       accessibilityLabel={label}
-      className="flex-1 items-center justify-center py-2"
+      className={`flex-1 items-center justify-center rounded-2xl py-2 ${active ? 'bg-coral-light' : ''}`}
     >
       <View style={{ position: 'relative' }}>
         {avatarUrl ? (
@@ -144,7 +144,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
               borderRadius: avatarSize / 2,
               overflow: 'hidden',
               borderWidth: active ? 2 : 0,
-              borderColor: ACTIVE_COLOR,
+              borderColor: colors.accentDark,
             }}
           >
             <Image source={avatar} style={{ width: '100%', height: '100%' }} />
@@ -245,9 +245,9 @@ export function AppTabBar() {
   if (!visible) return null;
 
   const onHome = pathname === '/';
-  const onHabitations = HABITATION_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  const onFriends = pathname === '/friends';
-  const onProfile = pathname === '/profile';
+  const onHabitations = HABITATION_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ['/factures', '/export-factures'].includes(pathname);
+  const onFriends = ['/friends', '/prets', '/invites'].includes(pathname);
+  const onProfile = ['/profile', '/account', '/corbeille', '/tutoriels', '/upgrade-account'].includes(pathname) || pathname.startsWith('/tutoriel/');
 
   return (
     /* Barre pleine largeur collée au bas, PAS une pastille flottante : le
@@ -264,9 +264,9 @@ export function AppTabBar() {
         {/* Le pin reprend le "o" du logo Céoù — clin d'œil au nom, et
             surtout la seule façon de ne pas mettre deux maisons côte à côte
             dans une app qui parle justement d'habitations. */}
-        <TabItem label={t('app_name')} iconName="location" active={onHome} onPress={() => router.navigate('/')} />
+        <TabItem label={t('redesign.find')} iconName="search" active={onHome} onPress={() => router.navigate('/')} />
         <TabItem
-          label={t('inventory.habitations.title')}
+          label={t('redesign.places')}
           iconName="habitations"
           active={onHabitations}
           onPress={() => router.navigate('/habitations')}
@@ -277,7 +277,7 @@ export function AppTabBar() {
             qu'à une page vide, autant ne pas le montrer. */}
         {isGuest ? null : (
           <TabItem
-            label={t('friends.tab_title')}
+            label={t('redesign.shares')}
             iconName="friends"
             active={onFriends}
             badgeCount={pendingIncomingCount}

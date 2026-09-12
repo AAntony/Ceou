@@ -1,7 +1,8 @@
+import { useRecentLocations } from './RecentLocations';
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button } from '../../components/Button';
 import { FormActions } from '../../components/FormActions';
 import { TextField } from '../../components/TextField';
@@ -43,6 +44,10 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
   const { t } = useTranslation();
   const { session } = useSession();
   const createObjet = useCreateObjet();
+  const { remember } = useRecentLocations();
+  const nameInput = useRef<TextInput>(null);
+  const submitting = useRef(false);
+  const [savedAnother, setSavedAnother] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [localPhotoUri, setLocalPhotoUri] = useState<string | null>(null);
@@ -52,6 +57,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
 
   useEffect(() => {
     if (active) {
+      setSavedAnother(false);
       setName('');
       setDescription('');
       setLocalPhotoUri(null);
@@ -78,8 +84,8 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
     }
   };
 
-  const handleSubmit = async () => {
-    if (!name.trim()) return;
+  const handleSubmit = async (another = false) => {
+    if (!name.trim() || submitting.current || lookupLoading) return;
 
     if (onCollected) {
       onCollected({ name: name.trim(), description: description.trim() || null, localPhotoUri, barcode });
@@ -88,6 +94,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
 
     if (!session || !parentType || !parentId) return;
 
+    submitting.current = true;
     try {
       await createObjet.mutateAsync({
         parentType,
@@ -103,9 +110,13 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
       logClientError(err, { source: 'objet_form', step: 'create', parentType });
       showMessage(t('common.error_generic'));
       return;
-    }
+    } finally { submitting.current = false; }
 
-    onDone();
+    remember(parentType, parentId);
+    if (another) {
+      setName(''); setDescription(''); setLocalPhotoUri(null); setBarcode(null);
+      setSavedAnother(true); nameInput.current?.focus();
+    } else onDone();
   };
 
   return (
@@ -116,7 +127,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           écran d'AddObjetModal. Cf. le commentaire de la branche manuelle
           dans CreateObjetModal avant d'y ajouter quoi que ce soit. */}
       <ScrollView contentContainerClassName="px-6 pb-6 pt-2" keyboardShouldPersistTaps="handled">
-        <Pressable accessibilityRole="button" onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
+        <Pressable accessibilityRole="button" accessibilityLabel={t('a11y.change_photo')} onPress={handlePickPhoto} className="mb-4 h-32 w-32 items-center justify-center self-center overflow-hidden rounded-xl bg-sand-dark">
           {lookupLoading ? (
             <ActivityIndicator />
           ) : localPhotoUri ? (
@@ -132,7 +143,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
           <Button label={t('inventory.objet.scan_barcode')} variant="ghost" onPress={() => setScannerVisible(true)} />
         </View>
 
-        <TextField label={t('inventory.objet.name_label')} value={name} onChangeText={setName} autoFocus />
+        <TextField ref={nameInput} label={t('inventory.objet.name_label')} value={name} onChangeText={(value) => { setName(value); setSavedAnother(false); }} autoFocus />
         <TextField
           label={t('inventory.objet.description_label')}
           value={description}
@@ -146,10 +157,12 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
             cancelLabel={t('common.cancel')}
             onCancel={onCancel}
             confirmLabel={t(onCollected ? 'common.next' : 'common.save')}
-            onConfirm={handleSubmit}
+            onConfirm={() => handleSubmit()}
             loading={createObjet.isPending}
-            disabled={!name.trim()}
+            disabled={!name.trim() || lookupLoading}
           />
+          {!onCollected ? <View className="mt-2"><Button variant="outline" label={t('redesign.addAnother')} onPress={() => handleSubmit(true)} disabled={!name.trim() || lookupLoading || createObjet.isPending} /></View> : null}
+          {savedAnother ? <Text accessibilityLiveRegion="polite" className="mt-3 text-label text-coral-dark">{t('redesign.savedLocal')}</Text> : null}
         </View>
       </ScrollView>
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScanned={handleBarcodeScanned} />

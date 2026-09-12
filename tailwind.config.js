@@ -34,13 +34,13 @@ module.exports = {
         subheading: ['1.125rem', '1.75rem'],
         // LE TEXTE COURANT : nom d'un objet, d'une piece, d'un ami, contenu
         // d'un champ de saisie. En cas de doute, c'est celui-la.
-        body: ['1rem', '1.5rem'],
+        body: ['1.143rem', '1.714rem'],
         // Libelle de champ, ligne secondaire d'une rangee, libelle de
         // bouton compact. Le plus utilise apres `body`.
-        label: ['0.875rem', '1.25rem'],
+        label: ['1rem', '1.5rem'],
         // Mention, aide, pastille de comptage. Ce qu'on lit si on cherche,
         // pas ce qu'on lit d'abord.
-        caption: ['0.75rem', '1rem'],
+        caption: ['0.929rem', '1.357rem'],
       },
       colors: {
         // Identité visuelle Ceou — corail/turquoise/moutarde plutôt que du

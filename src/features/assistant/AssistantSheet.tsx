@@ -230,7 +230,7 @@ export function AssistantSheet({
                       pas une étape. */}
                   {index === 0 && state.undo ? (
                     <Pressable onPress={onUndoMove} hitSlop={8} accessibilityRole="button" className="active:opacity-60">
-                      <Text className="text-caption font-semibold text-coral">{t('assistant.move.undo')}</Text>
+                      <Text className="text-caption font-semibold text-coral-dark">{t('assistant.move.undo')}</Text>
                     </Pressable>
                   ) : null}
                 </View>

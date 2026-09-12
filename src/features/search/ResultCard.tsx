@@ -1,152 +1,36 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
-import { PLACEHOLDER_IMAGES, type EntityLevel } from '../inventory/placeholders';
+import { Icon, type IconName } from '../../components/Icon';
 import { useMediaSource } from '../../lib/images/media';
-import { useScaled } from '../../lib/textScale';
+import { useTextScale } from '../../lib/textScale';
+import { useThemeColors } from '../../lib/theme';
 import type { SearchIndexEntry, SearchKind } from './queries';
 
-const ROUTE_BY_KIND: Record<SearchKind, string> = {
-  objet: 'objet',
-  conteneur: 'conteneur',
-  emplacement: 'emplacement',
-  piece: 'piece',
-};
+const ICONS: Record<SearchKind, IconName> = { objet: 'objet', piece: 'piece', emplacement: 'conteneur', conteneur: 'conteneur' };
 
-// Les quatre types de résultat correspondent un pour un à un niveau de
-// l'inventaire, donc à une illustration par défaut déjà dessinée.
-const LEVEL_BY_KIND: Record<SearchKind, EntityLevel> = {
-  objet: 'objet',
-  conteneur: 'conteneur',
-  emplacement: 'emplacement',
-  piece: 'piece',
-};
-
-// Largeur d'une tuile selon le nombre de colonnes. Les écarts de 9 px sont
-// posés par la rangée (COLUMN_WRAPPER, HomeDashboard) : les pourcentages
-// laissent juste la place qu'ils occupent.
-const TILE_WIDTH: Record<number, `${number}%`> = {
-  3: '31.5%',
-  2: '48.5%',
-};
-
-// Largeur de la vignette en disposition RANGÉE, avant mise à l'échelle.
-const ROW_THUMB_WIDTH = 96;
-
-// UNE INTERPOLATION NE DOIT JAMAIS SERVIR ICI, et ça a fini par se voir :
-// `parent_label` est nul dès qu'un objet est posé à même sa pièce, et
-// `${entry.parent_label}` écrivait alors le mot « null » sur la tuile.
-// Signalé à l'usage sous la forme « null · Cellier ».
-//
-// Le filtre traite la cause générale plutôt que ce seul champ : tous les
-// libellés de cette ligne viennent du serveur et peuvent manquer. Voir
-// aussi seedNewEntity, qui corrige la raison pour laquelle il manquait ce
-// jour-là.
-function locationLine(entry: SearchIndexEntry): string {
-  if (entry.kind === 'piece') return entry.habitation_name;
-  if (entry.kind === 'emplacement') return entry.piece_name;
-  // L'habitation en dernier recours : mieux vaut un repère large que rien.
-  return [entry.parent_label, entry.piece_name].filter(Boolean).join(' · ') || entry.habitation_name;
-}
-
-type ResultCardProps = {
-  entry: SearchIndexEntry;
-  /** 3, 2 ou 1 — décidé par l'écran selon la taille de texte en cours. */
-  columns: number;
-};
-
-// Tuile de résultat de l'accueil.
-//
-// Ne délègue plus à EntityCard : la carte y était bâtie autour d'une
-// PASTILLE de 52 px (photo rognée en rond, ou icône à défaut) posée sur un
-// fond pastel. La photo y était donc l'élément le plus petit de la tuile,
-// alors que c'est elle qui permet de reconnaître un objet d'un coup d'œil —
-// tout l'intérêt d'avoir des photos.
-//
-// Ici l'image occupe toute la largeur de la tuile, au même ratio 4:3 que la
-// vignette des rangées d'Emplacement : un objet a la même tête partout dans
-// l'app, qu'on le croise en cherchant ou en naviguant.
-//
-// Aucune icône par-dessus l'image (demande explicite) : quand la photo
-// manque, c'est l'illustration du NIVEAU qui s'affiche, et elle distingue
-// déjà un objet d'une pièce ou d'une boîte.
-//
-// TROIS PAR RANGÉE depuis le 2026-08-24 (deux auparavant). La tuile passe de
-// 164 à 108 px de large et de 181 à 126 px de haut : une dizaine d'objets
-// tiennent maintenant à l'écran au lieu de cinq. Une photo de 82 px suffit
-// largement à reconnaître un objet — c'est le PARCOURS qui coûtait cher, pas
-// la reconnaissance.
-//
-// EN GROS TEXTE, LA TUILE DEVIENT UNE RANGÉE (`columns === 1`). Une tuile
-// pleine largeur aurait porté une photo de 240 px de haut : un objet et demi
-// par écran, soit le contraire du service rendu. Couchée, la même carte garde
-// une vignette lisible et laisse au nom toute la largeur — c'est le passage
-// que font les listes du système quand le texte grossit.
-//
-// Deux lignes pour le nom, une pour l'emplacement : à x1,6 « Chargeur
-// d'ordinateur portable » tenait sur une ligne de tuile étroite comme
-// « Charg… », ce qui ne distingue plus rien.
-export function ResultCard({ entry, columns }: ResultCardProps) {
-  const rowThumbWidth = useScaled(ROW_THUMB_WIDTH);
+export function ResultCard({ entry, columns }: { entry: SearchIndexEntry; columns: number }) {
   const photo = useMediaSource(entry.photo_url);
-  const asRow = columns <= 1;
-
-  const image = (
-    <Image
-      source={photo ?? PLACEHOLDER_IMAGES[LEVEL_BY_KIND[entry.kind]]}
-      style={{ width: '100%', height: '100%' }}
-      contentFit="cover"
-    />
-  );
-
-  if (asRow) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
-        className="mb-2.5 w-full flex-row items-center overflow-hidden rounded-[14px] bg-surface active:opacity-70"
-      >
-        <View style={{ width: rowThumbWidth, aspectRatio: 4 / 3 }} className="bg-sand">
-          {image}
-        </View>
-        <View className="flex-1 px-3 py-2">
-          <Text numberOfLines={2} className="text-body font-semibold text-ink">
-            {entry.name}
-          </Text>
-          <Text numberOfLines={1} className="mt-0.5 text-label text-ink-soft">
-            {locationLine(entry)}
-          </Text>
-        </View>
-      </Pressable>
-    );
-  }
-
+  const colors = useThemeColors();
+  const { textScale } = useTextScale();
+  const row = columns === 1;
+  const location = entry.parent_label || (entry.kind === 'piece' ? entry.habitation_name : entry.piece_name);
+  const context = [entry.piece_name, entry.habitation_name].filter((part, i, all) => part && part !== location && all.indexOf(part) === i).join(' · ');
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push(`/${ROUTE_BY_KIND[entry.kind]}/${entry.id}`)}
-      style={{ width: TILE_WIDTH[columns] ?? TILE_WIDTH[3] }}
-      className="mb-2.5 overflow-hidden rounded-[14px] bg-surface active:opacity-70"
-    >
-      {/* `aspectRatio` plutôt qu'une hauteur fixe : la largeur d'une tuile
-          dépend de celle de l'écran, une hauteur en dur déformerait le
-          cadrage sur les petits comme sur les grands. */}
-      <View style={{ width: '100%', aspectRatio: 4 / 3 }} className="bg-sand">
-        {image}
+    <Pressable accessibilityRole="button" accessibilityLabel={[entry.name, location, context].filter(Boolean).join(', ')}
+      onPress={() => router.push(`/${entry.kind}/${entry.id}`)}
+      style={row ? undefined : { width: '48%' }}
+      className={`mb-3 overflow-hidden rounded-2xl bg-surface active:opacity-70 ${row ? 'w-full flex-row items-center p-3' : ''}`}>
+      {textScale < 2 ? <View style={row ? { width: 68, height: 76 } : { width: '100%', aspectRatio: 4 / 3 }}
+        className="items-center justify-center overflow-hidden rounded-xl bg-coral-light">
+        {photo ? <Image source={photo} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <Icon name={ICONS[entry.kind]} size={30} color={colors.accentDark} />}
+      </View> : null}
+      <View className={row ? 'min-w-0 flex-1 px-3 py-1' : 'p-3'}>
+        <Text className="text-body font-semibold text-ink">{entry.name}</Text>
+        <Text className="mt-1 text-label font-semibold text-coral-dark">{location}</Text>
+        {context ? <Text className="mt-1 text-caption text-ink-soft">{context}</Text> : null}
       </View>
-
-      <View className="px-2 pb-2 pt-1.5">
-        {/* Tailles en `rem` et non en pixels : c'est ce qui les fait suivre le
-            réglage de taille de l'app, comme le reste des classes Tailwind.
-            0,93rem et 0,71rem valent 13 px et 10 px à taille normale — les
-            valeurs d'origine, au dixième près. */}
-        <Text numberOfLines={2} className="text-[0.93rem] font-semibold text-ink">
-          {entry.name}
-        </Text>
-        <Text numberOfLines={1} className="mt-px text-[0.71rem] text-ink-soft">
-          {locationLine(entry)}
-        </Text>
-      </View>
+      {row && textScale < 1.3 ? <Icon name="chevron" size={18} color={colors.inkSoft} /> : null}
     </Pressable>
   );
 }

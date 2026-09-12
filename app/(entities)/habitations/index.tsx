@@ -149,7 +149,7 @@ export default function HabitationsScreen() {
           sont, déjà dans la barre du bas). */}
       <Stack.Screen
         options={{
-          title: t('inventory.habitations.title'),
+          title: t('redesign.places'),
           headerBackVisible: false,
           // Seul l'onglet Personnelles peut recevoir une creation : l'onglet
           // Partagees liste des amis, pas des habitations a soi.
