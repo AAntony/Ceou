@@ -27,8 +27,10 @@ export function useCorbeille() {
   return useQuery({
     queryKey: ['corbeille'],
     queryFn: async (): Promise<CorbeilleEntree[]> => {
-      const { data, error } = await supabase.rpc('corbeille_lister' as never);
+      const { data, error } = await supabase.rpc('corbeille_lister');
       if (error) throw error;
+      // `kind` et `resume` arrivent en `string` et en `Json` : le type est
+      // resserre ici, en un seul endroit, plutot qu'a chaque lecture.
       return (data ?? []) as unknown as CorbeilleEntree[];
     },
   });
@@ -46,9 +48,7 @@ export function useCorbeille() {
  * n'existe pas côté serveur et plus aucune suppression n'aboutit.
  */
 export function deposerOp(kind: CorbeilleKind, id: string): WriteOp {
-  // `as never` : la fonction n'entre dans les types générés qu'une fois la
-  // migration appliquée, et ce fichier doit compiler avant.
-  return rpcOp('corbeille_deposer' as never, { p_kind: kind, p_id: id });
+  return rpcOp('corbeille_deposer', { p_kind: kind, p_id: id });
 }
 
 /**
@@ -64,9 +64,9 @@ export function useRestaurer() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (id: string): Promise<string> => {
-      const { data, error } = await supabase.rpc('corbeille_restaurer' as never, { p_id: id } as never);
+      const { data, error } = await supabase.rpc('corbeille_restaurer', { p_id: id });
       if (error) throw error;
-      return (data as unknown as string) ?? 'ok';
+      return data ?? 'ok';
     },
     onSuccess: () => {
       // TOUT EST À RELIRE : une habitation restaurée reparaît sur l'accueil,
@@ -81,7 +81,7 @@ export function useViderCorbeille() {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.rpc('corbeille_vider' as never);
+      const { error } = await supabase.rpc('corbeille_vider');
       if (error) throw error;
     },
     onSuccess: () => {

@@ -138,6 +138,36 @@ export type Database = {
           },
         ]
       }
+      corbeille: {
+        Row: {
+          deleted_at: string
+          id: string
+          kind: string
+          label: string
+          payload: Json
+          resume: Json
+          user_id: string
+        }
+        Insert: {
+          deleted_at?: string
+          id?: string
+          kind: string
+          label: string
+          payload: Json
+          resume?: Json
+          user_id: string
+        }
+        Update: {
+          deleted_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          payload?: Json
+          resume?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       emplacements: {
         Row: {
           created_at: string
@@ -968,6 +998,22 @@ export type Database = {
         Args: { p_conteneur_id: string }
         Returns: string
       }
+      corbeille_deposer: {
+        Args: { p_id: string; p_kind: string }
+        Returns: string
+      }
+      corbeille_lister: {
+        Args: never
+        Returns: {
+          deleted_at: string
+          id: string
+          kind: string
+          label: string
+          resume: Json
+        }[]
+      }
+      corbeille_restaurer: { Args: { p_id: string }; Returns: string }
+      corbeille_vider: { Args: never; Returns: undefined }
       create_share_invite: {
         Args: {
           p_expires_at?: string
