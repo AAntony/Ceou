@@ -1,5 +1,7 @@
+import { Image } from 'expo-image';
 import { Stack } from 'expo-router';
 import type { TFunction } from 'i18next';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { useSpaceForAppTabBar } from '../src/components/AppTabBar';
@@ -7,7 +9,6 @@ import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
 import { ErrorState } from '../src/components/ErrorState';
 import { Icon, type IconName } from '../src/components/Icon';
-import { IconBadge } from '../src/components/IconBadge';
 import { usePullToRefresh } from '../src/components/usePullToRefresh';
 import {
   useCorbeille,
@@ -17,6 +18,8 @@ import {
   type CorbeilleKind,
 } from '../src/features/corbeille/queries';
 import { showDialog, showMessage } from '../src/lib/dialog';
+import { useMediaSource } from '../src/lib/images/media';
+import { useScaled } from '../src/lib/textScale';
 import { useThemeColors } from '../src/lib/theme';
 
 // LA CORBEILLE.
@@ -177,7 +180,7 @@ function Carte({
   return (
     <View className="mb-3 rounded-2xl border border-ink/10 bg-surface p-3">
       <View className="flex-row items-center gap-3">
-        <IconBadge icon={ICONES[entree.kind]} fill={colors.accentLight} iconColor={colors.accentDark} size={40} />
+        <Vignette photoUrl={entree.photo_url} kind={entree.kind} />
         <View className="flex-1">
           <Text className="text-body font-semibold text-ink">{entree.label || t('corbeille.untitled')}</Text>
           <Text className="text-caption text-ink-soft">
@@ -198,6 +201,47 @@ function Carte({
       <View className="mt-3">
         <Button label={t('corbeille.restore')} variant="outline" disabled={occupe} onPress={onRestore} />
       </View>
+    </View>
+  );
+}
+
+/**
+ * LA PHOTO PLUTÔT QUE L'ICÔNE DU TYPE.
+ *
+ * L'icône disait « Objet », la même pour les quarante objets d'une cave — or
+ * savoir LEQUEL est exactement ce qu'on vient chercher ici. Signalé à l'usage
+ * dès le premier essai.
+ *
+ * CARRÉ ARRONDI DANS LES DEUX CAS, photo ou repli : c'est ce qui garde la
+ * liste régulière. Une vignette ronde à côté d'une carrée ferait sauter
+ * l'alignement d'une rangée à l'autre.
+ *
+ * ET L'IMAGE PEUT ÉCHOUER SANS CASSER : le fichier d'une suppression faite
+ * chez quelqu'un d'autre est rangé sous le préfixe du propriétaire, illisible
+ * une fois la ligne partie (voir la migration). `onError` retombe alors sur
+ * l'icône, au lieu d'un cadre vide.
+ */
+function Vignette({ photoUrl, kind }: { photoUrl: string | null; kind: CorbeilleKind }) {
+  const colors = useThemeColors();
+  const [echec, setEchec] = useState(false);
+  const source = useMediaSource(echec ? null : photoUrl);
+  const taille = useScaled(44);
+
+  return (
+    <View
+      style={{ width: taille, height: taille }}
+      className="items-center justify-center overflow-hidden rounded-xl border border-ink/10 bg-sand-dark"
+    >
+      {source ? (
+        <Image
+          source={source}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          onError={() => setEchec(true)}
+        />
+      ) : (
+        <Icon name={ICONES[kind]} size={20} color={colors.accentDark} />
+      )}
     </View>
   );
 }

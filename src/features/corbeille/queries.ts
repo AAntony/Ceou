@@ -18,6 +18,14 @@ export type CorbeilleEntree = {
   kind: CorbeilleKind;
   /** Le nom que portait la chose supprimée. Vide pour une facture sans vendeur. */
   label: string;
+  /**
+   * Sa photo, copiée au moment du dépôt.
+   *
+   * Le fichier survit à la suppression de la ligne, et le propriétaire le lit
+   * par le préfixe de son dossier — sans que la table soit consultée. Un objet
+   * supprimé garde donc sa vignette. Voir la migration.
+   */
+  photo_url: string | null;
   /** Ce qui est parti avec elle, en nombres. L'écran en fait une phrase. */
   resume: { pieces?: number; emplacements?: number; conteneurs?: number; objets?: number; factures?: number };
   deleted_at: string;
