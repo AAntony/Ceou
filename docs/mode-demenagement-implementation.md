@@ -24,6 +24,6 @@ Terminer conserve les métadonnées et retire uniquement les cartons temporaires
 
 ## Vérification
 
-`npm run test:moving:setup` installe PGlite dans le dossier ignoré `dist/moving-tests`, sans dépendance de production. `npm run test:moving` exécute la migration réelle avec un schéma de référence isolé et la fonction existante `move_objet`. Les 14 tests couvrent droits, révocation, QR, atomicité, idempotence, archivage, suppression de compte, lots de 500 objets, déplacements usuels et traductions. La corbeille et les permissions du schéma de référence sont des substituts : ces tests ne remplacent pas un essai intégré Supabase sur téléphone.
+PGlite est une dépendance de développement installée par `npm ci`, indépendante du dossier d’export `dist`. `npm run test:moving` exécute la migration réelle avec un schéma de référence isolé et la fonction existante `move_objet`. Les 14 tests couvrent droits, révocation, QR, atomicité, idempotence, archivage, suppression de compte, lots de 500 objets, déplacements usuels et traductions. La corbeille et les permissions du schéma de référence sont des substituts : ces tests ne remplacent pas un essai intégré Supabase sur téléphone.
 
 Vérifications complémentaires : TypeScript, ESLint ciblé, tests de refonte et export Android Expo.

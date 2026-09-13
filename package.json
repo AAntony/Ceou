@@ -56,6 +56,7 @@
     "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@emnapi/core": "^1.11.3",
     "@emnapi/runtime": "^1.11.3",
     "@types/react": "~19.2.2",
@@ -74,7 +75,6 @@
     "verify": "npm run typecheck && npm run lint",
     "site": "node scripts/build-site.mjs",
     "site:serve": "node scripts/serve-site.mjs",
-    "test:moving:setup": "npm install --prefix dist/moving-tests --no-save --package-lock=false @electric-sql/pglite@0.5.8",
     "test:moving": "node --test scripts/tests/moving.test.mjs",
     "test:redesign": "node --test scripts/test-redesign.mjs"
   },
