@@ -1273,6 +1273,13 @@
     }
   },
   "redesign": {
+    "addShort": "Ajouter",
+    "filters": "Filtres",
+    "showList": "Afficher en liste",
+    "showGrid": "Afficher en grille de photos",
+    "voice": "Assistant vocal",
+    "rooms": "Pièces",
+    "showResults": "Voir les résultats ({{count}})",
     "find": "Retrouver",
     "places": "Lieux",
     "shares": "Partages",

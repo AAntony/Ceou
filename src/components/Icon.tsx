@@ -102,6 +102,8 @@ export type IconName =
   | 'theme'
   | 'textSize'
   | 'list'
+  | 'grid'
+  | 'filter'
   | 'moveUp'
   | 'moveDown'
   // Prêts et emprunts
@@ -220,6 +222,8 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   // Le plan d'un niveau, mais en phrases (voir PlanRoomList) : des puces,
   // pas des colonnes — ce n'est pas un tableau.
   list: 'format-list-bulleted',
+  grid: 'view-grid-outline',
+  filter: 'tune-variant',
   share: 'share-variant',
   // Distincte de `share` a dessein : « partager » envoie un lien vers ce qui
   // reste dans l'app, « exporter » en fait sortir un fichier. Les deux

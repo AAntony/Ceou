@@ -1273,6 +1273,13 @@
     }
   },
   "redesign": {
+    "addShort": "Add",
+    "filters": "Filters",
+    "showList": "Show list view",
+    "showGrid": "Show photo grid",
+    "voice": "Voice assistant",
+    "rooms": "Rooms",
+    "showResults": "Show results ({{count}})",
     "find": "Find",
     "places": "Places",
     "shares": "Sharing",
