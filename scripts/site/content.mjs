@@ -18,6 +18,13 @@ export const CONTACT = 'contact@ceou.eu';
 // consultable depuis un dossier local avant déploiement.
 export const ORIGIN = 'https://ceou.eu';
 
+// LE QUESTIONNAIRE, qui sert aussi d'inscription au test.
+//
+// UN LIEN, PAS UNE RESSOURCE : rien n'est chargé depuis Google tant que le
+// visiteur ne clique pas, et le texte autour dit où il va. La règle du site —
+// ne rien appeler de distant — tient donc toujours.
+export const SURVEY = 'https://forms.gle/ngUZoU7c9f6euFFp6';
+
 // LES NOMS DE FICHIERS ET LES ANCRES PARTENT DANS LES FICHES DE STORE.
 // Une adresse déposée là-bas est recopiée ailleurs et ne se corrige jamais
 // partout : à figer une fois la première soumission faite.
@@ -34,8 +41,8 @@ export const OTHER = { fr: 'en', en: 'fr' };
 // finiraient par ne plus se répondre — et un lien de menu qui ne défile pas
 // est le genre de panne qu'on ne remarque qu'en production.
 const IDS = {
-  fr: { how: 'comment', features: 'fonctionnalites', detail: 'en-detail', pillars: 'engagements', faq: 'questions' },
-  en: { how: 'how-it-works', features: 'features', detail: 'in-detail', pillars: 'principles', faq: 'faq' },
+  fr: { how: 'comment', features: 'fonctionnalites', detail: 'en-detail', pillars: 'engagements', progress: 'avancement', faq: 'questions' },
+  en: { how: 'how-it-works', features: 'features', detail: 'in-detail', pillars: 'principles', progress: 'progress', faq: 'faq' },
 };
 
 export const SITE = {
@@ -53,9 +60,23 @@ export const SITE = {
       { to: 'how', label: 'Comment ça marche' },
       { to: 'features', label: 'Fonctionnalités' },
       { to: 'pillars', label: 'Engagements' },
+      { to: 'progress', label: 'Avancement' },
       { to: 'faq', label: 'Questions' },
     ],
     navPrivacy: 'Confidentialité',
+
+    // Le bandeau au-dessus de l'en-tête, sur les quatre pages.
+    //
+    // UN BOUTON COURT, EXPRÈS : sur un téléphone de 375 pixels, « Répondre
+    // au questionnaire » renvoyait le second lien à la ligne, et le bandeau
+    // montait à 134 pixels — un sixième de l'écran avant même le logo.
+    announce: {
+      label: 'Annonce',
+      tag: 'En test',
+      text: 'Céoù cherche ses premiers testeurs : 5 minutes pour donner ton avis.',
+      cta: 'Je participe',
+      more: 'Où en est Céoù ?',
+    },
 
     hero: {
       pun: 'Céoù, comme « c’est où ? »',
@@ -198,6 +219,49 @@ export const SITE = {
       link: 'Lire la politique de confidentialité',
     },
 
+    // OÙ EN EST CÉOÙ — LA FRISE EST TENUE À LA MAIN, dans les deux langues.
+    //
+    // Rien ne la met à jour toute seule : quand une étape change, changer son
+    // `status`, réengendrer et redéployer. Une frise qui annonce « en cours »
+    // ce qui est sorti depuis un mois dit surtout que le site est abandonné.
+    //
+    //   done  terminé     now  en cours     next  à venir
+    progress: {
+      eyebrow: 'Avancement',
+      title: 'Où en est Céoù',
+      lede: 'Céoù n’est pas encore sur les stores. Voici où on en est, et comment l’essayer avant tout le monde.',
+      status: { done: 'Terminé', now: 'En cours', next: 'À venir' },
+      stages: [
+        {
+          status: 'done',
+          title: 'L’application est construite',
+          body: 'Tout ce que décrit cette page existe déjà et fonctionne sur téléphone.',
+        },
+        {
+          status: 'now',
+          title: 'Les tests au quotidien',
+          body: 'Céoù est utilisé chaque jour sur Android pour débusquer ce qui accroche encore. L’iPhone suivra.',
+        },
+        {
+          status: 'now',
+          title: 'Tes avis',
+          body: 'Un questionnaire de cinq minutes pour fixer les dernières priorités avant la sortie.',
+        },
+        {
+          status: 'next',
+          title: 'La sortie',
+          body: 'Sur le Play Store et l’App Store.',
+        },
+      ],
+      invite: {
+        title: 'Teste Céoù avant sa sortie',
+        body: 'Réponds au questionnaire : cinq minutes pour dire ce qui te servirait, et ce qui manque. À la fin, laisse ton adresse si tu veux tester l’application — tu recevras une invitation dès qu’une version est prête.',
+        cta: 'Répondre au questionnaire',
+        note: 'Anonyme, sur Google Forms. Ton adresse n’est demandée que si tu veux tester.',
+        notify: 'Pour être simplement prévenu de la sortie, écris à ' + CONTACT + '.',
+      },
+    },
+
     faq: {
       title: 'Questions fréquentes',
       items: [
@@ -227,7 +291,7 @@ export const SITE = {
         },
         {
           q: 'Quand est-ce que ça sort ?',
-          a: 'L’application est en préparation pour le Play Store et l’App Store. Écris à ' + CONTACT + ' pour être prévenu le jour de la sortie.',
+          a: 'Céoù est en test sur Android, et se prépare pour le Play Store et l’App Store. Pour l’essayer avant sa sortie, réponds au questionnaire proposé sur ce site. Pour être simplement prévenu le jour venu, écris à ' + CONTACT + '.',
         },
       ],
     },
@@ -296,9 +360,18 @@ export const SITE = {
       { to: 'how', label: 'How it works' },
       { to: 'features', label: 'Features' },
       { to: 'pillars', label: 'Principles' },
+      { to: 'progress', label: 'Progress' },
       { to: 'faq', label: 'FAQ' },
     ],
     navPrivacy: 'Privacy',
+
+    announce: {
+      label: 'Announcement',
+      tag: 'Testing',
+      text: 'Céoù is looking for its first testers: 5 minutes to share your thoughts.',
+      cta: 'Take part',
+      more: 'Where is Céoù at?',
+    },
 
     hero: {
       pun: 'Céoù — French for “where is it?”',
@@ -441,6 +514,44 @@ export const SITE = {
       link: 'Read the privacy policy',
     },
 
+    progress: {
+      eyebrow: 'Progress',
+      title: 'Where Céoù is at',
+      lede: 'Céoù is not in the stores yet. Here is where things stand, and how to try it before everyone else.',
+      status: { done: 'Done', now: 'In progress', next: 'Coming up' },
+      stages: [
+        {
+          status: 'done',
+          title: 'The app is built',
+          body: 'Everything described on this page already exists and works on a phone.',
+        },
+        {
+          status: 'now',
+          title: 'Everyday testing',
+          body: 'Céoù is used every day on Android to track down what still gets in the way. iPhone comes next.',
+        },
+        {
+          status: 'now',
+          title: 'Your feedback',
+          body: 'A five-minute survey to settle the last priorities before release.',
+        },
+        {
+          status: 'next',
+          title: 'Release',
+          body: 'On the Play Store and the App Store.',
+        },
+      ],
+      invite: {
+        title: 'Try Céoù before release',
+        body: 'Take the survey: five minutes to say what would help you, and what is missing. At the end, leave your address if you would like to test the app — you will get an invitation as soon as a version is ready.',
+        cta: 'Take the survey',
+        // Le questionnaire n'existe qu'en français : le dire avant le clic
+        // plutôt que de le laisser découvrir à l'arrivée.
+        note: 'Anonymous, on Google Forms — in French for now. Your address is only asked for if you want to test.',
+        notify: 'To simply hear about the release, write to ' + CONTACT + '.',
+      },
+    },
+
     faq: {
       title: 'Frequently asked questions',
       items: [
@@ -470,7 +581,7 @@ export const SITE = {
         },
         {
           q: 'When is it out?',
-          a: 'The app is being prepared for the Play Store and the App Store. Write to ' + CONTACT + ' to hear about it on release day.',
+          a: 'Céoù is being tested on Android, and prepared for the Play Store and the App Store. To try it before release, take the survey offered on this site. To simply hear about release day, write to ' + CONTACT + '.',
         },
       ],
     },

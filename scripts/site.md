@@ -43,6 +43,12 @@ Le sommaire de la page se construit tout seul à partir de ses sections.
 **Le texte de l'accueil** vit dans `content.mjs` : il n'appartient qu'au site,
 l'app n'en connaît pas un mot.
 
+**La frise « Où en est Céoù »** et l'adresse du questionnaire y vivent aussi
+(`progress` et `SURVEY`). La frise ne se met pas à jour toute seule : quand
+une étape avance, changer son `status` dans les deux langues, réengendrer et
+redéployer. Le bandeau d'annonce, en haut des quatre pages, pointe vers les
+deux.
+
 Après toute modification, réengendrer **et redéployer**. Sans ça la version
 publique reste en arrière de celle de l'app — et l'écart entre les deux est
 exactement ce qu'un examinateur de store relève.
@@ -64,7 +70,7 @@ Ce qui mérite un coup d'oeil à chaque fois :
   la console, sur une fenêtre étroite. Rien ne doit déborder de côté ni se
   tronquer. C'est là que les défauts de grille apparaissent.
 - **Les deux thèmes.** Le site suit le réglage du système.
-- **Le menu replié**, sous 54 rem : il s'ouvre, se referme à Échap et au clic
+- **Le menu replié**, sous 64 rem : il s'ouvre, se referme à Échap et au clic
   sur un lien.
 
 ## Ce qui ne doit rien coûter à personne
@@ -75,6 +81,10 @@ y compris là où les requêtes vers un tiers sont bloquées ; il ne peut pas
 casser parce que quelqu'un a bougé un fichier ailleurs ; et il n'apprend rien
 à personne sur qui le consulte, ce qui serait malvenu sur un site dont une
 page promet justement de ne pas faire ça.
+
+Le questionnaire, hébergé chez Google Forms, ne fait pas exception : c'est un
+**lien**, pas une ressource. Rien ne part vers Google avant le clic, et la
+note sous le bouton dit où il mène.
 
 Le JavaScript de la page ne fait que du confort : menu repliable, apparitions
 au défilement, lien de menu souligné pour la section qu'on lit. **Rien de ce

@@ -5,8 +5,8 @@
 // premier symptôme serait un menu qui n'a pas les mêmes entrées selon la
 // page où on se trouve.
 
-import { CONTACT, DELETION_ANCHOR as DELETION, FILES, ORIGIN, OTHER, SITE } from './content.mjs';
-import { FAVICON, MARK } from './icons.mjs';
+import { CONTACT, DELETION_ANCHOR as DELETION, FILES, ORIGIN, OTHER, SITE, SURVEY } from './content.mjs';
+import { FAVICON, ICONS, MARK } from './icons.mjs';
 import { STYLE } from './style.mjs';
 
 export function escape(value) {
@@ -75,7 +75,10 @@ const SCRIPT = `(function () {
   var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
 
   var onScroll = function () {
-    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8); }
+    // Colle SEULEMENT une fois arrive en haut de la fenetre : le bandeau
+    // d'annonce le precede, et tant qu'il est visible l'en-tete n'a rien
+    // qui defile sous lui — une bordure y serait posee pour rien.
+    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8 && top.getBoundingClientRect().top <= 0); }
     if (!spySections.length) { return; }
     var current = null;
     for (var i = 0; i < spySections.length; i++) {
@@ -192,6 +195,33 @@ ${links}
   </header>`;
 }
 
+/**
+ * Le bandeau d'annonce, au-dessus de l'en-tête et sur les quatre pages.
+ *
+ * IL DÉFILE AVEC LA PAGE, IL NE COLLE PAS : l'en-tête collant prend déjà sa
+ * part d'un écran de téléphone, et une deuxième bande fixe mangerait le
+ * contenu qu'on est venu lire. Il est vu en arrivant — c'est le moment qui
+ * compte — et le menu garde un lien vers la section pour la suite.
+ *
+ * Le questionnaire s'ouvre dans le même onglet : forcer un nouvel onglet
+ * désoriente qui navigue au clavier ou au lecteur d'écran, et le retour
+ * arrière ramène ici. La flèche dit seulement qu'on quitte le site.
+ */
+function announce(lang, isHome) {
+  const copy = SITE[lang];
+  const section = `${isHome ? '' : FILES.home[lang]}#${copy.ids.progress}`;
+
+  return `  <aside class="announce" aria-label="${escape(copy.announce.label)}">
+    <div class="wrap announce-inner">
+      <p><span class="announce-tag">${escape(copy.announce.tag)}</span>${escape(copy.announce.text)}</p>
+      <p class="announce-links">
+        <a class="announce-cta" href="${SURVEY}">${escape(copy.announce.cta)}${ICONS.external}</a>
+        <a class="announce-more" href="${section}">${escape(copy.announce.more)}</a>
+      </p>
+    </div>
+  </aside>`;
+}
+
 export function footer(lang) {
   const copy = SITE[lang];
   const links = copy.nav
@@ -281,6 +311,7 @@ export function shell({ lang, file, title, description, body, bodyClass = '', st
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
   <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#main">${escape(SITE[lang].skip)}</a>
+${announce(lang, isHome)}
 ${body}
 ${footer(lang)}
 ${ld}

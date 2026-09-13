@@ -178,7 +178,8 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
    texte grossit, c'est-a-dire exactement chez qui en a besoin. Releve au
    test a 200 % — la rangee des prets debordait de 375 a 653 pixels. */
 .grid > *, .row > *, .steps > *, .pillars > *, .hero > *, .foot-grid > *,
-.loan > *, .chat > *, .results > *, .doc-layout > * { min-width: 0; }
+.loan > *, .chat > *, .results > *, .doc-layout > *, .progress-layout > *,
+.stage > *, .announce-inner > * { min-width: 0; }
 
 .skip {
   position: absolute;
@@ -231,6 +232,66 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
   }
   @keyframes progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 }
+
+/* === Le bandeau d'annonce ============================================== */
+
+/* LE SEUL APLAT FONCÉ DU SITE, et c'est voulu : il doit se voir avant tout le
+   reste. --accent-fill et le blanc sont les mêmes dans les deux thèmes, donc
+   le contraste aussi — 6,74:1, mesuré pour les bulles de l'assistant. */
+.announce {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.announce-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem 1.4rem;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  text-align: center;
+}
+/* Un contour et non un fond : un blanc translucide posé sous du texte blanc
+   retombait à 4,5:1, pile au seuil, sur une étiquette de douze pixels. */
+.announce-tag {
+  display: inline-block;
+  margin-right: 0.6rem;
+  padding: 0.05rem 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 0.1em;
+}
+.announce-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem 1.1rem;
+}
+.announce-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: var(--accent-fill);
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 0.2s var(--ease);
+}
+.announce-cta:hover { transform: translateY(-1px); }
+.announce-cta svg { width: 1em; height: 1em; flex: none; }
+.announce-more { color: var(--on-accent); font-weight: 500; }
+/* L'anneau bleu du site disparaîtrait sur ce fond bleu. */
+.announce :focus-visible { outline-color: #FFFFFF; }
 
 /* === En-tête =========================================================== */
 
@@ -327,7 +388,12 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
 .top[data-open="true"] .burger span::before { transform: rotate(45deg); }
 .top[data-open="true"] .burger span::after { transform: rotate(-45deg); }
 
-@media (max-width: 54rem) {
+/* LE SEUIL SE MESURE, IL NE SE DEVINE PAS. Le menu français en ligne demande
+   983 pixels depuis l'ajout de « Avancement » — logo, marges et liens compris,
+   en Segoe UI. À 54 rem il passait sur deux lignes et poussait la page de
+   côté entre 864 et 983 pixels. 64 rem laisse une marge aux polices plus
+   larges d'autres systèmes. À remesurer à chaque entrée de menu ajoutée. */
+@media (max-width: 64rem) {
   .burger { display: flex; }
   .nav {
     position: absolute;
@@ -400,6 +466,9 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
   animation: pulse 2.4s var(--ease) infinite;
 }
 @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.72); } }
+/* La pastille mène à l'avancement : « bientôt », c'est quand ? */
+a.badge { text-decoration: none; }
+a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 
 .ghost {
   display: inline-flex;
@@ -674,6 +743,83 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 .pillar h3 { font-size: 1.1875rem; margin-bottom: 0.55rem; }
 .pillar p { color: var(--ink-soft); font-size: 0.9375rem; }
 
+/* === Où en est Céoù ==================================================== */
+
+.progress-layout { display: grid; gap: 2.5rem; }
+@media (min-width: 56rem) {
+  .progress-layout { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start; }
+}
+
+.roadmap { display: grid; }
+.stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  gap: 1.1rem;
+  padding-bottom: 1.75rem;
+}
+.stage:last-child { padding-bottom: 0; }
+/* Le fil qui relie une étape à la suivante, part du bas de sa pastille.
+   Teinté tant qu'il sort d'une étape terminée : on lit d'un coup jusqu'où
+   le chemin est fait. */
+.stage:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: calc(1.2rem - 1px);
+  top: 2.4rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--line-strong);
+}
+.stage.is-done:not(:last-child)::before { background: var(--teal); }
+.stage-dot {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px dashed var(--line-strong);
+}
+.stage-dot svg { width: 1.2rem; height: 1.2rem; }
+.is-done .stage-dot { background: var(--teal-soft); border: 0; color: var(--teal-strong); }
+.is-now .stage-dot { background: var(--accent-soft); border: 0; }
+.is-now .stage-dot::after {
+  content: "";
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2.4s var(--ease) infinite;
+}
+.stage-tag {
+  display: inline-block;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.is-done .stage-tag { background: var(--teal-soft); border-color: transparent; }
+.is-now .stage-tag { background: var(--accent-soft); border-color: transparent; }
+.stage h3 { font-size: 1.0625rem; margin: 0.4rem 0 0.3rem; }
+.stage p { color: var(--ink-soft); font-size: 0.9375rem; }
+
+.invite {
+  padding: 1.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.invite h3 { font-size: clamp(1.25rem, 2.4vw, 1.5rem); margin-bottom: 0.7rem; }
+.invite p { color: var(--ink-soft); }
+.invite .button { margin-top: 1.5rem; }
+.invite-note { margin-top: 1rem; font-size: 0.875rem; }
+.invite-note + .invite-note { margin-top: 0.35rem; }
+
 /* === Les questions ===================================================== */
 
 .faq { max-width: 46rem; }
@@ -710,7 +856,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 
 .cta { text-align: center; padding: 4.5rem 0; }
 .cta p { margin: 0.9rem auto 0; max-width: 32rem; color: var(--ink-soft); }
-.mailto {
+.mailto, .button {
   display: inline-block;
   /* L'adresse ne contient pas d'espace : sans ces deux lignes le bouton
      s'elargit au lieu de passer a la ligne, et c'est la page entiere qui
@@ -728,7 +874,10 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
   box-shadow: var(--shadow-md);
   transition: transform 0.25s var(--ease), filter 0.25s;
 }
-.mailto:hover { transform: translateY(-2px); filter: brightness(1.06); }
+.mailto:hover, .button:hover { transform: translateY(-2px); filter: brightness(1.06); }
+/* Le même bouton, avec une icône à côté du texte. */
+.button { display: inline-flex; align-items: center; gap: 0.5rem; }
+.button svg { width: 1.05em; height: 1.05em; flex: none; }
 
 .foot { border-top: 1px solid var(--line); padding: 3rem 0 3.5rem; font-size: 0.9375rem; }
 .foot-grid { display: grid; gap: 2rem; }
@@ -855,7 +1004,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
    sans ces quelques lignes, elle sort avec un menu collant en travers de la
    première page et des liens dont on ne voit pas la destination. */
 @media print {
-  .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
+  .announce, .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
   body { background: #FFFFFF; color: #000000; }
   .doc-layout { display: block; padding: 0; }
   .highlight { border: 1px solid #999999; background: none; }
@@ -866,6 +1015,15 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
 <body>
   <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#main">Aller au contenu</a>
+  <aside class="announce" aria-label="Annonce">
+    <div class="wrap announce-inner">
+      <p><span class="announce-tag">En test</span>Céoù cherche ses premiers testeurs : 5 minutes pour donner ton avis.</p>
+      <p class="announce-links">
+        <a class="announce-cta" href="https://forms.gle/ngUZoU7c9f6euFFp6">Je participe<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/></svg></a>
+        <a class="announce-more" href="#avancement">Où en est Céoù ?</a>
+      </p>
+    </div>
+  </aside>
   <header class="top" data-open="false">
     <div class="wrap top-inner">
       <a class="brand" href="index.html" aria-current="page">
@@ -884,6 +1042,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
         <a href="#comment">Comment ça marche</a>
         <a href="#fonctionnalites">Fonctionnalités</a>
         <a href="#engagements">Engagements</a>
+        <a href="#avancement">Avancement</a>
         <a href="#questions">Questions</a>
         <a href="confidentialite.html">Confidentialité</a>
         <span class="nav-sep" aria-hidden="true"></span>
@@ -901,7 +1060,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
           <h1>Range une fois. Retrouve toujours.</h1>
           <p class="lede">Céoù retient où tu poses tes affaires — quelle pièce, quel meuble, quelle boîte — et te le redit le jour où tu ne t'en souviens plus.</p>
           <div class="hero-actions">
-            <span class="badge">Bientôt sur Android et iOS</span>
+            <a class="badge" href="#avancement">Bientôt sur Android et iOS</a>
             <a class="ghost" href="#fonctionnalites">Voir ce que ça fait</a>
           </div>
           <p class="hero-note">Sans publicité. Marche hors ligne. Hébergé dans l’Union européenne.</p>
@@ -1109,7 +1268,60 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
       </div>
     </section>
 
-    <section class="section section-alt" id="questions" data-spy-target>
+    <section class="section section-alt" id="avancement" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">Avancement</span>
+          <h2>Où en est Céoù</h2>
+          <p class="lede">Céoù n’est pas encore sur les stores. Voici où on en est, et comment l’essayer avant tout le monde.</p>
+        </div>
+        <div class="progress-layout">
+          <ol class="roadmap reveal">
+          <li class="stage is-done">
+            <span class="stage-dot" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5.5 12.4 4.2 4.2 8.8-9.2"/></svg></span>
+            <div>
+              <span class="stage-tag">Terminé</span>
+              <h3>L’application est construite</h3>
+              <p>Tout ce que décrit cette page existe déjà et fonctionne sur téléphone.</p>
+            </div>
+          </li>
+          <li class="stage is-now">
+            <span class="stage-dot" aria-hidden="true"></span>
+            <div>
+              <span class="stage-tag">En cours</span>
+              <h3>Les tests au quotidien</h3>
+              <p>Céoù est utilisé chaque jour sur Android pour débusquer ce qui accroche encore. L’iPhone suivra.</p>
+            </div>
+          </li>
+          <li class="stage is-now">
+            <span class="stage-dot" aria-hidden="true"></span>
+            <div>
+              <span class="stage-tag">En cours</span>
+              <h3>Tes avis</h3>
+              <p>Un questionnaire de cinq minutes pour fixer les dernières priorités avant la sortie.</p>
+            </div>
+          </li>
+          <li class="stage is-next">
+            <span class="stage-dot" aria-hidden="true"></span>
+            <div>
+              <span class="stage-tag">À venir</span>
+              <h3>La sortie</h3>
+              <p>Sur le Play Store et l’App Store.</p>
+            </div>
+          </li>
+          </ol>
+          <div class="invite reveal" style="--i:1">
+            <h3>Teste Céoù avant sa sortie</h3>
+            <p>Réponds au questionnaire : cinq minutes pour dire ce qui te servirait, et ce qui manque. À la fin, laisse ton adresse si tu veux tester l’application — tu recevras une invitation dès qu’une version est prête.</p>
+            <a class="button" href="https://forms.gle/ngUZoU7c9f6euFFp6">Répondre au questionnaire<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/></svg></a>
+            <p class="invite-note">Anonyme, sur Google Forms. Ton adresse n’est demandée que si tu veux tester.</p>
+            <p class="invite-note">Pour être simplement prévenu de la sortie, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="questions" data-spy-target>
       <div class="wrap">
         <div class="section-head reveal">
           <h2>Questions fréquentes</h2>
@@ -1141,13 +1353,13 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
         </details>
         <details name="faq">
           <summary>Quand est-ce que ça sort ?</summary>
-          <p class="answer">L’application est en préparation pour le Play Store et l’App Store. Écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> pour être prévenu le jour de la sortie.</p>
+          <p class="answer">Céoù est en test sur Android, et se prépare pour le Play Store et l’App Store. Pour l’essayer avant sa sortie, réponds au questionnaire proposé sur ce site. Pour être simplement prévenu le jour venu, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
         </details>
         </div>
       </div>
     </section>
 
-    <section class="cta">
+    <section class="cta section-alt">
       <div class="wrap">
         <h2>Une question ?</h2>
         <p>Écris, on répond. C’est une petite équipe, et le courrier arrive vraiment.</p>
@@ -1172,6 +1384,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
             <li><a href="index.html#comment">Comment ça marche</a></li>
             <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
             <li><a href="index.html#engagements">Engagements</a></li>
+            <li><a href="index.html#avancement">Avancement</a></li>
             <li><a href="index.html#questions">Questions</a></li>
           </ul>
         </div>
@@ -1266,7 +1479,7 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
       "name": "Quand est-ce que ça sort ?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "L’application est en préparation pour le Play Store et l’App Store. Écris à contact@ceou.eu pour être prévenu le jour de la sortie."
+        "text": "Céoù est en test sur Android, et se prépare pour le Play Store et l’App Store. Pour l’essayer avant sa sortie, réponds au questionnaire proposé sur ce site. Pour être simplement prévenu le jour venu, écris à contact@ceou.eu."
       }
     }
   ]
@@ -1311,7 +1524,10 @@ html:not(.js) .nav { position: static; visibility: visible; opacity: 1; transfor
   var spyLinks = Array.prototype.slice.call(document.querySelectorAll('[data-spy] a[href*="#"]'));
 
   var onScroll = function () {
-    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8); }
+    // Colle SEULEMENT une fois arrive en haut de la fenetre : le bandeau
+    // d'annonce le precede, et tant qu'il est visible l'en-tete n'a rien
+    // qui defile sous lui — une bordure y serait posee pour rien.
+    if (top) { top.classList.toggle('is-stuck', window.scrollY > 8 && top.getBoundingClientRect().top <= 0); }
     if (!spySections.length) { return; }
     var current = null;
     for (var i = 0; i < spySections.length; i++) {

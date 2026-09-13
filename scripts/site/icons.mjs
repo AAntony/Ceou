@@ -34,6 +34,11 @@ export const ICONS = {
   // Des ondes barrées.
   offline: stroke('<path d="M3.6 9.3A13 13 0 0 1 9.4 6.2"/><path d="M20.4 9.3a13 13 0 0 0-4.3-2.8"/><path d="M7 12.9a8 8 0 0 1 2.2-1.4"/><path d="M17 12.9a8 8 0 0 0-1.9-1.3"/><circle cx="12" cy="17.6" r="1.15" fill="currentColor" stroke="none"/><path d="M3.4 3.4 20.6 20.6"/>'),
   shield: stroke('<path d="M12 3.4 19 6v6.1c0 4.2-2.9 7.3-7 8.5-4.1-1.2-7-4.3-7-8.5V6l7-2.6Z"/><path d="m9.1 12 2.1 2.1 3.7-3.9"/>'),
+
+  // L'étape franchie, dans la frise d'avancement.
+  check: stroke('<path d="m5.5 12.4 4.2 4.2 8.8-9.2"/>'),
+  // Une flèche qui sort du cadre : ce lien quitte le site.
+  external: stroke('<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/>'),
 };
 
 // LE REPÈRE DE CÉOÙ : la goutte percée d'un rond clair. Repris tel quel de

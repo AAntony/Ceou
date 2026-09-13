@@ -9,6 +9,7 @@ import {
   ORIGIN,
   OTHER,
   SITE,
+  SURVEY,
 } from './site/content.mjs';
 import { ICONS, planIllustration } from './site/icons.mjs';
 import { escape, header, shell, withMailto } from './site/layout.mjs';
@@ -119,6 +120,51 @@ ${rows}
         </div>`;
 }
 
+/**
+ * Où en est Céoù : la frise à gauche, l'invitation à droite.
+ *
+ * L'ÉTAT EST ÉCRIT EN TOUTES LETTRES dans chaque étape, pas seulement
+ * dessiné : une pastille verte ou bleue ne dit rien à qui ne distingue pas
+ * les couleurs, ni à un lecteur d'écran.
+ */
+function progressSection(copy) {
+  const progress = copy.progress;
+  const stages = progress.stages
+    .map(
+      (stage) => `          <li class="stage is-${stage.status}">
+            <span class="stage-dot" aria-hidden="true">${stage.status === 'done' ? ICONS.check : ''}</span>
+            <div>
+              <span class="stage-tag">${escape(progress.status[stage.status])}</span>
+              <h3>${escape(stage.title)}</h3>
+              <p>${escape(stage.body)}</p>
+            </div>
+          </li>`,
+    )
+    .join('\n');
+
+  return `    <section class="section section-alt" id="${copy.ids.progress}" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow">${escape(progress.eyebrow)}</span>
+          <h2>${escape(progress.title)}</h2>
+          <p class="lede">${escape(progress.lede)}</p>
+        </div>
+        <div class="progress-layout">
+          <ol class="roadmap reveal">
+${stages}
+          </ol>
+          <div class="invite reveal" style="--i:1">
+            <h3>${escape(progress.invite.title)}</h3>
+            <p>${escape(progress.invite.body)}</p>
+            <a class="button" href="${SURVEY}">${escape(progress.invite.cta)}${ICONS.external}</a>
+            <p class="invite-note">${escape(progress.invite.note)}</p>
+            <p class="invite-note">${withMailto(escape(progress.invite.notify))}</p>
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
 function homePage(lang) {
   const copy = SITE[lang];
   const ids = copy.ids;
@@ -185,6 +231,10 @@ ${points}
     )
     .join('\n');
 
+  // LES FONDS ALTERNENT d'une section à l'autre. L'avancement, glissé avant
+  // les questions, a décalé la suite d'un cran : les questions passent en
+  // clair, et l'appel final prend le fond teinté pour ne pas se fondre dans
+  // elles.
   const body = `${header(lang)}
 
   <main id="main">
@@ -195,7 +245,7 @@ ${points}
           <h1>${escape(copy.hero.title)}</h1>
           <p class="lede">${escape(copy.hero.body)}</p>
           <div class="hero-actions">
-            <span class="badge">${escape(copy.hero.badge)}</span>
+            <a class="badge" href="#${ids.progress}">${escape(copy.hero.badge)}</a>
             <a class="ghost" href="#${ids.features}">${escape(copy.hero.cta)}</a>
           </div>
           <p class="hero-note">${escape(copy.hero.note)}</p>
@@ -252,7 +302,9 @@ ${pillars}
       </div>
     </section>
 
-    <section class="section section-alt" id="${ids.faq}" data-spy-target>
+${progressSection(copy)}
+
+    <section class="section" id="${ids.faq}" data-spy-target>
       <div class="wrap">
         <div class="section-head reveal">
           <h2>${escape(copy.faq.title)}</h2>
@@ -263,7 +315,7 @@ ${faq}
       </div>
     </section>
 
-    <section class="cta">
+    <section class="cta section-alt">
       <div class="wrap">
         <h2>${escape(copy.cta.title)}</h2>
         <p>${escape(copy.cta.body)}</p>
