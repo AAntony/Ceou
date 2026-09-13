@@ -9,13 +9,14 @@ type QrScannerProps = {
   visible: boolean;
   onClose: () => void;
   onScanned: (data: string) => void;
+  hint?: string;
 };
 
 // Calqué sur BarcodeScanner.tsx (même CameraView, même permission) mais pour
 // les QR d'ajout d'ami/invitation — types séparés dans expo-camera, d'où un
 // composant distinct plutôt qu'une simple extension de la liste de types du
 // scanner code-barre existant (concerns différents, i18n différent).
-export function QrScanner({ visible, onClose, onScanned }: QrScannerProps) {
+export function QrScanner({ visible, onClose, onScanned, hint }: QrScannerProps) {
   const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -49,7 +50,7 @@ export function QrScanner({ visible, onClose, onScanned }: QrScannerProps) {
             />
             <View className="absolute inset-x-0 top-16 items-center px-6">
               <Text className="overflow-hidden rounded-full bg-black/50 px-4 py-2 text-center text-white">
-                {t('friends.scan_hint')}
+                {hint ?? t('friends.scan_hint')}
               </Text>
             </View>
             <Pressable accessibilityRole="button" onPress={onClose} className="absolute bottom-12 self-center rounded-full bg-white/90 px-6 py-3">

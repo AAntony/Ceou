@@ -94,6 +94,7 @@ export function useAppTabBarVisible(): boolean {
 // SECTION où l'on se trouve, pas l'écran exact. Sans ça, aucun onglet ne
 // serait allumé sur la majorité des écrans de l'app.
 const HABITATION_PREFIXES = [
+  '/moving',
   '/habitations',
   '/habitation/',
   '/piece/',

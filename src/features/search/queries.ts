@@ -28,7 +28,14 @@ export function useSearchIndex() {
     queryFn: async (): Promise<SearchIndexEntry[]> => {
       const { data, error } = await supabase.rpc('search_index');
       if (error) throw error;
-      return data as unknown as SearchIndexEntry[];
+      const moving = await supabase.rpc('moving_search_index', {});
+      // Rolling deployment: the previous backend may not have the additive RPC yet.
+      if (moving.error && moving.error.code !== 'PGRST202' && moving.error.code !== '42883') throw moving.error;
+      const combined = new Map<string, SearchIndexEntry>();
+      for (const entry of [...data, ...(moving.data ?? [])] as unknown as SearchIndexEntry[]) {
+        combined.set(`${entry.kind}-${entry.id}`, entry);
+      }
+      return [...combined.values()];
     },
   });
 }

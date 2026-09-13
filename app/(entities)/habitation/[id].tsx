@@ -1,9 +1,10 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, View } from 'react-native';
 import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
+import { Button } from '../../../src/components/Button';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
 import { FacturesEntryCard } from '../../../src/features/factures/FacturesEntryCard';
 import { isSingleSpaceHabitation } from '../../../src/features/inventory/constants';
@@ -87,6 +88,7 @@ export default function HabitationScreen() {
               la, elle ne menerait nulle part tout en prenant sa place en haut
               de la surface la plus parcourue de l'app. */}
           <FacturesEntryCard habitationId={id} isOwner={permission === 'owner'} />
+          <View className="mb-3"><Button variant="outline" label={t('moving.entry')} onPress={() => router.push({pathname:'/moving',params:{sourceId:id}})} /></View>
           <SegmentedTabs
             options={[
               { value: 'contenu', label: contentLabel },

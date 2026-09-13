@@ -329,6 +329,7 @@ export function useToggleHabitationFavorite() {
 export function usePieces(habitationId: string) {
   return useQuery({
     queryKey: ['pieces', habitationId],
+    enabled: !!habitationId,
     queryFn: () => selectMany<Piece>('pieces', { column: 'habitation_id', value: habitationId }, 'created_at'),
   });
 }
@@ -1019,6 +1020,8 @@ export async function undoLastMove(objetId: string): Promise<void> {
  * emplacement.
  */
 export function invalidateAfterMove(queryClient: ReturnType<typeof useQueryClient>, objetId: string) {
+  queryClient.invalidateQueries({ queryKey: ['movingSnapshot'] });
+  queryClient.invalidateQueries({ queryKey: ['movingProjects'] });
   queryClient.invalidateQueries({ queryKey: ['objet', objetId] });
   queryClient.invalidateQueries({ queryKey: ['objetHistory', objetId] });
   queryClient.invalidateQueries({ queryKey: ['objetLocationChain', objetId] });

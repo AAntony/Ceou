@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button } from '../../../src/components/Button';
+import { PackObjectButton } from '../../../src/features/moving/PackObjectButton';
 import { ButtonRow } from '../../../src/components/ButtonRow';
 import { ErrorState } from '../../../src/components/ErrorState';
 import { HeaderIconButton } from '../../../src/components/HeaderIconButton';
@@ -239,7 +240,7 @@ export default function ObjetScreen() {
         )}
 
         {history && history.length > 3 ? <Button label={t(fullHistory ? 'redesign.lessHistory' : 'redesign.moreHistory')} variant="ghost" onPress={() => setFullHistory(!fullHistory)} /> : null}
-        {editable ? <View className="mt-6"><Button label={t('redesign.edit')} variant="outline" onPress={() => setEditing(true)} /></View> : null}
+        {editable ? <View className="mt-6 gap-3"><PackObjectButton objectId={id} homeId={habitationId}/><Button label={t('redesign.edit')} variant="outline" onPress={() => setEditing(true)} /></View> : null}
         {editable ? (
           <View className="mt-10">
             <Button label={t('common.delete')} variant="danger" onPress={handleDelete} />

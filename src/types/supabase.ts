@@ -956,6 +956,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      moving_command: { Args: { p_action: string; p_payload: Json }; Returns: Json }
+      moving_read: { Args: { p_project_id?: string | null }; Returns: Json }
+      moving_search_index: { Args: Record<PropertyKey, never>; Returns: {kind: string; id: string; name: string; photo_url: string | null; preset_key: string | null; piece_id: string; piece_name: string; habitation_id: string; habitation_name: string; parent_label: string | null}[] }
+
       apply_plan_template: {
         Args: { p_plan_id: string; p_rooms: Json }
         Returns: {

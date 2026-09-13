@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
+import { Button } from '../../../src/components/Button';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityPhotoField } from '../../../src/components/EntityPhotoField';
 import { EntityRow } from '../../../src/components/EntityRow';
@@ -205,6 +206,8 @@ export default function HabitationsScreen() {
             value={effectiveTab}
             onChange={setTab}
           />
+
+          <Button label={t('moving.title')} variant="ghost" onPress={() => router.push('/moving')} />
 
           {effectiveTab === 'personal' ? (
             // L'échec passe AVANT l'état vide : sans lui, une lecture ratée
