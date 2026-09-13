@@ -1,5 +1,9 @@
 {
   "moving": {
+    "startHint": "Choose where you are moving from, then pack your boxes. You can choose the destination later.",
+    "resumeEntry": "Continue my move",
+    "entryHint": "Pack your boxes and find them when you arrive.",
+    "seeArchives": "View completed moves",
     "confirm": "Confirm",
     "boxFullName": "Box name",
     "objectsLabel": "objects",

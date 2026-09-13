@@ -2,7 +2,7 @@
 
 ## Parcours
 
-Accès depuis **Lieux → Déménagements**, ou depuis un logement pour présélectionner le départ. La destination peut être créée pendant le parcours ou choisie plus tard.
+Accès uniquement depuis **Lieux**, sous la liste des lieux : une entrée neutre ouvre directement la création sans projet actif, reprend le projet s'il est unique, ou affiche les projets s'il y en a plusieurs. Un lien distinct donne accès aux archives. La destination peut être créée pendant le parcours ou choisie plus tard.
 
 Le tableau de bord regroupe les cartons, les étapes, les filtres et la progression. Chaque carton propose l'ajout multiple d'objets existants, l'analyse photo avec validation des correspondances, un QR, l'impression et la création du carton suivant avec les mêmes préférences. Le déballage réaffecte les objets aux emplacements de destination. Un carton peut devenir un rangement permanent. Les sorties (perdu, donné, vendu, jeté) utilisent la corbeille existante.
 

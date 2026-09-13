@@ -1,5 +1,9 @@
 {
   "moving": {
+    "startHint": "Choisis ton lieu de départ, puis prépare tes cartons. Tu pourras préciser la destination plus tard.",
+    "resumeEntry": "Reprendre mon déménagement",
+    "entryHint": "Prépare tes cartons, puis retrouve-les à l’arrivée.",
+    "seeArchives": "Voir les déménagements terminés",
     "confirm": "Confirmer",
     "boxFullName": "Nom du carton",
     "objectsLabel": "objets",

@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { router, Stack } from 'expo-router';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSpaceForAppTabBar } from '../../components/AppTabBar';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -21,6 +21,7 @@ import { PackPicker, MovingPhotoFlow } from './packing';
 import { movingProgress, boxState, movingQr, parseMovingQr, type MovingBox, type MovingObject, type BoxFilter } from './model';
 import { useMovingCommand, useMovingSnapshot } from './queries';
 import { printMovingLabels } from './labels';
+import { MovingActions, MovingBoxRow, MovingTimeline, type MovingAction } from './DashboardParts';
 import type { Json } from '../../types/supabase';
 
 function BoxPhoto({uri}:{uri:string|null}) {
@@ -53,9 +54,9 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
  const boxes=data.boxes.filter(b=>(filter==='all'||(filter==='done'?['done','stored'].includes(boxState(b,data.items)):boxState(b,data.items)===filter))&&(!roomFilter||b.destination_piece_id===roomFilter)&&b.name.toLowerCase().includes(boxSearch.toLowerCase()));
  const roomChoices=[...new Map(data.boxes.filter(b=>b.destination_piece_id).map(b=>[b.destination_piece_id!,b.destination_name??t('moving.noRoom')])).entries()];
  const toggle=(id:string)=>setSelected(old=>old.includes(id)?old.filter(x=>x!==id):[...old,id]);
- const updatePhoto=async()=>{
-  if(photoBusy||!session||!box?.container_id)return;setPhotoBusy(true);
-  try{const uri=await pickImage([1,1]);if(!uri)return;const url=await uploadImage(uri,{bucket:'objets',path:`${session.user.id}/conteneur-${box.container_id}.jpg`});await perform('box_photo',{photo_url:url});}
+ const updatePhoto=async(target:MovingBox|undefined=box)=>{
+  if(photoBusy||!session||!target?.container_id)return;setPhotoBusy(true);
+  try{const uri=await pickImage([1,1]);if(!uri)return;const url=await uploadImage(uri,{bucket:'objets',path:`${session.user.id}/conteneur-${target.container_id}.jpg`});await perform('box_photo',{box_id:target.id,photo_url:url});}
   catch{showMessage(t('moving.photoFailed'));}finally{setPhotoBusy(false);}
  };
  const actionButton=(label:string,action:()=>void,disabled=false)=><Button label={t(label)} variant="outline" onPress={action} disabled={disabled||command.isPending}/>;
@@ -86,33 +87,42 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
      {!members.length?<Text className="mb-4 text-body text-ink-soft">{t('moving.noObjects')}</Text>:null}
      {writable&&state!=='stored'&&members.length?<Button variant="ghost" label={t(selection.length?'moving.clear':'moving.selectAll')} onPress={()=>setSelected(selection.length?[]:members.map(o=>o.id))}/>:null}
     </>:<>
-     <View className="mb-4 rounded-2xl bg-coral-light p-4"><Text className="text-label font-semibold text-coral-dark">{t('moving.'+project.status)}{project.planned_date?' · '+project.planned_date:''}</Text>
-      <Text accessibilityRole="header" className="mt-2 text-title font-bold text-ink">{t('moving.progress',{percent:progress.percent})}</Text>
-      <View accessibilityRole="progressbar" accessibilityValue={{min:0,max:100,now:progress.percent}} className="my-3 h-2 overflow-hidden rounded-full bg-sand-dark"><View style={{width:`${progress.percent}%`}} className="h-full bg-coral"/></View>
-      <View className="gap-1"><Text className="text-body text-ink">{data.boxes.length} {t('moving.boxes')} · {progress.packed} {t('moving.packed')}</Text><Text className="text-body text-ink">{progress.installed} {t('moving.installed')} · {progress.stored} {t('moving.stored')}</Text>
-      <Text className="text-label text-ink-soft">{t('moving.readyCount')} : {data.boxes.filter(b=>boxState(b,data.items)==='ready').length} · {t('moving.transportedCount')} : {data.boxes.filter(b=>boxState(b,data.items)==='transported').length}</Text>
-      <Text className="text-label text-ink-soft">{t('moving.doneCount')} : {data.boxes.filter(b=>boxState(b,data.items)==='done').length}</Text></View>
-      <Text className="mt-2 text-caption text-ink-soft">{t('moving.progressHint')}</Text>
+     <MovingTimeline status={project.status}/>
+     <View className="mb-2 flex-row items-center justify-between gap-2">
+      <Text className="flex-1 text-label text-ink-soft">{data.boxes.length} {t('moving.boxes')} · {progress.packed} {t('moving.packed')}</Text>
+      <Pressable accessibilityRole="button" onPress={()=>showMessage([
+       t('moving.progress',{percent:progress.percent}),
+       `${progress.installed} ${t('moving.installed')} · ${progress.stored} ${t('moving.stored')}`,
+       `${t('moving.readyCount')} : ${data.boxes.filter(b=>boxState(b,data.items)==='ready').length}`,
+       `${t('moving.transportedCount')} : ${data.boxes.filter(b=>boxState(b,data.items)==='transported').length}`,
+       `${t('moving.doneCount')} : ${data.boxes.filter(b=>boxState(b,data.items)==='done').length}`,
+       t('moving.progressHint'), project.planned_date??''
+      ].filter(Boolean).join('\n'))} className="min-h-[48px] justify-center px-2">
+       <Text className="text-label font-semibold text-coral-dark">{t('moving.progress',{percent:progress.percent})} ⓘ</Text>
+      </Pressable>
      </View>
-     <View className="mb-4 gap-2">{writable?<><Button label={t('moving.newBox')} onPress={()=>setModal('box')} disabled={command.isPending}/>
-      {actionButton('moving.destinationEdit',()=>setModal('destination'))}
-      {actionButton(project.status==='preparation'?'moving.startMoving':project.status==='moving'?'moving.startUnpacking':'moving.backPreparation',()=>{void perform('phase',{status:project.status==='preparation'?'moving':project.status==='moving'?'unpacking':'preparation'});})}</>:null}
-      {actionButton('moving.scan',()=>setScan(true))}
-      {data.boxes.length? actionButton('moving.printAll',()=>{void print(data.boxes);}):null}
-     </View>
+     <MovingActions actions={[
+      ...(writable?[
+       {label:t('moving.newBox'),icon:'conteneur',primary:true,onPress:()=>setModal('box'),disabled:command.isPending},
+       {label:t('moving.destinationEdit'),icon:'location',onPress:()=>setModal('destination'),disabled:command.isPending},
+       {label:t(project.status==='preparation'?'moving.startMoving':project.status==='moving'?'moving.startUnpacking':'moving.backPreparation'),icon:'move',onPress:()=>{void perform('phase',{status:project.status==='preparation'?'moving':project.status==='moving'?'unpacking':'preparation'});},disabled:command.isPending},
+      ] as MovingAction[]:[]),
+      {label:t('moving.scan'),icon:'camera',onPress:()=>setScan(true)},
+      ...(data.boxes.length?[{label:t('moving.printAll'),icon:'pdf',onPress:()=>{void print(data.boxes);}}] as MovingAction[]:[])
+     ]}/>
      <TextField label={t('moving.boxes')} value={boxSearch} onChangeText={setBoxSearch}/>
-     <View className="mb-3 flex-row flex-wrap gap-2">{(['all','packing','ready','transported','done'] as BoxFilter[]).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:filter===value}} onPress={()=>setFilter(value)} className={`min-h-[48px] justify-center rounded-full px-3 ${filter===value?'bg-coral-light':'bg-surface'}`}><Text className="text-label text-coral-dark">{t('moving.'+value)}</Text></Pressable>)}</View>
+     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}} className="mb-3">{(['all','packing','ready','transported','done'] as BoxFilter[]).map(value=><Pressable key={value} accessibilityRole="button" accessibilityState={{selected:filter===value}} onPress={()=>setFilter(value)} className={`min-h-[48px] justify-center rounded-full px-3 ${filter===value?'bg-coral-light':'bg-surface'}`}><Text className="text-label text-coral-dark">{t('moving.'+value)}</Text></Pressable>)}</ScrollView>
      {roomChoices.length?<View className="mb-4 flex-row flex-wrap gap-2"><Choice label={t('moving.all')} selected={!roomFilter} onPress={()=>setRoomFilter('')}/>{roomChoices.map(([id,name])=><Choice key={id} label={name} selected={roomFilter===id} onPress={()=>setRoomFilter(roomFilter===id?'':id)}/>)}</View>:null}
     </>}
    </View>}
    renderItem={({item})=> 'parent_id' in item ? <View className="mb-2">
      {writable&&state!=='stored'?<Choice label={item.name} selected={selection.includes(item.id)} onPress={()=>toggle(item.id)} disabled={command.isPending}/>:<Pressable accessibilityRole="button" onPress={()=>router.push(`/objet/${item.id}`)} className="min-h-[48px] rounded-xl bg-surface p-4"><Text className="text-body text-ink">{item.name}</Text></Pressable>}
-    </View>:<Pressable accessibilityRole="button" onPress={()=>router.push(`/moving-box/${item.id}`)} className="mb-3 min-h-[72px] rounded-2xl bg-surface p-4">
-    <Text className="text-heading font-bold text-ink">{item.name}</Text><Text className="mt-1 text-body text-coral-dark">{item.destination_name??t('moving.noRoom')}</Text><Text className="mt-1 text-label text-ink-soft">{t(boxState(item,data.items)==='stored'?'moving.boxStored':'moving.'+boxState(item,data.items))} · {data.items.filter(i=>i.box_id===item.id&&i.outcome==='packed').length} {t('moving.objectsLabel')}</Text>
-   </Pressable>}
+    </View>:<MovingBoxRow box={item} busy={photoBusy||command.isPending} onOpen={()=>router.push(`/moving-box/${item.id}`)}
+     onPhoto={writable?()=>{void updatePhoto(item);}:undefined}
+     detail={`${t(boxState(item,data.items)==='stored'?'moving.boxStored':'moving.'+boxState(item,data.items))} · ${data.items.filter(i=>i.box_id===item.id&&i.outcome==='packed').length} ${t('moving.objectsLabel')}`} />}
    ListFooterComponent={box?boxFooter:writable?<View className="mt-5"><Button variant="outline" label={t('moving.finish')} disabled={command.isPending||progress.packed>0} onPress={()=>showDialog({title:t('moving.finishTitle'),message:t('moving.finishHint'),actions:[{label:t('common.cancel'),cancel:true},{label:t('moving.finish'),onPress:()=>{void perform('finish');}}]})}/></View>:null}/>
   {box&&modal==='actions'?<MovingSheet title={box.name} onClose={close}><View className="gap-3">
-    {actionButton('moving.edit',()=>setModal('edit'))}{actionButton('moving.photo',updatePhoto,photoBusy)}
+    {actionButton('moving.edit',()=>setModal('edit'))}{actionButton('moving.photo',()=>{void updatePhoto();},photoBusy)}
     {state!=='stored'?actionButton(box.status==='packing'?'moving.markReady':box.status==='ready'?'moving.markTransported':'moving.reopen',()=>{void perform('box_status',{status:box.status==='packing'?'ready':box.status==='ready'?'transported':'packing'});}):null}
     {actionButton('moving.quickBox',()=>{void createNext();})}
    </View></MovingSheet>:null}
