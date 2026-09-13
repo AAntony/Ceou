@@ -1,4 +1,4 @@
-import qrcode from 'qrcode-generator';
+import qrFactory from 'qrcode-generator';
 import { useMemo } from 'react';
 import { View } from 'react-native';
 
@@ -14,7 +14,7 @@ type QrCodeProps = {
 // View colorées plutôt qu'un rendu SVG/Canvas.
 export function QrCode({ value, size = 200 }: QrCodeProps) {
   const modules = useMemo(() => {
-    const qr = qrcode(0, 'M');
+    const qr = qrFactory(0, 'M');
     qr.addData(value);
     qr.make();
     const count = qr.getModuleCount();
