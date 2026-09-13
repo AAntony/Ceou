@@ -170,7 +170,11 @@ export function header(lang, { base = '', current = 'home' } = {}) {
   // script — un menu doit dire ou l'on se trouve meme sans JavaScript.
   const ici = (name) => (current === name ? ' aria-current="page"' : '');
   const links = copy.nav
-    .map((item) => `        <a href="${base}#${copy.ids[item.to]}">${escape(item.label)}</a>`)
+    .map((item) =>
+      item.page
+        ? `        <a href="${FILES[item.page][lang]}"${ici(item.page)}>${escape(item.label)}</a>`
+        : `        <a href="${base}#${copy.ids[item.to]}">${escape(item.label)}</a>`,
+    )
     .join('\n');
 
   return `  <header class="top" data-open="false">
@@ -188,7 +192,7 @@ export function header(lang, { base = '', current = 'home' } = {}) {
 ${links}
         <a href="${FILES.privacy[lang]}"${ici('privacy')}>${escape(copy.navPrivacy)}</a>
         <span class="nav-sep" aria-hidden="true"></span>
-        <a class="lang" href="${FILES.home[OTHER[lang]]}" hreflang="${OTHER[lang]}" lang="${OTHER[lang]}"
+        <a class="lang" href="${FILES[current][OTHER[lang]]}" hreflang="${OTHER[lang]}" lang="${OTHER[lang]}"
            title="${escape(copy.switchTitle)}">${escape(copy.switchLabel)}</a>
       </nav>
     </div>
@@ -196,7 +200,7 @@ ${links}
 }
 
 /**
- * Le bandeau d'annonce, au-dessus de l'en-tête et sur les quatre pages.
+ * Le bandeau d'annonce, au-dessus de l'en-tête et sur toutes les pages.
  *
  * IL DÉFILE AVEC LA PAGE, IL NE COLLE PAS : l'en-tête collant prend déjà sa
  * part d'un écran de téléphone, et une deuxième bande fixe mangerait le
@@ -222,10 +226,13 @@ function announce(lang, isHome) {
   </aside>`;
 }
 
-export function footer(lang) {
+export function footer(lang, page) {
   const copy = SITE[lang];
   const links = copy.nav
-    .map((item) => `            <li><a href="${FILES.home[lang]}#${copy.ids[item.to]}">${escape(item.label)}</a></li>`)
+    .map((item) => {
+      const href = item.page ? FILES[item.page][lang] : `${FILES.home[lang]}#${copy.ids[item.to]}`;
+      return `            <li><a href="${href}">${escape(item.label)}</a></li>`;
+    })
     .join('\n');
 
   return `  <div class="wrap">
@@ -248,7 +255,7 @@ ${links}
             <li><a href="${FILES.privacy[lang]}">${escape(copy.footer.privacy)}</a></li>
             <li><a href="${FILES.privacy[lang]}#${escape(DELETION[lang])}">${escape(copy.footer.deletion)}</a></li>
             <li><a href="mailto:${CONTACT}">${CONTACT}</a></li>
-            <li><a href="${FILES.home[OTHER[lang]]}" hreflang="${OTHER[lang]}" lang="${OTHER[lang]}">${escape(copy.switchLabel)}</a></li>
+            <li><a href="${FILES[page][OTHER[lang]]}" hreflang="${OTHER[lang]}" lang="${OTHER[lang]}">${escape(copy.switchLabel)}</a></li>
           </ul>
         </div>
       </div>
@@ -259,20 +266,21 @@ ${links}
 /**
  * Le document complet.
  *
- * `file` est le nom du fichier engendré : il sert à l'adresse canonique et à
- * la carte de partage, qui n'acceptent ni l'une ni l'autre un chemin relatif.
+ * `page` est une clé de FILES (`home`, `privacy`, `tutorials`) : elle donne le
+ * fichier engendré, son pendant dans l'autre langue, et l'adresse canonique
+ * et la carte de partage, qui n'acceptent ni l'une ni l'autre un chemin
+ * relatif.
  */
-export function shell({ lang, file, title, description, body, bodyClass = '', structured = [] }) {
+export function shell({ lang, page, title, description, body, bodyClass = '', structured = [] }) {
   const other = OTHER[lang];
-  const isHome = file === FILES.home[lang];
   // UNE SEULE FORME D'ADRESSE PAR PAGE. `index.html` répond aussi à la racine
   // nue, et déclarer l'une comme canonique tout en pointant l'autre depuis la
   // page voisine donnerait deux adresses pour une même page — ce qui divise
   // ce qu'un moteur en sait au lieu de l'additionner.
   const url = (name) => `${ORIGIN}/${name === 'index.html' ? '' : name}`;
-  const canonical = url(file);
-  const alternate = url(isHome ? FILES.home[other] : FILES.privacy[other]);
-  const defaultUrl = url(isHome ? FILES.home.fr : FILES.privacy.fr);
+  const canonical = url(FILES[page][lang]);
+  const alternate = url(FILES[page][other]);
+  const defaultUrl = url(FILES[page].fr);
 
   const ld = structured
     .map((data) => `  <script type="application/ld+json">\n${jsonLd(data)}\n  </script>`)
@@ -311,9 +319,9 @@ export function shell({ lang, file, title, description, body, bodyClass = '', st
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
   <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#main">${escape(SITE[lang].skip)}</a>
-${announce(lang, isHome)}
+${announce(lang, page === 'home')}
 ${body}
-${footer(lang)}
+${footer(lang, page)}
 ${ld}
   <script>${SCRIPT}</script>
 </body>

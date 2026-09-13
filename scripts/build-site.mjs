@@ -11,14 +11,16 @@ import {
   SITE,
   SURVEY,
 } from './site/content.mjs';
+import { DEMO_IDS, demo } from './site/demos.mjs';
 import { ICONS, planIllustration } from './site/icons.mjs';
 import { escape, header, shell, withMailto } from './site/layout.mjs';
+import { loadTutorials } from './site/tutorials.mjs';
 
 // LE SITE PUBLIC DE CÉOÙ, ENGENDRÉ.
 //
-// Quatre pages dans site/ : l'accueil et la politique de confidentialité,
-// chacune en français et en anglais. C'est ce dossier, et lui seul, qu'on
-// dépose dans le `www` de l'hébergement.
+// Six pages dans site/ : l'accueil, les tutoriels et la politique de
+// confidentialité, chacune en français et en anglais. C'est ce dossier, et
+// lui seul, qu'on dépose dans le `www` de l'hébergement.
 //
 // POURQUOI UN GÉNÉRATEUR ET NON QUATRE FICHIERS ÉCRITS À LA MAIN :
 //
@@ -27,6 +29,8 @@ import { escape, header, shell, withMailto } from './site/layout.mjs';
 //    app/privacy-policy.tsx. Recopié ici, il divergerait — et l'écart entre
 //    ce qu'une app déclare et ce que sa page publique déclare est exactement
 //    ce qu'un examinateur de store relève.
+//  - Les tutoriels aussi : fr.json, en.json et l'ordre de chapitres.ts,
+//    lus tels quels (voir scripts/site/tutorials.mjs).
 //  - L'en-tête, le pied de page, le style et le menu sont communs aux quatre
 //    pages. Écrits quatre fois, ils se désaccorderaient au premier
 //    changement.
@@ -46,6 +50,12 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..');
 
 const legal = JSON.parse(readFileSync(join(root, 'src/features/legal/privacyPolicy.json'), 'utf8'));
+const tutorials = loadTutorials(root, DEMO_IDS);
+
+/** « Chapitre {n} sur {total} » : les accolades remplacées par leur valeur. */
+function fill(template, values) {
+  return template.replace(/\{(\w+)\}/g, (match, key) => String(values[key] ?? match));
+}
 
 /** Un identifiant d'ancre tiré d'un titre : « Tes droits » donne `tes-droits`. */
 function slug(value) {
@@ -278,6 +288,7 @@ ${chain}
         <ul class="grid">
 ${cards}
         </ul>
+        <p class="section-more reveal"><a class="ghost is-forward" href="${FILES.tutorials[lang]}">${escape(copy.tutorials.featuresLink)}</a></p>
       </div>
     </section>
 
@@ -326,7 +337,7 @@ ${faq}
 
   return shell({
     lang,
-    file: FILES.home[lang],
+    page: 'home',
     title: copy.title,
     description: copy.description,
     body,
@@ -426,13 +437,129 @@ ${paragraphs}
 
   return shell({
     lang,
-    file: FILES.privacy[lang],
+    page: 'privacy',
     bodyClass: 'doc-page',
     title: `${policy.title} — Céoù`,
     description:
       lang === 'fr'
         ? "Politique de confidentialité de l'application Céoù, et demande de suppression de compte."
         : 'Privacy policy of the Céoù app, and account deletion requests.',
+    body,
+  });
+}
+
+// === Les tutoriels =======================================================
+
+/**
+ * Les chapitres de l'app, l'un sous l'autre, précédés de leur sommaire.
+ *
+ * UNE SEULE PAGE ET NON UNE PAR CHAPITRE : on vient ici pour se faire une
+ * idée de l'app, pas pour suivre une leçon précise. Faire défiler dix
+ * chapitres le dit mieux que dix pages à ouvrir une à une — et le sommaire
+ * en tête permet quand même d'aller droit à celui qui intéresse.
+ *
+ * LA FORME EST CELLE DE L'APP : objectif, étapes, astuce, résultat, et le
+ * mini-écran d'une étape posé sous l'étape qui en parle. Sur un écran large,
+ * le mini-écran du chapitre reste à côté du texte pendant qu'on le lit.
+ */
+function tutorialsPage(lang) {
+  const copy = SITE[lang];
+  const page = copy.tutorials;
+  const app = tutorials.locales[lang];
+  const total = tutorials.chapters.length;
+  const tones = ['blue', 'teal', 'mustard', 'sky'];
+
+  const toc = tutorials.chapters
+    .map((chapter, i) => {
+      const text = app.chapters[chapter.id];
+      return `          <li><a class="toc-card tone-${tones[i % tones.length]}" href="#${chapter.id}">
+            <span class="pill">${ICONS[chapter.icon]}</span>
+            <b>${i + 1}. ${escape(text.title)}</b>
+            <span>${escape(text.summary)}</span>
+          </a></li>`;
+    })
+    .join('\n');
+
+  // Le premier chapitre prend le fond teinté : il suit le sommaire, posé sur
+  // le fond clair, et les deux ne doivent pas se confondre.
+  const chapters = tutorials.chapters
+    .map((chapter, i) => {
+      const text = app.chapters[chapter.id];
+      const steps = text.steps
+        .map((step, rank) => {
+          const inline = chapter.demosEtapes[rank];
+          return `            <li>
+              <p>${escape(step)}</p>${inline ? `\n          ${demo(inline, app.demos)}` : ''}
+            </li>`;
+        })
+        .join('\n');
+
+      return `    <section class="section${i % 2 === 0 ? ' section-alt' : ''}" id="${chapter.id}">
+      <div class="wrap chapter">
+        <div class="chapter-head reveal">
+          <span class="eyebrow">${escape(fill(page.chapter, { n: i + 1, total }))}</span>
+          <h2>${escape(text.title)}</h2>
+          <p class="lede">${escape(text.summary)}</p>
+        </div>
+        <div class="chapter-demo reveal">
+          ${demo(chapter.demo, app.demos)}
+        </div>
+        <div class="chapter-body">
+          <h3 class="chapter-label">${escape(app.goal)}</h3>
+          <p class="chapter-goal">${escape(text.goal)}</p>
+          <h3 class="chapter-label">${escape(app.steps)}</h3>
+          <ol class="chapter-steps">
+${steps}
+          </ol>
+          <div class="callout is-tip">
+            <h3>${ICONS.bulb}${escape(app.tip)}</h3>
+            <p>${escape(text.tip)}</p>
+          </div>
+          <div class="callout is-result">
+            <h3>${ICONS.check}${escape(app.result)}</h3>
+            <p>${escape(text.result)}</p>
+          </div>
+          <a class="to-toc" href="#sommaire">${escape(page.backToToc)}</a>
+        </div>
+      </div>
+    </section>`;
+    })
+    .join('\n\n');
+
+  const body = `${header(lang, { base: FILES.home[lang], current: 'tutorials' })}
+
+  <main id="main">
+    <div class="wrap">
+      <div class="tuto-head">
+        <span class="eyebrow">${escape(page.eyebrow)}</span>
+        <h1>${escape(page.heading)}</h1>
+        <p class="lede">${escape(page.lede)}</p>
+      </div>
+      <nav class="toc" id="sommaire" aria-labelledby="sommaire-titre">
+        <h2 class="toc-title" id="sommaire-titre">${escape(page.toc)}</h2>
+        <ol class="toc-grid">
+${toc}
+        </ol>
+      </nav>
+    </div>
+
+${chapters}
+
+    <section class="cta section-alt">
+      <div class="wrap">
+        <h2>${escape(page.cta.title)}</h2>
+        <p>${escape(page.cta.body)}</p>
+        <a class="button" href="${SURVEY}">${escape(copy.progress.invite.cta)}${ICONS.external}</a>
+        <p class="cta-more"><a href="${FILES.home[lang]}#${copy.ids.progress}">${escape(copy.announce.more)}</a></p>
+      </div>
+    </section>
+  </main>`;
+
+  return shell({
+    lang,
+    page: 'tutorials',
+    title: page.title,
+    description: page.description,
     body,
   });
 }
@@ -444,6 +571,7 @@ mkdirSync(outDir, { recursive: true });
 
 for (const lang of ['fr', 'en']) {
   writeFileSync(join(outDir, FILES.home[lang]), homePage(lang), 'utf8');
+  writeFileSync(join(outDir, FILES.tutorials[lang]), tutorialsPage(lang), 'utf8');
   writeFileSync(join(outDir, FILES.privacy[lang]), privacyPage(lang), 'utf8');
 }
 
@@ -481,7 +609,7 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
   'utf8',
 );
 
-const pages = ['fr', 'en'].flatMap((lang) => [FILES.home[lang], FILES.privacy[lang]]);
+const pages = ['fr', 'en'].flatMap((lang) => [FILES.home[lang], FILES.tutorials[lang], FILES.privacy[lang]]);
 console.log(`site/ : ${pages.join(', ')}, og-image.png, .htaccess`);
 console.log(`ancres de suppression : #${DELETION_ANCHOR.fr} (fr), #${DELETION_ANCHOR.en} (en)`);
 console.log(`langue alternee : ${FILES.home.fr} <-> ${FILES.home[OTHER.fr]}`);

@@ -31,6 +31,7 @@ export const SURVEY = 'https://forms.gle/ngUZoU7c9f6euFFp6';
 export const FILES = {
   home: { fr: 'index.html', en: 'en.html' },
   privacy: { fr: 'confidentialite.html', en: 'privacy.html' },
+  tutorials: { fr: 'tutoriels.html', en: 'tutorials.html' },
 };
 export const DELETION_ANCHOR = { fr: 'suppression-de-compte', en: 'account-deletion' };
 
@@ -56,16 +57,18 @@ export const SITE = {
     switchTitle: 'Read this page in English',
     skip: 'Aller au contenu',
     menu: { open: 'Ouvrir le menu', close: 'Fermer le menu' },
+    // `to` vise une section de l'accueil, `page` une autre page du site.
     nav: [
       { to: 'how', label: 'Comment ça marche' },
       { to: 'features', label: 'Fonctionnalités' },
+      { page: 'tutorials', label: 'Tutoriels' },
       { to: 'pillars', label: 'Engagements' },
       { to: 'progress', label: 'Avancement' },
       { to: 'faq', label: 'Questions' },
     ],
     navPrivacy: 'Confidentialité',
 
-    // Le bandeau au-dessus de l'en-tête, sur les quatre pages.
+    // Le bandeau au-dessus de l'en-tête, sur toutes les pages.
     //
     // UN BOUTON COURT, EXPRÈS : sur un téléphone de 375 pixels, « Répondre
     // au questionnaire » renvoyait le second lien à la ligne, et le bandeau
@@ -116,6 +119,25 @@ export const SITE = {
       ],
       chainLabel: 'La hiérarchie de Céoù : Maison, puis Garage, puis Établi, puis Boîte à outils, puis Perceuse.',
       chain: ['Maison', 'Garage', 'Établi', 'Boîte à outils', 'Perceuse'],
+    },
+
+    // LA PAGE DES TUTORIELS. Seul ce qui l'entoure est écrit ici : les
+    // chapitres eux-mêmes viennent de l'app (voir scripts/site/tutorials.mjs).
+    tutorials: {
+      title: 'Tutoriels — Céoù',
+      description:
+        'Les tutoriels de Céoù, chapitre par chapitre : ranger, retrouver, scanner, garder ses factures, dessiner son plan, prêter, partager.',
+      eyebrow: 'Tutoriels',
+      heading: 'Céoù, pas à pas',
+      lede: 'Les tutoriels de l’application, tels que tu les trouveras dedans : du premier objet rangé au partage avec tes proches. De quoi voir ce que Céoù sait faire avant même de l’installer.',
+      toc: 'Sommaire',
+      chapter: 'Chapitre {n} sur {total}',
+      backToToc: 'Revenir au sommaire',
+      featuresLink: 'Voir chaque fonctionnalité pas à pas',
+      cta: {
+        title: 'Envie de l’essayer ?',
+        body: 'Céoù n’est pas encore sorti. Réponds au questionnaire : cinq minutes, et tu peux laisser ton adresse pour tester l’application avant tout le monde.',
+      },
     },
 
     features: {
@@ -359,6 +381,7 @@ export const SITE = {
     nav: [
       { to: 'how', label: 'How it works' },
       { to: 'features', label: 'Features' },
+      { page: 'tutorials', label: 'Tutorials' },
       { to: 'pillars', label: 'Principles' },
       { to: 'progress', label: 'Progress' },
       { to: 'faq', label: 'FAQ' },
@@ -411,6 +434,23 @@ export const SITE = {
       ],
       chainLabel: 'The Céoù hierarchy: Home, then Garage, then Workbench, then Toolbox, then Drill.',
       chain: ['Home', 'Garage', 'Workbench', 'Toolbox', 'Drill'],
+    },
+
+    tutorials: {
+      title: 'Tutorials — Céoù',
+      description:
+        'The Céoù tutorials, chapter by chapter: put things away, find them, scan, keep receipts, draw your plan, lend, share.',
+      eyebrow: 'Tutorials',
+      heading: 'Céoù, step by step',
+      lede: 'The tutorials from the app, just as you will find them inside: from the first item put away to sharing with the people close to you. Enough to see what Céoù can do before you even install it.',
+      toc: 'Contents',
+      chapter: 'Chapter {n} of {total}',
+      backToToc: 'Back to contents',
+      featuresLink: 'See every feature step by step',
+      cta: {
+        title: 'Want to try it?',
+        body: 'Céoù is not out yet. Take the survey — in French for now: five minutes, and you can leave your address to test the app before everyone else.',
+      },
     },
 
     features: {

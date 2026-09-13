@@ -169,7 +169,8 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
    test a 200 % — la rangee des prets debordait de 375 a 653 pixels. */
 .grid > *, .row > *, .steps > *, .pillars > *, .hero > *, .foot-grid > *,
 .loan > *, .chat > *, .results > *, .doc-layout > *, .progress-layout > *,
-.stage > *, .announce-inner > * { min-width: 0; }
+.stage > *, .announce-inner > *, .chapter > *, .toc-grid > *, .chapter-steps > li > *,
+.demo-screen > *, .d-card > *, .d-line > *, .d-tiles > *, .d-plan > *, .d-rail li > * { min-width: 0; }
 
 .skip {
   position: absolute;
@@ -379,11 +380,12 @@ a { color: var(--accent-strong); text-decoration-thickness: 1px; text-underline-
 .top[data-open="true"] .burger span::after { transform: rotate(-45deg); }
 
 /* LE SEUIL SE MESURE, IL NE SE DEVINE PAS. Le menu français en ligne demande
-   983 pixels depuis l'ajout de « Avancement » — logo, marges et liens compris,
-   en Segoe UI. À 54 rem il passait sur deux lignes et poussait la page de
-   côté entre 864 et 983 pixels. 64 rem laisse une marge aux polices plus
-   larges d'autres systèmes. À remesurer à chaque entrée de menu ajoutée. */
-@media (max-width: 64rem) {
+   1 071 pixels depuis l'ajout de « Tutoriels » — logo, marges et liens
+   compris, en Segoe UI. En dessous il passe sur deux lignes et pousse la page
+   de côté. 72 rem laisse une marge aux polices plus larges d'autres systèmes
+   (San Francisco l'est de quelques pour cent). À remesurer à chaque entrée
+   de menu ajoutée. */
+@media (max-width: 72rem) {
   .burger { display: flex; }
   .nav {
     position: absolute;
@@ -475,6 +477,10 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 }
 .ghost:hover { border-color: var(--accent); transform: translateY(-1px); }
 .ghost::after { content: ""; width: 0.42rem; height: 0.42rem; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg) translate(-0.1em, -0.1em); }
+/* Le chevron descend vers une section de la page ; il pointe à droite quand
+   le lien mène à une autre page. */
+.ghost.is-forward::after { transform: rotate(-45deg) translate(-0.05em, -0.05em); }
+.section-more { margin-top: 2.5rem; text-align: center; }
 
 .hero-note { margin-top: 1.35rem; font-size: 0.9375rem; color: var(--ink-soft); }
 
@@ -809,6 +815,293 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 .invite .button { margin-top: 1.5rem; }
 .invite-note { margin-top: 1rem; font-size: 0.875rem; }
 .invite-note + .invite-note { margin-top: 0.35rem; }
+
+/* === Les tutoriels ===================================================== */
+
+.tuto-head { max-width: 46rem; padding: 3.5rem 0 2.5rem; }
+.tuto-head h1 { font-size: clamp(2.1rem, 4.4vw, 3rem); letter-spacing: -0.03em; }
+
+.toc { padding-bottom: 4rem; }
+.toc-title {
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+/* Deux colonnes au plus : dix chapitres sur trois laissaient le dernier seul
+   sur sa ligne, comme oublié. */
+.toc-grid { display: grid; gap: 0.8rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
+.toc-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 0.15rem 0.9rem;
+  height: 100%;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+@media (hover: hover) {
+  .toc-card:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+}
+.toc-card .pill { grid-row: span 2; width: 2.5rem; height: 2.5rem; margin: 0; border-radius: 12px; }
+.toc-card .pill svg { width: 1.25rem; height: 1.25rem; }
+.toc-card b { font-size: 1rem; line-height: 1.35; }
+.toc-card > span:last-child { font-size: 0.875rem; line-height: 1.5; color: var(--ink-soft); }
+
+/* LE MINI-ÉCRAN À CÔTÉ DU TEXTE, ET IL Y RESTE. Sur un écran large, il colle
+   pendant qu'on lit les étapes : on garde sous les yeux ce dont elles
+   parlent. Sur un téléphone il n'y a pas d'à-côté — il se place entre le
+   titre et l'objectif, là où l'app le met. */
+.chapter { display: grid; gap: 2rem; }
+@media (min-width: 62rem) {
+  .chapter {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    grid-template-areas: "head demo" "body demo";
+    column-gap: 4.5rem;
+    row-gap: 0;
+  }
+  .chapter-head { grid-area: head; }
+  .chapter-body { grid-area: body; }
+  .chapter-demo { grid-area: demo; align-self: start; position: sticky; top: 6.5rem; }
+}
+.chapter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 2rem 0 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.chapter-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.chapter-goal { font-size: 1.0625rem; }
+
+.chapter-steps { display: grid; gap: 1.1rem; counter-reset: etape; }
+.chapter-steps > li {
+  counter-increment: etape;
+  display: grid;
+  grid-template-columns: 1.9rem 1fr;
+  column-gap: 0.85rem;
+}
+.chapter-steps > li::before {
+  content: counter(etape);
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.chapter-steps > li > p { padding-top: 0.15rem; }
+/* Le mini-écran d'une étape, sous la phrase qui en parle. Sur un téléphone il
+   reprend la largeur de la pastille : la colonne du texte seule lui laissait
+   à peine 200 pixels. */
+.chapter-steps > li > .demo { grid-column: 2; max-width: 24rem; margin-top: 0.85rem; }
+@media (max-width: 40rem) {
+  .chapter-steps > li > .demo { grid-column: 1 / -1; }
+}
+
+/* L'astuce et le résultat se relisent en diagonale : des blocs teintés, pas
+   des paragraphes de plus. Le texte reste en encre — les teintes fortes ne
+   tiennent pas 4,5:1 sur leur propre fond pâle, elles vont aux icônes. */
+.callout { margin-top: 1.25rem; padding: 1.1rem 1.25rem; border-radius: 16px; }
+.callout h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.callout h3 svg { width: 1.1rem; height: 1.1rem; flex: none; }
+.callout.is-tip { background: var(--mustard-soft); }
+.callout.is-tip svg { color: var(--mustard-strong); }
+.callout.is-result { background: var(--teal-soft); }
+.callout.is-result svg { color: var(--teal-strong); }
+
+.to-toc { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 1.75rem; font-size: 0.9375rem; text-decoration: none; }
+.to-toc::before { content: ""; width: 0.4rem; height: 0.4rem; margin-top: 0.2rem; border-left: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(135deg); }
+
+.cta .button { margin-top: 1.75rem; }
+.cta .cta-more { margin-top: 1.1rem; }
+
+/* === Les mini-écrans =================================================== */
+
+/* Le pendant de Demos.tsx dans l'app, dessiné avec les jetons du site. Le
+   cadre prend la teinte opposée à celle de la section, comme les maquettes
+   de l'accueil : il doit se lire « un écran », pas « un bloc de plus ». */
+.demo { margin: 0; }
+.demo-screen {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--sand-2);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  /* UN MOT PEUT SE COUPER ICI, et nulle part ailleurs sur le site. Glissé
+     sous une étape, le mini-écran n'a que 200 pixels sur un téléphone ; à
+     texte doublé, « Factures » plus ses deux boutons n'y tenaient plus et
+     poussaient la page entière de 100 pixels vers la droite. */
+  overflow-wrap: anywhere;
+}
+.section-alt .demo-screen { background: var(--sand); }
+.demo figcaption { margin-top: 0.7rem; font-size: 0.875rem; color: var(--ink-soft); }
+.demo-screen svg { width: 1rem; height: 1rem; flex: none; }
+.demo-screen b { font-weight: 600; }
+.demo-screen p { margin: 0; }
+
+/* Les rangées se replient plutôt que de déborder : à texte doublé, le nom,
+   le montant et les boutons d'une même ligne ne tiennent plus côte à côte. */
+.d-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.d-stack { display: grid; justify-items: start; gap: 0.3rem; }
+.d-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.65rem; width: 100%; }
+/* Une base fixe plutôt que la largeur du texte : sinon un long chemin
+   (« Maison › Cuisine › Commode › Boîte ») passait sous sa vignette dès que
+   la place manquait, au lieu de revenir à la ligne à côté d'elle. */
+.d-text { display: grid; flex: 1 1 7rem; }
+.d-text > span { font-size: 0.78rem; color: var(--ink-soft); }
+.d-thumb { display: grid; place-items: center; flex: none; width: 2.4rem; height: 1.9rem; border-radius: 9px; background: var(--line); color: var(--ink-soft); }
+.d-thumb.is-tall { width: 1.8rem; height: 2.3rem; }
+.d-field svg { color: var(--ink-soft); }
+.d-grow { flex: 1; }
+.d-label { margin-top: 0.15rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.d-label.is-plain { margin: 0; font-size: 0.78rem; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.d-pill { justify-self: start; max-width: 100%; padding: 0.25rem 0.75rem; border-radius: 999px; background: var(--line); font-size: 0.78rem; font-weight: 600; }
+.d-pill.is-outline { margin-top: 0.25rem; border: 1px solid var(--line-strong); background: none; }
+
+/* La hiérarchie : chaque niveau un cran plus à droite, reliés par un fil. */
+.d-rail { display: grid; gap: 0.35rem; }
+.d-rail li { position: relative; display: flex; align-items: center; gap: 0.6rem; margin-left: calc(var(--lvl) * 1.1rem); }
+.d-rail li + li::before {
+  content: "";
+  position: absolute;
+  left: -0.55rem;
+  top: -0.5rem;
+  width: 0.75rem;
+  height: 1.25rem;
+  border-left: 1.5px solid var(--line-strong);
+  border-bottom: 1.5px solid var(--line-strong);
+  border-bottom-left-radius: 6px;
+}
+.d-rail-dot { display: grid; place-items: center; flex: none; width: 1.9rem; height: 1.9rem; border-radius: 10px; color: var(--ink); }
+.d-rail li:nth-child(1) .d-rail-dot { background: var(--sky-soft); }
+.d-rail li:nth-child(2) .d-rail-dot { background: var(--accent-soft); }
+.d-rail li:nth-child(3) .d-rail-dot { background: var(--teal-soft); }
+.d-rail li:nth-child(4) .d-rail-dot { background: var(--mustard-soft); }
+.d-rail li:nth-child(5) .d-rail-dot { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+.d-heading { display: grid; margin-bottom: 0.15rem; }
+.d-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.d-tile {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+}
+.d-badge { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong); }
+
+.d-tabs { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: 999px; background: var(--line); }
+.d-tabs span { flex: 1; padding: 0.3rem 0.4rem; border-radius: 999px; font-size: 0.78rem; text-align: center; color: var(--ink-soft); }
+.d-tabs .is-on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-sm); }
+.d-amount { margin-left: auto; font-variant-numeric: tabular-nums; }
+.d-chips { display: flex; flex-wrap: wrap; gap: 0.35rem; width: 100%; margin-top: 0.25rem; padding-top: 0.55rem; border-top: 1px solid var(--line); }
+.d-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.55rem; border-radius: 999px; background: var(--line); font-size: 0.75rem; }
+.demo-screen .d-chip svg { width: 0.8rem; height: 0.8rem; color: var(--ink-soft); }
+
+.d-bar b { flex: 1; font-size: 0.95rem; }
+.d-bar > svg { color: var(--ink-soft); }
+.d-round { display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border: 1px solid var(--line); border-radius: 50%; color: var(--accent-strong); }
+
+.d-mic { display: grid; place-items: center; flex: none; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--accent-fill); color: var(--on-accent); }
+.demo-screen .d-mic svg { width: 1.2rem; height: 1.2rem; }
+.d-answer { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.6rem 0.8rem; border-radius: 16px; background: var(--teal-soft); }
+.d-answer svg { margin-top: 0.1rem; color: var(--teal-strong); }
+
+.d-photo { display: grid; place-items: center; height: 3.6rem; border-radius: 14px; background: var(--line); color: var(--ink-soft); }
+.demo-screen .d-photo svg { width: 1.4rem; height: 1.4rem; }
+.d-checks { display: grid; gap: 0.3rem; }
+.d-checks li { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.6rem; border-radius: 10px; background: var(--surface); }
+.d-checks svg { color: var(--teal-strong); }
+.d-primary { display: block; margin-top: 0.15rem; padding: 0.5rem; border-radius: 12px; background: var(--accent-fill); color: var(--on-accent); font-weight: 600; text-align: center; }
+
+.d-plan { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 0.45rem; height: 6.5rem; padding: 0.45rem; }
+.d-room { display: flex; flex-direction: column; justify-content: space-between; padding: 0.45rem 0.55rem; border-radius: 10px; font-size: 0.78rem; }
+.d-room.is-teal { background: var(--teal-soft); }
+.d-room.is-mustard { background: var(--mustard-soft); }
+.d-dots { display: flex; gap: 0.3rem; }
+.d-dots i { width: 0.85rem; height: 0.85rem; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 1.5px var(--line-strong); }
+
+.d-meta { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--ink-soft); }
+.demo-screen .d-meta svg { width: 0.95rem; height: 0.95rem; color: var(--accent-strong); }
+
+.d-code { justify-content: space-between; }
+.d-code b { font-size: 1rem; font-weight: 700; letter-spacing: 0.18em; }
+.d-code svg { color: var(--ink-soft); }
+.d-home > svg { color: var(--accent-strong); }
+.d-tag { padding: 0.15rem 0.55rem; border-radius: 999px; background: var(--accent-soft); color: var(--accent-strong); font-size: 0.75rem; font-weight: 600; }
+
+.d-invite { flex-direction: column; gap: 0.2rem; padding: 0.9rem; text-align: center; }
+.d-invite span { font-size: 0.78rem; color: var(--ink-soft); }
+.d-invite b { font-size: 1.35rem; font-weight: 700; letter-spacing: 0.2em; }
+
+.d-card.is-large { font-size: 1.05rem; }
+.d-card.is-large .d-text > span { font-size: 0.9rem; }
+
+.d-offline { display: flex; align-items: center; gap: 0.45rem; padding: 0.4rem 0.7rem; border-radius: 10px; background: var(--mustard-soft); font-size: 0.78rem; }
+.d-offline svg { color: var(--mustard-strong); }
+.d-ok { margin-left: auto; color: var(--teal-strong); }
+
+/* L'ANNEAU QUI BAT désigne le bouton dont parle l'étape, comme dans l'app.
+   Son contour fixe reste quand le mouvement est coupé : c'est lui qui
+   désigne, l'animation ne fait qu'attirer l'œil. */
+.is-pulse { position: relative; outline: 2px solid var(--accent); outline-offset: 3px; }
+.is-pulse::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  box-shadow: 0 0 0 2px var(--accent);
+  animation: ring 2.2s var(--ease) infinite;
+  pointer-events: none;
+}
+@keyframes ring {
+  0% { opacity: 0.8; transform: scale(1); }
+  70%, 100% { opacity: 0; transform: scale(1.12); }
+}
 
 /* === Les questions ===================================================== */
 

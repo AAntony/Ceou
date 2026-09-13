@@ -1,6 +1,6 @@
 # Le site public de Céoù
 
-Quatre pages, une image et une règle de serveur, engendrées dans `site/`.
+Six pages, une image et une règle de serveur, engendrées dans `site/`.
 **Ne rien y modifier à la main** — le dossier est réécrit à chaque exécution
 du générateur.
 
@@ -8,6 +8,8 @@ du générateur.
 | --- | --- | --- |
 | `index.html` | Accueil, français | |
 | `en.html` | Accueil, anglais | |
+| `tutoriels.html` | Tutoriels de l'app, français | `#<id du chapitre>` |
+| `tutorials.html` | Tutoriels de l'app, anglais | `#<id du chapitre>` |
 | `confidentialite.html` | Politique de confidentialité, français | `#suppression-de-compte` |
 | `privacy.html` | Politique de confidentialité, anglais | `#account-deletion` |
 | `og-image.png` | Vignette de partage et icône de raccourci | |
@@ -27,7 +29,9 @@ Le générateur assemble ; la matière est à côté.
 
 | Fichier | Rôle |
 | --- | --- |
-| `scripts/build-site.mjs` | Assemble les quatre pages et les écrit |
+| `scripts/build-site.mjs` | Assemble les six pages et les écrit |
+| `scripts/site/tutorials.mjs` | Lit les tutoriels dans l'app et vérifie qu'ils sont complets |
+| `scripts/site/demos.mjs` | Les mini-écrans des tutoriels, redessinés en HTML |
 | `scripts/site/content.mjs` | **Tout le texte**, français et anglais côte à côte |
 | `scripts/site/style.mjs` | La feuille de style, écrite dans chaque page |
 | `scripts/site/icons.mjs` | Les dessins : logo, favicon, icônes, plan miniature |
@@ -40,13 +44,22 @@ Le générateur assemble ; la matière est à côté.
 modifier, et c'est ce qui empêche l'app et la page publique de se contredire.
 Le sommaire de la page se construit tout seul à partir de ses sections.
 
+**Les tutoriels** suivent la même règle : leur texte vient de `fr.json` et
+`en.json` (bloc `tutoriels`), leur ordre de `src/features/tutoriels/chapitres.ts`.
+Corriger une étape dans l'app la corrige sur le site au prochain `npm run site`
+— à redéployer, comme le reste. Seuls les mini-écrans sont redessinés, dans
+`demos.mjs`, avec les mêmes mots. **Un chapitre ou un mini-écran ajouté dans
+l'app arrête la génération** tant qu'il n'a pas son icône de sommaire
+(`tutorials.mjs`) et son dessin (`demos.mjs`) : le message dit quoi ajouter. Une
+page qui annoncerait dix chapitres et en montrerait neuf ne se verrait pas.
+
 **Le texte de l'accueil** vit dans `content.mjs` : il n'appartient qu'au site,
 l'app n'en connaît pas un mot.
 
 **La frise « Où en est Céoù »** et l'adresse du questionnaire y vivent aussi
 (`progress` et `SURVEY`). La frise ne se met pas à jour toute seule : quand
 une étape avance, changer son `status` dans les deux langues, réengendrer et
-redéployer. Le bandeau d'annonce, en haut des quatre pages, pointe vers les
+redéployer. Le bandeau d'annonce, en haut de toutes les pages, pointe vers les
 deux.
 
 Après toute modification, réengendrer **et redéployer**. Sans ça la version
@@ -70,7 +83,7 @@ Ce qui mérite un coup d'oeil à chaque fois :
   la console, sur une fenêtre étroite. Rien ne doit déborder de côté ni se
   tronquer. C'est là que les défauts de grille apparaissent.
 - **Les deux thèmes.** Le site suit le réglage du système.
-- **Le menu replié**, sous 64 rem : il s'ouvre, se referme à Échap et au clic
+- **Le menu replié**, sous 72 rem : il s'ouvre, se referme à Échap et au clic
   sur un lien.
 
 ## Ce qui ne doit rien coûter à personne

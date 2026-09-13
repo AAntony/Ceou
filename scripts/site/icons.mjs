@@ -39,6 +39,25 @@ export const ICONS = {
   check: stroke('<path d="m5.5 12.4 4.2 4.2 8.8-9.2"/>'),
   // Une flèche qui sort du cadre : ce lien quitte le site.
   external: stroke('<path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/>'),
+
+  // --- Les tutoriels : le sommaire, les encadrés et les mini-écrans. ---
+
+  // Un fanion planté : le point de départ.
+  flag: stroke('<path d="M5.5 21V4"/><path d="M5.5 4.5h11.2l-2.2 3.8 2.2 3.8H5.5"/>'),
+  people: stroke('<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><path d="M15.5 5.6a3.2 3.2 0 0 1 0 6"/><path d="M17.6 14.4a5.5 5.5 0 0 1 2.9 5.1"/>'),
+  qr: stroke('<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5zM14 20h1M20 14v1"/>'),
+  // Un ticket de caisse, dentelé en bas.
+  receipt: stroke('<path d="M6 3.5h12v17l-2.4-1.5-2.4 1.5-2.4-1.5-2.4 1.5L6 20.5Z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/>'),
+  bulb: stroke('<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3.5a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1v.6h5v-.6c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3.5Z"/>'),
+  // La hiérarchie de l'app, niveau par niveau : la pièce, le meuble, l'objet.
+  door: stroke('<path d="M6 20V4.8a.8.8 0 0 1 .8-.8h10.4a.8.8 0 0 1 .8.8V20"/><path d="M4 20h16"/><circle cx="14.6" cy="12.4" r="0.9" fill="currentColor" stroke="none"/>'),
+  drawers: stroke('<rect x="4" y="4" width="16" height="14.5" rx="1.8"/><path d="M4 8.9h16M4 13.7h16"/><path d="M10.5 6.4h3M10.5 11.3h3M10.5 16.1h3"/><path d="M6.5 18.5V20M17.5 18.5V20"/>'),
+  tag: stroke('<path d="M3.8 12.6 11.4 5a2 2 0 0 1 1.4-.6h5.4a1.4 1.4 0 0 1 1.4 1.4v5.4a2 2 0 0 1-.6 1.4l-7.6 7.6a1.6 1.6 0 0 1-2.3 0l-5.3-5.3a1.6 1.6 0 0 1 0-2.3Z"/><circle cx="15.6" cy="8.4" r="1.3"/>'),
+  move: stroke('<path d="M12 3.5v17M3.5 12h17"/><path d="m9.5 6 2.5-2.5L14.5 6M9.5 18l2.5 2.5 2.5-2.5M6 9.5 3.5 12 6 14.5M18 9.5l2.5 2.5-2.5 2.5"/>'),
+  export: stroke('<path d="M12 14.5V3.8"/><path d="m8 7.6 4-4 4 4"/><path d="M5.5 12.5v5.7a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-5.7"/>'),
+  back: stroke('<path d="m14.5 5.5-6.5 6.5 6.5 6.5"/>'),
+  camera: stroke('<path d="M4 8.2a2 2 0 0 1 2-2h2l1.5-2.2h5L16 6.2h2a2 2 0 0 1 2 2v9.6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.8" r="3.4"/>'),
+  alert: stroke('<path d="M10.3 4.4 3.2 17a2 2 0 0 0 1.7 3h14.2a2 2 0 0 0 1.7-3L13.7 4.4a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5v4.2"/><circle cx="12" cy="16.9" r="0.9" fill="currentColor" stroke="none"/>'),
 };
 
 // LE REPÈRE DE CÉOÙ : la goutte percée d'un rond clair. Repris tel quel de
