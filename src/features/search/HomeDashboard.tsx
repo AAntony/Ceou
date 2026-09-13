@@ -8,6 +8,7 @@ import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
+import { HeaderAddButton } from '../../components/HeaderAddButton';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
 import { showMessage } from '../../lib/dialog';
 import { logClientError } from '../../lib/errorLogging';
@@ -85,13 +86,9 @@ export function HomeDashboard() {
   return (
     <View className="flex-1 bg-sand" style={{ paddingTop: insets.top + 4 }}>
       <View className="px-4 pb-1">
-        <View className="mb-1 flex-row items-center justify-between gap-3">
+        <View className="mb-1 min-h-[48px] flex-row items-center justify-between gap-3">
           <Text accessibilityRole="header" className="text-title font-bold text-coral-dark">Céoù</Text>
-          {!isGuest ? <Pressable accessibilityRole="button" accessibilityLabel={t('redesign.add')}
-            onPress={() => setAdding(true)} className="min-h-[48px] flex-row items-center gap-1 rounded-xl px-3 active:opacity-70">
-            <Icon name="add" size={22} color={colors.accentDark} />
-            <Text className="text-label font-semibold text-coral-dark">{t('redesign.addShort')}</Text>
-          </Pressable> : null}
+          {!isGuest ? <HeaderAddButton onPress={() => setAdding(true)} label={t('redesign.add')} /> : null}
         </View>
         <View className="min-h-[52px] flex-row items-center rounded-2xl border border-ink/20 bg-surface pl-4">
           <Icon name="search" size={22} color={colors.inkSoft} />

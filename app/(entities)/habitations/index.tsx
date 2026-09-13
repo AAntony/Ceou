@@ -7,6 +7,7 @@ import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityPhotoField } from '../../../src/components/EntityPhotoField';
 import { EntityRow } from '../../../src/components/EntityRow';
 import { ErrorState } from '../../../src/components/ErrorState';
+import { SectionHeader } from '../../../src/components/SectionHeader';
 import { HeaderAddButton } from '../../../src/components/HeaderAddButton';
 import { SegmentedTabs } from '../../../src/components/SegmentedTabs';
 import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
@@ -153,10 +154,10 @@ export default function HabitationsScreen() {
           headerBackVisible: false,
           // Seul l'onglet Personnelles peut recevoir une creation : l'onglet
           // Partagees liste des amis, pas des habitations a soi.
-          headerRight: () =>
+          header: () => <SectionHeader title={t('redesign.places')} action={
             effectiveTab === 'personal' && !isGuest ? (
               <HeaderAddButton onPress={openCreate} label={t('inventory.habitations.add')} />
-            ) : null,
+            ) : null} />,
         }}
       />
       <View className="flex-1 bg-sand">
