@@ -460,6 +460,198 @@ export type Database = {
         }
         Relationships: []
       }
+      moving_boxes: {
+        Row: {
+          category: string | null
+          container_id: string | null
+          created_at: string
+          description: string | null
+          destination_piece_id: string | null
+          id: string
+          name: string
+          number: number
+          photo_url: string | null
+          project_id: string
+          status: string
+        }
+        Insert: {
+          category?: string | null
+          container_id?: string | null
+          created_at?: string
+          description?: string | null
+          destination_piece_id?: string | null
+          id?: string
+          name: string
+          number: number
+          photo_url?: string | null
+          project_id: string
+          status?: string
+        }
+        Update: {
+          category?: string | null
+          container_id?: string | null
+          created_at?: string
+          description?: string | null
+          destination_piece_id?: string | null
+          id?: string
+          name?: string
+          number?: number
+          photo_url?: string | null
+          project_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moving_boxes_container_id_fkey"
+            columns: ["container_id"]
+            isOneToOne: true
+            referencedRelation: "conteneurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_boxes_destination_piece_id_fkey"
+            columns: ["destination_piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_boxes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "moving_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moving_items: {
+        Row: {
+          box_id: string
+          name: string
+          object_id: string
+          origin_id: string | null
+          origin_label: string | null
+          origin_type: string | null
+          outcome: string
+          packed_at: string
+          project_id: string
+          resolved_at: string | null
+        }
+        Insert: {
+          box_id: string
+          name: string
+          object_id: string
+          origin_id?: string | null
+          origin_label?: string | null
+          origin_type?: string | null
+          outcome?: string
+          packed_at?: string
+          project_id: string
+          resolved_at?: string | null
+        }
+        Update: {
+          box_id?: string
+          name?: string
+          object_id?: string
+          origin_id?: string | null
+          origin_label?: string | null
+          origin_type?: string | null
+          outcome?: string
+          packed_at?: string
+          project_id?: string
+          resolved_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moving_items_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "moving_boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_items_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "moving_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moving_projects: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          destination_id: string | null
+          id: string
+          name: string
+          next_number: number
+          planned_date: string | null
+          source_id: string | null
+          staging_location_id: string | null
+          staging_piece_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          destination_id?: string | null
+          id?: string
+          name: string
+          next_number?: number
+          planned_date?: string | null
+          source_id?: string | null
+          staging_location_id?: string | null
+          staging_piece_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          destination_id?: string | null
+          id?: string
+          name?: string
+          next_number?: number
+          planned_date?: string | null
+          source_id?: string | null
+          staging_location_id?: string | null
+          staging_piece_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moving_projects_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "habitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_projects_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "habitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_projects_staging_location_id_fkey"
+            columns: ["staging_location_id"]
+            isOneToOne: false
+            referencedRelation: "emplacements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_projects_staging_piece_id_fkey"
+            columns: ["staging_piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       objet_deplacements: {
         Row: {
           from_location_id: string | null
@@ -956,10 +1148,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      moving_command: { Args: { p_action: string; p_payload: Json }; Returns: Json }
-      moving_read: { Args: { p_project_id?: string | null }; Returns: Json }
-      moving_search_index: { Args: Record<PropertyKey, never>; Returns: {kind: string; id: string; name: string; photo_url: string | null; preset_key: string | null; piece_id: string; piece_name: string; habitation_id: string; habitation_name: string; parent_label: string | null}[] }
-
       apply_plan_template: {
         Args: { p_plan_id: string; p_rooms: Json }
         Returns: {
@@ -1233,6 +1421,30 @@ export type Database = {
       move_objet: {
         Args: { p_objet_id: string; p_to_id: string; p_to_type: string }
         Returns: undefined
+      }
+      moving_access: {
+        Args: { p_id: string; p_permission?: string }
+        Returns: boolean
+      }
+      moving_command: {
+        Args: { p_action: string; p_payload: Json }
+        Returns: Json
+      }
+      moving_read: { Args: { p_project_id?: string }; Returns: Json }
+      moving_search_index: {
+        Args: never
+        Returns: {
+          habitation_id: string
+          habitation_name: string
+          id: string
+          kind: string
+          name: string
+          parent_label: string
+          photo_url: string
+          piece_id: string
+          piece_name: string
+          preset_key: string
+        }[]
       }
       my_guest_access_status: { Args: never; Returns: Json }
       objet_location_chain: {

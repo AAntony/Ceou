@@ -28,7 +28,7 @@ export function useSearchIndex() {
     queryFn: async (): Promise<SearchIndexEntry[]> => {
       const { data, error } = await supabase.rpc('search_index');
       if (error) throw error;
-      const moving = await supabase.rpc('moving_search_index', {});
+      const moving = await supabase.rpc('moving_search_index');
       // Rolling deployment: the previous backend may not have the additive RPC yet.
       if (moving.error && moving.error.code !== 'PGRST202' && moving.error.code !== '42883') throw moving.error;
       const combined = new Map<string, SearchIndexEntry>();
