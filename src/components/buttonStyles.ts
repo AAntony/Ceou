@@ -62,7 +62,8 @@ export const BUTTON_DISABLED = 'opacity-50';
 export const BUTTON_SURFACE: Record<ButtonVariant, string> = {
   primary: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-coral`,
   ghost: `${BUTTON_BASE} ${BUTTON_BLOCK} bg-transparent`,
-  outline: `${BUTTON_BASE} ${BUTTON_BLOCK} border-2 border-coral bg-coral-light`,
+  // A secondary action is not a selected option: reserve blue fills for selection.
+  outline: `${BUTTON_BASE} ${BUTTON_BLOCK} border border-ink/20 bg-surface`,
   danger: `${BUTTON_BASE} ${BUTTON_PILL} bg-red-700`,
   // Le MEME rouge que la pastille, volontairement : c'est le meme geste, vu a
   // deux moments. Un second rouge ferait douter qu'il s'agisse du meme.
@@ -75,7 +76,7 @@ export const BUTTON_SURFACE: Record<ButtonVariant, string> = {
 export const BUTTON_LABEL: Record<ButtonVariant, string> = {
   primary: 'text-center text-body font-semibold text-white',
   ghost: 'text-center text-body font-semibold text-ink',
-  outline: 'text-center text-body font-semibold text-coral-dark',
+  outline: 'text-center text-body font-semibold text-ink',
   danger: 'text-center text-label font-semibold text-white',
   destructive: 'text-center text-body font-semibold text-white',
   tile: 'text-center text-label font-semibold text-ink',

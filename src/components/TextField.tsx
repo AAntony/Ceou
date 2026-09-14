@@ -37,6 +37,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   const colors = useThemeColors();
   const { t } = useTranslation();
   const [revealed, setRevealed] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [revealIndex, setRevealIndex] = useState(-1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,7 +77,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <Text className="mb-1.5 text-label font-medium text-ink-soft">{label}</Text>
       {/* La bordure porte sur l'ensemble et non sur le champ seul : c'est ce
           qui met l'œil À L'INTÉRIEUR du cadre plutôt qu'à côté. */}
-      <View className="flex-row items-center rounded-xl border border-ink/10 bg-sand-dark">
+      <View className={`flex-row items-center rounded-xl border-2 bg-surface ${error ? 'border-danger' : focused ? 'border-coral' : 'border-ink/20'}`}>
         <TextInput
           ref={ref}
           // `min-w-0` : sans lui, la version web du champ refuse de
@@ -84,7 +85,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           // <input>) et pousse l'oeil hors du cadre des que le texte
           // grossit. Sans effet sur mobile, ou c'est deja la valeur par
           // defaut de Yoga.
-          className="min-w-0 flex-1 px-4 py-3 text-body text-ink"
+          className="min-h-[48px] min-w-0 flex-1 px-4 py-3 text-body text-ink"
           placeholderTextColor={colors.inkSoft}
           accessibilityLabel={label}
           accessibilityHint={error}
@@ -97,6 +98,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           // le préciser (« password-new » à l'inscription).
           autoComplete={isPassword ? 'password' : undefined}
           {...inputProps}
+          onFocus={(event) => { setFocused(true); inputProps.onFocus?.(event); }}
+          onBlur={(event) => { setFocused(false); inputProps.onBlur?.(event); }}
           // APRÈS la diffusion des props : ces trois-là sont pilotées ici et
           // ne doivent pas pouvoir être écrasées par l'écran appelant, sans
           // quoi le masquage se retrouverait à moitié en place.

@@ -38,9 +38,7 @@ export function Button({ label, loading, variant = 'primary', icon, disabled, ..
   const spinnerColor =
     variant === 'primary' || variant === 'danger' || variant === 'destructive'
       ? '#fff'
-      : variant === 'outline'
-        ? colors.accentDark
-        : colors.ink;
+      : colors.ink;
 
   return (
     <Pressable

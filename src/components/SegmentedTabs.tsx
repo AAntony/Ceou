@@ -30,7 +30,7 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Se
   const stacked = textScale >= STACK_SCALE;
 
   return (
-    <View className={`mb-4 gap-2 ${stacked ? '' : 'flex-row'}`}>
+    <View className={`mb-4 gap-1 rounded-2xl bg-sand-dark p-1 ${stacked ? '' : 'flex-row'}`}>
       {options.map((option) => {
         const active = option.value === value;
         const disabled = option.disabled === true;
@@ -42,12 +42,12 @@ export function SegmentedTabs<T extends string>({ options, value, onChange }: Se
             accessibilityRole="tab"
             accessibilityState={{ selected: active, disabled }}
             className={`min-h-[48px] items-center justify-center rounded-xl border px-4 py-3 ${stacked ? '' : 'flex-1'} ${
-              active ? 'border-coral bg-coral-light' : 'border-ink/10'
+              active ? 'border-coral bg-coral-light' : 'border-transparent bg-transparent'
             } ${disabled ? 'opacity-40' : ''}`}
           >
             {/* Centre : en gros texte, un libelle passe sur deux lignes et
                 un alignement a gauche desaxerait la pastille. */}
-            <Text className={active ? 'text-center font-semibold text-coral-dark' : 'text-center text-ink-soft'}>
+            <Text className={active ? 'text-label text-center font-semibold text-coral-dark' : 'text-label text-center text-ink-soft'}>
               {option.label}
             </Text>
           </Pressable>

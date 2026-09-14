@@ -40,5 +40,6 @@ Chaque étape produit un commit sur main et un OTA Android preview. La suivante 
 
 ## Suivi
 
-- Étape 1 : implémentée ; validation automatisée et publication à consigner dans la conversation.
-- Étapes 2 à 5 : en attente de validation de l’étape précédente.
+- Étape 1 : validée par l’utilisateur ; commit 47659a1, OTA publié.
+- Étape 2 : charte documentée, boutons secondaires, onglets et champs harmonisés ; vérifications et OTA avant validation utilisateur.
+- Étapes 3 à 5 : en attente de validation de l’étape précédente.
