@@ -105,7 +105,7 @@ await test('moving UI copy has French/English parity and all literal keys exist'
  const fr=JSON.parse(readFileSync(new URL('../../src/lib/i18n/locales/fr.json',import.meta.url),'utf8'));
  const en=JSON.parse(readFileSync(new URL('../../src/lib/i18n/locales/en.json',import.meta.url),'utf8'));
  assert.deepEqual(Object.keys(fr.moving).sort(),Object.keys(en.moving).sort());
- for(const filename of ['MovingListScreen.tsx','MovingScreen.tsx','forms.tsx','packing.tsx','PackObjectButton.tsx']){
+ for(const filename of ['MovingListScreen.tsx','MovingScreen.tsx','forms.tsx','packing.tsx','PackObjectButton.tsx','ActiveMovingBar.tsx']){
   const source=readFileSync(new URL('../../src/features/moving/'+filename,import.meta.url),'utf8');
   for(const [,key] of source.matchAll(/['"]((?:moving|common)\.[a-zA-Z_]+)['"]/g)){
    assert.ok(key.split('.').reduce((node,part)=>node?.[part],fr),filename+': '+key);

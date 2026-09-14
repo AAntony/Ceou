@@ -2,8 +2,8 @@ import { Stack, router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
+import { useSpaceForAppTabBar } from '../../../src/components/AppTabBar';
 import { CreateEntityModal } from '../../../src/components/CreateEntityModal';
-import { MovingEntry } from '../../../src/features/moving/MovingEntry';
 import { EmptyState } from '../../../src/components/EmptyState';
 import { EntityPhotoField } from '../../../src/components/EntityPhotoField';
 import { EntityRow } from '../../../src/components/EntityRow';
@@ -16,6 +16,7 @@ import { PresetPicker } from '../../../src/components/PresetPicker';
 import { GuestAccessLostCard, useGuestAccessLost } from '../../../src/features/auth/GuestBanner';
 import { useIsAnonymous, useSession } from '../../../src/features/auth/SessionProvider';
 import { useIsOffline } from '../../../src/lib/network';
+import { AddPlaceSheet } from '../../../src/features/inventory/AddPlaceSheet';
 import { HABITATION_TYPES, getHabitationIcon, type HabitationTypeKey } from '../../../src/features/inventory/constants';
 import { objetCountLabel } from '../../../src/features/inventory/counts';
 import { photoChange } from '../../../src/features/inventory/entityPhoto';
@@ -28,6 +29,9 @@ import {
   useToggleHabitationFavorite,
   useUpdateHabitation,
 } from '../../../src/features/inventory/queries';
+import { ActiveMovingBar } from '../../../src/features/moving/ActiveMovingBar';
+import { ProjectForm } from '../../../src/features/moving/forms';
+import { useActiveMoving } from '../../../src/features/moving/useActiveMoving';
 import { useFriendships } from '../../../src/features/sharing/queries';
 import { confirmDelete } from '../../../src/lib/confirmDelete';
 import type { Habitation } from '../../../src/types/database';
@@ -55,6 +59,11 @@ export default function HabitationsScreen() {
   const [name, setName] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const { data: objetCounts } = useHabitationObjectCounts();
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [movingFormOpen, setMovingFormOpen] = useState(false);
+  const moving = useActiveMoving();
+  const [movingBarHeight, setMovingBarHeight] = useState(0);
+  const tabBarSpace = useSpaceForAppTabBar();
 
   const favoriteIds = new Set((favorites ?? []).map((f) => f.habitation_id));
   // Ciblé sur l'Habitation réellement en cours de bascule (et pas sur
@@ -142,6 +151,12 @@ export default function HabitationsScreen() {
   // réseau, sans qu'on ait eu à le réécrire.
   const effectiveTab: Tab = offline && tab === 'shared' ? 'personal' : tab;
 
+  // LA BARRE DU DÉMÉNAGEMENT N'APPARAÎT QU'EN COURS, ET SUR SES PROPRES LIEUX :
+  // « Partagées » liste les logements des autres, un déménagement n'y a pas sa
+  // place. Sans déménagement actif, rien ne s'affiche — on le lance depuis
+  // « + Ajouter ».
+  const showMovingBar = !isGuest && effectiveTab === 'personal' && moving.activeCount > 0;
+
   return (
     <>
       {/* Atteint uniquement via le bouton "Habitations" de la barre du bas,
@@ -157,12 +172,22 @@ export default function HabitationsScreen() {
           // Partagees liste des amis, pas des habitations a soi.
           header: () => <SectionHeader title={t('redesign.places')} action={
             effectiveTab === 'personal' && !isGuest ? (
-              <HeaderAddButton onPress={openCreate} label={t('inventory.habitations.add')} />
+              <HeaderAddButton onPress={() => setAddSheetOpen(true)} label={t('inventory.habitations.add_menu')} />
             ) : null} />,
         }}
       />
       <View className="flex-1 bg-sand">
-        <ScrollView contentContainerClassName="px-6 pb-28 pt-4" refreshControl={refreshControl}>
+        {/* Le bas de la liste s'arrête au-dessus de la barre d'onglets, et
+            au-dessus de la barre du déménagement quand elle est là : les deux
+            sont posées par-dessus, et grandissent avec le texte. */}
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 24,
+            paddingTop: 16,
+            paddingBottom: tabBarSpace + (showMovingBar ? movingBarHeight : 0) + 24,
+          }}
+          refreshControl={refreshControl}
+        >
           {/* Un visiteur ne voit ni onglets ni creation : les deux onglets lui
               seraient vides par construction (il ne possede rien et n’a aucun
               ami). Il voit directement ce a quoi son code lui donne acces. */}
@@ -263,8 +288,33 @@ export default function HabitationsScreen() {
           )}
             </>
           )}
-          {!isGuest ? <MovingEntry /> : null}
         </ScrollView>
+
+        {showMovingBar ? (
+          <ActiveMovingBar moving={moving} onLayout={(event) => setMovingBarHeight(event.nativeEvent.layout.height)} />
+        ) : null}
+
+        <AddPlaceSheet
+          visible={addSheetOpen}
+          onClose={() => setAddSheetOpen(false)}
+          onAddPlace={() => {
+            setAddSheetOpen(false);
+            openCreate();
+          }}
+          onMove={() => {
+            setAddSheetOpen(false);
+            moving.start(() => setMovingFormOpen(true));
+          }}
+        />
+        {movingFormOpen ? (
+          <ProjectForm
+            onClose={() => setMovingFormOpen(false)}
+            onCreated={(id) => {
+              setMovingFormOpen(false);
+              router.push(`/moving/${id}`);
+            }}
+          />
+        ) : null}
 
         <CreateEntityModal
           visible={modalOpen}

@@ -9,7 +9,6 @@
     "unpackHint": "Ouvre un carton pour installer ses objets dans leur nouvel emplacement.",
     "startHint": "Choisis ton lieu de départ, puis prépare tes cartons. Tu pourras préciser la destination plus tard.",
     "resumeEntry": "Reprendre mon déménagement",
-    "entryHint": "Prépare tes cartons, puis retrouve-les à l’arrivée.",
     "seeArchives": "Voir les déménagements terminés",
     "confirm": "Confirmer",
     "boxFullName": "Nom du carton",
@@ -129,7 +128,12 @@
     "photoFailed": "Le carton est enregistré, mais sa photo n’a pas pu être envoyée.",
     "startUnpacking": "Passer au déballage",
     "startMoving": "Déménagement en cours",
-    "backPreparation": "Revenir à la préparation"
+    "backPreparation": "Revenir à la préparation",
+    "start": "Déménager",
+    "startSubtitle": "Transférer mes objets vers un nouveau lieu",
+    "activeBar": "Déménagement en cours",
+    "activeBarMany": "{{count}} déménagements en cours",
+    "activeBarPercent": "{{percent}} %"
   },
   "app_name": "Céoù",
   "common": {
@@ -634,7 +638,11 @@
       "tab_emplacements": "Emplacements",
       "tab_plans": "Plans",
       "shared_empty": "Aucune habitation ne t’a été partagée pour l’instant.",
-      "shared_via_invite": "Reçu par code d’invitation"
+      "shared_via_invite": "Reçu par code d’invitation",
+      "add_menu": "Ajouter un lieu ou déménager",
+      "add_choice_title": "Que souhaites-tu faire ?",
+      "add_place": "Ajouter un lieu",
+      "add_place_hint": "Maison, appartement, véhicule, stockage…"
     },
     "habitationTypes": {
       "maison": "Maison",

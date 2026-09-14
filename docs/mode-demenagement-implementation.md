@@ -2,7 +2,7 @@
 
 ## Parcours
 
-Accès uniquement depuis **Lieux**, sous la liste des lieux : une entrée neutre ouvre directement la création sans projet actif, reprend le projet s'il est unique, ou affiche les projets s'il y en a plusieurs. Un lien distinct donne accès aux archives. La destination peut être créée pendant le parcours ou choisie plus tard.
+Accès uniquement depuis **Lieux**, onglet de ses propres lieux. Sans déménagement en cours, rien n'est affiché : on le lance par **+ Ajouter → Déménager**, qui ouvre directement la création s'il n'existe encore aucun projet, et la liste des déménagements sinon (projets en cours, création, archives). Pendant un déménagement, une barre compacte reste posée au-dessus des onglets : elle reprend le projet s'il est unique, ou affiche les projets s'il y en a plusieurs, et montre le pourcentage traité du tableau de bord quand un seul projet a déjà des objets en cartons. Elle disparaît dans « Partagées » et dès que le déménagement est terminé. La destination peut être créée pendant le parcours ou choisie plus tard.
 
 Le tableau de bord regroupe les cartons, les étapes, les filtres et la progression. Chaque carton propose l'ajout multiple d'objets existants, l'analyse photo avec validation des correspondances, un QR, l'impression et la création du carton suivant avec les mêmes préférences. Le déballage réaffecte les objets aux emplacements de destination. Un carton peut devenir un rangement permanent. Les sorties (perdu, donné, vendu, jeté) utilisent la corbeille existante.
 

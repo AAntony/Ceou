@@ -9,7 +9,6 @@
     "unpackHint": "Open a box to put its items in their new location.",
     "startHint": "Choose where you are moving from, then pack your boxes. You can choose the destination later.",
     "resumeEntry": "Continue my move",
-    "entryHint": "Pack your boxes and find them when you arrive.",
     "seeArchives": "View completed moves",
     "confirm": "Confirm",
     "boxFullName": "Box name",
@@ -129,7 +128,12 @@
     "photoFailed": "The box was saved, but its photo could not be uploaded.",
     "startUnpacking": "Start unpacking",
     "startMoving": "Start moving",
-    "backPreparation": "Back to preparation"
+    "backPreparation": "Back to preparation",
+    "start": "Move house",
+    "startSubtitle": "Move my belongings to a new place",
+    "activeBar": "Move in progress",
+    "activeBarMany": "{{count}} moves in progress",
+    "activeBarPercent": "{{percent}}%"
   },
   "app_name": "Céoù",
   "common": {
@@ -634,7 +638,11 @@
       "tab_emplacements": "Spots",
       "tab_plans": "Plans",
       "shared_empty": "No home has been shared with you yet.",
-      "shared_via_invite": "Received via invitation code"
+      "shared_via_invite": "Received via invitation code",
+      "add_menu": "Add a place or move house",
+      "add_choice_title": "What would you like to do?",
+      "add_place": "Add a place",
+      "add_place_hint": "House, flat, vehicle, storage…"
     },
     "habitationTypes": {
       "maison": "House",
