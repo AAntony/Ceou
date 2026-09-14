@@ -1,5 +1,12 @@
 {
   "moving": {
+    "defaultName": "Déménagement · {{place}}",
+    "optionalDetails": "Destination, date et nom (facultatif)",
+    "hideDetails": "Masquer les détails facultatifs",
+    "moreActions": "Plus d’actions",
+    "prepareHint": "Commence par créer un carton et y ajouter tes objets.",
+    "transportHint": "Scanne tes cartons à l’arrivée pour les retrouver rapidement.",
+    "unpackHint": "Ouvre un carton pour installer ses objets dans leur nouvel emplacement.",
     "startHint": "Choisis ton lieu de départ, puis prépare tes cartons. Tu pourras préciser la destination plus tard.",
     "resumeEntry": "Reprendre mon déménagement",
     "entryHint": "Prépare tes cartons, puis retrouve-les à l’arrivée.",

@@ -1,5 +1,12 @@
 {
   "moving": {
+    "defaultName": "Move · {{place}}",
+    "optionalDetails": "Destination, date and name (optional)",
+    "hideDetails": "Hide optional details",
+    "moreActions": "More actions",
+    "prepareHint": "Start by creating a box and adding your items.",
+    "transportHint": "Scan your boxes on arrival to find them quickly.",
+    "unpackHint": "Open a box to put its items in their new location.",
     "startHint": "Choose where you are moving from, then pack your boxes. You can choose the destination later.",
     "resumeEntry": "Continue my move",
     "entryHint": "Pack your boxes and find them when you arrive.",
