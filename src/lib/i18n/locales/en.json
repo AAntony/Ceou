@@ -1,5 +1,7 @@
 {
   "moving": {
+    "busy": "An action is already in progress. Wait for it to finish before trying again.",
+    "offlineEmpty": "This move is not available offline. Reconnect to load it.",
     "stepAnnouncement": "Step {{step}} of {{total}}: {{name}}",
     "defaultName": "Move · {{place}}",
     "optionalDetails": "Destination, date and name (optional)",
@@ -107,7 +109,7 @@
     "noObjects": "This box is empty",
     "addHint": "Select inventory objects or photograph the contents.",
     "saved": "Saved",
-    "error": "Action not saved. Check your connection and reload before retrying.",
+    "error": "Unable to confirm the save. Check your connection and refresh the list before trying again.",
     "conflict": "An object changed boxes. Reload the move and try again.",
     "forbidden": "You need edit permission for both homes.",
     "edit": "Edit box",

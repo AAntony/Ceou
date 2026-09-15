@@ -8,7 +8,22 @@ import { movingProgress, boxState, matchingObjects, movingQr, parseMovingQr } fr
 const db=new PGlite();
 await db.exec(readFileSync(new URL('./moving-fixture.sql',import.meta.url),'utf8'));
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260812090000_move_objet.sql',import.meta.url),'utf8').split('-- === stockage')[0]);
+// Exercise the real permission resolver and trash functions, not permissive stand-ins.
+await db.exec(`drop function has_habitation_access(uuid,uuid,text);
+create view habitation_shares as select home as habitation_id, person as shared_with_user_id, null::uuid as shared_with_group_id, permission from test_permissions;
+create table friend_group_members(group_id uuid, friend_user_id uuid);
+drop function corbeille_deposer(text,uuid);
+alter table habitations add column photo_url text;
+alter table pieces add column photo_url text;
+alter table emplacements add column photo_url text;
+create table factures(id uuid primary key, vendor text, document_kind text, document_url text);
+create table facture_objets(id uuid primary key, facture_id uuid references factures(id), objet_id uuid references objets(id) on delete cascade);`);
+const sharing=readFileSync(new URL('../../supabase/migrations/20260817100000_sharing_rls.sql',import.meta.url),'utf8');
+await db.exec(sharing.slice(sharing.indexOf('create function public.habitation_share_permission'),sharing.indexOf('create function public.can_manage_habitation_sharing')));
+for(const name of ['20260912190000_corbeille.sql','20260912210000_corbeille_photo.sql'])await db.exec(readFileSync(new URL('../../supabase/migrations/'+name,import.meta.url),'utf8'));
+await db.exec('grant usage on schema auth to authenticated; grant select, insert, update, delete on corbeille to authenticated');
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260913010000_moving_mode.sql',import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../../supabase/migrations/20260915090000_moving_dispose_atomic.sql',import.meta.url),'utf8'));
 const owner=randomUUID(), stranger=randomUUID(), viewer=randomUUID();
 await db.query('insert into auth.users values ($1),($2),($3)',[owner,stranger,viewer]);
 const source=randomUUID(),dest=randomUUID(),other=randomUUID(),sourceRoom=randomUUID(),destRoom=randomUUID(),sourceShelf=randomUUID(),destShelf=randomUUID();
@@ -139,5 +154,29 @@ await test('moving to an already stored box resolves packing and cross-project m
  const container=(await read(p)).boxes.find(x=>x.id===stored).container_id;
  await command('unpack',{project_id:p,box_id:b,to_type:'conteneur',to_id:container,items:[{id:o}]});
  assert.equal((await read(p)).items.find(x=>x.object_id===o).outcome,'installed');
+});
+await test('box photo metadata updates both records and denies a stranger',async()=>{
+ const p=randomUUID(),b=randomUUID();await login(owner);
+ await command('create',{id:p,source_id:source,name:'Photo test'});await command('box_create',{project_id:p,id:b});
+ await command('box_photo',{project_id:p,box_id:b,photo_url:'https://example.test/box.jpg'});
+ const box=(await read(p)).boxes[0];assert.equal(box.photo_url,'https://example.test/box.jpg');
+ await admin();assert.equal((await db.query('select photo_url from conteneurs where id=$1',[box.container_id])).rows[0].photo_url,box.photo_url);
+ await login(stranger);await assert.rejects(command('box_photo',{project_id:p,box_id:b,photo_url:'changed'}),/moving_forbidden/);
+ await login(owner);assert.equal((await read(p)).boxes[0].photo_url,box.photo_url);
+});
+await test('disposal snapshots the photo, hides trash from strangers and rolls back stale batches',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID();await login(owner);
+ await command('create',{id:p,source_id:source,name:'Trash test'});await command('box_create',{project_id:p,id:b});
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Camera',create:true}]});
+ await admin();await db.query('update objets set photo_url=$1 where id=$2',['https://example.test/camera.jpg',o]);await login(owner);
+ await assert.rejects(command('dispose',{project_id:p,box_id:b,outcome:'given',items:[{id:o},{id:'ffffffff-ffff-4fff-bfff-ffffffffffff'}]}),/moving_object_missing/);
+ assert.equal((await read(p)).items[0].outcome,'packed');
+ assert.equal((await db.query("select id from corbeille where label='Camera'")).rows.length,0);
+ await command('dispose',{project_id:p,box_id:b,outcome:'given',items:[{id:o}]});
+ assert.equal((await read(p)).objects.some(x=>x.id===o),false);
+ const trash=(await db.query("select id,photo_url,payload from corbeille where label='Camera'")).rows[0];
+ assert.equal(trash.photo_url,'https://example.test/camera.jpg');assert.equal(trash.payload.objets[0].id,o);
+ await login(stranger);assert.equal((await db.query('select id from corbeille where id=$1',[trash.id])).rows.length,0);
+ await login(owner);
 });
 await db.close();

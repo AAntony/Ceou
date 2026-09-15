@@ -44,8 +44,8 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
  };
  const close=()=>{if(!command.isPending&&!photoBusy)setModal(null);};
  const print=async(boxes:MovingBox[])=>{try{await printMovingLabels(boxes);}catch{showMessage(t('moving.error'));}};
- if(query.isPending)return <View className="flex-1 items-center justify-center bg-sand"><ActivityIndicator/></View>;
- if(query.isError||!data||!project||(boxId&&!box))return <View className="flex-1 gap-4 bg-sand p-6"><Stack.Screen options={{headerShown:true,title:t('moving.title')}}/><Text className="text-body text-ink">{t('moving.loadError')}</Text><Button label={t('common.retry')} onPress={()=>{void query.refetch();}}/></View>;
+ if(query.isPending&&!offline)return <View className="flex-1 items-center justify-center bg-sand"><ActivityIndicator/></View>;
+ if(query.isError||!data||!project||(boxId&&!box))return <View className="flex-1 gap-4 bg-sand p-6"><Stack.Screen options={{headerShown:true,title:t('moving.title')}}/><Text className="text-body text-ink">{t(offline?'moving.offlineEmpty':'moving.loadError')}</Text><Button label={t('common.retry')} disabled={offline||query.isFetching} onPress={()=>{void query.refetch();}}/></View>;
  const progress=movingProgress(data.items);const members=box?data.objects.filter(o=>o.parent_id===box.container_id):[];
  const history=box?data.items.filter(i=>i.box_id===box.id):[];
  const selection=selected.filter(id=>members.some(o=>o.id===id));

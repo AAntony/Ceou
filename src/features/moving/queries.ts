@@ -1,4 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { onlineManager, useMutation, useQuery } from '@tanstack/react-query';
+import { useRef } from 'react';
+import { createCommandGuard } from './commandGuard';
 import { supabase } from '../../lib/supabase/client';
 import { useSession } from '../auth/SessionProvider';
 import type { Json } from '../../types/supabase';
@@ -15,7 +17,8 @@ export function useMovingSnapshot(id: string) {
     queryFn: async () => { const {data,error}=await supabase.rpc('moving_read',{p_project_id:id}); if(error) throw error; return data as unknown as MovingSnapshot; } });
 }
 export function useMovingCommand() {
-  return useMutation({
+  const guard = useRef(createCommandGuard()).current;
+  const mutation = useMutation({
     // Online transactional operations: no optimistic claim that a partial lot succeeded.
     networkMode: 'always', retry: false,
     mutationFn: async ({action,payload}:{action:string;payload:Record<string,Json|undefined>}) => {
@@ -24,4 +27,9 @@ export function useMovingCommand() {
     },
     // The shared MutationCache invalidates inventory/search/moving queries on success.
   });
+  return {
+    ...mutation,
+    mutateAsync: (...args: Parameters<typeof mutation.mutateAsync>) =>
+      guard(() => onlineManager.isOnline(), () => mutation.mutateAsync(...args)),
+  };
 }

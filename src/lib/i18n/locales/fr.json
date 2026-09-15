@@ -1,5 +1,7 @@
 {
   "moving": {
+    "busy": "Une action est déjà en cours. Attends sa fin avant de réessayer.",
+    "offlineEmpty": "Ce déménagement n’est pas disponible hors ligne. Reconnecte-toi pour le charger.",
     "stepAnnouncement": "Étape {{step}} sur {{total}} : {{name}}",
     "defaultName": "Déménagement · {{place}}",
     "optionalDetails": "Destination, date et nom (facultatif)",
@@ -107,7 +109,7 @@
     "noObjects": "Ce carton est vide",
     "addHint": "Sélectionne des objets de ton inventaire ou photographie son contenu.",
     "saved": "Enregistré",
-    "error": "Action non enregistrée. Vérifie ta connexion et recharge avant de réessayer.",
+    "error": "Impossible de confirmer l’enregistrement. Vérifie ta connexion et recharge la liste avant de réessayer.",
     "conflict": "Un objet a changé de carton. Recharge le déménagement avant de recommencer.",
     "forbidden": "Tu dois avoir le droit de modification sur les deux logements.",
     "edit": "Modifier le carton",

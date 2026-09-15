@@ -20,12 +20,4 @@ export function Choice({label,detail,selected,onPress,disabled=false,role='check
   {detail?<Text className="mt-1 text-label text-ink-soft">{detail}</Text>:null}
  </Pressable>;
 }
-export function movingError(error: unknown):string {
- const message=String((error as {message?:string})?.message??error);
- if(message.includes('moving_forbidden')) return 'moving.forbidden';
- if(message.includes('moving_destination')) return 'moving.wrongDestination';
- if(message.includes('moving_object_changed')||message.includes('moving_other_project')) return 'moving.conflict';
- if(message.includes('moving_not_empty')) return 'moving.notEmpty';
- if((error as {code?:string})?.code==='PGRST202') return 'moving.setup';
- return 'moving.error';
-}
+export { movingError } from './errors';
