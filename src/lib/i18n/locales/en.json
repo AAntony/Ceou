@@ -916,6 +916,10 @@
       "outside_one": "1 door to the outside",
       "outside_other": "{{count}} doors to the outside",
       "placed": "Placed on the plan: {{names}}"
+    },
+    "explore": {
+      "choose_room": "Explore rooms",
+      "options": "Floor plan options"
     }
   },
   "a11y": {

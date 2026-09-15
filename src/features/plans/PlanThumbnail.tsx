@@ -97,8 +97,9 @@ export function PlanThumbnail({ formes, colorForForme }: PlanThumbnailProps) {
                 // donc rester sombre ») : c'etait vrai de la miniature, faux
                 // du canevas, et c'est de cet ecart que venait le defaut.
                 backgroundColor: isDark ? tintForDark(colorForForme(forme)) : colorForForme(forme),
+                opacity: 0.55,
                 borderWidth: 0.5,
-                borderColor: colors.ink,
+                borderColor: colors.inkSoft,
               }}
             />
           ))

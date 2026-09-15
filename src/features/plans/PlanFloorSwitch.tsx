@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { floorLabel } from './floorLabel';
 import type { Plan } from '../../types/database';
 
@@ -27,15 +27,17 @@ type PlanFloorSwitchProps = {
   plans: Plan[];
   currentId: string;
   onSelect: (planId: string) => void;
+  horizontal?: boolean;
 };
 
-export function PlanFloorSwitch({ plans, currentId, onSelect }: PlanFloorSwitchProps) {
+export function PlanFloorSwitch({ plans, currentId, onSelect, horizontal = false }: PlanFloorSwitchProps) {
   if (plans.length < 2) return null;
 
   return (
     // `self-end` : la colonne se cale à droite sans prendre la largeur, et
     // laisse le reste du plan libre au doigt.
-    <View className="self-end overflow-hidden rounded-2xl border border-ink/10 bg-surface/95">
+    <ScrollView horizontal={horizontal} showsHorizontalScrollIndicator={false} style={{ maxHeight: horizontal ? undefined : 200 }}>
+    <View className={horizontal ? 'mb-2 flex-row gap-1' : 'self-end overflow-hidden rounded-2xl border border-ink/10 bg-surface/95'}>
       {plans.map((plan, index) => {
         const active = plan.id === currentId;
         return (
@@ -47,9 +49,9 @@ export function PlanFloorSwitch({ plans, currentId, onSelect }: PlanFloorSwitchP
             // Le nom ENTIER, pas l'abréviation : « RDC » lu à voix haute ne
             // veut rien dire, « Rez-de-chaussée » si.
             accessibilityLabel={plan.name}
-            className={`min-w-[2.75rem] items-center justify-center px-2 py-2.5 ${
-              index > 0 ? 'border-t border-ink/10' : ''
-            } ${active ? 'bg-coral' : 'active:opacity-60'}`}
+            className={`min-h-[48px] min-w-[48px] items-center justify-center px-3 py-2.5 ${
+              !horizontal && index > 0 ? 'border-t border-ink/10' : ''
+            } ${horizontal ? 'rounded-xl' : ''} ${active ? 'bg-coral' : 'bg-surface active:opacity-60'}`}
           >
             <Text
               numberOfLines={1}
@@ -61,5 +63,6 @@ export function PlanFloorSwitch({ plans, currentId, onSelect }: PlanFloorSwitchP
         );
       })}
     </View>
+    </ScrollView>
   );
 }

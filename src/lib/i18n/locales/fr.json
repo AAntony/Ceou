@@ -916,6 +916,10 @@
       "outside_one": "1 porte vers l'extérieur",
       "outside_other": "{{count}} portes vers l'extérieur",
       "placed": "Placés sur le plan : {{names}}"
+    },
+    "explore": {
+      "choose_room": "Explorer les pièces",
+      "options": "Options du plan"
     }
   },
   "a11y": {

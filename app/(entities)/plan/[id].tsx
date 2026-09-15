@@ -7,6 +7,7 @@ import { ErrorState } from '../../../src/components/ErrorState';
 import { Icon, type IconName } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
+import { PlanExplorePanel } from '../../../src/features/plans/PlanExplorePanel';
 import { PlanCanvas, type PlanCanvasHandle } from '../../../src/features/plans/PlanCanvas';
 import { nextPinSlot } from '../../../src/features/plans/pinSlots';
 import { PlanPinSheet } from '../../../src/features/plans/PlanPinSheet';
@@ -63,10 +64,11 @@ export default function PlanScreen() {
   // étages au lieu de rendre la main à la liste), ou imposé une transition
   // glissée à chaque appui — l'inverse d'un sélecteur de carte.
   const [id, setId] = useState(routePlanId);
+  const [dismissedHighlight, setDismissedHighlight] = useState<string | null>(null);
   // La route peut changer sous nos pieds : « Voir sur le plan », depuis la
   // fiche d'un objet, vise un plan précis alors qu'on en regarde peut-être
   // déjà un autre.
-  useEffect(() => setId(routePlanId), [routePlanId]);
+  useEffect(() => { setId(routePlanId); setDismissedHighlight(null); }, [routePlanId, highlightFormeId, highlightEmplacementId]);
   const { data: plan, isLoading: planLoading, isError: planError, refetch } = usePlan(id);
   // `isPending` sert la garde de chargement plus bas : sans elle, un etage
   // encore inconnu du cache affichait un eclair de selecteur de logements
@@ -189,6 +191,8 @@ export default function PlanScreen() {
   // rien ici — et le laisser empêcherait en plus le cadrage initial du
   // nouveau niveau, que le canevas suspend quand on lui désigne une pièce.
   const onRoutePlan = id === routePlanId;
+  const highlightKey = `${id}:${highlightFormeId}:${highlightEmplacementId}`;
+  const highlightActive = onRoutePlan && dismissedHighlight !== highlightKey;
 
   if (planError) {
     return (
@@ -240,82 +244,12 @@ export default function PlanScreen() {
     <>
       <Stack.Screen options={{ title: plan.name }} />
       <View className="flex-1 bg-sand">
-        {/* PLUS RIEN NE DÉCALE LE PLAN. Tous les contrôles sont posés EN
-            SUPERPOSITION sur le canevas, qui occupe seul toute la hauteur
-            disponible. Avant, la bascule, les deux boutons d'ajout, la barre
-            des Emplacements et le rappel des gestes vivaient dans le flux :
-            le plan démarrait à mi-écran, et chaque bouton qui apparaissait le
-            repoussait encore. C'est le principe des barres flottantes de
-            Material 3 Expressive — la surface de travail est la page, les
-            outils flottent au-dessus. */}
+        {/* Keep browsing controls outside the drawing so they never hide a room label. */}
         <View className="flex-1 px-3 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
-          <View className="flex-1">
-            {listing ? (
-              <PlanRoomList
-                formes={formes ?? []}
-                doors={doors ?? []}
-                pins={pins ?? []}
-                pieces={pieces ?? []}
-                pinNames={pinNames}
-                roomCounts={roomCounts}
-                storageCounts={storageCounts}
-                highlightFormeId={onRoutePlan ? highlightFormeId : undefined}
-                onOpenRoom={setRoomSheetPieceId}
-              />
-            ) : (
-              <PlanCanvas
-                // REMONTAGE VOLONTAIRE À CHAQUE CHANGEMENT D'ÉTAGE. Le canevas
-                // garde son zoom et sa position dans son propre état, et ne
-                // cadre le plan qu'une fois, au montage. Le remonter est donc
-                // exactement ce qui recadre le nouveau niveau — plutôt que
-                // d'hériter du cadrage de l'étage précédent, qui ne correspond
-                // à rien ici.
-                key={id}
-                ref={canvasRef}
-                formes={formes ?? []}
-                pieceInfo={pieceInfo}
-                pins={pins ?? []}
-                pinDisplay={pinDisplay}
-                highlightFormeId={onRoutePlan ? highlightFormeId : undefined}
-                highlightEmplacementId={onRoutePlan ? highlightEmplacementId : undefined}
-                selectedFormeId={selectedFormeId}
-                roomCounts={roomCounts}
-                readOnly={!editing}
-                onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
-                onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
-                onSelect={(forme) => {
-                  setSelectedFormeId(forme.id);
-                  setSelectedDoorId(null);
-                  setSelectedPinId(null);
-                  // En lecture, toucher une pièce ouvre sa fiche : sans ça le tap
-                  // ne faisait que la surligner, ce qui ne répond à aucune
-                  // question. En édition il sélectionne seulement, pour ne pas
-                  // ouvrir une feuille à chaque fois qu'on veut déplacer.
-                  if (!editing && forme.piece_id) setRoomSheetPieceId(forme.piece_id);
-                }}
-                onDeselect={() => {
-                  setSelectedFormeId(null);
-                  setSelectedDoorId(null);
-                  setSelectedPinId(null);
-                }}
-                onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
-                onPinTap={(pin) => setSheetPinId(pin.id)}
-                pinSize={pinSize}
-                selectedPinId={selectedPinId}
-                onPinSelect={setSelectedPinId}
-                doors={doors ?? []}
-                doorPlacing={doorPlacing}
-                selectedDoorId={selectedDoorId}
-                onDoorCreate={(formeId, edge, position) => createDoor.mutate({ formeId, edge, position })}
-                onDoorSelect={(door) => setSelectedDoorId(door.id)}
-                onDoorDragEnd={(doorId, edge, position) => updateDoor.mutate({ id: doorId, edge, position })}
-              />
-            )}
-
-            {/* Un visiteur ou un ami en Consultation ne voit pas la bascule :
-                lui proposer Modifier serait une promesse que la RLS refuserait. */}
+          <View className="flex-row items-center justify-between gap-2">
+            <View className="min-w-0 flex-1"><PlanFloorSwitch horizontal plans={siblingPlans ?? []} currentId={id} onSelect={showFloor} /></View>
             {canManage && !listing ? (
-              <View pointerEvents="box-none" className="absolute left-3 right-3 top-3 gap-2">
+              <View pointerEvents="box-none" className="mb-2 gap-2">
                 <PlanModeSwitch
                   mode={mode}
                   onChange={(next) => {
@@ -336,6 +270,67 @@ export default function PlanScreen() {
                 {editing && selectedPinId ? <PlanPinSizeSwitch size={pinSize} onChange={setPinSize} /> : null}
               </View>
             ) : null}
+          </View>
+          <View className="flex-1">
+            {listing ? (
+              <PlanRoomList
+                formes={formes ?? []}
+                doors={doors ?? []}
+                pins={pins ?? []}
+                pieces={pieces ?? []}
+                pinNames={pinNames}
+                roomCounts={roomCounts}
+                storageCounts={storageCounts}
+                highlightFormeId={highlightActive ? highlightFormeId : undefined}
+                onOpenRoom={setRoomSheetPieceId}
+              />
+            ) : (
+              <PlanCanvas
+                // REMONTAGE VOLONTAIRE À CHAQUE CHANGEMENT D'ÉTAGE. Le canevas
+                // garde son zoom et sa position dans son propre état, et ne
+                // cadre le plan qu'une fois, au montage. Le remonter est donc
+                // exactement ce qui recadre le nouveau niveau — plutôt que
+                // d'hériter du cadrage de l'étage précédent, qui ne correspond
+                // à rien ici.
+                key={id}
+                ref={canvasRef}
+                formes={formes ?? []}
+                pieceInfo={pieceInfo}
+                pins={pins ?? []}
+                pinDisplay={pinDisplay}
+                highlightFormeId={highlightActive ? highlightFormeId : undefined}
+                highlightEmplacementId={highlightActive ? highlightEmplacementId : undefined}
+                selectedFormeId={selectedFormeId}
+                roomCounts={roomCounts}
+                readOnly={!editing}
+                onDragEnd={(formeId, x, y) => updateForme.mutate({ id: formeId, x, y })}
+                onResizeEnd={(formeId, x, y, width, height) => updateForme.mutate({ id: formeId, x, y, width, height })}
+                onSelect={(forme) => {
+                  setSelectedFormeId(forme.id);
+                  setSelectedDoorId(null);
+                  setSelectedPinId(null);
+                  // Focus the room while keeping its storage list below the drawing.
+                  if (!editing) { setDismissedHighlight(highlightKey); canvasRef.current?.focusRoom(forme.id); }
+                }}
+                onDeselect={() => {
+                  setSelectedFormeId(null);
+                  setSelectedDoorId(null);
+                  setSelectedPinId(null);
+                }}
+                onPinDragEnd={(pinId, relX, relY) => updatePin.mutate({ id: pinId, relX, relY })}
+                onPinTap={(pin) => setSheetPinId(pin.id)}
+                pinSize={pinSize}
+                selectedPinId={selectedPinId}
+                onPinSelect={setSelectedPinId}
+                doors={doors ?? []}
+                doorPlacing={doorPlacing}
+                selectedDoorId={selectedDoorId}
+                onDoorCreate={(formeId, edge, position) => createDoor.mutate({ formeId, edge, position })}
+                onDoorSelect={(door) => setSelectedDoorId(door.id)}
+                onDoorDragEnd={(doorId, edge, position) => updateDoor.mutate({ id: doorId, edge, position })}
+              />
+            )}
+
 
             {/* Toute la colonne du bas, empilée et flottante. `box-none` :
                 seules les cartes elles-mêmes captent le doigt, le reste
@@ -349,13 +344,10 @@ export default function PlanScreen() {
             <View pointerEvents="box-none" className="absolute bottom-3 left-3 right-3 top-3 justify-end gap-2">
               {hintOpen && !listing ? <HintCard editing={editing} onClose={() => setHintOpen(false)} /> : null}
 
-              {/* Juste au-dessus des deux boutons ronds, du même côté : la
-                  colonne des niveaux tombe ainsi dans la zone du pouce, et
-                  ne peut chevaucher ni la bascule du haut ni la fiche
-                  d'aide, puisque tout est empilé dans la même colonne. */}
-              <PlanFloorSwitch plans={siblingPlans ?? []} currentId={id} onSelect={showFloor} />
 
-              <View pointerEvents="box-none" className="flex-row justify-end gap-2">
+
+
+              <View pointerEvents="box-none" style={!editing && !listing ? { display: 'none' } : undefined} className="flex-row justify-end gap-2">
                 {/* EN PREMIER, ET VISIBLE POUR TOUT LE MONDE — y compris un
                     visiteur, qui n'a pas la bascule Explorer/Modifier. C'est
                     la seule porte d'entree vers une version du plan qu'un
@@ -498,6 +490,15 @@ export default function PlanScreen() {
               ) : null}
             </View>
           </View>
+          {!editing && !listing ? <View className="mt-2 flex-row justify-end gap-2">
+            <RoundButton icon="list" label={t('plans.list.show')} onPress={() => setView('list')} />
+            <RoundButton icon="recenter" label={t('plans.recenter')} onPress={() => canvasRef.current?.recenter()} />
+            <RoundButton icon="help" label={t('plans.hint.title')} onPress={() => setHintOpen(!hintOpen)} />
+          </View> : null}
+          {!editing && !listing ? <PlanExplorePanel formes={formes ?? []} pieces={pieces ?? []}
+            selected={selectedForme ?? ((formes ?? []).find((f) => highlightActive && f.id === highlightFormeId) ?? null)}
+            pins={pins ?? []} counts={roomCounts} onSelect={(forme) => { setDismissedHighlight(highlightKey); setSelectedFormeId(forme.id); canvasRef.current?.focusRoom(forme.id); }}
+            onClose={() => { setDismissedHighlight(highlightKey); setSelectedFormeId(null); canvasRef.current?.recenter(); }} /> : null}
         </View>
       </View>
 

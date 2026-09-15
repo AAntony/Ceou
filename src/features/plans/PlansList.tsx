@@ -1,10 +1,10 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CreateEntityModal } from '../../components/CreateEntityModal';
 import { EmptyState } from '../../components/EmptyState';
-import { EntityRow } from '../../components/EntityRow';
+import { Icon } from '../../components/Icon';
 import { ErrorState } from '../../components/ErrorState';
 import { confirmDelete } from '../../lib/confirmDelete';
 import { canModify, useHabitationPermission } from '../sharing/queries';
@@ -44,6 +44,7 @@ function PlanRow({
   const { t } = useTranslation();
   const { data: formes } = usePlanFormes(plan.id);
   const rooms = formes ?? [];
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   // Exactement la règle du canevas : couleur de la Pièce associée, sinon une
   // teinte tirée de l'identifiant de la forme. Une vignette qui ne
@@ -52,19 +53,33 @@ function PlanRow({
     forme.piece_id ? (pieceColors.get(forme.piece_id) ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
 
   return (
-    <EntityRow
-      level="habitation"
-      // Sans taille : la vignette se mesure sur la case que la rangee lui
-      // donne, qui change avec le reglage d'affichage.
-      thumbnail={<PlanThumbnail formes={rooms} colorForForme={colorForForme} />}
-      icon="plan"
-      title={plan.name}
-      subtitle={rooms.length === 0 ? t('plans.rooms_count_zero') : t('plans.rooms_count', { count: rooms.length })}
-      onPress={onOpen}
-      onEdit={editable ? onEdit : undefined}
-      onMoveUp={onMoveUp}
-      onMoveDown={onMoveDown}
-    />
+    <View className="mb-4 overflow-hidden rounded-3xl border border-ink/10 bg-surface">
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={plan.name} className="active:opacity-80">
+        <View style={{ height: 180 }} className="m-3 overflow-hidden rounded-2xl bg-sand p-4">
+          <PlanThumbnail formes={rooms} colorForForme={colorForForme} />
+        </View>
+        <View className="flex-row items-center gap-3 px-4 pb-3">
+          <View className="flex-1"><Text className="text-body font-semibold text-ink">{plan.name}</Text>
+            <Text className="mt-1 text-label text-ink-soft">{t('plans.rooms_count', { count: rooms.length })}</Text>
+          </View><Icon name="chevron" size={20} />
+        </View>
+      </Pressable>
+      {editable ? <>
+        <Pressable onPress={() => setOptionsOpen(!optionsOpen)} accessibilityRole="button"
+          accessibilityLabel={t('plans.explore.options')} accessibilityState={{ expanded: optionsOpen }}
+          className="min-h-[48px] flex-row items-center justify-between border-t border-ink/10 px-4">
+          <Text className="text-caption text-ink-soft">{t('plans.explore.options')}</Text><Text className="text-heading text-ink">⋯</Text>
+        </Pressable>
+        {optionsOpen ? <View className="flex-row flex-wrap gap-2 px-3 pb-3">
+          <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel={t('a11y.edit_named', { name: plan.name })}
+            className="min-h-[48px] flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-sand px-3"><Icon name="pencil" size={18} /><Text className="text-label text-ink">{t('common.edit')}</Text></Pressable>
+          <Pressable onPress={onMoveUp} disabled={!onMoveUp} accessibilityRole="button" accessibilityState={{ disabled: !onMoveUp }} accessibilityLabel={t('a11y.move_up_named', { name: plan.name })}
+            className={`min-h-[48px] min-w-[48px] items-center justify-center rounded-xl bg-sand ${!onMoveUp ? 'opacity-40' : ''}`}><Icon name="moveUp" size={22} /></Pressable>
+          <Pressable onPress={onMoveDown} disabled={!onMoveDown} accessibilityRole="button" accessibilityState={{ disabled: !onMoveDown }} accessibilityLabel={t('a11y.move_down_named', { name: plan.name })}
+            className={`min-h-[48px] min-w-[48px] items-center justify-center rounded-xl bg-sand ${!onMoveDown ? 'opacity-40' : ''}`}><Icon name="moveDown" size={22} /></Pressable>
+        </View> : null}
+      </> : null}
+    </View>
   );
 }
 

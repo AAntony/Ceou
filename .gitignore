@@ -40,6 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+/public/canvaskit.wasm
 
 # local tooling config (Claude Code preview server)
 /.claude/
