@@ -50,7 +50,7 @@ export function PlanThumbnail({ formes, colorForForme }: PlanThumbnailProps) {
 
   if (formes.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center bg-sand">
+      <View style={{ width: '100%', height: '100%' }} className="items-center justify-center bg-sand">
         <Icon name="plan" size={26} color={colors.inkFaint} />
       </View>
     );
@@ -73,7 +73,7 @@ export function PlanThumbnail({ formes, colorForForme }: PlanThumbnailProps) {
   const offsetY = PADDING + (innerHeight - (maxY - minY) * scale) / 2;
 
   return (
-    <View className="flex-1 bg-sand" onLayout={handleLayout}>
+    <View style={{ width: '100%', height: '100%' }} className="bg-sand" onLayout={handleLayout}>
       {/* Rien tant que la case n'est pas mesurée : au premier rendu la taille
           vaut zéro, et toutes les pièces s'y écraseraient sur un point. */}
       {box.width > 0 && box.height > 0
