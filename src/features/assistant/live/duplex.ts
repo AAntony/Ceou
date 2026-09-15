@@ -44,3 +44,14 @@ export class OpeningAudio {
   }
   close() { this.closed = true; this.chunks = []; this.send = null; }
 }
+
+/** Counts only time awaiting the user, never generation or playback. */
+export class InactivityClock {
+  private since: number | null = null;
+  activity(now: number) { this.since = now; }
+  check(now: number, waiting: boolean) {
+    if (!waiting) { this.since = null; return false; }
+    if (this.since === null) this.since = now;
+    return now - this.since >= 20000;
+  }
+}

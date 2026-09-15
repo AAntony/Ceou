@@ -16,7 +16,20 @@ function load(path, dependencies) {
 }
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
-const { ReplyGate, OpeningAudio } = load('../../src/features/assistant/live/duplex.ts', {});
+const { ReplyGate, OpeningAudio, InactivityClock } = load('../../src/features/assistant/live/duplex.ts', {});
+
+test('silence closes after 20 seconds waiting, resets on speech and excludes assistant work', () => {
+  const clock = new InactivityClock();
+  assert.equal(clock.check(0, true), false);
+  assert.equal(clock.check(19999, true), false);
+  clock.activity(19000);
+  assert.equal(clock.check(20000, true), false);
+  assert.equal(clock.check(39000, true), true);
+  assert.equal(clock.check(40000, false), false);
+  assert.equal(clock.check(90000, false), false);
+  assert.equal(clock.check(100000, true), false);
+  assert.equal(clock.check(120000, true), true);
+});
 
 test('echo protection holds through inter-chunk gaps, turn completion and acoustic tail', () => {
   const gate = new ReplyGate();

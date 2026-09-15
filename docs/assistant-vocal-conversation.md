@@ -2,6 +2,17 @@
 
 ## Correctifs du 15 septembre 2026
 
+### Clôture de conversation
+
+Les formules de fin (« merci », « ça sera tout », « au revoir », et leurs
+équivalents) déclenchent un bref au revoir et l'outil de fermeture. Une phrase
+qui contient encore une demande doit être traitée avant de fermer.
+L'application ferme aussi après 20 secondes d'attente sans activité vocale,
+hors connexion, génération et lecture. L'activité est mesurée sur les trames
+micro autorisées (seuil RMS 0,015) et actualisée par la transcription. Un bruit
+ambiant dépassant ce seuil peut retarder la fermeture ; ce n'est pas un VAD
+natif spécialisé. Le contrôle s'effectue au tick d'une seconde.
+
 ### Protection après essai sur téléphone
 
 L'essai utilisateur a confirmé une auto-interruption en boucle : le traitement

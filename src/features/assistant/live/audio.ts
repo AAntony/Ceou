@@ -91,7 +91,7 @@ export function encodePcm16(samples: Float32Array, frames: number, sampleRate: n
 export type LiveAudio = {
   /** Demande le micro. Faux si refusé. */
   requestPermission: () => Promise<boolean>;
-  startCapture: (onChunk: (base64Pcm16k: string) => void) => Promise<void>;
+  startCapture: (onChunk: (base64Pcm16k: string, speechDetected: boolean) => void) => Promise<void>;
   stopCapture: () => Promise<void>;
   /** Met un morceau de voix en file ; les morceaux sont joués dans l'ordre d'arrivée. */
   play: (base64Pcm24k: string) => void;
@@ -174,7 +174,12 @@ export function createLiveAudio(): LiveAudio | null {
       recorder = new AudioRecorder();
       const ready = recorder.onAudioReady(
         { sampleRate: INPUT_SAMPLE_RATE, bufferLength: CHUNK_FRAMES, channelCount: 1 },
-        ({ buffer, numFrames }) => onChunk(encodePcm16(buffer.getChannelData(0), numFrames, buffer.sampleRate)),
+        ({ buffer, numFrames }) => {
+          const samples = buffer.getChannelData(0);
+          let energy = 0;
+          for (let i = 0; i < numFrames; i++) energy += samples[i] * samples[i];
+          onChunk(encodePcm16(samples, numFrames, buffer.sampleRate), numFrames > 0 && Math.sqrt(energy / numFrames) > 0.015);
+        },
       );
       if (ready.status === 'error') throw new Error(ready.message);
       const current = recorder;

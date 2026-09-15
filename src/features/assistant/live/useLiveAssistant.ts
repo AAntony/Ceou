@@ -11,7 +11,7 @@ import { usePrets } from '../../loans/queries';
 import { useSearchIndex } from '../../search/queries';
 import { canModifyHabitation, isPermissionError } from '../permissions';
 import { createLiveAudio, encodePcm16, isLiveAudioSupported, type LiveAudio } from './audio';
-import { OpeningAudio, ReplyGate } from './duplex';
+import { InactivityClock, OpeningAudio, ReplyGate } from './duplex';
 import { LiveConnection, type FunctionCall } from './connection';
 import { runTool, ToolSession, type ToolEffects, type ToolEvent } from './tools';
 
@@ -140,6 +140,7 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
   const inputRef = useRef<OpeningAudio | null>(null);
   const gateRef = useRef(new ReplyGate());
   const skipReplyRef = useRef(false);
+  const inactivityRef = useRef(new InactivityClock());
 
   const appendTranscript = useCallback((role: LiveLine['role'], chunk: string) => {
     setState((current) => {
@@ -290,6 +291,10 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
     const session = sessionRef.current;
     const audio = audioRef.current;
     if (!session || !audio) return;
+    if (inactivityRef.current.check(Date.now(), statusRef.current === 'listening' && gateRef.current.allowsInput(Date.now()) && !audio.isPlaying())) {
+      void finish('user');
+      return;
+    }
     const elapsed = Math.floor((Date.now() - session.startedAt) / 1000);
     const left = session.grantedSeconds - elapsed;
 
@@ -331,6 +336,7 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
 
     const gate = new ReplyGate();
     gateRef.current = gate;
+    inactivityRef.current = new InactivityClock();
     skipReplyRef.current = false;
     const input = new OpeningAudio();
     inputRef.current = input;
@@ -341,8 +347,9 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
     }, 15000);
     // Listen immediately after the user's explicit action and permission.
     // Only delivery waits for authentication and the Gemini handshake.
-    void audio.startCapture((chunk) => {
+    void audio.startCapture((chunk, speechDetected) => {
       if (!activeRef.current || generationRef.current !== generation) return;
+      if (speechDetected && gate.allowsInput(Date.now())) inactivityRef.current.activity(Date.now());
       try { input.push(gate.allowsInput(Date.now()) ? chunk : silence); }
       catch (captureError) {
         logClientError(captureError, { source: 'assistant.live', step: 'opening_audio' });
@@ -420,7 +427,11 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
         turnCompleteRef.current = false;
         setStatus('speaking');
       },
-      onInputTranscript: (text) => appendTranscript('user', text),
+      onInputTranscript: (text) => {
+        inactivityRef.current.activity(Date.now());
+        if (!audio.isPlaying()) setStatus('thinking');
+        appendTranscript('user', text);
+      },
       onOutputTranscript: (text) => appendTranscript('assistant', text),
       // L'utilisateur a parlé par-dessus : ce qui restait à dire est caduc.
       onInterrupted: () => {
