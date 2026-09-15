@@ -1,5 +1,7 @@
 export function movingError(error: unknown): string {
   const message = String((error as { message?: string })?.message ?? error);
+  if (message.includes('moving_delete_not_empty')) return 'moving.deleteNotEmpty';
+  if (message.includes('moving_share_rights')) return 'moving.shareRightsChanged';
   if (message.includes('moving_busy')) return 'moving.busy';
   if (message.includes('moving_offline')) return 'moving.online';
   if (message.includes('moving_forbidden')) return 'moving.forbidden';

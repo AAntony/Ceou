@@ -1,6 +1,6 @@
 export type MovingPhase = 'preparation' | 'moving' | 'unpacking' | 'completed';
 export type ItemOutcome = 'packed' | 'installed' | 'stored' | 'lost' | 'given' | 'sold' | 'discarded' | 'removed';
-export type MovingProject = { id: string; name: string; source_id: string | null; destination_id: string | null; planned_date: string | null; status: MovingPhase; created_at: string; editable?: boolean };
+export type MovingProject = { id: string; user_id: string; shared_with: string[]; name: string; source_id: string | null; destination_id: string | null; planned_date: string | null; status: MovingPhase; created_at: string; editable?: boolean };
 export type MovingBox = { id: string; project_id: string; container_id: string | null; number: number; name: string; category: string | null; description: string | null; photo_url: string | null; destination_piece_id: string | null; destination_name: string | null; status: 'packing' | 'ready' | 'transported' | 'stored' };
 export type MovingItem = { project_id: string; object_id: string; box_id: string; name: string; origin_type: string | null; origin_id: string | null; origin_label: string | null; outcome: ItemOutcome; packed_at: string; resolved_at: string | null };
 export type MovingObject = { id: string; name: string; photo_url: string | null; parent_type: 'emplacement' | 'conteneur'; parent_id: string; parent_label: string; habitation_id: string; piece_name: string };

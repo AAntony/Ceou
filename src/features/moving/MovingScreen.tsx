@@ -17,6 +17,7 @@ import { LocationTreePicker } from '../inventory/LocationTreePicker';
 import { QrScanner } from '../sharing/QrScanner';
 import { Choice, MovingSheet, movingError } from './components';
 import { BoxForm, ProjectForm } from './forms';
+import { EditMovingSheet, ShareMovingSheet } from './ManagementSheets';
 import { PackPicker, MovingPhotoFlow } from './packing';
 import { movingProgress, boxState, movingQr, parseMovingQr, type MovingBox, type MovingObject, type BoxFilter } from './model';
 import { useMovingCommand, useMovingSnapshot } from './queries';
@@ -31,7 +32,7 @@ function BoxPhoto({uri}:{uri:string|null}) {
 export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
  const {t}=useTranslation();const {session}=useSession();const query=useMovingSnapshot(id);const command=useMovingCommand();const bottom=useSpaceForAppTabBar();const offline=useIsOffline();
  const quickBoxId=useRef(newId());
- const [modal,setModal]=useState<'box'|'edit'|'pack'|'photo'|'qr'|'unpack'|'store'|'transfer'|'dispose'|'destination'|'actions'|'projectActions'|null>(null);
+ const [modal,setModal]=useState<'box'|'edit'|'pack'|'photo'|'qr'|'unpack'|'store'|'transfer'|'dispose'|'destination'|'actions'|'projectActions'|'projectEdit'|'sharing'|null>(null);
  const [filter,setFilter]=useState<BoxFilter>('all');const [roomFilter,setRoomFilter]=useState('');const [boxSearch,setBoxSearch]=useState('');const [selected,setSelected]=useState<string[]>([]);const [scan,setScan]=useState(false);const [photoBusy,setPhotoBusy]=useState(false);
  const data=query.data;const project=data?.project;const box=data?.boxes.find(b=>b.id===boxId);const writable=!!data?.editable&&project?.status!=='completed'&&!offline;
  const perform=async(action:string,payload:Record<string,Json|undefined>={})=>{
@@ -42,6 +43,7 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
   if(!project||!box||command.isPending)return;
   try{const result=await command.mutateAsync({action:'box_create',payload:{id:quickBoxId.current,project_id:project.id,category:box.category,destination_piece_id:box.destination_piece_id}});quickBoxId.current=newId();setModal(null);router.push(`/moving-box/${result.id}`);}catch(error){showMessage(t(movingError(error)));}
  };
+ const remove=()=>showDialog({title:t(box?'moving.deleteBox':'moving.deleteProject'),message:t(box?'moving.deleteBoxHint':'moving.deleteProjectHint'),actions:[{label:t('common.cancel'),cancel:true},{label:t('common.delete'),destructive:true,onPress:async()=>{if(await perform(box?'box_delete':'project_delete'))router.replace(box?`/moving/${id}`:'/moving');}}]});
  const close=()=>{if(!command.isPending&&!photoBusy)setModal(null);};
  const print=async(boxes:MovingBox[])=>{try{await printMovingLabels(boxes);}catch{showMessage(t('moving.error'));}};
  if(query.isPending&&!offline)return <View className="flex-1 items-center justify-center bg-sand"><ActivityIndicator/></View>;
@@ -81,7 +83,7 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
      {box.description?<Text className="mb-4 text-body text-ink-soft">{box.description}</Text>:null}
      <View className="mb-4 gap-2">
       {writable&&state!=='stored'?<><Button label={t('moving.addObjects')} onPress={()=>setModal('pack')} disabled={command.isPending}/>{actionButton('moving.photoAI',()=>setModal('photo'))}</>:null}
-      <View className="flex-row gap-2"><View className="flex-1">{actionButton('moving.qr',()=>setModal('qr'))}</View>{writable?<View className="flex-1">{actionButton('moving.manage',()=>setModal('actions'))}</View>:null}</View>
+      <View className="flex-row gap-2"><View className="flex-1">{actionButton('moving.qr',()=>setModal('qr'))}</View>{data.editable&&!offline?<View className="flex-1">{actionButton('moving.manage',()=>setModal('actions'))}</View>:null}</View>
      </View>
      <Text accessibilityRole="header" className="mb-2 text-heading font-bold text-ink">{t('moving.content')} · {members.length}</Text>
      {!members.length?<Text className="mb-4 text-body text-ink-soft">{t('moving.noObjects')}</Text>:null}
@@ -121,14 +123,20 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
      onPhoto={writable?()=>{void updatePhoto(item);}:undefined}
      detail={`${t(boxState(item,data.items)==='stored'?'moving.boxStored':'moving.'+boxState(item,data.items))} · ${data.items.filter(i=>i.box_id===item.id&&i.outcome==='packed').length} ${t('moving.objectsLabel')}`} />}
    ListFooterComponent={box?boxFooter:writable?<View className="mt-5"><Button variant="outline" label={t('moving.finish')} disabled={command.isPending||progress.packed>0} onPress={()=>showDialog({title:t('moving.finishTitle'),message:t('moving.finishHint'),actions:[{label:t('common.cancel'),cancel:true},{label:t('moving.finish'),onPress:()=>{void perform('finish');}}]})}/></View>:null}/>
+  {modal==='projectEdit'?<EditMovingSheet project={project} onClose={()=>setModal(null)}/>:null}
+  {modal==='sharing'?<ShareMovingSheet project={project} onClose={()=>setModal(null)}/>:null}
   {modal==='projectActions'?<MovingSheet title={t('moving.moreActions')} onClose={close}><View className="gap-2">
+   {data.editable?actionButton('moving.editProject',()=>setModal('projectEdit'),offline):null}
+   {project.user_id===session?.user.id?actionButton('moving.shareFriends',()=>setModal('sharing'),offline):null}
+   {data.editable||(project.user_id===session?.user.id&&project.status==='completed')?actionButton('moving.deleteProject',remove,offline):null}
    {writable?<>{actionButton('moving.destinationEdit',()=>setModal('destination'))}{project.status!=='preparation'?actionButton('moving.backPreparation',()=>{void perform('phase',{status:'preparation'});}):null}</>:null}
    {data.boxes.length?actionButton('moving.printAll',()=>{void print(data.boxes);}):null}
   </View></MovingSheet>:null}
   {box&&modal==='actions'?<MovingSheet title={box.name} onClose={close}><View className="gap-3">
-    {actionButton('moving.edit',()=>setModal('edit'))}{actionButton('moving.photo',()=>{void updatePhoto();},photoBusy)}
-    {state!=='stored'?actionButton(box.status==='packing'?'moving.markReady':box.status==='ready'?'moving.markTransported':'moving.reopen',()=>{void perform('box_status',{status:box.status==='packing'?'ready':box.status==='ready'?'transported':'packing'});}):null}
-    {actionButton('moving.quickBox',()=>{void createNext();})}
+    {actionButton('moving.edit',()=>setModal('edit'),offline)}{writable?actionButton('moving.photo',()=>{void updatePhoto();},photoBusy):null}
+    {actionButton('moving.deleteBox',remove,offline)}
+    {writable&&state!=='stored'?actionButton(box.status==='packing'?'moving.markReady':box.status==='ready'?'moving.markTransported':'moving.reopen',()=>{void perform('box_status',{status:box.status==='packing'?'ready':box.status==='ready'?'transported':'packing'});}):null}
+    {writable?actionButton('moving.quickBox',()=>{void createNext();}):null}
    </View></MovingSheet>:null}
   {modal==='box'||modal==='edit'?<BoxForm project={project} box={modal==='edit'?box:undefined} previous={data.boxes[data.boxes.length-1]} onClose={close} onCreated={id=>{setModal(null);if(modal==='box')router.push(`/moving-box/${id}`);}}/>:null}
   {modal==='destination'?<ProjectForm project={project} onClose={close} onCreated={()=>setModal(null)}/>:null}

@@ -24,6 +24,9 @@ for(const name of ['20260912190000_corbeille.sql','20260912210000_corbeille_phot
 await db.exec('grant usage on schema auth to authenticated; grant select, insert, update, delete on corbeille to authenticated');
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260913010000_moving_mode.sql',import.meta.url),'utf8'));
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260915090000_moving_dispose_atomic.sql',import.meta.url),'utf8'));
+await db.exec('create table friendships(requester_id uuid, addressee_id uuid, status text)');
+await db.exec(readFileSync(new URL('../../supabase/migrations/20260915120000_moving_management.sql',import.meta.url),'utf8'));
+async function manage(action,payload){return (await db.query('select moving_manage($1,$2::jsonb) as data',[action,JSON.stringify(payload)])).rows[0].data;}
 const owner=randomUUID(), stranger=randomUUID(), viewer=randomUUID();
 await db.query('insert into auth.users values ($1),($2),($3)',[owner,stranger,viewer]);
 const source=randomUUID(),dest=randomUUID(),other=randomUUID(),sourceRoom=randomUUID(),destRoom=randomUUID(),sourceShelf=randomUUID(),destShelf=randomUUID();
@@ -50,6 +53,9 @@ await test('direct table writes, strangers and readers cannot mutate; QR never g
  await login(stranger);await assert.rejects(read(first),/moving_forbidden/);
  await assert.rejects(command('box_create',{project_id:project,id:randomUUID()}),/moving_forbidden/);
  await admin();await db.query("insert into test_permissions values ($1,$3,'consultation'),($2,$3,'consultation')",[source,dest,viewer]);
+ await login(viewer);await assert.rejects(read(project),/moving_forbidden/);
+ await admin();await db.query("insert into friendships values ($1,$2,'accepted')",[owner,viewer]);await login(owner);
+ await manage('sharing',{project_id:project,friends:[viewer]});
  await login(viewer);assert.equal((await read(project)).editable,false);
  await assert.rejects(command('phase',{project_id:project,status:'moving'}),/moving_forbidden/);
  await login(owner);await assert.rejects(command('destination',{project_id:project,destination_id:other}),/moving_destination/);
@@ -120,7 +126,7 @@ await test('moving UI copy has French/English parity and all literal keys exist'
  const fr=JSON.parse(readFileSync(new URL('../../src/lib/i18n/locales/fr.json',import.meta.url),'utf8'));
  const en=JSON.parse(readFileSync(new URL('../../src/lib/i18n/locales/en.json',import.meta.url),'utf8'));
  assert.deepEqual(Object.keys(fr.moving).sort(),Object.keys(en.moving).sort());
- for(const filename of ['MovingListScreen.tsx','MovingScreen.tsx','forms.tsx','packing.tsx','PackObjectButton.tsx','ActiveMovingBar.tsx']){
+ for(const filename of ['MovingListScreen.tsx','MovingScreen.tsx','forms.tsx','packing.tsx','PackObjectButton.tsx','ActiveMovingBar.tsx','ManagementSheets.tsx']){
   const source=readFileSync(new URL('../../src/features/moving/'+filename,import.meta.url),'utf8');
   for(const [,key] of source.matchAll(/['"]((?:moving|common)\.[a-zA-Z_]+)['"]/g)){
    assert.ok(key.split('.').reduce((node,part)=>node?.[part],fr),filename+': '+key);
@@ -178,5 +184,34 @@ await test('disposal snapshots the photo, hides trash from strangers and rolls b
  assert.equal(trash.photo_url,'https://example.test/camera.jpg');assert.equal(trash.payload.objets[0].id,o);
  await login(stranger);assert.equal((await db.query('select id from corbeille where id=$1',[trash.id])).rows.length,0);
  await login(owner);
+});
+await test('private moves require explicit sharing and inherit downgraded and revoked rights',async()=>{
+ await admin();await db.query("insert into test_permissions values ($1,$3,'modification'),($2,$3,'consultation')",[source,dest,viewer]);await login(owner);
+ const p=randomUUID(),b=randomUUID();await command('create',{id:p,source_id:source,destination_id:dest,name:'Private'});await command('box_create',{project_id:p,id:b});
+ await login(viewer);await assert.rejects(read(b),/moving_forbidden/);await assert.rejects(manage('sharing',{project_id:p,friends:[viewer]}),/moving_forbidden/);
+ await login(owner);assert.equal((await db.query('select moving_share_candidates($1) as data',[p])).rows[0].data.find(x=>x.user_id===viewer).permission,'consultation');await assert.rejects(manage('sharing',{project_id:p,friends:[stranger]}),/moving_share_rights/);
+ await manage('sharing',{project_id:p,friends:[viewer]});
+ await login(viewer);assert.equal((await read(b)).editable,false);await assert.rejects(manage('project_edit',{project_id:p,name:'Denied'}),/moving_forbidden/);
+ await admin();await db.query("update test_permissions set permission='modification' where person=$1",[viewer]);await login(viewer);
+ assert.equal((await read(p)).editable,true);await manage('project_edit',{project_id:p,name:'Updated',planned_date:'2027-01-02'});assert.equal((await read(p)).project.name,'Updated');await manage('box_edit',{project_id:p,box_id:b,name:'Renamed box'});assert.equal((await read(p)).boxes[0].name,'Renamed box');
+ await assert.rejects(manage('sharing',{project_id:p,friends:[]}),/moving_forbidden/);await assert.rejects(command('destination',{project_id:p,destination_id:other}),/moving_destination/);
+ await login(owner);await manage('sharing',{project_id:p,friends:[]});await login(viewer);await assert.rejects(read(b),/moving_forbidden/);
+ await login(owner);await manage('sharing',{project_id:p,friends:[viewer]});await admin();await db.query("update friendships set status='declined' where requester_id=$1 and addressee_id=$2",[owner,viewer]);await login(viewer);await assert.rejects(read(p),/moving_forbidden/);
+ await login(owner);
+});
+await test('deleting a box or move protects contents and invalidates QR access',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID();await command('create',{id:p,source_id:source,name:'Delete test'});await command('box_create',{project_id:p,id:b});
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Keep me',create:true}]});
+ await assert.rejects(manage('box_delete',{project_id:p,box_id:b}),/moving_delete_not_empty/);
+ await assert.rejects(manage('project_delete',{project_id:p}),/moving_delete_not_empty/);
+ assert.equal((await read(p)).objects.some(x=>x.id===o),true);
+ await admin();await db.query("select move_objet($1,'emplacement',$2)",[o,sourceShelf]);await login(owner);
+ const container=(await read(p)).boxes[0].container_id;
+ const nested=randomUUID();await admin();await db.query("insert into conteneurs(id,name,parent_conteneur_id) values ($1,'Nested',$2)",[nested,container]);await login(owner);
+ await assert.rejects(manage('box_delete',{project_id:p,box_id:b}),/moving_delete_not_empty/);
+ await admin();await db.query('delete from conteneurs where id=$1',[nested]);await login(owner);
+ await manage('box_delete',{project_id:p,box_id:b});assert.equal((await read(p)).boxes.length,0);
+ await manage('project_delete',{project_id:p});await assert.rejects(read(p),/moving_forbidden/);await assert.rejects(read(b),/moving_forbidden/);
+ await admin();assert.equal((await db.query('select id from objets where id=$1',[o])).rows.length,1);await login(owner);
 });
 await db.close();

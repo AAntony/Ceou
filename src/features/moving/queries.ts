@@ -8,12 +8,12 @@ import type { MovingProject, MovingSnapshot } from './model';
 
 export function useMovingProjects() {
   const { session } = useSession();
-  return useQuery({ queryKey: ['movingProjects',session?.user.id], enabled: !!session,
+  return useQuery({ queryKey: ['movingProjectsPrivate',session?.user.id], enabled: !!session,
     queryFn: async () => { const {data,error}=await supabase.rpc('moving_read',{}); if(error) throw error; return data as unknown as MovingProject[]; } });
 }
 export function useMovingSnapshot(id: string) {
   const { session } = useSession();
-  return useQuery({ queryKey: ['movingSnapshot',session?.user.id,id], enabled: !!session && !!id,
+  return useQuery({ queryKey: ['movingSnapshotPrivate',session?.user.id,id], enabled: !!session && !!id,
     queryFn: async () => { const {data,error}=await supabase.rpc('moving_read',{p_project_id:id}); if(error) throw error; return data as unknown as MovingSnapshot; } });
 }
 export function useMovingCommand() {
@@ -22,7 +22,7 @@ export function useMovingCommand() {
     // Online transactional operations: no optimistic claim that a partial lot succeeded.
     networkMode: 'always', retry: false,
     mutationFn: async ({action,payload}:{action:string;payload:Record<string,Json|undefined>}) => {
-      const {data,error}=await supabase.rpc('moving_command',{p_action:action,p_payload:payload});
+      const {data,error}=await supabase.rpc(['sharing','project_edit','project_delete','box_delete','box_edit'].includes(action)?'moving_manage':'moving_command',{p_action:action,p_payload:payload});
       if(error) throw error; return data as {id:string};
     },
     // The shared MutationCache invalidates inventory/search/moving queries on success.
@@ -32,4 +32,13 @@ export function useMovingCommand() {
     mutateAsync: (...args: Parameters<typeof mutation.mutateAsync>) =>
       guard(() => onlineManager.isOnline(), () => mutation.mutateAsync(...args)),
   };
+}
+
+export function useMovingShareCandidates(id: string) {
+  const { session } = useSession();
+  return useQuery({ queryKey: ['movingShareCandidates', session?.user.id, id], enabled: !!session && !!id,
+    queryFn: async () => { const { data, error } = await supabase.rpc('moving_share_candidates', { p_id: id });
+      if (error) throw error;
+      return data as unknown as { user_id: string; permission: 'consultation' | 'modification' | null }[];
+    } });
 }

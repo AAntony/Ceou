@@ -471,10 +471,12 @@ export type Database = {
           name: string
           number: number
           photo_url: string | null
+          deleted_at: string | null
           project_id: string
           status: string
         }
         Insert: {
+          deleted_at?: string | null
           category?: string | null
           container_id?: string | null
           created_at?: string
@@ -488,6 +490,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          deleted_at?: string | null
           category?: string | null
           container_id?: string | null
           created_at?: string
@@ -591,6 +594,8 @@ export type Database = {
           staging_location_id: string | null
           staging_piece_id: string | null
           status: string
+          shared_with: string[]
+          deleted_at: string | null
           user_id: string
         }
         Insert: {
@@ -605,6 +610,8 @@ export type Database = {
           staging_location_id?: string | null
           staging_piece_id?: string | null
           status?: string
+          shared_with?: string[]
+          deleted_at?: string | null
           user_id?: string
         }
         Update: {
@@ -619,6 +626,8 @@ export type Database = {
           staging_location_id?: string | null
           staging_piece_id?: string | null
           status?: string
+          shared_with?: string[]
+          deleted_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -1428,6 +1437,14 @@ export type Database = {
       moving_access: {
         Args: { p_id: string; p_permission?: string }
         Returns: boolean
+      }
+      moving_manage: {
+        Args: { p_action: string; p_payload: Json }
+        Returns: Json
+      }
+      moving_share_candidates: {
+        Args: { p_id: string }
+        Returns: Json
       }
       moving_command: {
         Args: { p_action: string; p_payload: Json }
