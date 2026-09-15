@@ -28,11 +28,17 @@ function resolveGitCommit() {
 const CAMERA_PERMISSION =
   "Ceou a besoin de l'appareil photo pour scanner les codes-barres et photographier tes objets.";
 
+// MEME PIEGE POUR LE MICRO, entre expo-speech-recognition (l'assistant
+// simple) et react-native-audio-api (la conversation) : une seule constante,
+// passee aux deux. Le texte parle de conversation, puisque c'est desormais
+// l'usage principal du micro.
+const MICROPHONE_PERMISSION = 'Ceou a besoin du microphone pour que tu puisses parler à son assistant vocal.';
+
 module.exports = {
   expo: {
     name: 'Ceou',
     slug: 'ceou',
-    version: '1.0.0',
+    version: '1.1.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     // 'automatic' et non 'light' depuis l'ajout du theme sombre : c'est ce
@@ -180,8 +186,28 @@ module.exports = {
       [
         'expo-speech-recognition',
         {
-          microphonePermission: 'Ceou a besoin du microphone pour rechercher un objet à la voix.',
+          microphonePermission: MICROPHONE_PERMISSION,
           speechRecognitionPermission: 'Ceou a besoin de la reconnaissance vocale pour rechercher un objet à la voix.',
+        },
+      ],
+      [
+        // LE MICRO ET LE HAUT-PARLEUR DE LA CONVERSATION TEMPS REEL (voir
+        // src/features/assistant/live/audio.ts). Module natif : il n'arrive
+        // qu'avec un build, jamais par OTA — l'app retombe sur l'assistant
+        // simple tant qu'il manque.
+        //
+        // Tout ce qui sert a jouer de la musique en arriere-plan est coupe :
+        // une conversation s'arrete quand l'app passe en arriere-plan, et un
+        // service de premier plan ou un mode audio d'arriere-plan declares
+        // sans usage sont exactement ce qu'un examinateur de store refuse.
+        // FFmpeg aussi : on ne decode aucun fichier, seulement du PCM brut.
+        'react-native-audio-api',
+        {
+          iosMicrophonePermission: MICROPHONE_PERMISSION,
+          iosBackgroundMode: false,
+          androidForegroundService: false,
+          androidPermissions: ['android.permission.RECORD_AUDIO', 'android.permission.MODIFY_AUDIO_SETTINGS'],
+          disableFFmpeg: true,
         },
       ],
     ],

@@ -1,0 +1,23 @@
+diff --git a/node_modules/react-native-audio-api/android/src/main/cpp/audioapi/android/core/AndroidAudioRecorder.cpp b/node_modules/react-native-audio-api/android/src/main/cpp/audioapi/android/core/AndroidAudioRecorder.cpp
+index adb0512..4f96b71 100644
+--- a/node_modules/react-native-audio-api/android/src/main/cpp/audioapi/android/core/AndroidAudioRecorder.cpp
++++ b/node_modules/react-native-audio-api/android/src/main/cpp/audioapi/android/core/AndroidAudioRecorder.cpp
+@@ -68,12 +68,17 @@ Result<NoneType, std::string> AndroidAudioRecorder::openAudioStream() {
+     return Result<NoneType, std::string>::Ok(None);
+   }
+ 
++  // Ceou: the voice assistant plays and records at the same time. The default
++  // VoiceRecognition preset has no echo cancellation, and a LowLatency (MMAP)
++  // stream bypasses the platform effects chain. Same change as upstream 1.0
++  // (androidInputPreset: 'voiceCommunication', PerformanceMode::None).
+   oboe::AudioStreamBuilder builder;
+   builder.setSharingMode(oboe::SharingMode::Exclusive)
+       ->setDirection(oboe::Direction::Input)
+       ->setFormat(oboe::AudioFormat::Float)
+       ->setFormatConversionAllowed(true)
+-      ->setPerformanceMode(oboe::PerformanceMode::LowLatency)
++      ->setPerformanceMode(oboe::PerformanceMode::None)
++      ->setInputPreset(oboe::InputPreset::VoiceCommunication)
+       ->setSampleRateConversionQuality(oboe::SampleRateConversionQuality::Medium)
+       ->setDataCallback(shared_from_this())
+       ->setErrorCallback(shared_from_this());

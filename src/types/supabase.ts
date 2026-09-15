@@ -1016,6 +1016,7 @@ export type Database = {
         Row: {
           ai_assistant_consent_at: string | null
           ai_photo_consent_at: string | null
+          ai_voice_live_consent_at: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -1027,6 +1028,7 @@ export type Database = {
         Insert: {
           ai_assistant_consent_at?: string | null
           ai_photo_consent_at?: string | null
+          ai_voice_live_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -1038,6 +1040,7 @@ export type Database = {
         Update: {
           ai_assistant_consent_at?: string | null
           ai_photo_consent_at?: string | null
+          ai_voice_live_consent_at?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null

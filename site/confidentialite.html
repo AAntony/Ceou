@@ -1394,7 +1394,10 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
         </section>
         <section id="l-assistant-vocal" data-spy-target>
           <h2>L'assistant vocal</h2>
-          <p>Quand tu parles à Céoù, deux services interviennent. D'abord la reconnaissance vocale de ton téléphone, qui transforme ta voix en texte : c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs — c'est le même mécanisme que la dictée du clavier. Ensuite le texte obtenu, et jamais l'audio, est envoyé à l'API Gemini de Google, hors Union Européenne, pour être interprété. Ta phrase n'est traitée que pour répondre à cette demande ponctuelle. Comme le scan photo, l'assistant demande un accord explicite avant sa toute première utilisation.</p>
+          <p>Céoù propose deux façons de parler à son assistant, chacune avec son propre accord explicite, demandé avant la toute première utilisation.</p>
+          <p>La conversation : ta voix est envoyée en direct à l'API Gemini de Google, hors Union Européenne, qui l'écoute et te répond avec sa propre voix. Au fil de la conversation, Céoù lui transmet aussi les résultats des recherches qu'elle demande pour te répondre — des noms d'objets, de pièces et de rangements, et l'état d'un prêt — mais jamais ton inventaire entier, ni aucun identifiant de ta base. Rien n'est envoyé tant que la conversation n'est pas ouverte, et elle s'arrête dès que l'application passe en arrière-plan. Pour appliquer une durée de conversation quotidienne, Céoù conserve la durée de chaque conversation avec ton compte ; il ne conserve ni l'audio ni ce qui a été dit.</p>
+          <p>L'assistant simple, utilisé quand la conversation n'est pas disponible : la reconnaissance vocale de ton téléphone transforme ta voix en texte — c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs, comme la dictée du clavier. Seul le texte obtenu, jamais l'audio, est ensuite envoyé à l'API Gemini pour être interprété.</p>
+          <p>Dans les deux cas, ce qui est envoyé n'est traité que pour te répondre.</p>
         </section>
         <section id="recherche-de-produit-par-code-barre" data-spy-target>
           <h2>Recherche de produit par code-barre</h2>

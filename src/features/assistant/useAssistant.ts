@@ -6,12 +6,11 @@ import { logClientError } from '../../lib/errorLogging';
 import { normalize } from '../../lib/text/match';
 import { wordCount } from '../../lib/text/words';
 import { supabase } from '../../lib/supabase/client';
-import type { EffectiveHabitationPermission } from '../../types/database';
 import { invalidateAfterMove, moveObjet, undoLastMove } from '../inventory/queries';
 import { useSearchIndex, type SearchIndexEntry } from '../search/queries';
-import { canModify } from '../sharing/queries';
 import { composeAnswer, composeMoveFailure } from './answer';
 import { isAlreadyThere, resolveMove, type MoveDestination } from './move';
+import { canModifyHabitation, isPermissionError } from './permissions';
 import { parseMove, splitClosing } from './phrase';
 import { locationSentence, normalizeIntent, resolveIntent, type AssistantIntent, type AssistantResult } from './resolve';
 import { primeVoices, speak, stopSpeaking } from './speak';
@@ -162,27 +161,6 @@ export function draftSelection(draft: MoveDraft): { objet: SearchIndexEntry; des
 }
 
 const tr = (key: string, options?: Record<string, unknown>) => i18n.t(key, options ?? {});
-
-/**
- * Le refus vient-il des droits plutôt que d'une panne ?
- *
- * `move_objet` s'exécute avec les droits de l'appelant : sur une Habitation
- * partagée en consultation, c'est la RLS qui refuse l'écriture. Ça mérite une
- * phrase compréhensible, pas le message d'erreur générique.
- */
-function isPermissionError(error: unknown): boolean {
-  const failure = error as { code?: string; message?: string } | null;
-  if (failure?.code === '42501') return true;
-  return typeof failure?.message === 'string' && failure.message.toLowerCase().includes('row-level security');
-}
-
-async function canModifyHabitation(habitationId: string): Promise<boolean> {
-  const { data, error } = await supabase.rpc('get_effective_habitation_permission', {
-    p_habitation_id: habitationId,
-  });
-  if (error) throw error;
-  return canModify(data as EffectiveHabitationPermission | null);
-}
 
 type InvokeErrorContext = { status?: number; json?: () => Promise<unknown> };
 

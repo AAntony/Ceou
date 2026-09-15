@@ -20,18 +20,25 @@ import { TextLink } from '../../components/TextLink';
 // POSÉE AVANT L'OUVERTURE DU MICRO, et pas avant l'envoi : demander l'accord
 // une fois la phrase déjà prononcée reviendrait à faire choisir entre
 // consentir et perdre ce qu'on vient de dire. Ce n'est pas un choix libre.
+//
+// `live` pour la conversation temps réel : même feuille, autre texte. Elle
+// envoie la voix et des résultats de recherche, pas seulement une phrase —
+// l'accord doit le dire tel quel.
 export function AssistantConsentSheet({
   visible,
   loading,
   onAccept,
   onCancel,
+  kind = 'classic',
 }: {
   visible: boolean;
   loading: boolean;
   onAccept: () => void;
   onCancel: () => void;
+  kind?: 'classic' | 'live';
 }) {
   const { t } = useTranslation();
+  const keys = kind === 'live' ? 'assistant.live.consent' : 'assistant.consent';
 
   return (
     <BottomSheetModal
@@ -40,8 +47,8 @@ export function AssistantConsentSheet({
       sheetClassName="rounded-t-3xl bg-surface px-6 pb-8 pt-6"
       scrollable
     >
-      <Text className="mb-3 text-subheading font-bold text-ink">{t('assistant.consent.title')}</Text>
-      <Text className="mb-4 text-label leading-5 text-ink-soft">{t('assistant.consent.body')}</Text>
+      <Text className="mb-3 text-subheading font-bold text-ink">{t(`${keys}.title`)}</Text>
+      <Text className="mb-4 text-label leading-5 text-ink-soft">{t(`${keys}.body`)}</Text>
       <TextLink
         href="/privacy-policy"
         label={t('profile.privacy_policy')}
@@ -51,7 +58,7 @@ export function AssistantConsentSheet({
       <FormActions
         cancelLabel={t('common.cancel')}
         onCancel={onCancel}
-        confirmLabel={t('assistant.consent.accept')}
+        confirmLabel={t(`${keys}.accept`)}
         onConfirm={onAccept}
         loading={loading}
       />

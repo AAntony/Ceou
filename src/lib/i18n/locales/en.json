@@ -493,6 +493,30 @@
       "closing_one": "My pleasure. One item put away — see you soon.",
       "closing_other": "My pleasure. {{count}} items put away — see you soon.",
       "closing_empty": "See you soon."
+    },
+    "live": {
+      "title": "Talking with Céoù",
+      "status_connecting": "Connecting…",
+      "status_listening": "I’m listening",
+      "status_thinking": "Looking…",
+      "status_speaking": "Answering",
+      "status_idle": "Paused",
+      "example": "Just talk: “Where are my keys?”, “I put the drill on the workbench”, “What’s in the garage?”. Say “thanks, that’s all” to finish.",
+      "place_count_zero": "Empty",
+      "place_count_one": "{{count}} item",
+      "place_count_other": "{{count}} items",
+      "loans_count_zero": "No ongoing loans",
+      "loans_count_one": "{{count}} ongoing loan",
+      "loans_count_other": "{{count}} ongoing loans",
+      "lost": "The conversation was cut off. Try again in a moment.",
+      "quota_fallback": "You have used today’s conversation minutes. The simple assistant is still available: it answers your questions and puts things away, with the phone’s voice.",
+      "unavailable_fallback": "Conversation is not available right now. The simple assistant can take over.",
+      "use_simple": "Use the simple assistant",
+      "consent": {
+        "title": "Talk with Céoù",
+        "body": "To hold a real conversation, your voice is streamed live to Gemini, Google’s artificial intelligence service, outside the European Union. As the conversation goes, Céoù also passes it the results of your searches — item names and where they are stored — but never your whole inventory. Nothing is sent until the conversation is open. When it is unavailable, the simple assistant takes over: only the text of your sentence is sent then.",
+        "accept": "Accept and talk"
+      }
     }
   },
   "friends": {

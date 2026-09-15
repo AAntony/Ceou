@@ -35,7 +35,14 @@ export function useProfile() {
 // (AiPhotoScanFlow, HomeDashboard) — et conservés côté PROFIL plutôt que
 // sur l'appareil, pour survivre à une réinstallation ou à un changement de
 // téléphone, et pour valoir preuve.
-export type AiConsentKind = 'ai_photo_consent_at' | 'ai_assistant_consent_at';
+//
+// `ai_voice_live_consent_at` : la conversation temps réel, qui envoie la VOIX
+// et les résultats de recherche, plus seulement le texte d'une phrase (voir
+// supabase/functions/voice-session). Un troisième traitement, donc un
+// troisième accord. Il horodate AUSSI l'accord de l'assistant simple : son
+// texte annonce le repli sur celui-ci quand la conversation n'est pas
+// disponible, et il couvre un envoi plus large que lui.
+export type AiConsentKind = 'ai_photo_consent_at' | 'ai_assistant_consent_at' | 'ai_voice_live_consent_at';
 
 export function useSetAiConsent(kind: AiConsentKind) {
   const { session } = useSession();
@@ -49,9 +56,25 @@ export function useSetAiConsent(kind: AiConsentKind) {
       // calculée : `{ [kind]: at }` s'élargit en index de chaînes, que le
       // type généré de la table refuse — et à juste titre, il n'y a que ces
       // deux colonnes-là qu'on ait le droit d'horodater ici.
-      const patch = kind === 'ai_photo_consent_at' ? { ai_photo_consent_at: at } : { ai_assistant_consent_at: at };
+      const patch =
+        kind === 'ai_photo_consent_at'
+          ? { ai_photo_consent_at: at }
+          : kind === 'ai_voice_live_consent_at'
+            ? { ai_voice_live_consent_at: at }
+            : { ai_assistant_consent_at: at };
       const { error } = await supabase.from('profiles').update(patch).eq('id', userId!);
       if (error) throw error;
+      // L'accord à l'assistant simple n'est posé que s'il MANQUE : une date
+      // déjà enregistrée est la preuve d'un accord antérieur, on ne la
+      // réécrit pas.
+      if (kind === 'ai_voice_live_consent_at') {
+        const { error: fallbackError } = await supabase
+          .from('profiles')
+          .update({ ai_assistant_consent_at: at })
+          .eq('id', userId!)
+          .is('ai_assistant_consent_at', null);
+        if (fallbackError) throw fallbackError;
+      }
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', userId] }),
   });

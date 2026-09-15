@@ -493,6 +493,30 @@
       "closing_one": "Avec plaisir. Un objet rangé, à tout à l’heure.",
       "closing_other": "Avec plaisir. {{count}} objets rangés, à tout à l’heure.",
       "closing_empty": "À tout à l’heure."
+    },
+    "live": {
+      "title": "Conversation avec Céoù",
+      "status_connecting": "Connexion…",
+      "status_listening": "Je t’écoute",
+      "status_thinking": "Je regarde…",
+      "status_speaking": "Je réponds",
+      "status_idle": "En pause",
+      "example": "Parle naturellement : « Où sont mes clés ? », « J’ai rangé la perceuse dans l’établi », « Qu’est-ce qu’il y a dans le garage ? ». Dis « merci, c’est tout » pour terminer.",
+      "place_count_zero": "Vide",
+      "place_count_one": "{{count}} objet",
+      "place_count_other": "{{count}} objets",
+      "loans_count_zero": "Aucun prêt en cours",
+      "loans_count_one": "{{count}} prêt en cours",
+      "loans_count_other": "{{count}} prêts en cours",
+      "lost": "La conversation a été coupée. Réessaie dans un instant.",
+      "quota_fallback": "Tu as utilisé tes minutes de conversation du jour. L’assistant simple reste disponible : il répond à tes questions et range tes affaires, avec la voix du téléphone.",
+      "unavailable_fallback": "La conversation n’est pas disponible pour le moment. L’assistant simple peut prendre le relais.",
+      "use_simple": "Utiliser l’assistant simple",
+      "consent": {
+        "title": "Parler avec Céoù",
+        "body": "Pour tenir une vraie conversation, ta voix est envoyée en direct à Gemini, le service d’intelligence artificielle de Google, hors Union européenne. Au fil de la conversation, Céoù lui transmet aussi les résultats de tes recherches — des noms d’objets et les endroits où ils sont rangés — mais jamais ton inventaire entier. Rien ne part tant que la conversation n’est pas ouverte. Quand elle n’est pas disponible, l’assistant simple prend le relais : seul le texte de ta phrase est alors envoyé.",
+        "accept": "Accepter et parler"
+      }
     }
   },
   "friends": {

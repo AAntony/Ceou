@@ -10,13 +10,15 @@ import { ErrorState } from '../../components/ErrorState';
 import { Icon } from '../../components/Icon';
 import { HeaderAddButton } from '../../components/HeaderAddButton';
 import { usePullToRefresh } from '../../components/usePullToRefresh';
-import { showMessage } from '../../lib/dialog';
+import { showDialog, showMessage } from '../../lib/dialog';
 import { logClientError } from '../../lib/errorLogging';
 import { ONE_COLUMN_SCALE, useTextScale } from '../../lib/textScale';
 import { useThemeColors } from '../../lib/theme';
 import { AssistantConsentSheet } from '../assistant/AssistantConsentSheet';
 import { AssistantSheet } from '../assistant/AssistantSheet';
 import { useAssistant } from '../assistant/useAssistant';
+import { LiveAssistantSheet } from '../assistant/live/LiveAssistantSheet';
+import { useLiveAssistant } from '../assistant/live/useLiveAssistant';
 import { GuestBanner } from '../auth/GuestBanner';
 import { useIsAnonymous } from '../auth/SessionProvider';
 import { AddObjetModal } from '../inventory/AddObjetModal';
@@ -54,9 +56,15 @@ export function HomeDashboard() {
   const [voiceHeight, setVoiceHeight] = useState(56);
   const [adding, setAdding] = useState(false);
   const [consent, setConsent] = useState(false);
+  const [liveConsent, setLiveConsent] = useState(false);
   const assistant = useAssistant();
+  // Le plafond du jour s'épuise en pleine conversation : Céoù vient de
+  // l'annoncer, l'assistant simple prend la suite sans qu'on ait à rappuyer.
+  const live = useLiveAssistant({ onTimeUp: () => startClassic() });
+  const voiceActive = assistant.active || live.active;
   const onboarding = useOnboardingLaunch();
   const setConsentMutation = useSetAiConsent('ai_assistant_consent_at');
+  const setLiveConsentMutation = useSetAiConsent('ai_voice_live_consent_at');
   const columns = grid && textScale < ONE_COLUMN_SCALE ? 2 : 1;
   const homes = useMemo(() => Array.from(new Map((entries ?? []).map((entry) => [entry.habitation_id, entry.habitation_name])).entries()), [entries]);
   const activeHome = homes.some(([id]) => id === homeId) ? homeId : null;
@@ -68,10 +76,45 @@ export function HomeDashboard() {
   const filtered = useMemo(() => rankResults(entries ?? [], search, activeHome, activeRoom), [entries, search, activeHome, activeRoom]);
   const renderItem = useCallback(({ item }: { item: SearchIndexEntry }) => <ResultCard entry={item} columns={columns} />, [columns]);
   const reset = () => { setSearch(''); setHomeId(null); setRoomId(null); };
-  const startAssistant = () => {
-    if (assistant.active) { assistant.stop(); return; }
+  const startClassic = () => {
     if (profile?.ai_assistant_consent_at) assistant.start();
     else setConsent(true);
+  };
+  // LA CONVERSATION D'ABORD, L'ASSISTANT SIMPLE EN REPLI. Un build sans le
+  // module audio, un invité, un plafond du jour atteint ou un service
+  // indisponible retombent sur l'assistant d'avant — jamais sur un micro
+  // muet. Le repli se propose au lieu de s'imposer : la voix et la façon de
+  // parler changent, il faut le dire.
+  const startLive = async () => {
+    const outcome = await live.start();
+    if (outcome === 'started') return;
+    if (outcome === 'consent') { setLiveConsent(true); return; }
+    if (outcome === 'permission') { showMessage(t('home.voice_search_permission_message')); return; }
+    if (outcome === 'unsupported') { startClassic(); return; }
+    showDialog({
+      message: t(outcome === 'quota' ? 'assistant.live.quota_fallback' : 'assistant.live.unavailable_fallback'),
+      actions: [
+        { label: t('assistant.live.use_simple'), onPress: startClassic },
+        { label: t('common.cancel'), cancel: true },
+      ],
+    });
+  };
+  const startAssistant = () => {
+    if (assistant.active) { assistant.stop(); return; }
+    if (live.active) { live.stop(); return; }
+    if (!live.supported || isGuest) { startClassic(); return; }
+    if (profile?.ai_voice_live_consent_at) void startLive();
+    else setLiveConsent(true);
+  };
+  const acceptLiveConsent = async () => {
+    try {
+      await setLiveConsentMutation.mutateAsync();
+      setLiveConsent(false);
+      void startLive();
+    } catch (error) {
+      logClientError(error, { source: 'assistant.live', step: 'consent' });
+      showMessage(t('common.error_generic'));
+    }
   };
   const acceptConsent = async () => {
     try {
@@ -132,12 +175,12 @@ export function HomeDashboard() {
         )} />
       <View pointerEvents="box-none" style={{ position: 'absolute', right: 16, left: 16, bottom: bottomSpace + 12, alignItems: 'flex-end' }}>
         <Pressable accessibilityRole="button" accessibilityLabel={t('redesign.voice')}
-          accessibilityHint={t('home.assistant_a11y')} accessibilityState={{ selected: assistant.active }}
+          accessibilityHint={t('home.assistant_a11y')} accessibilityState={{ selected: voiceActive }}
           onPress={startAssistant} onLayout={(event) => setVoiceHeight(event.nativeEvent.layout.height)}
           className="min-h-[56px] max-w-full flex-row items-center gap-2 rounded-full bg-coral px-5 py-3 active:opacity-90"
           style={{ elevation: 6, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } }}>
           <Icon name="microphone" size={24} color="#FFFFFF" />
-          <Text className="shrink text-body font-semibold text-white">{t(assistant.active ? 'assistant.session.title' : 'redesign.voice')}</Text>
+          <Text className="shrink text-body font-semibold text-white">{t(voiceActive ? 'assistant.session.title' : 'redesign.voice')}</Text>
         </Pressable>
       </View>
       <BottomSheetModal visible={filtersOpen} onClose={() => setFiltersOpen(false)} scrollable sheetClassName="rounded-t-3xl bg-surface px-5 py-4">
@@ -160,6 +203,8 @@ export function HomeDashboard() {
       <AddObjetModal visible={adding} onClose={() => setAdding(false)} />
       <OnboardingGuide visible={onboarding.open} onClose={onboarding.close} />
       <AssistantConsentSheet visible={consent} loading={setConsentMutation.isPending} onAccept={acceptConsent} onCancel={() => setConsent(false)} />
+      <AssistantConsentSheet kind="live" visible={liveConsent} loading={setLiveConsentMutation.isPending} onAccept={acceptLiveConsent} onCancel={() => setLiveConsent(false)} />
+      <LiveAssistantSheet state={live} onStop={live.stop} />
       <AssistantSheet state={assistant} onClose={assistant.stop} onChooseObjet={assistant.chooseObjet}
         onChooseDestination={assistant.chooseDestination} onSkipChoice={assistant.skipChoice} onUndoMove={assistant.undoMove} />
     </View>

@@ -390,13 +390,19 @@ function privacyPage(lang) {
     .map((entry) => `            <li><a href="#${entry.id}">${escape(entry.label)}</a></li>`)
     .join('\n');
 
+  // Une ligne vide sépare deux paragraphes, comme dans l'écran de l'app : sans
+  // ce découpage, le HTML les recollerait en un seul bloc.
   const sections = policy.sections
-    .map(
-      (section) => `        <section id="${slug(section.heading)}" data-spy-target>
+    .map((section) => {
+      const paragraphs = section.body
+        .split(/\n\s*\n/)
+        .map((text) => `          <p>${withMailto(escape(text.trim()))}</p>`)
+        .join('\n');
+      return `        <section id="${slug(section.heading)}" data-spy-target>
           <h2>${escape(section.heading)}</h2>
-          <p>${withMailto(escape(section.body))}</p>
-        </section>`,
-    )
+${paragraphs}
+        </section>`;
+    })
     .join('\n');
 
   const paragraphs = deletion.paragraphs

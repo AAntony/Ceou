@@ -1394,7 +1394,10 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
         </section>
         <section id="the-voice-assistant" data-spy-target>
           <h2>The voice assistant</h2>
-          <p>When you talk to Ceou, two services are involved. First your phone's own speech recognition, which turns your voice into text: that is Apple's or Google's depending on the device, and it may send the audio to their servers — the same mechanism as your keyboard's dictation. Then the resulting text, never the audio, is sent to Google's Gemini API, outside the EU, to be interpreted. Your sentence is only processed to answer that one-off request. Like photo scanning, the assistant asks for your explicit consent before its very first use.</p>
+          <p>Ceou offers two ways to talk to its assistant, each with its own explicit consent, asked before the very first use.</p>
+          <p>Conversation: your voice is streamed live to Google's Gemini API, outside the EU, which listens and answers with its own voice. As the conversation goes, Ceou also passes it the results of the searches it requests to answer you — names of items, rooms and storage, and the status of a loan — but never your whole inventory, nor any identifier from your database. Nothing is sent until the conversation is open, and it stops as soon as the app goes to the background. To apply a daily conversation time, Ceou keeps the length of each conversation with your account; it keeps neither the audio nor what was said.</p>
+          <p>The simple assistant, used when conversation is not available: your phone's own speech recognition turns your voice into text — that is Apple's or Google's depending on the device, and it may send the audio to their servers, like your keyboard's dictation. Only the resulting text, never the audio, is then sent to the Gemini API to be interpreted.</p>
+          <p>In both cases, what is sent is only processed to answer you.</p>
         </section>
         <section id="barcode-product-lookup" data-spy-target>
           <h2>Barcode product lookup</h2>
