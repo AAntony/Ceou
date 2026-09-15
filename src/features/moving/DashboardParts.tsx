@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Icon, type IconName } from '../../components/Icon';
 import { useMediaSource } from '../../lib/images/media';
 import { useThemeColors } from '../../lib/theme';
+import { STACK_SCALE, useTextScale } from '../../lib/textScale';
 import type { MovingBox } from './model';
 
 export function MovingTimeline({ status }: { status: string }) {
@@ -11,7 +12,16 @@ export function MovingTimeline({ status }: { status: string }) {
   const colors = useThemeColors();
   const steps = ['preparation', 'moving', 'unpacking', 'completed'];
   const current = steps.indexOf(status);
-  return <View className="mb-3 flex-row" accessibilityLabel={t('moving.' + status)}>
+  const { textScale } = useTextScale();
+  const vertical = textScale >= STACK_SCALE;
+  const announcement = t('moving.stepAnnouncement', { step: current + 1, total: steps.length, name: t('moving.' + status) });
+  if (vertical) return <View accessible accessibilityLabel={announcement} className="mb-3 gap-2">
+    {steps.map((step, index) => <View key={step} className="flex-row items-center gap-3">
+      <Icon name={index < current ? 'validate' : 'chevron'} size={20} color={index === current ? colors.accentDark : colors.inkSoft} />
+      <Text className={`flex-1 text-label ${index === current ? 'font-bold text-coral-dark' : 'text-ink-soft'}`}>{index + 1}. {t('moving.' + step)}</Text>
+    </View>)}
+  </View>;
+  return <View accessible className="mb-3 flex-row" accessibilityLabel={announcement}>
     {steps.map((step, index) => <View key={step} className="flex-1 items-center">
       <View className="w-full flex-row items-center">
         <View className={`h-0.5 flex-1 ${index === 0 ? 'bg-transparent' : index <= current ? 'bg-coral' : 'bg-ink/15'}`} />
@@ -28,14 +38,15 @@ export function MovingTimeline({ status }: { status: string }) {
 export type MovingAction = { label: string; icon: IconName; onPress: () => void; disabled?: boolean; primary?: boolean };
 export function MovingActions({ actions }: { actions: MovingAction[] }) {
   const colors = useThemeColors();
+  const { textScale } = useTextScale();
   return <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={{ flexGrow: 1, justifyContent: 'space-evenly', gap: 8, paddingBottom: 8 }} className="mb-2">
     {actions.map(action => <Pressable key={action.label} accessibilityRole="button" accessibilityLabel={action.label}
       accessibilityState={{ disabled: !!action.disabled }} disabled={action.disabled} onPress={action.onPress}
-      style={{ flexGrow: 1, flexBasis: 0, minWidth: 88, opacity: action.disabled ? 0.45 : 1 }} className="items-center px-1 py-2">
+      style={{ flexGrow: 1, flexBasis: 0, minWidth: 88 * textScale, opacity: action.disabled ? 0.45 : 1 }} className="items-center px-1 py-2">
       <View className={`mb-1 h-12 w-12 items-center justify-center rounded-2xl ${action.primary ? 'bg-coral-light' : 'bg-surface'}`}>
         <Icon name={action.icon} size={24} color={action.primary ? colors.accentDark : colors.ink} />
       </View>
-      <Text style={{ maxWidth: 150 }} className="text-center text-caption font-medium text-ink">{action.label}</Text>
+      <Text style={{ maxWidth: 150 * textScale }} className="text-center text-caption font-medium text-ink">{action.label}</Text>
     </Pressable>)}
   </ScrollView>;
 }
@@ -47,7 +58,7 @@ export function MovingBoxRow({ box, detail, onOpen, onPhoto, busy }: {
   const colors = useThemeColors();
   const source = useMediaSource(box.photo_url);
   return <View className="mb-3 flex-row items-center gap-3 rounded-2xl bg-surface p-3">
-    <Pressable accessibilityRole="button" accessibilityLabel={t('moving.photo') + ' · ' + box.name}
+    <Pressable accessibilityRole="button" accessibilityLabel={onPhoto ? t('moving.photo') + ' · ' + box.name : box.name}
       accessibilityState={{ disabled: busy }} disabled={busy} onPress={onPhoto ?? onOpen}
       className="h-20 w-20 items-center justify-center overflow-hidden rounded-xl bg-sand">
       {source ? <Image source={source} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <Icon name="camera" size={26} color={colors.inkSoft} />}

@@ -28,7 +28,7 @@ type ButtonProps = PressableProps & {
 // disaient trois fois la meme chose et divergeaient sans qu'on le voie —
 // `accessibilityState` etait recopie a l'identique dans chacune, et il aurait
 // suffi d'en corriger deux sur trois.
-export function Button({ label, loading, variant = 'primary', icon, disabled, ...pressableProps }: ButtonProps) {
+export function Button({ label, loading, variant = 'primary', icon, disabled, accessibilityState, ...pressableProps }: ButtonProps) {
   const colors = useThemeColors();
   const tileMinHeight = useScaled(TILE_MIN_HEIGHT);
   const inactive = disabled || loading;
@@ -47,7 +47,7 @@ export function Button({ label, loading, variant = 'primary', icon, disabled, ..
       accessibilityLabel={label}
       // `busy` fait annoncer « en cours » pendant l'attente : sans lui, un
       // bouton qui tourne est simplement un bouton qui ne repond pas.
-      accessibilityState={{ disabled: inactive, busy: loading }}
+      accessibilityState={{ ...accessibilityState, disabled: !!inactive, busy: !!loading }}
       className={`${BUTTON_SURFACE[variant]} ${inactive ? BUTTON_DISABLED : ''}`}
       style={variant === 'tile' ? { minHeight: tileMinHeight } : undefined}
       {...pressableProps}

@@ -42,5 +42,6 @@ Chaque étape produit un commit sur main et un OTA Android preview. La suivante 
 
 - Étape 1 : validée par l’utilisateur ; commit 47659a1, OTA publié.
 - Étape 2 : validée par l’utilisateur ; commit 6d50ea2, OTA publié.
-- Étape 3 : création avec lieu de départ seul, nom automatique et détails facultatifs ; actions occasionnelles dans un menu, progression contextuelle. Vérifications et OTA avant validation utilisateur.
-- Étapes 4 et 5 : en attente de validation de l’étape précédente.
+- Étape 3 : terminée, commit 4c04cde et OTA publié ; poursuite demandée par l’utilisateur.
+- Étape 4 : rôles bouton/radio/case à cocher corrigés dans les parcours déménagement, états occupé/désactivé préservés, geste de fermeture VoiceOver des modales et progression verticale en grande police. `npm run verify:ci` réussi (44 tests, 32 avertissements ESLint existants). Validation native TalkBack/VoiceOver et grandes polices encore nécessaire sur téléphone : aucun appareil connecté. OTA prévu pour cette validation.
+- Étape 5 : en attente de validation de l’étape 4.

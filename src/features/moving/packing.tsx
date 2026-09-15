@@ -50,8 +50,8 @@ export function MovingPhotoFlow({snapshot,box,onClose}:{snapshot:MovingSnapshot;
   {!items?<View style={{flex:1}}><AiPhotoScanFlow active onCancel={onClose} onDone={onClose} onCollected={list=>setItems(list.map(item=>({...item,id:newId(),existingId:null})))}/></View>:<>
    <Text className="mb-4 text-body text-ink-soft">{t('moving.scanHint')}</Text>
    {items.map((item,index)=><View key={item.id} className="mb-5"><Text className="mb-2 text-body font-bold text-ink">{item.name}</Text>
-    <Choice label={t('moving.newObject')} selected={!item.existingId} onPress={()=>choose(index,null)} disabled={busy}/>
-    {matchingObjects(item.name,snapshot.objects).map(o=><Choice key={o.id} label={o.name} detail={o.parent_label+' · '+o.piece_name} selected={item.existingId===o.id} onPress={()=>choose(index,o.id)} disabled={busy}/>)}</View>)}
+    <Choice role="radio" label={t('moving.newObject')} selected={!item.existingId} onPress={()=>choose(index,null)} disabled={busy}/>
+    {matchingObjects(item.name,snapshot.objects).map(o=><Choice role="radio" key={o.id} label={o.name} detail={o.parent_label+' · '+o.piece_name} selected={item.existingId===o.id} onPress={()=>choose(index,o.id)} disabled={busy}/>)}</View>)}
    <Button label={t('moving.scanCommit',{count:items.length})} loading={busy} disabled={!items.length} onPress={submit}/>
   </>}
  </MovingSheet>;

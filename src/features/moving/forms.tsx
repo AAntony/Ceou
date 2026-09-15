@@ -23,11 +23,11 @@ export function ProjectForm({sourceId,onClose,onCreated,project}:{sourceId?:stri
  return <MovingSheet title={t(project?'moving.destinationEdit':'moving.new')} onClose={()=>{if(!command.isPending)onClose();}}>
   {!project?<>
   <Text className="mb-2 text-body font-semibold text-ink">{t('moving.source')}</Text>
-  {homes.map(h=><Choice key={h.id} label={h.name} selected={source===h.id} onPress={()=>{setSource(h.id);if(destination===h.id)setDestination('');}}/>)}</>:null}
+  {homes.map(h=><Choice role="radio" key={h.id} label={h.name} selected={source===h.id} onPress={()=>{setSource(h.id);if(destination===h.id)setDestination('');}}/>)}</>:null}
   <>{!project?<Button variant="ghost" label={t(details?'moving.hideDetails':'moving.optionalDetails')} accessibilityState={{expanded:details}} onPress={()=>setDetails(!details)}/>:null}{project||details?<><Text className="mb-2 mt-3 text-body font-semibold text-ink">{t('moving.destination')}</Text>
-  {!project?<Choice label={t('moving.later')} selected={!destination&&!newHome} onPress={()=>{setDestination('');setNewHome(false);}}/>:null}
-  {homes.filter(h=>h.id!==(project?.source_id??source)).map(h=><Choice key={h.id} label={h.name} selected={destination===h.id&&!newHome} onPress={()=>{setDestination(h.id);setNewHome(false);}}/>)}
-  <Choice label={t('moving.createHome')} selected={newHome} onPress={()=>setNewHome(!newHome)}/>
+  {!project?<Choice role="radio" label={t('moving.later')} selected={!destination&&!newHome} onPress={()=>{setDestination('');setNewHome(false);}}/>:null}
+  {homes.filter(h=>h.id!==(project?.source_id??source)).map(h=><Choice role="radio" key={h.id} label={h.name} selected={destination===h.id&&!newHome} onPress={()=>{setDestination(h.id);setNewHome(false);}}/>)}
+  <Choice role="radio" label={t('moving.createHome')} selected={newHome} onPress={()=>setNewHome(true)}/>
   {newHome?<TextField label={t('moving.homeName')} value={homeName} onChangeText={setHomeName} maxLength={160}/>:null}
   {!project?<TextField label={t('moving.name')} value={name} onChangeText={setName} maxLength={160}/>:null}
   {!project?<TextField label={t('moving.date')} value={date} onChangeText={setDate} placeholder="2026-10-01"/>:null}</>:null}</>
@@ -47,8 +47,8 @@ export function BoxForm({project,box,previous,onClose,onCreated}:{project:Moving
   <TextField label={t('moving.description')} value={description} onChangeText={setDescription} multiline/>
   {!box&&previous?<Text className="mb-3 text-label text-ink-soft">{t('moving.copyPrevious')}</Text>:null}
   <Text className="mb-2 text-body font-semibold text-ink">{t('moving.room')}</Text>
-  <Choice label={t('moving.noRoom')} selected={!room} onPress={()=>setRoom('')}/>
-  {rooms.map(r=><Choice key={r.id} label={r.name} selected={room===r.id} onPress={()=>setRoom(r.id)}/>)}
+  <Choice role="radio" label={t('moving.noRoom')} selected={!room} onPress={()=>setRoom('')}/>
+  {rooms.map(r=><Choice role="radio" key={r.id} label={r.name} selected={room===r.id} onPress={()=>setRoom(r.id)}/>)}
   {!rooms.length?<Text className="mb-3 text-label text-ink-soft">{t('moving.noRoomHint')}</Text>:null}
   <View className="mt-3"><Button label={t(box?'common.save':'moving.boxCreate')} loading={command.isPending} disabled={!!box&&!name.trim()} onPress={submit}/></View>
  </MovingSheet>;

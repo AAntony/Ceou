@@ -135,6 +135,7 @@ export function BottomSheetModal({
 
         <View
           accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
           className={sheetClassName ?? DEFAULT_SHEET_CLASSNAME}
           // Le style de l'appelant passe EN DERNIER : il peut donc imposer
           // sa propre hauteur par-dessus le plafond.

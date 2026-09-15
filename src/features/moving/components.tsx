@@ -13,8 +13,8 @@ export function MovingSheet({title,onClose,children,scrollable=true}:{title:stri
   <Pressable accessibilityRole="button" accessibilityLabel={t('common.close')} onPress={onClose} className="min-h-[48px] min-w-[48px] items-center justify-center"><Icon name="close" color={colors.ink} size={22}/></Pressable></View>{children}
  </BottomSheetModal>;
 }
-export function Choice({label,detail,selected,onPress,disabled=false}:{label:string;detail?:string;selected:boolean;onPress:()=>void;disabled?:boolean}) {
- return <Pressable accessibilityRole="checkbox" accessibilityState={{checked:selected,disabled}} disabled={disabled} onPress={onPress}
+export function Choice({label,detail,selected,onPress,disabled=false,role='checkbox'}:{label:string;detail?:string;selected:boolean;onPress:()=>void;disabled?:boolean;role?:'checkbox'|'radio'|'button'}) {
+ return <Pressable accessibilityRole={role} accessibilityLabel={[label,detail].filter(Boolean).join(', ')} accessibilityState={role==='button'?{disabled}:{checked:selected,disabled}} disabled={disabled} onPress={onPress}
   className={`mb-2 min-h-[48px] rounded-xl border px-4 py-3 ${selected?'border-coral bg-coral-light':'border-ink/15 bg-surface'}`}>
   <Text className={`text-body ${selected?'font-semibold text-coral-dark':'text-ink'}`}>{selected?'✓ ':''}{label}</Text>
   {detail?<Text className="mt-1 text-label text-ink-soft">{detail}</Text>:null}

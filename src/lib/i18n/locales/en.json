@@ -1,5 +1,6 @@
 {
   "moving": {
+    "stepAnnouncement": "Step {{step}} of {{total}}: {{name}}",
     "defaultName": "Move · {{place}}",
     "optionalDetails": "Destination, date and name (optional)",
     "hideDetails": "Hide optional details",
