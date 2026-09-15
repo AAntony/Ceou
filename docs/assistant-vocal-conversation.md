@@ -2,6 +2,26 @@
 
 ## Correctifs du 15 septembre 2026
 
+### Protection après essai sur téléphone
+
+L'essai utilisateur a confirmé une auto-interruption en boucle : le traitement
+audio natif actuel ne suffit pas à supprimer l'écho. Le mode de secours est
+donc **half duplex** : pendant toute la réponse (y compris les creux entre
+morceaux), puis 400 ms après sa lecture, les trames micro envoyées sont
+remplacées par du silence. « Reprendre la parole » coupe la lecture et rend
+le micro à l'utilisateur après ce délai acoustique. Cela ne constitue pas
+une annulation d'écho ni une interruption naturelle à la voix.
+
+La capture démarre désormais dès l'ouverture autorisée, en parallèle de la
+connexion. La première phrase est conservée en mémoire uniquement, au maximum
+15 secondes, puis transmise dans l'ordre après le handshake. Une annulation
+efface cette mémoire. Le statut distingue écoute locale et connexion prête :
+la réponse du service ne peut pas être instantanée sur tout réseau.
+
+Les descriptions full duplex ci-dessous concernent l'architecture initiale ;
+elles sont remplacées par cette protection tant que la chaîne native d'écho
+n'est pas validée sur appareil.
+
 - Silence identifié : dans react-native-audio-api 0.13.3, `start()` utilise
   un offset par défaut de -1 que sa validation rejette. Le lecteur appelle
   désormais `start(0, 0)` et réactive explicitement le contexte audio.

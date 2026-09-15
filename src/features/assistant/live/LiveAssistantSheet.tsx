@@ -36,7 +36,7 @@ function Orb({ status }: { status: LiveStatus }) {
   useEffect(() => {
     scale.stopAnimation();
     scale.setValue(1);
-    if (reduced || (status !== 'listening' && status !== 'speaking')) return;
+    if (reduced || (status !== 'listening' && status !== 'buffering' && status !== 'speaking')) return;
     const [peak, duration] = status === 'speaking' ? [1.14, 420] : [1.06, 1400];
     const loop = Animated.loop(
       Animated.sequence([
@@ -112,7 +112,7 @@ function Card({ card, onOpen }: { card: LiveCard; onOpen: (path: Href) => void }
   return <CardRow icon="pret" title={t('assistant.live.loans_count', { count: card.count })} onPress={() => onOpen('/prets')} />;
 }
 
-export function LiveAssistantSheet({ state, onStop }: { state: LiveState; onStop: () => void }) {
+export function LiveAssistantSheet({ state, onStop, onInterrupt }: { state: LiveState; onStop: () => void; onInterrupt: () => void }) {
   const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
   const transcriptMaxHeight = useScaled(320);
@@ -175,6 +175,11 @@ export function LiveAssistantSheet({ state, onStop }: { state: LiveState; onStop
       </ScrollView>
 
       <View className="mt-4">
+        {state.status === 'speaking' ? (
+          <View className="mb-3">
+            <Button label={t('assistant.live.interrupt')} onPress={onInterrupt} />
+          </View>
+        ) : null}
         <Button label={t('assistant.session.finish')} variant="outline" onPress={onStop} />
       </View>
     </BottomSheetModal>

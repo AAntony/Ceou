@@ -204,7 +204,7 @@ export function HomeDashboard() {
       <OnboardingGuide visible={onboarding.open} onClose={onboarding.close} />
       <AssistantConsentSheet visible={consent} loading={setConsentMutation.isPending} onAccept={acceptConsent} onCancel={() => setConsent(false)} />
       <AssistantConsentSheet kind="live" visible={liveConsent} loading={setLiveConsentMutation.isPending} onAccept={acceptLiveConsent} onCancel={() => setLiveConsent(false)} />
-      <LiveAssistantSheet state={live} onStop={live.stop} />
+      <LiveAssistantSheet state={live} onStop={live.stop} onInterrupt={live.interrupt} />
       <AssistantSheet state={assistant} onClose={assistant.stop} onChooseObjet={assistant.chooseObjet}
         onChooseDestination={assistant.chooseDestination} onSkipChoice={assistant.skipChoice} onUndoMove={assistant.undoMove} />
     </View>

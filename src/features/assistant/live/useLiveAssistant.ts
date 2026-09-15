@@ -10,7 +10,8 @@ import { invalidateAfterMove, moveObjet, undoLastMove } from '../../inventory/qu
 import { usePrets } from '../../loans/queries';
 import { useSearchIndex } from '../../search/queries';
 import { canModifyHabitation, isPermissionError } from '../permissions';
-import { createLiveAudio, isLiveAudioSupported, type LiveAudio } from './audio';
+import { createLiveAudio, encodePcm16, isLiveAudioSupported, type LiveAudio } from './audio';
+import { OpeningAudio, ReplyGate } from './duplex';
 import { LiveConnection, type FunctionCall } from './connection';
 import { runTool, ToolSession, type ToolEffects, type ToolEvent } from './tools';
 
@@ -59,7 +60,7 @@ const CHECKPOINT_SECONDS = 10;
 const MAX_LINES = 30;
 const MAX_CARDS = 12;
 
-export type LiveStatus = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking';
+export type LiveStatus = 'idle' | 'connecting' | 'buffering' | 'listening' | 'thinking' | 'speaking';
 export type LiveLine = { id: number; role: 'user' | 'assistant'; text: string };
 export type LiveCard = Exclude<ToolEvent, { type: 'end' }> & { id: number };
 
@@ -136,6 +137,9 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
   const connectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeUpSentRef = useRef(false);
   const lineIdRef = useRef(0);
+  const inputRef = useRef<OpeningAudio | null>(null);
+  const gateRef = useRef(new ReplyGate());
+  const skipReplyRef = useRef(false);
 
   const appendTranscript = useCallback((role: LiveLine['role'], chunk: string) => {
     setState((current) => {
@@ -175,6 +179,8 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
     endTimerRef.current = null;
 
     connectionRef.current?.close();
+    inputRef.current?.close();
+    inputRef.current = null;
     connectionRef.current = null;
     toolsRef.current = null;
     const audio = audioRef.current;
@@ -323,6 +329,32 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
     setState({ ...EMPTY, active: true, status: 'connecting' });
     statusRef.current = 'connecting';
 
+    const gate = new ReplyGate();
+    gateRef.current = gate;
+    skipReplyRef.current = false;
+    const input = new OpeningAudio();
+    inputRef.current = input;
+    const silence = encodePcm16(new Float32Array(1600), 1600, 16000);
+    connectTimerRef.current = setTimeout(() => {
+      logClientError(new Error('voice_setup_timeout'), { source: 'assistant.live', step: 'connect' });
+      void finish('error');
+    }, 15000);
+    // Listen immediately after the user's explicit action and permission.
+    // Only delivery waits for authentication and the Gemini handshake.
+    void audio.startCapture((chunk) => {
+      if (!activeRef.current || generationRef.current !== generation) return;
+      try { input.push(gate.allowsInput(Date.now()) ? chunk : silence); }
+      catch (captureError) {
+        logClientError(captureError, { source: 'assistant.live', step: 'opening_audio' });
+        void finish('error');
+      }
+    }).then(() => {
+      if (activeRef.current && generationRef.current === generation && statusRef.current === 'connecting') setStatus('buffering');
+    }).catch((captureError: unknown) => {
+      logClientError(captureError, { source: 'assistant.live', step: 'capture' });
+      void finish('error');
+    });
+
     const pending = await readPending();
     const { data, error } = await supabase.functions.invoke<StartResponse>('voice-session', {
       body: { action: 'start', language: i18n.language.toLowerCase().startsWith('en') ? 'en' : 'fr', pending },
@@ -338,6 +370,9 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
     }
 
     if (error || !data?.token) {
+      if (connectTimerRef.current) clearTimeout(connectTimerRef.current);
+      connectTimerRef.current = null;
+      input.close();
       activeRef.current = false;
       audioRef.current = null;
       setState(EMPTY);
@@ -357,11 +392,12 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
 
     audio.setOnIdle(() => {
       if (!activeRef.current || audio.isPlaying()) return;
+      gate.idle(Date.now());
       if (pendingEndRef.current && turnCompleteRef.current) {
         void finish('model');
         return;
       }
-      setStatus('listening');
+      if (turnCompleteRef.current) setStatus('listening');
     });
     audio.setOnError((playbackError) => {
       logClientError(playbackError, { source: 'assistant.live', step: 'playback' });
@@ -373,22 +409,13 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
         if (!activeRef.current) return;
         if (connectTimerRef.current) clearTimeout(connectTimerRef.current);
         connectTimerRef.current = null;
-        audio
-          .startCapture((chunk) => {
-            if (activeRef.current) connectionRef.current?.sendAudio(chunk);
-          })
-          .then(() => {
-            if (!activeRef.current || generationRef.current !== generation) return;
-            setStatus('listening');
-            timerRef.current = setInterval(tick, 1000);
-          })
-          .catch((captureError: unknown) => {
-            logClientError(captureError, { source: 'assistant.live', step: 'capture' });
-            void finish('error');
-          });
+        input.ready(chunk => connection.sendAudio(chunk));
+        setStatus('listening');
+        timerRef.current = setInterval(tick, 1000);
       },
       onAudio: (base64) => {
-        if (!activeRef.current) return;
+        if (!activeRef.current || skipReplyRef.current) return;
+        gate.start();
         audio.play(base64);
         turnCompleteRef.current = false;
         setStatus('speaking');
@@ -396,9 +423,15 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
       onInputTranscript: (text) => appendTranscript('user', text),
       onOutputTranscript: (text) => appendTranscript('assistant', text),
       // L'utilisateur a parlé par-dessus : ce qui restait à dire est caduc.
-      onInterrupted: () => audio.flush(),
+      onInterrupted: () => {
+        skipReplyRef.current = false;
+        gate.interrupt(Date.now());
+        audio.flush();
+      },
       onTurnComplete: () => {
         turnCompleteRef.current = true;
+        skipReplyRef.current = false;
+        gate.finish(audio.isPlaying(), Date.now());
         if (audio.isPlaying()) return;
         if (pendingEndRef.current) {
           void finish('model');
@@ -414,10 +447,6 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
       },
     });
     connectionRef.current = connection;
-    connectTimerRef.current = setTimeout(() => {
-      logClientError(new Error('voice_setup_timeout'), { source: 'assistant.live', step: 'connect' });
-      void finish('error');
-    }, 15000);
     connection.open();
     return 'started';
     } catch (error) {
@@ -430,6 +459,16 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
   }, [appendTranscript, finish, finishAfterGoodbye, handleToolCalls, setStatus, tick]);
 
   const stop = useCallback(() => void finish('user'), [finish]);
+  const interrupt = useCallback(() => {
+    if (!activeRef.current) return;
+    skipReplyRef.current = true;
+    gateRef.current.interrupt(Date.now());
+    pendingEndRef.current = false;
+    if (endTimerRef.current) clearTimeout(endTimerRef.current);
+    endTimerRef.current = null;
+    audioRef.current?.flush();
+    setStatus('listening');
+  }, [setStatus]);
 
   // Une conversation ne continue pas en arrière-plan : le micro d'un téléphone
   // posé dans une poche n'a rien à écouter, et chaque seconde se paie.
@@ -443,5 +482,5 @@ export function useLiveAssistant({ onTimeUp }: { onTimeUp?: () => void } = {}) {
 
   useEffect(() => () => void finish('user'), [finish]);
 
-  return { ...state, supported, start, stop };
+  return { ...state, supported, start, stop, interrupt };
 }

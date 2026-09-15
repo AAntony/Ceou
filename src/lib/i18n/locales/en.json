@@ -497,6 +497,8 @@
     "live": {
       "title": "Talking with Céoù",
       "status_connecting": "Connecting…",
+      "status_buffering": "Listening · connecting",
+      "interrupt": "Take the floor",
       "status_listening": "I’m listening",
       "status_thinking": "Looking…",
       "status_speaking": "Answering",

@@ -16,6 +16,38 @@ function load(path, dependencies) {
 }
 
 const settle = () => new Promise(resolve => setImmediate(resolve));
+const { ReplyGate, OpeningAudio } = load('../../src/features/assistant/live/duplex.ts', {});
+
+test('echo protection holds through inter-chunk gaps, turn completion and acoustic tail', () => {
+  const gate = new ReplyGate();
+  assert.equal(gate.allowsInput(0), true);
+  gate.start(); gate.idle(100);
+  assert.equal(gate.allowsInput(1000), false);
+  gate.finish(true, 1000);
+  assert.equal(gate.allowsInput(1001), false);
+  gate.idle(1100);
+  assert.equal(gate.allowsInput(1499), false);
+  assert.equal(gate.allowsInput(1500), true);
+  gate.start(); gate.interrupt(2000);
+  assert.equal(gate.allowsInput(2399), false);
+  assert.equal(gate.allowsInput(2400), true);
+});
+
+test('first utterance is delivered once in order and discarded on cancelled opening', () => {
+  const opening = new OpeningAudio(); const sent = [];
+  opening.push('first'); opening.push('second');
+  assert.deepEqual(sent, []);
+  opening.ready(chunk => sent.push(chunk)); opening.push('third');
+  opening.ready(chunk => sent.push(chunk));
+  assert.deepEqual(sent, ['first', 'second', 'third']);
+  opening.close(); opening.push('private');
+  assert.equal(sent.length, 3);
+  const cancelled = new OpeningAudio(); cancelled.push('private'); cancelled.close();
+  cancelled.ready(chunk => sent.push(chunk)); assert.equal(sent.length, 3);
+  const stalled = new OpeningAudio();
+  for (let i = 0; i < 150; i++) stalled.push('chunk');
+  assert.throws(() => stalled.push('overflow'), /buffer_full/);
+});
 function fixture({ fail = false } = {}) {
   const queues = [];
   const starts = [];
