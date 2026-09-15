@@ -38,6 +38,13 @@ Chaque étape produit un commit sur main et un OTA Android preview. La suivante 
 - Étendre les tests sur les droits réels, la corbeille et les photos dans un environnement de test isolé, jamais en fabriquant des données dans l’inventaire personnel.
 - Validation : pertes réseau et reprise des actions ; bilan des limites restantes.
 
+## 6 — Fiabilité des scanners et maintenance React
+
+- Partager le cycle de vie des scanners QR et codes-barres ; monter la caméra uniquement pendant l’ouverture.
+- Accepter une seule détection par ouverture, ignorer les événements après annulation et réinitialiser par nouvelle session plutôt que par effet de mise à jour d’état.
+- Conserver les formats de codes et les libellés propres à chaque parcours ; respecter la réduction des animations, permettre l’annulation pendant le chargement des permissions et garantir le contraste du bouton en mode sombre.
+- Tester les rafales, l’annulation, la réouverture et les erreurs de traitement. Vérifier sur téléphone les permissions caméra, un scan, l’annulation puis un second scan du même code.
+
 ## Suivi
 
 - Étape 1 : validée par l’utilisateur ; commit 47659a1, OTA publié.
@@ -45,3 +52,5 @@ Chaque étape produit un commit sur main et un OTA Android preview. La suivante 
 - Étape 3 : terminée, commit 4c04cde et OTA publié ; poursuite demandée par l’utilisateur.
 - Étape 4 : validation utilisateur reçue après réglage de la lecture de mise en forme TalkBack ; commit aa11ef5, OTA publié.
 - Étape 5 : verrou contre les doubles appuis, gestion hors ligne des formulaires et chargements, erreurs isolées, correction transactionnelle de la sortie vers la corbeille. 49 tests réussis. Détails et limites dans `docs/robustesse-demenagement.md`. Validation téléphone après publication.
+- Étape 5 : poursuite demandée par l’utilisateur ; commit b91871d et OTA publié.
+- Étape 6 : scanners mutualisés et détection unique ; 52 tests réussis. Plafond ESLint abaissé de 32 à 30, sans désactiver de règle. Les autres avertissements React restent à traiter séparément ; essais de caméra physique à valider sur téléphone après OTA.
