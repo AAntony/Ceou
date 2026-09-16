@@ -47,6 +47,7 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
   const { remember } = useRecentLocations();
   const nameInput = useRef<TextInput>(null);
   const submitting = useRef(false);
+  const barcodeLookup = useRef<AbortController | null>(null);
   const [savedAnother, setSavedAnother] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -62,7 +63,9 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
       setDescription('');
       setLocalPhotoUri(null);
       setBarcode(null);
+      setLookupLoading(false);
     }
+    return () => barcodeLookup.current?.abort();
   }, [active]);
 
   const handlePickPhoto = async () => {
@@ -71,16 +74,20 @@ export function ObjetFormBody({ parentType, parentId, active, onDone, onCancel, 
   };
 
   const handleBarcodeScanned = async (code: string) => {
+    barcodeLookup.current?.abort();
+    const request = new AbortController();
+    barcodeLookup.current = request;
     setScannerVisible(false);
     setBarcode(code);
     setLookupLoading(true);
     try {
-      const result = await lookupBarcode(code);
+      const result = await lookupBarcode(code, request.signal);
+      if (request.signal.aborted) return;
       if (result?.title) setName(result.title);
       if (result?.imageUrl) setLocalPhotoUri(result.imageUrl);
       if (!result?.title) showMessage(t('inventory.objet.scan_not_found'));
     } finally {
-      setLookupLoading(false);
+      if (!request.signal.aborted) setLookupLoading(false);
     }
   };
 

@@ -1,6 +1,7 @@
 import { onlineManager } from '@tanstack/react-query';
 import * as Network from 'expo-network';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
+import { observeAsyncState } from './observeAsyncState';
 import { AppState } from 'react-native';
 
 // L'ÉTAT DU RÉSEAU, ET LE SEUL ENDROIT QUI LE DÉCIDE.
@@ -53,57 +54,22 @@ function isOnline(state: Network.NetworkState): boolean {
  * donc rien à défaire.
  */
 export function installOnlineManager(): void {
-  onlineManager.setEventListener((setOnline) => {
-    // TOUT LE BLOC EST GARDÉ, et pas seulement l'appel asynchrone.
-    //
-    // C'était un vrai défaut de la première version : seul
-    // `getNetworkStateAsync` était protégé, par un `.catch()` qui ne rattrape
-    // que les promesses. `addNetworkStateListener`, lui, lève
-    // SYNCHRONEMENT quand le module natif est absent — l'exception
-    // traversait donc `setEventListener` et faisait tomber l'application au
-    // démarrage.
-    //
-    // Le cas n'a rien de théorique : les appareils qui n'ont pas encore
-    // réinstallé l'application n'embarquent pas expo-network, et une mise à
-    // jour OTA leur arrive quand même. Ce fichier aurait planté chez eux.
-    try {
-      // L'état INITIAL, et il compte autant que les suivants : l'écouteur ne
-      // se déclenche qu'au prochain CHANGEMENT. Sans cette lecture, une app
-      // ouverte en mode avion se croirait en ligne jusqu'à ce que le réseau
-      // bouge — c'est-à-dire précisément quand on a le plus besoin qu'elle le
-      // sache.
-      Network.getNetworkStateAsync()
-        .then((state) => setOnline(isOnline(state)))
-        .catch(() => setOnline(true));
-
-      const subscription = Network.addNetworkStateListener((state) => setOnline(isOnline(state)));
-
-      // UNE SECONDE SOURCE, PARCE QU'UN ÉCOUTEUR PEUT MANQUER UN ÉVÉNEMENT.
-      // Reprendre l'application au premier plan est le moment exact où l'on
-      // constate « ah, j'ai du réseau maintenant » — et c'est aussi celui où
-      // un écouteur endormi pendant que l'app était en arrière-plan a le plus
-      // de chances d'avoir laissé passer le changement. On relit donc l'état
-      // à chaque retour, sans attendre qu'on veuille bien nous le dire.
-      const appState = AppState.addEventListener('change', (status) => {
-        if (status !== 'active') return;
-        Network.getNetworkStateAsync()
-          .then((state) => setOnline(isOnline(state)))
-          .catch(() => setOnline(true));
+  onlineManager.setEventListener((setOnline) => observeAsyncState({
+    read: async () => isOnline(await Network.getNetworkStateAsync()),
+    subscribe: (receive) => {
+      const subscription = Network.addNetworkStateListener((state) => receive(isOnline(state)));
+      return () => subscription.remove();
+    },
+    subscribeRefresh: (refresh) => {
+      const subscription = AppState.addEventListener('change', (status) => {
+        if (status === 'active') refresh();
       });
-
-      return () => {
-        subscription.remove();
-        appState.remove();
-      };
-    } catch {
-      // On reste sur l'hypothèse « en ligne », c'est-à-dire le comportement
-      // d'avant ce fichier : l'app tente ses requêtes et échoue proprement.
-      // Mieux que de se croire hors-ligne et de ne rien tenter — et
-      // infiniment mieux que de ne pas démarrer.
-      setOnline(true);
-      return () => {};
-    }
-  });
+      return () => subscription.remove();
+    },
+    publish: setOnline,
+    // An unavailable native module retains the existing online fallback.
+    fallback: true,
+  }));
 }
 
 /**
@@ -111,10 +77,9 @@ export function installOnlineManager(): void {
  * décide de suspendre les requêtes : le bandeau ne peut donc pas annoncer
  * autre chose que ce que l'application fait réellement.
  */
+const subscribeOnline = (notify: () => void) => onlineManager.subscribe(notify);
+const readOffline = () => !onlineManager.isOnline();
+
 export function useIsOffline(): boolean {
-  const [offline, setOffline] = useState(() => !onlineManager.isOnline());
-
-  useEffect(() => onlineManager.subscribe((online) => setOffline(!online)), []);
-
-  return offline;
+  return useSyncExternalStore(subscribeOnline, readOffline, readOffline);
 }

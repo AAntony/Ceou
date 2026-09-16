@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useThemeColors } from '../../lib/theme';
 import { placeRoomLabel, overlaps, orderedPins, type LabelRect } from './exploreLayout';
@@ -16,19 +16,20 @@ export function ExploreLabelLayer({ rooms, pins, selectedId, zoom, factor, numbe
   highlightedId?: string | null;
 }) {
   const colors = useThemeColors();
-  const [measures, setMeasures] = useState<Record<string, { width: number; height: number }>>({});
+  const [measures, setMeasures] = useState<Record<string, { label: string; factor: number; width: number; height: number }>>({});
+  const roomById = useMemo(() => new Map(rooms.map((room) => [room.id, room])), [rooms]);
   const occupied: LabelRect[] = [];
   if (editingMetrics) for (const pin of pins) {
-    const room = rooms.find((r) => r.id === pin.forme_id);
+    const room = roomById.get(pin.forme_id);
     if (!room) continue;
     occupied.push({ x: zoom.translateX + (room.geo.x + pin.rel_x * room.geo.width - editingMetrics.cardWidth / 2) * zoom.scale,
       y: zoom.translateY + (room.geo.y + pin.rel_y * room.geo.height - editingMetrics.cardHeight / 2) * zoom.scale,
       width: editingMetrics.cardWidth * zoom.scale, height: editingMetrics.cardHeight * zoom.scale });
   }
   const roomPins = orderedPins(pins.filter((pin) => pin.forme_id === selectedId));
+  const pinNumbers = new Map(roomPins.map((pin, index) => [pin.id, index + 1]));
   const markers = (editingMetrics ? [] : [...roomPins].sort((a, b) => Number(b.emplacement_id === highlightedId) - Number(a.emplacement_id === highlightedId))).map((pin) => {
-    const index = roomPins.findIndex((p) => p.id === pin.id);
-    const room = rooms.find((r) => r.id === pin.forme_id);
+    const room = roomById.get(pin.forme_id);
     if (!room) return null;
     const highlighted = pin.emplacement_id === highlightedId;
     const diameter = (highlighted ? 44 : 24) * factor;
@@ -42,7 +43,7 @@ export function ExploreLabelLayer({ rooms, pins, selectedId, zoom, factor, numbe
       width: diameter, height: diameter, borderRadius: diameter / 2, backgroundColor: colors.accent,
       boxShadow: highlighted ? `0 0 0 6px ${colors.accentLight}` : undefined,
       borderWidth: highlighted ? 3 : 2, borderColor: pin.emplacement_id === highlightedId ? colors.accentDark : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-      <Text allowFontScaling={false} style={{ color: '#fff', fontSize: (highlighted ? 18 : 12) * factor, fontWeight: '700' }}>{index + 1}</Text>
+      <Text allowFontScaling={false} style={{ color: '#fff', fontSize: (highlighted ? 18 : 12) * factor, fontWeight: '700' }}>{pinNumbers.get(pin.id)}</Text>
     </View>;
   });
   const textStyle = { fontSize: 14 * factor, lineHeight: 18 * factor, fontWeight: '600' as const, color: colors.ink };
@@ -53,16 +54,20 @@ export function ExploreLabelLayer({ rooms, pins, selectedId, zoom, factor, numbe
       style={textStyle}
       onLayout={(event) => {
         const line = event.nativeEvent.layout;
-        const key = `${room.id}:${room.label}:${factor}`;
-        const size = { width: Math.ceil(line.width) + 2, height: Math.ceil(line.height) + 2 };
-        setMeasures((prev) => prev[key]?.width === size.width && prev[key]?.height === size.height ? prev : { ...prev, [key]: size });
+        const size = { label: room.label, factor, width: Math.ceil(line.width) + 2, height: Math.ceil(line.height) + 2 };
+        setMeasures((prev) => {
+          const previous = prev[room.id];
+          return previous?.width === size.width && previous?.height === size.height && previous?.label === room.label && previous?.factor === factor
+            ? prev : { ...prev, [room.id]: size };
+        });
       }}>{room.label}</Text>)}
     </View>
     {markers}
     {rooms.map((room) => {
       const bounds = { x: zoom.translateX + room.geo.x * zoom.scale, y: zoom.translateY + room.geo.y * zoom.scale,
         width: room.geo.width * zoom.scale, height: room.geo.height * zoom.scale };
-      const size = measures[`${room.id}:${room.label}:${factor}`];
+      const measured = measures[room.id];
+      const size = measured?.label === room.label && measured.factor === factor ? measured : undefined;
       const label = size ? placeRoomLabel(bounds, size, occupied) : null;
       const badge = !label ? placeRoomLabel(bounds, { width: 24 * factor, height: 24 * factor }, occupied) : null;
       const rect = label ?? badge;

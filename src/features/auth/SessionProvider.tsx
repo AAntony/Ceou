@@ -2,6 +2,8 @@ import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { clearPersistedCache } from '../../lib/queryClient';
 import { supabase } from '../../lib/supabase/client';
+import { logClientError } from '../../lib/errorLogging';
+import { observeSession } from './sessionLifecycle';
 
 type SessionContextValue = {
   session: Session | null;
@@ -14,37 +16,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setIsLoading(false);
-    });
-
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, newSession) => {
-      // LE MÉNAGE EST DÉCLENCHÉ PAR L'ÉVÉNEMENT, PAS PAR LA DISPARITION DE LA
-      // SESSION. `SIGNED_OUT` n'est émis que par une déconnexion voulue.
-      // Déduire la déconnexion d'une session devenue nulle confondrait ce cas
-      // avec un renouvellement de jeton qui échoue faute de réseau — et
-      // effacerait le cache au moment précis où il sert.
-      if (event === 'SIGNED_OUT') {
-        setSession(null);
-        void clearPersistedCache();
-        return;
-      }
-
-      // ON NE RETOMBE JAMAIS À `null` SUR UN AUTRE ÉVÉNEMENT. Le jeton d'accès
-      // dure environ une heure ; passé ce délai sans réseau, Supabase ne peut
-      // plus le renouveler et annonce une session nulle. La traiter comme une
-      // déconnexion renverrait vers l'écran de connexion quelqu'un qui est
-      // simplement dans une cave — et lui retirerait l'accès hors-ligne au
-      // moment où il en a besoin. On garde donc la dernière session connue :
-      // les lectures viennent du cache, les écritures partent en file, et le
-      // jeton se renouvellera tout seul au retour du réseau.
-      setSession((current) => newSession ?? current);
-    });
-
-    return () => subscription.subscription.unsubscribe();
-  }, []);
+  useEffect(() => observeSession<Session>({
+    read: async () => (await supabase.auth.getSession()).data.session,
+    subscribe: (receive) => {
+      const { data } = supabase.auth.onAuthStateChange(receive);
+      return () => data.subscription.unsubscribe();
+    },
+    publish: setSession,
+    ready: () => setIsLoading(false),
+    signedOut: () => { void clearPersistedCache().catch((error) => logClientError(error, { source: 'auth.cache_cleanup' })); },
+  }), []);
 
   // CHANGEMENT DE COMPTE = CACHE VIDÉ.
   //
@@ -67,7 +48,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
     const previous = previousUserId.current;
     const userId = session?.user.id ?? null;
     previousUserId.current = userId;
-    if (shouldClearForUserChange(previous, userId)) void clearPersistedCache();
+    if (shouldClearForUserChange(previous, userId)) {
+      void clearPersistedCache().catch((error) => logClientError(error, { source: 'auth.cache_cleanup' }));
+    }
   }, [session]);
 
   return <SessionContext.Provider value={{ session, isLoading }}>{children}</SessionContext.Provider>;

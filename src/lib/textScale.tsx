@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { rem } from 'nativewind';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type PropsWithChildren } from 'react';
 import { AppState, PixelRatio } from 'react-native';
 
 export type TextScalePreference = 'normal' | 'large' | 'huge';
@@ -69,6 +69,8 @@ const TextScaleContext = createContext<TextScaleContextValue>({
 
 export function TextScaleProvider({ children }: PropsWithChildren) {
   const [preference, setPreferenceState] = useState<TextScalePreference>('normal');
+  const preferenceChanged = useRef(false);
+  const pendingWrite = useRef(Promise.resolve());
   const [osFontScale, setOsFontScale] = useState(() => PixelRatio.getFontScale());
 
   // Relu au RETOUR DANS L'APP, et pas a chaque rendu. Le parcours reel est
@@ -89,15 +91,17 @@ export function TextScaleProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
+    let active = true;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (stored !== 'large' && stored !== 'huge') return;
+        if (!active || preferenceChanged.current || (stored !== 'large' && stored !== 'huge')) return;
         setPreferenceState(stored);
       })
       .catch(() => {
         // Lecture impossible : on reste sur la taille normale. Personne n'a
         // rien a corriger, inutile d'alerter.
       });
+    return () => { active = false; };
   }, []);
 
   // TOUT PASSE PAR CETTE SEULE LIGNE.
@@ -115,12 +119,13 @@ export function TextScaleProvider({ children }: PropsWithChildren) {
   }, [preference]);
 
   const setPreference = useCallback((next: TextScalePreference) => {
+    preferenceChanged.current = true;
     setPreferenceState(next);
     // 'normal' n'est pas stocke mais EFFACE : c'est l'absence de choix, et
     // l'ecrire figerait aujourd'hui ce que le defaut pourrait devenir.
-    const write =
-      next === 'normal' ? AsyncStorage.removeItem(STORAGE_KEY) : AsyncStorage.setItem(STORAGE_KEY, next);
-    write.catch(() => {});
+    pendingWrite.current = pendingWrite.current
+      .then(() => next === 'normal' ? AsyncStorage.removeItem(STORAGE_KEY) : AsyncStorage.setItem(STORAGE_KEY, next))
+      .catch(() => {});
   }, []);
 
   const value = useMemo<TextScaleContextValue>(() => {
