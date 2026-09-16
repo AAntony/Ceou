@@ -33,7 +33,8 @@ const CAMERA_PERMISSION =
 // passee aux deux. Le texte parle de conversation, puisque c'est desormais
 // l'usage principal du micro.
 const MICROPHONE_PERMISSION = 'Ceou a besoin du microphone pour que tu puisses parler à son assistant vocal.';
-const ANDROID_KOTLIN_VERSION = '2.3.21';
+// Pika 0.3.2 (Expo 57) publishes its compiler plugin for 2.3.20, not 2.3.21.
+const ANDROID_KOTLIN_VERSION = '2.3.20';
 
 module.exports = {
   expo: {
