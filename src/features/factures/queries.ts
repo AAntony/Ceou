@@ -431,7 +431,8 @@ function retirerDesOrphelins(
   const key = ['objetsSansFacture', habitationId];
   const liste = client.getQueryData<{ id: string }[]>(key);
   if (!liste) return [];
-  return [{ key, data: liste.filter((objet) => !objetIds.includes(objet.id)) }];
+  const linkedIds = new Set(objetIds);
+  return [{ key, data: liste.filter((objet) => !linkedIds.has(objet.id)) }];
 }
 
 export function useUpdateFacture() {

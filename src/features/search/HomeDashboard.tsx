@@ -27,7 +27,7 @@ import { useOnboardingLaunch } from '../onboarding/useOnboarding';
 import { useProfile, useSetAiConsent } from '../profile/useProfile';
 import { ResultCard } from './ResultCard';
 import { useSearchIndex, type SearchIndexEntry } from './queries';
-import { rankResults } from './rank';
+import { prepareSearchIndex, searchPreparedIndex } from './rank';
 
 function FilterChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
@@ -73,7 +73,8 @@ export function HomeDashboard() {
     .map((entry) => [entry.piece_id, { name: entry.piece_name, home: entry.habitation_name }])).entries())
     .sort((a, b) => a[1].name.localeCompare(b[1].name)), [entries, activeHome]);
   const activeRoom = rooms.some(([id]) => id === roomId) ? roomId : null;
-  const filtered = useMemo(() => rankResults(entries ?? [], search, activeHome, activeRoom), [entries, search, activeHome, activeRoom]);
+  const searchIndex = useMemo(() => prepareSearchIndex(entries ?? []), [entries]);
+  const filtered = useMemo(() => searchPreparedIndex(searchIndex, search, activeHome, activeRoom), [searchIndex, search, activeHome, activeRoom]);
   const renderItem = useCallback(({ item }: { item: SearchIndexEntry }) => <ResultCard entry={item} columns={columns} />, [columns]);
   const reset = () => { setSearch(''); setHomeId(null); setRoomId(null); };
   const startClassic = () => {

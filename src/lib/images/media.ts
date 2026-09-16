@@ -84,7 +84,7 @@ export function parseStoredMedia(value: string): { bucket: string; path: string;
 const SIGNATURE_STALE_MS = (SIGNATURE_TTL_SECONDS - 10 * 60) * 1000;
 
 export function useMediaSource(value: string | null | undefined): ImageSource | null {
-  const stored = value && !isLocalUri(value) ? parseStoredMedia(value) : null;
+  const stored = useMemo(() => value && !isLocalUri(value) ? parseStoredMedia(value) : null, [value]);
 
   const signature = useQuery({
     queryKey: [MEDIA_SIGNATURE_KEY, stored?.bucket, stored?.path],
