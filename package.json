@@ -72,12 +72,12 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package --error-on-fail",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
     "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans && npm run test:profile && npm run test:resilience",
-    "verify:ci": "npm run typecheck && npm run lint -- --max-warnings 30 && npm test",
+    "verify:ci": "npm run typecheck && npm run lint -- --max-warnings 28 && npm test",
     "test:scanner": "node --test scripts/tests/scanner.test.mjs",
     "site": "node scripts/build-site.mjs",
     "site:serve": "node scripts/serve-site.mjs",
@@ -87,7 +87,12 @@
     "preweb": "node scripts/setup-plan-web.mjs",
     "test:plans": "node --test scripts/tests/plans-layout.test.mjs scripts/tests/plans-geometry.test.mjs scripts/tests/inventory-chain.test.mjs",
     "test:profile": "node --test scripts/tests/profile-setup.test.mjs",
-    "test:resilience": "node --test scripts/tests/async-state.test.mjs scripts/tests/barcode-lookup.test.mjs scripts/tests/encrypted-storage.test.mjs scripts/tests/session-lifecycle.test.mjs"
+    "test:resilience": "node --test scripts/tests/async-state.test.mjs scripts/tests/barcode-lookup.test.mjs scripts/tests/encrypted-storage.test.mjs scripts/tests/session-lifecycle.test.mjs scripts/tests/dependency-compatibility.test.mjs"
+  },
+  "overrides": {
+    "metro": { "image-size": "2.0.3" },
+    "xcode": { "uuid": "11.1.1" },
+    "query-string": { "decode-uri-component": "0.5.0" }
   },
   "private": true
 }
