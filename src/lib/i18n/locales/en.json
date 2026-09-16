@@ -326,6 +326,28 @@
       "preview_location": "Sideboard drawer · Kitchen",
       "system_hint": "Ceou also follows the text size set on your phone.",
       "system_hint_active": "Your phone is set to a text size of {{percent}}%. Ceou adds to that."
+    },
+    "sections": {
+      "identity": {
+        "title": "My profile",
+        "hint": "Photo and display name"
+      },
+      "preferences": {
+        "title": "My preferences",
+        "hint": "Language, theme and text size"
+      },
+      "help": {
+        "title": "Getting the most out of Céoù",
+        "hint": "Getting started and tutorials"
+      },
+      "sharing": {
+        "title": "Friends and invitations",
+        "hint": "My friend code and guest access"
+      },
+      "account": {
+        "title": "Account and data",
+        "hint": "Security, trash and privacy"
+      }
     }
   },
   "home": {

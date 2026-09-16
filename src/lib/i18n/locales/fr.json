@@ -326,6 +326,28 @@
       "preview_location": "Tiroir du buffet · Cuisine",
       "system_hint": "Céoù suit aussi la taille de police réglée sur votre téléphone.",
       "system_hint_active": "Votre téléphone est réglé sur une taille de police de {{percent}} %. Céoù s’y ajoute."
+    },
+    "sections": {
+      "identity": {
+        "title": "Mon profil",
+        "hint": "Photo et nom affiché"
+      },
+      "preferences": {
+        "title": "Mes préférences",
+        "hint": "Langue, thème et taille du texte"
+      },
+      "help": {
+        "title": "Bien utiliser Céoù",
+        "hint": "Guide de démarrage et tutoriels"
+      },
+      "sharing": {
+        "title": "Amis et invitations",
+        "hint": "Mon code ami et les accès invités"
+      },
+      "account": {
+        "title": "Compte et données",
+        "hint": "Sécurité, corbeille et confidentialité"
+      }
     }
   },
   "home": {

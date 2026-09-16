@@ -13,6 +13,7 @@ import { TextField } from '../../src/components/TextField';
 import { TextLink } from '../../src/components/TextLink';
 import { usePullToRefresh } from '../../src/components/usePullToRefresh';
 import { GuestProfile } from '../../src/features/auth/GuestProfile';
+import { ProfileSection } from '../../src/features/profile/ProfileSection';
 import { DisplaySettings } from '../../src/features/profile/DisplaySettings';
 import { useIsAnonymous, useSession } from '../../src/features/auth/SessionProvider';
 import { cancelAllInviteReminders } from '../../src/features/notifications/inviteReminders';
@@ -36,7 +37,7 @@ export default function ProfileScreen() {
   // La pastille d'avatar est dessinee en pixels (image ronde recadree), donc
   // hors de portee de `rem` : elle est mise a l'echelle a la main pour ne pas
   // rester une vignette au milieu d'un ecran agrandi.
-  const avatarSize = useScaled(96);
+  const avatarSize = useScaled(64);
   const { t, i18n } = useTranslation();
   const { session } = useSession();
   const isGuest = useIsAnonymous();
@@ -151,8 +152,9 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-6 pb-40" refreshControl={refreshControl}>
-      <Pressable accessibilityRole="button" onPress={handleAvatarPress} className="mb-8 items-center">
+    <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-4 pt-4 pb-40" refreshControl={refreshControl}>
+      <ProfileSection title={t('profile.sections.identity.title')} summary={t('profile.sections.identity.hint')} icon="profile" defaultOpen>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('profile.avatar.change')} onPress={handleAvatarPress} className="mb-4 min-h-[48px] flex-row items-center gap-4">
         <View
           className="items-center justify-center overflow-hidden rounded-full bg-sand-dark"
           style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }}
@@ -167,7 +169,7 @@ export default function ProfileScreen() {
             </Text>
           )}
         </View>
-        <Text className="mt-2 text-label font-medium text-ink-soft">{t('profile.avatar.change')}</Text>
+        <Text className="flex-1 text-label font-semibold text-coral-dark">{t('profile.avatar.change')}</Text>
       </Pressable>
 
       {/* La confirmation d'enregistrement s'efface DES LA FRAPPE SUIVANTE :
@@ -185,28 +187,36 @@ export default function ProfileScreen() {
 
       {saved ? <Text className="mb-4 text-label text-green-600">{t('profile.saved')}</Text> : null}
 
-      <Text className="mb-2 mt-8 text-label font-medium text-ink-soft">{t('profile.language')}</Text>
+      {dirty ? <Button label={t('a11y.save_changes')} onPress={handleSave} loading={updateProfile.isPending} /> : null}
+      </ProfileSection>
+
+      <ProfileSection title={t('profile.sections.preferences.title')} summary={t('profile.sections.preferences.hint')} icon="theme">
+      <Text className="mb-2 text-label font-medium text-ink-soft">{t('profile.language')}</Text>
       <View className="flex-row gap-2">
         {SUPPORTED_LANGUAGES.map((language) => (
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ selected: i18n.language === language }}
+            accessibilityLabel={language === 'fr' ? 'Français' : 'English'}
             key={language}
             onPress={() => handleLanguageChange(language)}
-            className={`rounded-xl border px-4 py-2 ${
+            className={`min-h-[48px] flex-1 items-center justify-center rounded-xl border px-4 py-2 ${
               i18n.language === language ? 'border-coral bg-coral' : 'border-ink/10'
             }`}
           >
             <Text className={i18n.language === language ? 'font-semibold text-white' : 'text-ink-soft'}>
-              {language.toUpperCase()}
+              {language === 'fr' ? 'Français' : 'English'}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <View className="mt-8">
-        <DisplaySettings />
+      <View className="mt-5">
+        <DisplaySettings embedded />
       </View>
 
+      </ProfileSection>
+      <ProfileSection title={t('profile.sections.help.title')} summary={t('profile.sections.help.hint')} icon="guide">
       {/* Le guide de démarrage se rejoue à volonté. Il n'est pas rangé avec
           les liens de bas de page (Compte, Confidentialité) : ce n'est pas
           une mention légale, c'est la porte de secours de quelqu'un qui ne
@@ -214,7 +224,7 @@ export default function ProfileScreen() {
       <Pressable
         accessibilityRole="button"
         onPress={() => setGuideOpen(true)}
-        className="mt-8 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+        className="min-h-[48px] flex-row items-center gap-3 py-3 active:opacity-70"
       >
         <Icon name="guide" size={22} color={colors.accentDark} />
         <View className="flex-1">
@@ -232,7 +242,7 @@ export default function ProfileScreen() {
       <Pressable
         accessibilityRole="button"
         onPress={() => router.push('/tutoriels')}
-        className="mt-3 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+        className="min-h-[48px] flex-row items-center gap-3 border-t border-ink/10 py-3 active:opacity-70"
       >
         <Icon name="help" size={22} color={colors.accentDark} />
         <View className="flex-1">
@@ -242,14 +252,18 @@ export default function ProfileScreen() {
         <Icon name="chevron" size={20} color={colors.inkFaint} />
       </Pressable>
 
+      </ProfileSection>
+      <ProfileSection title={t('profile.sections.sharing.title')} summary={t('profile.sections.sharing.hint')} icon="friends">
       {/* Le code ami et le code d'invité sont deux choses différentes, donc
           deux sections distinctes. Réunis sous un même bouton « Partager mon
           code », ils produisaient un code d'ami que personne ne pouvait
           saisir à la main — le défaut corrigé le 26/08. */}
-      <Text className="mb-1 mt-8 text-label font-medium text-ink-soft">{t('friends.my_code.title')}</Text>
+      <Text className="mb-1 text-body font-semibold text-ink">{t('friends.my_code.title')}</Text>
       <Text className="mb-2 text-caption leading-4 text-ink-soft">{t('friends.my_code.subtitle')}</Text>
       <Pressable
         accessibilityRole="button"
+        accessibilityState={{ expanded: myCodeOpen }}
+        accessibilityLabel={`${t('friends.my_code.title')}, ${profile?.friend_code ?? ''}`}
         onPress={() => setMyCodeOpen((current) => !current)}
         className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-sand-dark px-4 py-3"
       >
@@ -267,7 +281,7 @@ export default function ProfileScreen() {
         <Button label={t('friends.my_code.share')} variant="outline" onPress={handleShareFriendCode} />
       </View>
 
-      <Text className="mb-1 mt-8 text-label font-medium text-ink-soft">{t('friends.share.section_title')}</Text>
+      <Text className="mb-1 mt-6 text-body font-semibold text-ink">{t('friends.share.section_title')}</Text>
       <Text className="mb-2 text-caption leading-4 text-ink-soft">{t('friends.share.section_hint')}</Text>
       <Button label={t('friends.share.entry')} variant="outline" onPress={() => setShareModalOpen(true)} />
 
@@ -282,6 +296,8 @@ export default function ProfileScreen() {
         textClassName="text-label font-semibold text-ink"
       />
 
+      </ProfileSection>
+      <ProfileSection title={t('profile.sections.account.title')} summary={t('profile.sections.account.hint')} icon="security">
       {/* LA CORBEILLE EST RANGÉE AVEC LES RÉGLAGES, pas avec l'inventaire : on
           n'y va pas pour consulter ses affaires, on y va parce qu'on vient
           d'en perdre. C'est l'endroit où l'on cherche quand quelque chose a
@@ -289,7 +305,7 @@ export default function ProfileScreen() {
       <Pressable
         accessibilityRole="button"
         onPress={() => router.push('/corbeille')}
-        className="mt-8 flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface px-4 py-3 active:opacity-70"
+        className="min-h-[48px] flex-row items-center gap-3 py-3 active:opacity-70"
       >
         <Icon name="delete" size={22} color={colors.inkSoft} />
         <View className="flex-1">
@@ -338,11 +354,13 @@ export default function ProfileScreen() {
         textClassName="text-center text-label font-semibold text-danger"
       />
 
+      </ProfileSection>
+
       {/* Le numéro "1.0.0" seul ne bouge presque jamais — le hash de commit
           (injecté par app.config.js à chaque bundle/build) est ce qui
           permet réellement de savoir quelle version est en train de tourner
           sur un appareil de test. */}
-      <Text className="mt-10 text-center text-caption text-ink-soft">
+      <Text className="mt-4 text-center text-caption text-ink-soft">
         {t('profile.version_label')} {Constants.expoConfig?.version ?? '?'} ({Constants.expoConfig?.extra?.gitCommit ?? '?'})
       </Text>
 

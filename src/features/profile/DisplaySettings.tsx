@@ -55,7 +55,7 @@ function Preview() {
   );
 }
 
-export function DisplaySettings() {
+export function DisplaySettings({ embedded = false }: { embedded?: boolean }) {
   const { t } = useTranslation();
   const colors = useThemeColors();
   const { preference: themePreference, isDark, setPreference: setThemePreference } = useTheme();
@@ -72,9 +72,9 @@ export function DisplaySettings() {
 
   return (
     <View>
-      <Text className="mb-2 text-label font-medium text-ink-soft">{t('profile.display.title')}</Text>
+      {!embedded ? <Text className="mb-2 text-label font-medium text-ink-soft">{t('profile.display.title')}</Text> : null}
 
-      <View className="rounded-2xl border border-ink/10 bg-surface p-4">
+      <View className={embedded ? "border-t border-ink/10 pt-4" : "rounded-2xl border border-ink/10 bg-surface p-4"}>
         {/* UN INTERRUPTEUR ET NON TROIS CHOIX (clair / sombre / système) :
             tant que personne n'y touche, l'app suit le téléphone, ce que
             'system' ferait de mieux. Le lien de retour n'apparaît QUE si un

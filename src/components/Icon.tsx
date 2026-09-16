@@ -74,6 +74,7 @@ export type IconName =
   | 'close'
   | 'search'
   | 'profile'
+  | 'security'
   | 'validate'
   | 'save'
   | 'microphone'
@@ -196,6 +197,7 @@ const GLYPHS: Record<IconName, keyof typeof MaterialCommunityIcons.glyphMap> = {
   close: 'close',
   search: 'magnify',
   profile: 'account-circle-outline',
+  security: 'shield-account-outline',
   validate: 'check',
   // La disquette d'enregistrement des en-tetes. Le glyphe PLEIN et non son
   // contour : c'est une commande, pas une decoration, et sa couleur porte
