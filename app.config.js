@@ -33,6 +33,7 @@ const CAMERA_PERMISSION =
 // passee aux deux. Le texte parle de conversation, puisque c'est desormais
 // l'usage principal du micro.
 const MICROPHONE_PERMISSION = 'Ceou a besoin du microphone pour que tu puisses parler à son assistant vocal.';
+const ANDROID_KOTLIN_VERSION = '2.3.21';
 
 module.exports = {
   expo: {
@@ -112,7 +113,8 @@ module.exports = {
     },
     plugins: [
       // Google Mobile Ads 25.4 uses Kotlin 2.3 metadata; Expo's default 2.1 compiler cannot read it.
-      ['expo-build-properties', { android: { kotlinVersion: '2.3.21' } }],
+      ['expo-build-properties', { android: { kotlinVersion: ANDROID_KOTLIN_VERSION } }],
+      ['./plugins/withAndroidKotlinCompiler', { kotlinVersion: ANDROID_KOTLIN_VERSION }],
       ['react-native-google-mobile-ads', {
         androidAppId: 'ca-app-pub-6809656178417507~5535422302',
         // iOS is not commercially configured yet; use Google's sample app ID.

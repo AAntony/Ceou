@@ -63,7 +63,7 @@ La bascule de `enforce` et `ads_enabled` est une opération d'administration sé
 
 ## Maintenance
 
-- La compilation Android utilise Kotlin 2.3.21 via `expo-build-properties`, nécessaire pour lire les métadonnées Kotlin 2.3 de Google Mobile Ads 25.4. Toute modification de ce réglage exige un nouveau build natif.
+- La compilation Android utilise Kotlin 2.3.21 via `expo-build-properties`, nécessaire pour lire les métadonnées Kotlin 2.3 de Google Mobile Ads 25.4. Le plugin local `withAndroidKotlinCompiler` aligne aussi le compilateur Gradle, en contournement du [problème Expo 57 nº 49668](https://github.com/expo/expo/issues/49668). Toute modification de ce réglage exige un nouveau build natif.
 - Migration `20260917120000_billing.sql` : règles, compteurs, réservations et protections d'accès.
 - Fonctions `billing-sync`, `revenuecat-webhook`, `billing-ad`, `admob-reward`, `detect-objects`.
 - Les fonctions publiques de callback vérifient leur signature fournisseur ; les endpoints applicatifs vérifient l'utilisateur avec `auth.getUser`.
