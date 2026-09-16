@@ -27,6 +27,13 @@ Conserver les parcours, textes, droits, règles métier, clés du cache et forma
 - Les sources d'images ne sont plus reconstruites à chaque rendu pour une URL inchangée.
 - Comparaison automatique avec l'ancien classement conservé comme référence de test : accents, types d'entité, filtres croisés, noms identiques et requêtes vides.
 
+## Étape 2 — modularité
+
+- L'arborescence des rangements est isolée de React Query et du préchargement hors ligne. Les mutations n'importent plus le module complet de préchargement ; l'accès au cache est un adaptateur séparé.
+- La géométrie des poignées et du zoom du plan est désormais pure et testable sans téléphone.
+- Les murs et ouvertures sont calculés séparément des couleurs, textes et sélections. Une sélection ou un changement de thème ne relance plus directement tout le calcul des murs.
+- Tests ajoutés : ancêtres manquants, cycles de rangements, ordre du chemin, pièces mono-espace, huit poignées, tailles limites, cadrage, murs mitoyens et portes.
+
 ## Limites de validation
 
 Les tests locaux et l'export ne remplacent pas un essai Android pour les gestes des plans, le microphone, le mode avion et la reprise de session après fermeture. Aucun test ne modifie l'inventaire réel.

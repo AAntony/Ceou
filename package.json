@@ -85,7 +85,7 @@
     "test:redesign": "node --test scripts/test-redesign.mjs scripts/tests/search-performance.test.mjs",
     "test:voice": "node --test scripts/tests/voice-live-tools.test.mjs scripts/tests/voice-audio.test.mjs",
     "preweb": "node scripts/setup-plan-web.mjs",
-    "test:plans": "node --test scripts/tests/plans-layout.test.mjs",
+    "test:plans": "node --test scripts/tests/plans-layout.test.mjs scripts/tests/plans-geometry.test.mjs scripts/tests/inventory-chain.test.mjs",
     "test:profile": "node --test scripts/tests/profile-setup.test.mjs"
   },
   "private": true

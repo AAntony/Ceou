@@ -23,9 +23,11 @@ import { ExploreLabelLayer } from './ExploreLabelLayer';
 import { orderedRooms } from './exploreLayout';
 import { PlanPinLayer } from './PlanPinLayer';
 import { PIN_METRICS, type PinSize } from './pinSize';
-import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallSegments, wallWidth } from './walls';
-import { clamp, clampPositionToWorld, clampResizeToWorld, clampSize, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
+import { doorCenter, doorJambs, doorSpan, freeDoorPosition, nearestEdge, wallWidth } from './walls';
+import { clamp, clampPositionToWorld, clampResizeToWorld, resolvePinRel, snapPosition, snapResize, snapToSiblings } from './snap';
 import type { DoorEdge, HandleId, ShapeGeometry } from './types';
+import { applyHandle, clampZoomState, handleAnchor, IDLE_ZOOM, type ZoomState } from './canvasGeometry';
+import { useRoomStructure } from './useRoomStructure';
 import { tintForDark } from '../../lib/color';
 import { useTextScale } from '../../lib/textScale';
 import { useTheme, useThemeColors } from '../../lib/theme';
@@ -41,69 +43,6 @@ const HANDLES: HandleId[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
 // corrigé ici : la feuille suit le thème depuis l'arrivée du sombre, seule
 // l'encre posée dessus ne suivait pas.
 const ACCENT = '#1591EA';
-
-function handleAnchor(geo: ShapeGeometry, handle: HandleId): { x: number; y: number } {
-  const cx = geo.x + geo.width / 2;
-  const cy = geo.y + geo.height / 2;
-  const right = geo.x + geo.width;
-  const bottom = geo.y + geo.height;
-  const positions: Record<HandleId, { x: number; y: number }> = {
-    nw: { x: geo.x, y: geo.y },
-    n: { x: cx, y: geo.y },
-    ne: { x: right, y: geo.y },
-    e: { x: right, y: cy },
-    se: { x: right, y: bottom },
-    s: { x: cx, y: bottom },
-    sw: { x: geo.x, y: bottom },
-    w: { x: geo.x, y: cy },
-  };
-  return positions[handle];
-}
-
-// Chaque poignée ne déplace que les bords qu'elle touche ; le(s) bord(s)
-// opposé(s) restent ancrés sur la géométrie au début du geste.
-function applyHandle(origin: ShapeGeometry, handle: HandleId, dx: number, dy: number): ShapeGeometry {
-  let { x, y, width, height } = origin;
-  const right = origin.x + origin.width;
-  const bottom = origin.y + origin.height;
-
-  if (handle.includes('w')) {
-    width = clampSize(origin.width - dx);
-    x = right - width;
-  }
-  if (handle.includes('e')) {
-    width = clampSize(origin.width + dx);
-  }
-  if (handle.includes('n')) {
-    height = clampSize(origin.height - dy);
-    y = bottom - height;
-  }
-  if (handle.includes('s')) {
-    height = clampSize(origin.height + dy);
-  }
-  return { x, y, width, height };
-}
-
-type ZoomState = { scale: number; translateX: number; translateY: number };
-const IDLE_ZOOM: ZoomState = { scale: 1, translateX: 0, translateY: 0 };
-
-// La feuille (WORLD_WIDTH x WORLD_HEIGHT) est une zone FIXE et LIMITÉE : on
-// ne peut jamais dézoomer plus loin que "toute la feuille visible d'un coup"
-// (minScale), ni glisser la vue pour révéler quoi que ce soit au-delà de son
-// bord. Sur l'axe où la feuille projetée est plus petite que le viewport,
-// elle reste centrée (rien à glisser sur cet axe) ; sur l'axe où elle est
-// plus grande, le glissé est borné pile à ses bords — jamais de vide au-delà.
-// Même principe qu'une visionneuse d'image/PDF (contain, puis pan une fois
-// zoomé), plutôt qu'un canevas panoramique sans limite perceptible.
-function clampZoomState(z: ZoomState, viewportW: number, viewportH: number, minScale: number, explore = false): ZoomState {
-  const scale = clamp(z.scale, minScale, MAX_ZOOM);
-  const contentW = WORLD_WIDTH * scale;
-  const contentH = WORLD_HEIGHT * scale;
-  if (explore) return { scale, translateX: clamp(z.translateX, viewportW / 2 - contentW, viewportW / 2), translateY: clamp(z.translateY, viewportH / 2 - contentH, viewportH / 2) };
-  const translateX = contentW <= viewportW ? (viewportW - contentW) / 2 : clamp(z.translateX, viewportW - contentW, 0);
-  const translateY = contentH <= viewportH ? (viewportH - contentH) / 2 : clamp(z.translateY, viewportH - contentH, 0);
-  return { scale, translateX, translateY };
-}
 
 export type PlanCanvasProps = {
   formes: PlanForme[];
@@ -818,6 +757,9 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     return map;
   }, [doors]);
 
+  // Walls depend on geometry, not on selection, language, counts or theme.
+  const roomStructure = useRoomStructure(formes, geoById, doorSpansByForme);
+
   const roomVisuals = useMemo(
     () =>
       sortedFormes.map((forme) => {
@@ -827,12 +769,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
         // l'écran de nuit. Sa traduction pour le thème sombre se fait ici,
         // au dessin (voir tintForDark dans lib/color).
         const pastel = forme.piece_id ? (info?.color ?? DEFAULT_PIECE_COLOR) : roomColorForForme(forme.id);
-        const roomDoors = doorSpansByForme[forme.id] ?? [];
-        // Les voisines disent deux choses : quels pans de mur sont mitoyens
-        // (donc fins), et où le mur commun est déjà percé par elles.
-        const neighbours = sortedFormes
-          .filter((other) => other.id !== forme.id)
-          .map((other) => ({ geo: geoById[other.id], doors: doorSpansByForme[other.id] ?? [] }));
         return {
           id: forme.id,
           geo: geoById[forme.id],
@@ -843,11 +779,11 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           // Le mur n'est plus un rectangle mais une suite de segments : les
           // portes de cette pièce y sont des trous, et chaque segment sait
           // s'il ferme le logement (épais) ou sépare deux pièces (fin).
-          walls: wallSegments(geoById[forme.id], roomDoors, neighbours),
-          jambs: doorJambs(geoById[forme.id], roomDoors, neighbours),
+          walls: roomStructure[forme.id].walls,
+          jambs: roomStructure[forme.id].jambs,
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorSpansByForme, isDark, t],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, roomStructure, isDark, t],
   );
 
   const selectedDoorGeometry = useMemo(() => {

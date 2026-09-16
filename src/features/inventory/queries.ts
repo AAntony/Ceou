@@ -10,7 +10,8 @@ import { deleteOp, insertOp, rpcOp, updateOp, uploadOp, useLocalFirstWrite, type
 import { deposerOp } from '../corbeille/queries';
 import { isSingleSpaceHabitation } from './constants';
 import { planEntityPhoto } from './entityPhoto';
-import { locationChainFrom, lookupsFromCache } from './offlineSnapshot';
+import { locationChainFrom, type ObjetLocationNode } from './locationChain';
+import { lookupsFromCache } from './locationCache';
 import type { SearchIndexEntry } from '../search/queries';
 
 // L'INVENTAIRE S'ÉCRIT À TRAVERS LA FILE, ET PLUS DIRECTEMENT.
@@ -931,16 +932,7 @@ export function useDeleteObjet() {
   }));
 }
 
-export type ObjetLocationNode = {
-  kind: 'habitation' | 'piece' | 'emplacement' | 'conteneur';
-  id: string;
-  name: string;
-  preset_key: string | null;
-  // Vrai uniquement pour la pièce fantôme d'une habitation mono-espace
-  // (Garage, Cave...), que le fil d'ariane écarte de l'affichage — la fiche
-  // objet, elle, garde ce maillon pour le lien vers le plan.
-  is_default: boolean;
-};
+export type { ObjetLocationNode } from './locationChain';
 
 export function useObjetLocationChain(objetId: string) {
   return useQuery({

@@ -17,7 +17,7 @@ import type {
   PlanPin,
 } from '../../types/database';
 import { useSession } from '../auth/SessionProvider';
-import type { ObjetLocationNode } from './queries';
+import { locationChainFrom } from './locationChain';
 
 // TOUT CE QU'ON POSSÈDE, CHARGÉ D'AVANCE PENDANT QU'IL Y A DU RÉSEAU.
 //
@@ -161,85 +161,6 @@ function groupBy<T>(rows: T[], key: (row: T) => string | null): Map<string, T[]>
     else map.set(k, [row]);
   }
   return map;
-}
-
-/**
- * LA CHAÎNE D'EMPLACEMENT, RECONSTITUÉE ICI.
- *
- * En ligne, c'est une fonction SQL (`objet_location_chain`) qui la calcule —
- * une requête par objet, ce qui interdit de la précharger pour tout
- * l'inventaire. Elle est donc redéduite de la hiérarchie qu'on vient de lire.
- *
- * L'ORDRE REPRODUIT CELUI DU SQL : habitation, pièce, emplacement, puis les
- * conteneurs du plus englobant au plus interne. C'est l'ordre du fil d'Ariane,
- * et s'en écarter donnerait un chemin qui se lit à l'envers.
- *
- * Le garde-fou sur les identifiants déjà vus n'est pas décoratif : un
- * conteneur qui se retrouverait son propre ancêtre — ce que la base interdit,
- * mais qu'une donnée abîmée pourrait présenter — ferait boucler l'application
- * sans fin au lieu d'afficher un chemin incomplet.
- *
- * EXPORTÉE POUR ÊTRE ÉPROUVÉE : c'est la logique la plus délicate de ce
- * fichier, elle réimplémente du SQL de tête, et une erreur d'ordre y donnerait
- * un chemin qui se lit à l'envers sans que rien ne plante.
- */
-export type EntityLookups = {
-  conteneur: (id: string) => Conteneur | undefined;
-  emplacement: (id: string) => Emplacement | undefined;
-  piece: (id: string) => Piece | undefined;
-  habitation: (id: string) => Habitation | undefined;
-};
-
-/**
- * Les entités sont fournies par des FONCTIONS et non par des tables, pour que
- * cette logique serve aux deux appelants sans être écrite deux fois : le
- * préchargement, qui a tout en mémoire, et le déplacement d'un objet, qui doit
- * recalculer le chemin depuis le cache.
- */
-export function locationChainFrom(
-  start: { emplacementId: string | null; conteneurId: string | null },
-  lookups: EntityLookups,
-): ObjetLocationNode[] {
-  const nested: Conteneur[] = [];
-  const seen = new Set<string>();
-  let emplacementId = start.emplacementId;
-  let cursor = start.conteneurId;
-
-  while (cursor && !seen.has(cursor)) {
-    seen.add(cursor);
-    const conteneur = lookups.conteneur(cursor);
-    if (!conteneur) break;
-    nested.push(conteneur);
-    if (conteneur.parent_emplacement_id) emplacementId = conteneur.parent_emplacement_id;
-    cursor = conteneur.parent_conteneur_id;
-  }
-  // Remonté depuis l'objet, donc du plus interne au plus englobant.
-  nested.reverse();
-
-  const emplacement = emplacementId ? lookups.emplacement(emplacementId) : undefined;
-  const piece = emplacement ? lookups.piece(emplacement.piece_id) : undefined;
-  const habitation = piece ? lookups.habitation(piece.habitation_id) : undefined;
-
-  const chain: ObjetLocationNode[] = [];
-  if (habitation) {
-    chain.push({ kind: 'habitation', id: habitation.id, name: habitation.name, preset_key: null, is_default: false });
-  }
-  if (piece) {
-    chain.push({ kind: 'piece', id: piece.id, name: piece.name, preset_key: piece.preset_key, is_default: piece.is_default });
-  }
-  if (emplacement) {
-    chain.push({
-      kind: 'emplacement',
-      id: emplacement.id,
-      name: emplacement.name,
-      preset_key: emplacement.preset_key,
-      is_default: false,
-    });
-  }
-  for (const conteneur of nested) {
-    chain.push({ kind: 'conteneur', id: conteneur.id, name: conteneur.name, preset_key: null, is_default: false });
-  }
-  return chain;
 }
 
 /**
@@ -428,19 +349,3 @@ export function useInventorySnapshot(): void {
   }, [data, client, userId]);
 }
 
-/**
- * Les mêmes recherches, mais servies par le CACHE.
- *
- * Le préchargement a posé chaque entité sous sa propre clé (`['piece', id]`,
- * `['conteneur', id]`…) : il n'y a donc rien à redemander pour recalculer un
- * chemin après un déplacement fait hors-ligne. Les recherches sont directes,
- * jamais une énumération du cache.
- */
-export function lookupsFromCache(client: QueryClient): EntityLookups {
-  return {
-    conteneur: (id) => client.getQueryData<Conteneur>(['conteneur', id]),
-    emplacement: (id) => client.getQueryData<Emplacement>(['emplacement', id]),
-    piece: (id) => client.getQueryData<Piece>(['piece', id]),
-    habitation: (id) => client.getQueryData<Habitation>(['habitation', id]),
-  };
-}
