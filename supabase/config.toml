@@ -429,3 +429,13 @@ verify_jwt = true
 # deduit qui prevenir. Sans jeton verifie, ce garde-fou n'existerait plus.
 [functions.send-push]
 verify_jwt = true
+
+# These functions validate the caller with auth.getUser, or the provider signature.
+[functions.billing-sync]
+verify_jwt = false
+[functions.billing-ad]
+verify_jwt = false
+[functions.revenuecat-webhook]
+verify_jwt = false
+[functions.admob-reward]
+verify_jwt = false

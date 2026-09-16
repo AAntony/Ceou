@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import type { ClientErrorInsert } from '../types/database';
 import { supabase } from './supabase/client';
+import i18n from './i18n';
 
 // Forme minimale d'un objet d'erreur exploitable : un `.message` string.
 // Volontairement pas `Error` — voir describeError ci-dessous.
@@ -98,7 +99,9 @@ function describeError(error: unknown): {
  * endroit.
  */
 export function errorMessage(error: unknown): string {
-  return describeError(error).message;
+  const message = describeError(error).message;
+  if (/^billing_[a-z_]+$/.test(message) && i18n.exists(`billing.${message}`)) return i18n.t(`billing.${message}`);
+  return message;
 }
 
 export async function logClientError(error: unknown, context?: Record<string, unknown>): Promise<void> {

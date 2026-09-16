@@ -38,7 +38,7 @@ module.exports = {
   expo: {
     name: 'Ceou',
     slug: 'ceou',
-    version: '1.1.0',
+    version: '1.2.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     // 'automatic' et non 'light' depuis l'ajout du theme sombre : c'est ce
@@ -111,6 +111,12 @@ module.exports = {
       favicon: './assets/favicon.png',
     },
     plugins: [
+      ['react-native-google-mobile-ads', {
+        androidAppId: 'ca-app-pub-6809656178417507~5535422302',
+        // iOS is not commercially configured yet; use Google's sample app ID.
+        iosAppId: 'ca-app-pub-3940256099942544~1458002511',
+        delayAppMeasurementInit: true,
+      }],
       'expo-router',
       'expo-image',
       'expo-secure-store',
@@ -212,6 +218,12 @@ module.exports = {
       ],
     ],
     extra: {
+      billing: {
+        mode: process.env.EXPO_PUBLIC_BILLING_MODE === 'live' ? 'live' : 'test',
+        revenueCatKey: process.env.EXPO_PUBLIC_BILLING_MODE === 'live'
+          ? (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '')
+          : 'test_kdAWkKfnPoHDUbxFHDPVuopebrZ',
+      },
       router: {},
       eas: {
         projectId: 'e6e7590c-fe95-4ec3-93c4-5da5ee7e9b94',

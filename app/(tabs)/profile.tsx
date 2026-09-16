@@ -188,6 +188,11 @@ export default function ProfileScreen() {
 
       </ProfileSection>
 
+      <Pressable accessibilityRole="button" onPress={() => router.push('/forfait')} className="mb-3 min-h-[72px] flex-row items-center gap-3 rounded-2xl border border-ink/10 bg-surface p-4">
+        <Icon name="star" size={24} />
+        <View className="flex-1"><Text className="text-body font-semibold text-ink">{t('billing.entry')}</Text><Text className="mt-1 text-caption text-ink-soft">{t('billing.entry_hint')}</Text></View>
+        <Icon name="chevron" size={18}/>
+      </Pressable>
       <ProfileSection title={t('profile.sections.preferences.title')} summary={t('profile.sections.preferences.hint')} icon="theme">
       <Text className="mb-2 text-label font-medium text-ink-soft">{t('profile.language')}</Text>
       <View className="flex-row gap-2">

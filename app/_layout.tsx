@@ -14,6 +14,7 @@ import { AppTabBar } from '../src/components/AppTabBar';
 import { OfflineBanner, useHasTopBanner } from '../src/components/OfflineBanner';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SessionProvider, useSession } from '../src/features/auth/SessionProvider';
+import { BillingAccountObserver } from '../src/features/billing/BillingAccountObserver';
 import { useAuthDeepLinks } from '../src/features/auth/useAuthDeepLinks';
 import { useInventorySnapshot } from '../src/features/inventory/offlineSnapshot';
 import { PushRegistrar } from '../src/features/notifications/PushRegistrar';
@@ -118,6 +119,7 @@ function AppShell() {
   return (
     <>
       <DeepLinkHandler />
+      <BillingAccountObserver />
       <PushRegistrar />
       {/* Icônes claires tant que le bleu occupe l'écran, sinon l'heure et la
           batterie s'écrivent en sombre sur fond soutenu. */}

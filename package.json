@@ -48,6 +48,8 @@
     "react-native-audio-api": "0.13.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "^2.0.0",
+    "react-native-google-mobile-ads": "^16.5.0",
+    "react-native-purchases": "^10.9.1",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
@@ -78,7 +80,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
-    "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans && npm run test:profile && npm run test:resilience && npm run test:finance",
+    "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans && npm run test:profile && npm run test:resilience && npm run test:finance && npm run test:billing",
+    "test:billing": "node --test scripts/tests/billing.test.mjs",
     "verify:ci": "npm run typecheck && npm run lint -- --max-warnings 28 && npm test",
     "test:scanner": "node --test scripts/tests/scanner.test.mjs",
     "site": "node scripts/build-site.mjs",
@@ -92,9 +95,15 @@
     "test:resilience": "node --test scripts/tests/async-state.test.mjs scripts/tests/barcode-lookup.test.mjs scripts/tests/encrypted-storage.test.mjs scripts/tests/session-lifecycle.test.mjs scripts/tests/dependency-compatibility.test.mjs"
   },
   "overrides": {
-    "metro": { "image-size": "2.0.3" },
-    "xcode": { "uuid": "11.1.1" },
-    "query-string": { "decode-uri-component": "0.5.0" }
+    "metro": {
+      "image-size": "2.0.3"
+    },
+    "xcode": {
+      "uuid": "11.1.1"
+    },
+    "query-string": {
+      "decode-uri-component": "0.5.0"
+    }
   },
   "private": true
 }

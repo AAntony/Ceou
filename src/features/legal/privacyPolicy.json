@@ -42,7 +42,15 @@
         },
         {
           "heading": "Ce qui n'est jamais fait",
-          "body": "Tes données ne sont ni vendues, ni utilisées à des fins publicitaires, ni partagées avec d'autres utilisateurs de l'app au-delà de ce que tu choisis explicitement de partager."
+          "body": "Ton inventaire, tes photos et le contenu de tes conversations ne sont pas transmis aux services publicitaires. Tes données ne sont pas vendues et ton inventaire n'est partagé avec d'autres utilisateurs que selon tes choix."
+        },
+        {
+          "heading": "Abonnement et compteurs d'utilisation",
+          "body": "RevenueCat et Google Play gèrent les achats et la restauration de Céoù Plus. RevenueCat reçoit l'identifiant technique de ton compte, les informations d'achat et des informations techniques sur l'application et l'appareil. Céoù ne reçoit pas tes coordonnées bancaires. Les compteurs d'analyses photo, les quantités de jetons consommés par ces analyses, les durées de conversation et les crédits bonus sont rattachés à ton compte chez Supabase. Ils servent à appliquer les quotas et suivre les coûts, sans conserver les photos envoyées à l'IA ni le contenu des conversations dans ces compteurs."
+        },
+        {
+          "heading": "Publicités à la demande",
+          "body": "Une publicité avec récompense est lancée uniquement si tu la demandes. Le service Google AdMob peut traiter des informations techniques sur ton appareil, des identifiants publicitaires selon les autorisations, et les interactions avec les annonces. Un formulaire présente tes choix lorsque cela est requis ; tu peux les retrouver dans Profil → Forfait et bonus IA → Mes choix publicitaires. Pour attribuer la récompense, Google reçoit l'identifiant technique de ton compte et un identifiant de vérification unique. Ces services peuvent traiter des données hors de l'Union européenne. Les versions de test utilisent des annonces de démonstration."
         },
         {
           "heading": "Durée de conservation",
@@ -96,7 +104,15 @@
         },
         {
           "heading": "What is never done",
-          "body": "Your data is never sold, never used for advertising, and never shared with other app users beyond what you explicitly choose to share."
+          "body": "Your inventory, photos and conversation content are not sent to advertising services. Your data is not sold, and your inventory is only shared with other app users according to your choices."
+        },
+        {
+          "heading": "Subscriptions and usage counters",
+          "body": "RevenueCat and Google Play handle Céoù Plus purchases and restoration. RevenueCat receives your technical account identifier, purchase information and technical information about the app and device. Céoù does not receive your bank details. Photo analysis counts, tokens used by those analyses, conversation durations and extra credits are linked to your account in Supabase. These counters enforce allowances and track costs without storing photos sent to AI or conversation content."
+        },
+        {
+          "heading": "Optional advertising",
+          "body": "Rewarded ads start only when you request them. Google AdMob may process technical device information, advertising identifiers depending on permissions, and ad interactions. A form presents your choices where required; you can revisit them under Profile → Plan and AI extras → My advertising choices. To award credits, Google receives your technical account identifier and a unique verification identifier. These services may process data outside the European Union. Test builds use demo ads."
         },
         {
           "heading": "Retention",

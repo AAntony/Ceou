@@ -5,6 +5,7 @@
   },
   "build": {
     "development": {
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "test" },
       "developmentClient": true,
       "distribution": "internal",
       "android": {
@@ -13,6 +14,8 @@
       "channel": "development"
     },
     "preview": {
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "test" },
+      "autoIncrement": true,
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -20,6 +23,7 @@
       "channel": "preview"
     },
     "production": {
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "live" },
       "autoIncrement": true,
       "channel": "production"
     }

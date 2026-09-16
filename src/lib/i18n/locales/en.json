@@ -567,7 +567,7 @@
       "loans_count_one": "{{count}} ongoing loan",
       "loans_count_other": "{{count}} ongoing loans",
       "lost": "The conversation was cut off. Try again in a moment.",
-      "quota_fallback": "You have used today’s conversation minutes. The simple assistant is still available: it answers your questions and puts things away, with the phone’s voice.",
+      "quota_fallback": "You've used your available conversation minutes. Check your allowance under Profile → Plan and AI extras. The simple assistant is still available with your phone's voice.",
       "unavailable_fallback": "Conversation is not available right now. The simple assistant can take over.",
       "use_simple": "Use the simple assistant",
       "consent": {

@@ -102,7 +102,7 @@ export function AiPhotoScanFlow({ parentType, parentId, active, onDone, onCancel
       showMessage(
         err instanceof RateLimitedError
           ? t('inventory.aiScan.rate_limited', { seconds: err.retryAfterSeconds })
-          : t('common.error_generic'),
+          : (err as Error)?.message === 'billing_photo_limit' ? t('billing.billing_photo_limit') : t('common.error_generic'),
       );
       setStep('capture');
     }

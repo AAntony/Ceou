@@ -16,6 +16,7 @@ export class RateLimitedError extends Error {
     this.retryAfterSeconds = retryAfterSeconds;
   }
 }
+export class PhotoQuotaError extends Error { constructor() { super('billing_photo_limit'); this.name='PhotoQuotaError'; } }
 
 // Taille envoyée à Gemini pour la détection — n'a AUCUN rapport avec la
 // résolution des vignettes gardées ensuite (voir cropDetection ci-dessous) :
@@ -56,8 +57,9 @@ export async function detectObjects(uri: string): Promise<Detection[]> {
       try {
         const body = await error.context.clone().json();
         if (body?.error === 'rate_limited') throw new RateLimitedError(body.retryAfterSeconds ?? 60);
+        if (body?.error === 'billing_photo_limit') throw new PhotoQuotaError();
       } catch (parsed) {
-        if (parsed instanceof RateLimitedError) throw parsed;
+        if (parsed instanceof RateLimitedError || parsed instanceof PhotoQuotaError) throw parsed;
       }
     }
     throw error;

@@ -11,6 +11,7 @@
 // spammerait le scan et grillerait le tier gratuit pour tout le monde.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { reply as jsonResponse } from '../_shared/billing-http.ts';
 
 const GEMINI_MODEL = 'gemini-3.6-flash';
 const MAX_DETECTIONS = 25;
@@ -32,10 +33,6 @@ const RESPONSE_SCHEMA = {
 
 type Detection = { label: string; box: { x: number; y: number; width: number; height: number } };
 
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-}
-
 // box_2d de Gemini = [yMin, xMin, yMax, xMax] normalisé 0..1000 — converti
 // ici en {x, y, width, height} relatif 0..1 (même convention que rel_x/
 // rel_y déjà utilisée par les pastilles du Plan, voir plan_pins) : le reste
@@ -45,9 +42,9 @@ function parseDetections(rawText: string): Detection[] {
   try {
     raw = JSON.parse(rawText);
   } catch {
-    return [];
+    throw new Error('invalid_provider_response');
   }
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) throw new Error('invalid_provider_response');
 
   return raw
     .filter(
@@ -57,7 +54,7 @@ function parseDetections(rawText: string): Detection[] {
         typeof (item as Record<string, unknown>).label === 'string' &&
         Array.isArray((item as Record<string, unknown>).box_2d) &&
         (item as { box_2d: unknown[] }).box_2d.length === 4 &&
-        (item as { box_2d: unknown[] }).box_2d.every((n) => typeof n === 'number'),
+        (item as { box_2d: unknown[] }).box_2d.every((n) => typeof n === 'number' && Number.isFinite(n)),
     )
     .slice(0, MAX_DETECTIONS)
     .map((item) => {
@@ -76,6 +73,7 @@ function parseDetections(rawText: string): Detection[] {
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return jsonResponse({});
   if (req.method !== 'POST') return jsonResponse({ error: 'method_not_allowed' }, 405);
 
   const apiKey = Deno.env.get('GEMINI_API_KEY');
@@ -95,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   const callerClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
   const { data: userData, error: userError } = await callerClient.auth.getUser();
-  if (userError || !userData.user) return jsonResponse({ error: 'unauthorized' }, 401);
+  if (userError || !userData.user || userData.user.is_anonymous) return jsonResponse({ error: 'unauthorized' }, 401);
 
   // check_and_touch_ai_scan_rate_limit n'a aucune policy client (RLS
   // bloque tout) — appelée ici via le client service_role, qui bypass RLS,
@@ -122,11 +120,16 @@ Deno.serve(async (req: Request) => {
   }
 
   const { imageBase64, mimeType } = body;
-  if (!imageBase64 || !mimeType) return jsonResponse({ error: 'missing_image' }, 400);
+  if (typeof imageBase64 !== 'string' || imageBase64.length > 8_000_000 || !['image/jpeg','image/png','image/webp'].includes(mimeType || '')) return jsonResponse({ error: 'invalid_image' }, 400);
+
+  const {data: reservation, error: quotaError} = await serviceClient.rpc('billing_photo_reserve',{p_user:userData.user.id});
+  if (quotaError) return jsonResponse({error: quotaError.message === 'billing_photo_limit' ? 'billing_photo_limit' : 'quota_unavailable'}, quotaError.message === 'billing_photo_limit' ? 429 : 503);
+  try {
 
   const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(45000),
     body: JSON.stringify({
       contents: [
         {
@@ -142,13 +145,20 @@ Deno.serve(async (req: Request) => {
   });
 
   if (!geminiRes.ok) {
-    console.error('Gemini API error', geminiRes.status, await geminiRes.text());
-    return jsonResponse({ error: 'detection_failed' }, 502);
+    throw new Error(`provider_${geminiRes.status}`);
   }
 
   const geminiJson = await geminiRes.json();
   const rawText: string | undefined = geminiJson?.candidates?.[0]?.content?.parts?.[0]?.text;
   const detections = rawText ? parseDetections(rawText) : [];
+  if (!rawText) throw new Error('empty_provider_response');
+  const usage = geminiJson.usageMetadata;
+  const {error: settlementError} = await serviceClient.rpc('billing_photo_settle', {p_id:reservation,p_success:true,p_input:usage?.promptTokenCount ?? null,p_output:usage?.candidatesTokenCount ?? null,p_model:GEMINI_MODEL});
+  if (settlementError) console.error('Photo usage settlement failed', settlementError.code);
 
   return jsonResponse({ detections });
+  } catch {
+    await serviceClient.rpc('billing_photo_settle',{p_id:reservation,p_success:false});
+    return jsonResponse({error:'detection_failed'},502);
+  }
 });

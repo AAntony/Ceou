@@ -1170,6 +1170,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      billing_snapshot: { Args: Record<PropertyKey, never>; Returns: Json }
       apply_plan_template: {
         Args: { p_plan_id: string; p_rooms: Json }
         Returns: {

@@ -567,7 +567,7 @@
       "loans_count_one": "{{count}} prêt en cours",
       "loans_count_other": "{{count}} prêts en cours",
       "lost": "La conversation a été coupée. Réessaie dans un instant.",
-      "quota_fallback": "Tu as utilisé tes minutes de conversation du jour. L’assistant simple reste disponible : il répond à tes questions et range tes affaires, avec la voix du téléphone.",
+      "quota_fallback": "Tu as utilisé tes minutes de conversation disponibles. Tu peux consulter ton compteur dans Profil → Forfait et bonus IA. L’assistant simple reste disponible avec la voix du téléphone.",
       "unavailable_fallback": "La conversation n’est pas disponible pour le moment. L’assistant simple peut prendre le relais.",
       "use_simple": "Utiliser l’assistant simple",
       "consent": {
