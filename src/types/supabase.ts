@@ -590,6 +590,7 @@ export type Database = {
           name: string
           next_number: number
           planned_date: string | null
+          recovery_location_id: string | null
           source_id: string | null
           staging_location_id: string | null
           staging_piece_id: string | null
@@ -606,6 +607,7 @@ export type Database = {
           name: string
           next_number?: number
           planned_date?: string | null
+          recovery_location_id?: string | null
           source_id?: string | null
           staging_location_id?: string | null
           staging_piece_id?: string | null
@@ -622,6 +624,7 @@ export type Database = {
           name?: string
           next_number?: number
           planned_date?: string | null
+          recovery_location_id?: string | null
           source_id?: string | null
           staging_location_id?: string | null
           staging_piece_id?: string | null
@@ -643,6 +646,13 @@ export type Database = {
             columns: ["source_id"]
             isOneToOne: false
             referencedRelation: "habitations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moving_projects_recovery_location_id_fkey"
+            columns: ["recovery_location_id"]
+            isOneToOne: false
+            referencedRelation: "emplacements"
             referencedColumns: ["id"]
           },
           {

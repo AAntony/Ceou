@@ -14,6 +14,17 @@ Les droits de consultation ou modification sont vérifiés sur les deux logement
 
 Terminer conserve les métadonnées et retire uniquement les cartons temporaires vides. Un logement lié à un projet actif ne peut pas être supprimé. La suppression du compte reste possible ; un projet terminé survit à la suppression du logement dans les archives de son créateur.
 
+### Supprimer un carton rempli
+
+La migration `20260916120000_moving_box_contents.sql` ajoute un choix explicite à la suppression d’un carton temporaire :
+
+- **Garder les objets** : les objets encore présents retrouvent leur premier emplacement connu, même après un transfert entre cartons. Si l’emplacement a disparu, est inaccessible ou appartient à un carton temporaire, ils sont conservés dans **Objets à ranger**, au lieu de départ. Les objets créés directement dans le carton et les rangements imbriqués sans historique utilisent aussi cet emplacement. La hiérarchie des rangements imbriqués est conservée.
+- **Supprimer aussi le contenu** : après une seconde confirmation, une copie complète du carton, des rangements imbriqués, des objets, des photos et des liens de factures est déposée dans la corbeille avant suppression. La restauration habituelle reste soumise à l’existence du parent du carton.
+
+Les objets déjà sortis du carton ne changent pas. Un carton stocké est uniquement retiré du suivi : son rangement permanent et son contenu restent dans l’inventaire. Un carton contenant un autre carton de déménagement doit d’abord être séparé de celui-ci pour préserver les deux suivis. La suppression d’un projet entier reste limitée aux cartons vides.
+
+Les droits de modification sont vérifiés côté serveur. Les parents, descendants et objets sont verrouillés pendant l’opération ; une erreur annule toute la suppression. Les anciens clients qui ne transmettent pas de choix continuent à recevoir un refus pour un carton rempli. Les emplacements de récupération survivent à la suppression du suivi.
+
 ## Limites de cette version
 
 - Les écritures de déménagement nécessitent une connexion ; les écrans déjà consultés peuvent être conservés par le cache habituel. Aucun lot hors ligne n'est présenté comme enregistré.
@@ -24,6 +35,6 @@ Terminer conserve les métadonnées et retire uniquement les cartons temporaires
 
 ## Vérification
 
-PGlite est une dépendance de développement installée par `npm ci`, indépendante du dossier d’export `dist`. `npm run test:moving` exécute la migration réelle avec un schéma de référence isolé et la fonction existante `move_objet`. Les 14 tests couvrent droits, révocation, QR, atomicité, idempotence, archivage, suppression de compte, lots de 500 objets, déplacements usuels et traductions. La corbeille et les permissions du schéma de référence sont des substituts : ces tests ne remplacent pas un essai intégré Supabase sur téléphone.
+PGlite est une dépendance de développement installée par `npm ci`, indépendante du dossier d’export `dist`. `npm run test:moving` exécute les migrations réelles avec un schéma d’inventaire isolé et les fonctions existantes de déplacement, de corbeille et de résolution des permissions. Les tests couvrent droits, révocation, QR, atomicité, idempotence, archivage, suppression de compte, lots de 500 objets, déplacements usuels, traductions et suppression des cartons remplis. Les échecs tardifs sont simulés pour vérifier l’annulation des déplacements, des emplacements de récupération et des copies en corbeille. Ces tests ne remplacent pas un essai intégré Supabase sur téléphone.
 
 Vérifications complémentaires : TypeScript, ESLint ciblé, tests de refonte et export Android Expo.

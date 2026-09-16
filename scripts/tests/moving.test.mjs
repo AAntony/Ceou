@@ -26,6 +26,7 @@ await db.exec(readFileSync(new URL('../../supabase/migrations/20260913010000_mov
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260915090000_moving_dispose_atomic.sql',import.meta.url),'utf8'));
 await db.exec('create table friendships(requester_id uuid, addressee_id uuid, status text)');
 await db.exec(readFileSync(new URL('../../supabase/migrations/20260915120000_moving_management.sql',import.meta.url),'utf8'));
+await db.exec(readFileSync(new URL('../../supabase/migrations/20260916120000_moving_box_contents.sql',import.meta.url),'utf8'));
 async function manage(action,payload){return (await db.query('select moving_manage($1,$2::jsonb) as data',[action,JSON.stringify(payload)])).rows[0].data;}
 const owner=randomUUID(), stranger=randomUUID(), viewer=randomUUID();
 await db.query('insert into auth.users values ($1),($2),($3)',[owner,stranger,viewer]);
@@ -213,5 +214,146 @@ await test('deleting a box or move protects contents and invalidates QR access',
  await manage('box_delete',{project_id:p,box_id:b});assert.equal((await read(p)).boxes.length,0);
  await manage('project_delete',{project_id:p});await assert.rejects(read(p),/moving_forbidden/);await assert.rejects(read(b),/moving_forbidden/);
  await admin();assert.equal((await db.query('select id from objets where id=$1',[o])).rows.length,1);await login(owner);
+});
+await test('deleting a filled box restores original locations, preserves nested contents and leaves unpacked objects alone',async()=>{
+ const p=randomUUID(),b=randomUUID(),box2=randomUUID(),shelfObject=randomUUID(),containerObject=randomUUID(),newObject=randomUUID(),unpacked=randomUUID(),originalContainer=randomUUID(),nested=randomUUID(),nestedObject=randomUUID();
+ await command('create',{id:p,source_id:source,destination_id:dest,name:'Restore contents'});
+ for(const id of [b,box2])await command('box_create',{project_id:p,id});
+ const container=(await read(p)).boxes.find(x=>x.id===b).container_id;
+ await admin();
+ await db.query("insert into conteneurs(id,name,parent_emplacement_id) values ($1,'Original drawer',$2)",[originalContainer,sourceShelf]);
+ await db.query("insert into objets(id,name,parent_emplacement_id) values ($1,'Photo album',$3),($2,'Already unpacked',$3)",[shelfObject,unpacked,sourceShelf]);
+ await db.query("insert into objets(id,name,parent_conteneur_id) values ($1,'Watch',$2)",[containerObject,originalContainer]);
+ await db.query("insert into conteneurs(id,name,parent_conteneur_id) values ($1,'Nested case',$2)",[nested,container]);
+ await db.query("insert into objets(id,name,parent_conteneur_id) values ($1,'Inside case',$2)",[nestedObject,nested]);
+ await login(owner);
+ await command('pack',{project_id:p,box_id:b,items:[{id:shelfObject},{id:containerObject},{id:unpacked}]});
+ // Transfers between boxes must still restore the first inventory location.
+ await command('pack',{project_id:p,box_id:box2,items:[{id:containerObject}]});
+ await command('pack',{project_id:p,box_id:b,items:[{id:containerObject}]});
+ await command('unpack',{project_id:p,box_id:b,to_type:'emplacement',to_id:destShelf,items:[{id:unpacked}]});
+ await command('scan',{project_id:p,box_id:b,items:[{id:newObject,name:'New from photo',create:true}]});
+ await manage('box_delete',{project_id:p,box_id:b,contents:'restore'});
+ const snapshot=await read(p),objects=new Map(snapshot.objects.map(o=>[o.id,o]));
+ assert.equal(snapshot.boxes.some(x=>x.id===b),false);
+ assert.equal(objects.get(shelfObject).parent_id,sourceShelf);
+ assert.equal(objects.get(containerObject).parent_id,originalContainer);
+ assert.equal(objects.get(unpacked).parent_id,destShelf);
+ assert.equal(objects.get(newObject).parent_id,snapshot.project.recovery_location_id);
+ assert.equal(objects.get(nestedObject).parent_id,nested);
+ assert.equal(snapshot.items.find(i=>i.object_id===shelfObject).outcome,'removed');
+ assert.equal(snapshot.items.find(i=>i.object_id===unpacked).outcome,'installed');
+ await admin();
+ assert.equal((await db.query('select parent_emplacement_id from conteneurs where id=$1',[nested])).rows[0].parent_emplacement_id,snapshot.project.recovery_location_id);
+ const movement=(await db.query('select * from objet_deplacements where objet_id=$1 and to_location_id=$2',[shelfObject,sourceShelf])).rows[0];
+ assert.equal(movement.from_location_id,container);
+ assert.equal((await db.query('select id from conteneurs where id=$1',[container])).rows.length,0);
+ await login(owner);
+ // Deleting the move must never cascade into the recovery location.
+ await manage('project_delete',{project_id:p});await admin();
+ assert.equal((await db.query('select id from objets where id=any($1::uuid[])',[[newObject,nestedObject]])).rows.length,2);
+ await login(owner);
+});
+
+await test('unavailable or unsafe origins fall back to recovery without granting access to another home',async()=>{
+ const p=randomUUID(),b=randomUUID(),missing=randomUUID(),revoked=randomUUID(),unsafe=randomUUID(),shelf=randomUUID();
+ await command('create',{id:p,source_id:source,name:'Missing origins'});await command('box_create',{project_id:p,id:b});
+ const container=(await read(p)).boxes[0].container_id;
+ await admin();await db.query("insert into emplacements(id,piece_id,name) values ($1,$2,'Removed shelf')",[shelf,sourceRoom]);
+ for(const id of [missing,revoked,unsafe])await db.query("insert into objets(id,name,parent_emplacement_id) values ($1,'Keep object',$2)",[id,shelf]);
+ await login(owner);await command('pack',{project_id:p,box_id:b,items:[missing,revoked,unsafe].map(id=>({id}))});
+ await admin();await db.query('delete from emplacements where id=$1',[shelf]);
+ const otherRoom=randomUUID(),otherShelf=randomUUID();
+ await db.query("insert into pieces(id,habitation_id,name) values ($1,$2,'Private room')",[otherRoom,other]);
+ await db.query("insert into emplacements(id,piece_id,name) values ($1,$2,'Private shelf')",[otherShelf,otherRoom]);
+ await db.query("update moving_items set origin_id=$1 where object_id=$2",[otherShelf,revoked]);
+ await db.query("update moving_items set origin_type='conteneur',origin_id=$1 where object_id=$2",[container,unsafe]);
+ await login(owner);await manage('box_delete',{project_id:p,box_id:b,contents:'restore'});
+ const snapshot=await read(p);
+ for(const id of [missing,revoked,unsafe])assert.equal(snapshot.objects.find(o=>o.id===id).parent_id,snapshot.project.recovery_location_id);
+});
+
+await test('deleting contents snapshots the complete tree and supports restoring photos and invoice links',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID(),nested=randomUUID(),inside=randomUUID(),outside=randomUUID(),invoice=randomUUID(),link=randomUUID();
+ await command('create',{id:p,source_id:source,name:'Trash entire box'});await command('box_create',{project_id:p,id:b});
+ const container=(await read(p)).boxes[0].container_id;
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Delete me',create:true,photo_url:'https://example.test/object.jpg'},{id:outside,name:'Outside',create:true}]});
+ await admin();await db.query("select move_objet($1,'emplacement',$2)",[outside,sourceShelf]);
+ await db.query("insert into conteneurs(id,name,parent_conteneur_id) values ($1,'Inner bag',$2)",[nested,container]);
+ await db.query("insert into objets(id,name,parent_conteneur_id) values ($1,'Inner object',$2)",[inside,nested]);
+ await db.query("insert into factures(id,vendor) values ($1,'Store')",[invoice]);
+ await db.query('insert into facture_objets values ($1,$2,$3)',[link,invoice,o]);
+ await login(owner);await manage('box_delete',{project_id:p,box_id:b,contents:'trash'});
+ const snapshot=await read(p);assert.equal(snapshot.boxes.length,0);assert.equal(snapshot.items.find(i=>i.object_id===o).outcome,'removed');
+ assert.equal(snapshot.objects.some(x=>x.id===outside),true);
+ const trash=(await db.query("select id,payload from corbeille where payload->'conteneurs'->0->>'id'=$1",[container])).rows[0];
+ assert.equal(trash.payload.conteneurs.length,2);assert.equal(trash.payload.objets.length,2);
+ assert.equal(trash.payload.objets.find(x=>x.id===o).photo_url,'https://example.test/object.jpg');
+ assert.equal(trash.payload.facture_objets[0].id,link);
+ await admin();assert.equal((await db.query('select id from objets where id=any($1::uuid[])',[[o,inside]])).rows.length,0);
+ // Real restore function, with owner privileges because inventory RLS is outside this fixture.
+ await db.query('select corbeille_restaurer($1)',[trash.id]);
+ assert.equal((await db.query('select parent_conteneur_id from objets where id=$1',[inside])).rows[0].parent_conteneur_id,nested);
+ assert.equal((await db.query('select id from facture_objets where id=$1',[link])).rows.length,1);
+ await login(owner);assert.equal((await read(p)).boxes.length,0);
+ await login(stranger);assert.equal((await db.query('select id from corbeille where id=$1',[trash.id])).rows.length,0);await login(owner);
+});
+
+await test('filled box removal enforces friendship and home rights, explicit choices and private helper access',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID();
+ await command('create',{id:p,source_id:source,name:'Delete permissions'});await command('box_create',{project_id:p,id:b});
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Protected',create:true}]});
+ await admin();await db.query("update friendships set status='accepted' where requester_id=$1 and addressee_id=$2",[owner,viewer]);
+ await db.query("update test_permissions set permission='consultation' where person=$1",[viewer]);await login(owner);
+ await manage('sharing',{project_id:p,friends:[viewer]});
+ for(const user of [stranger,viewer]){
+  await login(user);
+  for(const contents of ['restore','trash'])await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents}),/moving_forbidden/);
+ }
+ await login(owner);
+ for(const contents of [null,'invalid','keep'])await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents}),/moving_invalid/);
+ await assert.rejects(db.query("select moving_delete_box($1,$2,'trash','Recovery')",[p,b]),/permission denied/);
+ assert.equal((await read(p)).objects.some(x=>x.id===o),true);
+ await admin();await db.query("update test_permissions set permission='modification' where person=$1",[viewer]);await login(viewer);
+ await manage('box_delete',{project_id:p,box_id:b,contents:'restore'});
+ assert.equal((await read(p)).objects.some(x=>x.id===o),true);await login(owner);
+});
+
+await test('stored full containers remain inventory when removed from moving tracking',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID();
+ await command('create',{id:p,source_id:source,destination_id:dest,name:'Stored deletion'});await command('box_create',{project_id:p,id:b});
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Stored item',create:true}]});
+ await command('store',{project_id:p,box_id:b,to_type:'emplacement',to_id:destShelf});
+ const container=(await read(p)).boxes[0].container_id;
+ await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents:'trash'}),/moving_box_stored/);
+ await manage('box_delete',{project_id:p,box_id:b,contents:'keep'});
+ assert.equal((await read(p)).objects.find(x=>x.id===o).parent_id,container);
+ await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents:'keep'}),/moving_box_missing/);
+});
+
+await test('nested moving boxes cannot lose their tracking through a parent deletion',async()=>{
+ const p=randomUUID(),b=randomUUID(),child=randomUUID();
+ await command('create',{id:p,source_id:source,name:'Nested moving boxes'});
+ for(const id of [b,child])await command('box_create',{project_id:p,id});
+ const snapshot=await read(p),container=snapshot.boxes.find(x=>x.id===b).container_id,childContainer=snapshot.boxes.find(x=>x.id===child).container_id;
+ await admin();await db.query('update conteneurs set parent_emplacement_id=null,parent_conteneur_id=$1 where id=$2',[container,childContainer]);await login(owner);
+ for(const contents of ['restore','trash'])await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents}),/moving_nested_box/);
+ assert.equal((await read(p)).boxes.length,2);
+});
+
+await test('late deletion failures roll back object restoration, recovery creation and recycle-bin snapshots',async()=>{
+ const p=randomUUID(),b=randomUUID(),o=randomUUID();
+ await command('create',{id:p,source_id:source,name:'Atomic delete'});await command('box_create',{project_id:p,id:b});
+ await command('scan',{project_id:p,box_id:b,items:[{id:o,name:'Atomic item',create:true}]});
+ const container=(await read(p)).boxes[0].container_id;
+ await admin();await db.exec("create function test_reject_box_delete() returns trigger language plpgsql as $$begin raise exception 'test_delete_failure'; end$$; create trigger test_reject_box_delete before delete on conteneurs for each row execute function test_reject_box_delete()");await login(owner);
+ for(const contents of ['restore','trash']){
+  await assert.rejects(manage('box_delete',{project_id:p,box_id:b,contents}),/test_delete_failure/);
+  const snapshot=await read(p);
+  assert.equal(snapshot.boxes.length,1);assert.equal(snapshot.project.recovery_location_id,null);
+  assert.equal(snapshot.objects.find(x=>x.id===o).parent_id,container);assert.equal(snapshot.items[0].outcome,'packed');
+  assert.equal((await db.query("select id from corbeille where payload->'conteneurs'->0->>'id'=$1",[container])).rows.length,0);
+ }
+ await admin();await db.exec('drop trigger test_reject_box_delete on conteneurs; drop function test_reject_box_delete()');await login(owner);
 });
 await db.close();

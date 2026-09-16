@@ -43,7 +43,38 @@ export function MovingScreen({id,boxId}:{id:string;boxId?:string}) {
   if(!project||!box||command.isPending)return;
   try{const result=await command.mutateAsync({action:'box_create',payload:{id:quickBoxId.current,project_id:project.id,category:box.category,destination_piece_id:box.destination_piece_id}});quickBoxId.current=newId();setModal(null);router.push(`/moving-box/${result.id}`);}catch(error){showMessage(t(movingError(error)));}
  };
- const remove=()=>showDialog({title:t(box?'moving.deleteBox':'moving.deleteProject'),message:t(box?'moving.deleteBoxHint':'moving.deleteProjectHint'),actions:[{label:t('common.cancel'),cancel:true},{label:t('common.delete'),destructive:true,onPress:async()=>{if(await perform(box?'box_delete':'project_delete'))router.replace(box?`/moving/${id}`:'/moving');}}]});
+ const deleteBox=async(contents:'restore'|'trash'|'keep')=>{
+  if(!project||!box)return;
+  const projectId=project.id;
+  if(await perform('box_delete',{contents,recovery_name:t('moving.recoveryLocation')}))router.replace(`/moving/${projectId}`);
+ };
+ const remove=()=>{
+  setModal(null);
+  if(!box){
+   showDialog({title:t('moving.deleteProject'),message:t('moving.deleteProjectHint'),actions:[
+    {label:t('common.cancel'),cancel:true},
+    {label:t('common.delete'),destructive:true,onPress:async()=>{if(await perform('project_delete'))router.replace('/moving');}}
+   ]});
+   return;
+  }
+  if(box.status==='stored'){
+   showDialog({title:t('moving.deleteBox'),message:t('moving.deleteStoredBoxHint'),actions:[
+    {label:t('common.cancel'),cancel:true},
+    {label:t('common.delete'),onPress:()=>deleteBox('keep')}
+   ]});
+   return;
+  }
+  showDialog({title:t('moving.deleteBox'),message:t('moving.deleteBoxHint'),actions:[
+   {label:t('moving.deleteBoxRestore'),onPress:()=>deleteBox('restore')},
+   {label:t('moving.deleteBoxContents'),destructive:true,onPress:()=>showDialog({
+    title:t('moving.deleteBoxContents'),message:t('moving.deleteBoxContentsHint'),actions:[
+     {label:t('common.cancel'),cancel:true},
+     {label:t('moving.deleteBoxContentsConfirm'),destructive:true,onPress:()=>deleteBox('trash')}
+    ]
+   })},
+   {label:t('common.cancel'),cancel:true}
+  ]});
+ };
  const close=()=>{if(!command.isPending&&!photoBusy)setModal(null);};
  const print=async(boxes:MovingBox[])=>{try{await printMovingLabels(boxes);}catch{showMessage(t('moving.error'));}};
  if(query.isPending&&!offline)return <View className="flex-1 items-center justify-center bg-sand"><ActivityIndicator/></View>;
