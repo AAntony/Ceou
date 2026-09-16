@@ -347,18 +347,6 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
     setZoom(zoomForBounds(b.minX, b.minY, b.maxX, b.maxY, b.padding, width, height));
   };
 
-  // Amène une pièce précise au centre du viewport sans changer le zoom en
-  // cours — utilisé en arrivant depuis "Voir sur le plan" (fiche Objet), où
-  // situer la pièce importe plus qu'imposer un niveau de zoom arbitraire.
-  const centerOnGeo = (geo: ShapeGeometry) => {
-    const { width: vw, height: vh } = viewportSize;
-    if (!vw || !vh) return;
-    const scale = clamp(zoom.scale, minScale, MAX_ZOOM);
-    const cx = geo.x + geo.width / 2;
-    const cy = geo.y + geo.height / 2;
-    setZoom(clampZoomState({ scale, translateX: vw / 2 - cx * scale, translateY: vh / 2 - cy * scale }, vw, vh, minScale, readOnly));
-  };
-
   // FILET, pas chemin principal : le cadrage initial est posé par
   // handleLayout, dans le même rendu que la mesure. Cet effet ne sert que si
   // le viewport a été mesuré avant que les pièces ne soient là — le canevas
@@ -377,14 +365,15 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
   // chaque re-render tant que highlightFormeId ne change pas réellement.
   useEffect(() => {
     if (!highlightFormeId) return;
-    if (centeredHighlightRef.current === highlightFormeId) return;
+    const focusKey = `${highlightFormeId}:${viewportSize.width}:${viewportSize.height}`;
+    if (centeredHighlightRef.current === focusKey) return;
     if (!viewportSize.width || !viewportSize.height) return;
     const geo = geoById[highlightFormeId];
     if (!geo) return;
-    centeredHighlightRef.current = highlightFormeId;
+    centeredHighlightRef.current = focusKey;
     initializedRef.current = true;
     setFramed(true);
-    centerOnGeo(geo);
+    fitToBounds(geo.x, geo.y, geo.x + geo.width, geo.y + geo.height, 48);
   }, [highlightFormeId, geoById, viewportSize]);
 
   // Le bloc "Emplacements non placés" au-dessus du plan apparaît/disparaît
@@ -850,7 +839,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           color: isDark ? tintForDark(pastel) : pastel,
           label: info?.name ?? t('plans.unassigned_room'),
           count: forme.piece_id ? (roomCounts?.[forme.piece_id] ?? null) : null,
-          selected: forme.id === selectedFormeId,
+          selected: forme.id === (selectedFormeId ?? highlightFormeId),
           // Le mur n'est plus un rectangle mais une suite de segments : les
           // portes de cette pièce y sont des trous, et chaque segment sait
           // s'il ferme le logement (épais) ou sépare deux pièces (fin).
@@ -858,7 +847,7 @@ export const PlanCanvas = forwardRef<PlanCanvasHandle, PlanCanvasProps>(function
           jambs: doorJambs(geoById[forme.id], roomDoors, neighbours),
         };
       }),
-    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, doorSpansByForme, isDark, t],
+    [sortedFormes, pieceInfo, geoById, roomCounts, selectedFormeId, highlightFormeId, doorSpansByForme, isDark, t],
   );
 
   const selectedDoorGeometry = useMemo(() => {

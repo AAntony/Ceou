@@ -2,7 +2,8 @@ import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { useTextScale } from '../../../src/lib/textScale';
 import { Button } from '../../../src/components/Button';
 import { PackObjectButton } from '../../../src/features/moving/PackObjectButton';
 import { ButtonRow } from '../../../src/components/ButtonRow';
@@ -31,6 +32,9 @@ import { usePullToRefresh } from '../../../src/components/usePullToRefresh';
 export default function ObjetScreen() {
   const refreshControl = usePullToRefresh();
   const colors = useThemeColors();
+  const { width } = useWindowDimensions();
+  const { textScale } = useTextScale();
+  const stackSummary = width / textScale < 300;
   // `highlightPlanLink` est posé par le guide de démarrage, qui vient de
   // dessiner le plan et dépose la personne ici : c'est elle qui doit faire le
   // dernier geste du cycle, encore faut-il qu'elle voie où.
@@ -129,12 +133,15 @@ export default function ObjetScreen() {
         }}
       />
       <ScrollView className="flex-1 bg-sand" contentContainerClassName="px-6 pt-6" contentContainerStyle={{ paddingBottom: bottomSpace + 32 }} refreshControl={refreshControl}>
-        <View className="mb-6 self-center">
+        <View className="mb-6 gap-4" style={{ flexDirection: stackSummary ? 'column' : 'row', alignItems: 'flex-start' }}>
+        <View>
           <Pressable
             onPress={() => (objet.photo_url ? setPhotoViewerOpen(true) : editable ? handleChangePhoto() : undefined)}
-            accessibilityRole="button"
+            disabled={!objet.photo_url && !editable}
+            accessibilityRole={objet.photo_url || editable ? "button" : undefined}
             accessibilityLabel={t(objet.photo_url ? 'a11y.view_photo' : 'a11y.change_photo')}
-            className="h-40 w-40 items-center justify-center overflow-hidden rounded-2xl bg-sand-dark"
+            style={{ width: 112, height: 128 }}
+            className="items-center justify-center overflow-hidden rounded-2xl bg-sand-dark"
           >
             {photoUploading ? (
               <ActivityIndicator />
@@ -152,12 +159,17 @@ export default function ObjetScreen() {
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={t('a11y.change_photo')}
-              className="absolute -bottom-2 -right-2 h-9 w-9 items-center justify-center rounded-full border border-ink/10 bg-surface"
+              className="absolute -bottom-2 -right-2 h-12 w-12 items-center justify-center rounded-full border border-ink/10 bg-surface"
               style={{ elevation: 3, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } }}
             >
               {photoUploading ? <ActivityIndicator size="small" /> : <Icon name="pencil" size={16} color={colors.ink} />}
             </Pressable>
           ) : null}
+        </View>
+        <View style={{ flex: stackSummary ? undefined : 1, minWidth: 0 }}>
+          <Text accessibilityRole="header" className="mb-2 text-heading font-bold text-ink">{objet.name}</Text>
+          {objet.description ? <Text className="text-body text-ink-soft">{objet.description}</Text> : null}
+        </View>
         </View>
 
         {pret ? (
@@ -169,12 +181,9 @@ export default function ObjetScreen() {
           />
         ) : null}
 
-        <Text accessibilityRole="header" className="mb-4 text-title font-bold text-ink">{objet.name}</Text>
         <LocationBreadcrumb objetId={id} />
-        <PlanLocationLink pieceId={pieceId} emplacementId={emplacementId} emphasis={!!highlightPlanLink} />
+        <PlanLocationLink objetId={id} pieceId={pieceId} emplacementId={emplacementId} emphasis={!!highlightPlanLink} />
 
-        <Text accessibilityRole="header" className="mb-3 text-heading font-bold text-ink">{t('redesign.details')}</Text>
-        {objet.description ? <Text className="mb-5 text-body text-ink-soft">{objet.description}</Text> : null}
 
         {/* LA LISTE DES FACTURES DECRIT L'OBJET — ce qu'il a coute, quand,
             chez qui — donc sa place est avec les informations. Le GESTE
@@ -240,7 +249,7 @@ export default function ObjetScreen() {
         )}
 
         {history && history.length > 3 ? <Button label={t(fullHistory ? 'redesign.lessHistory' : 'redesign.moreHistory')} variant="ghost" onPress={() => setFullHistory(!fullHistory)} /> : null}
-        {editable ? <View className="mt-6 gap-3"><PackObjectButton objectId={id} homeId={habitationId}/><Button label={t('redesign.edit')} variant="outline" onPress={() => setEditing(true)} /></View> : null}
+        {editable ? <View className="mt-6 gap-3"><PackObjectButton objectId={id} homeId={habitationId}/></View> : null}
         {editable ? (
           <View className="mt-10">
             <Button label={t('common.delete')} variant="danger" onPress={handleDelete} />

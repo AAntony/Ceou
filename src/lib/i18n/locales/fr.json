@@ -920,6 +920,13 @@
     "explore": {
       "choose_room": "Explorer les pièces",
       "options": "Options du plan"
+    },
+    "object_focus": {
+      "title": "Votre objet sur le plan",
+      "unavailable": "Objet indisponible",
+      "close": "Quitter le repérage de cet objet",
+      "marker": "Repère {{number}} · Rangé ici",
+      "room": "Dans la pièce surlignée"
     }
   },
   "a11y": {

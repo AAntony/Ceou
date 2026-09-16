@@ -920,6 +920,13 @@
     "explore": {
       "choose_room": "Explore rooms",
       "options": "Floor plan options"
+    },
+    "object_focus": {
+      "title": "Your item on the map",
+      "unavailable": "Item unavailable",
+      "close": "Stop locating this item",
+      "marker": "Marker {{number}} · Stored here",
+      "room": "In the highlighted room"
     }
   },
   "a11y": {

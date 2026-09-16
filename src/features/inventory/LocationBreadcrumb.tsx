@@ -16,18 +16,22 @@ export function LocationBreadcrumb({ objetId }: { objetId: string }) {
   if (!destination) return null;
   const open = (node: ObjetLocationNode) => router.dismissTo(`/${ROUTES[node.kind]}/${node.id}`);
   return (
-    <View className="mb-5 rounded-3xl bg-coral-light px-5 py-4">
-      <Text className="text-label text-coral-dark">{t('redesign.in')}</Text>
-      <Pressable onPress={() => open(destination)} accessibilityRole="link" accessibilityLabel={destination.name} className="min-h-[48px] justify-center py-2">
-        <Text className="text-title font-bold text-coral-dark">{destination.name}</Text>
-      </Pressable>
-      <View className="flex-row flex-wrap items-center">
-        {nodes.slice(0, -1).map((node, index) => <View key={node.id} className="flex-row items-center">
-          {index ? <Icon name="chevron" size={14} color={colors.accentDark} /> : null}
-          <Pressable onPress={() => open(node)} accessibilityRole="link" accessibilityLabel={node.name}
-            className="min-h-[48px] justify-center px-2 py-2"><Text className="text-label text-coral-dark">{node.name}</Text></Pressable>
-        </View>)}
+    <View className="mb-3 rounded-2xl border border-ink/10 bg-surface p-4">
+      <View className="mb-2 flex-row items-center gap-2">
+        <Icon name="location" size={18} color={colors.accentDark} />
+        <Text className="text-label font-semibold text-ink-soft">{t('redesign.in')}</Text>
       </View>
+      {nodes.map((node, index) => {
+        const last = index === nodes.length - 1;
+        return <Pressable key={node.id} onPress={() => open(node)} accessibilityRole="link"
+          accessibilityLabel={node.name} className="min-h-[48px] flex-row items-center gap-3 py-2">
+          <View className="w-8 items-center">
+            <Icon name={node.kind === 'habitation' ? 'home' : node.kind === 'piece' ? 'piece' : node.kind === 'conteneur' ? 'conteneur' : 'armoire'} size={20} color={last ? colors.accentDark : colors.inkSoft} />
+          </View>
+          <Text className={last ? 'flex-1 text-body font-bold text-coral-dark' : 'flex-1 text-label text-ink-soft'}>{node.name}</Text>
+          <Icon name="chevron" size={16} color={colors.inkSoft} />
+        </Pressable>;
+      })}
     </View>
   );
 }

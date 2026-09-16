@@ -7,6 +7,8 @@ import { ErrorState } from '../../../src/components/ErrorState';
 import { Icon, type IconName } from '../../../src/components/Icon';
 import { getEmplacementIcon } from '../../../src/features/inventory/constants';
 import { useEmplacementsForPieces, usePieces, useUpdatePiece } from '../../../src/features/inventory/queries';
+import { PlanObjectFocus } from '../../../src/features/plans/PlanObjectFocus';
+import { orderedPins } from '../../../src/features/plans/exploreLayout';
 import { PlanExplorePanel } from '../../../src/features/plans/PlanExplorePanel';
 import { PlanCanvas, type PlanCanvasHandle } from '../../../src/features/plans/PlanCanvas';
 import { nextPinSlot } from '../../../src/features/plans/pinSlots';
@@ -49,10 +51,12 @@ export default function PlanScreen() {
     id: routePlanId,
     highlightFormeId,
     highlightEmplacementId,
+    highlightObjetId,
   } = useLocalSearchParams<{
     id: string;
     highlightFormeId?: string;
     highlightEmplacementId?: string;
+    highlightObjetId?: string;
   }>();
   const { t } = useTranslation();
 
@@ -68,7 +72,7 @@ export default function PlanScreen() {
   // La route peut changer sous nos pieds : « Voir sur le plan », depuis la
   // fiche d'un objet, vise un plan précis alors qu'on en regarde peut-être
   // déjà un autre.
-  useEffect(() => { setId(routePlanId); setDismissedHighlight(null); }, [routePlanId, highlightFormeId, highlightEmplacementId]);
+  useEffect(() => { setId(routePlanId); setDismissedHighlight(null); }, [routePlanId, highlightFormeId, highlightEmplacementId, highlightObjetId]);
   const { data: plan, isLoading: planLoading, isError: planError, refetch } = usePlan(id);
   // `isPending` sert la garde de chargement plus bas : sans elle, un etage
   // encore inconnu du cache affichait un eclair de selecteur de logements
@@ -191,7 +195,7 @@ export default function PlanScreen() {
   // rien ici — et le laisser empêcherait en plus le cadrage initial du
   // nouveau niveau, que le canevas suspend quand on lui désigne une pièce.
   const onRoutePlan = id === routePlanId;
-  const highlightKey = `${id}:${highlightFormeId}:${highlightEmplacementId}`;
+  const highlightKey = `${id}:${highlightFormeId}:${highlightEmplacementId}:${highlightObjetId}`;
   const highlightActive = onRoutePlan && dismissedHighlight !== highlightKey;
 
   if (planError) {
@@ -495,7 +499,9 @@ export default function PlanScreen() {
             <RoundButton icon="recenter" label={t('plans.recenter')} onPress={() => canvasRef.current?.recenter()} />
             <RoundButton icon="help" label={t('plans.hint.title')} onPress={() => setHintOpen(!hintOpen)} />
           </View> : null}
-          {!editing && !listing ? <PlanExplorePanel formes={formes ?? []} pieces={pieces ?? []}
+          {!editing && !listing && highlightActive && highlightObjetId ? <PlanObjectFocus objetId={highlightObjetId}
+            marker={orderedPins((pins ?? []).filter((pin) => pin.forme_id === highlightFormeId)).findIndex((pin) => pin.emplacement_id === highlightEmplacementId) + 1 || undefined}
+            onClose={() => { setDismissedHighlight(highlightKey); setSelectedFormeId(null); canvasRef.current?.recenter(); }} /> : !editing && !listing ? <PlanExplorePanel formes={formes ?? []} pieces={pieces ?? []}
             selected={selectedForme ?? ((formes ?? []).find((f) => highlightActive && f.id === highlightFormeId) ?? null)}
             pins={pins ?? []} counts={roomCounts} onSelect={(forme) => { setDismissedHighlight(highlightKey); setSelectedFormeId(forme.id); canvasRef.current?.focusRoom(forme.id); }}
             onClose={() => { setDismissedHighlight(highlightKey); setSelectedFormeId(null); canvasRef.current?.recenter(); }} /> : null}

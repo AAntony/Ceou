@@ -8,6 +8,7 @@ import { useThemeColors } from '../../lib/theme';
 import { useReducedMotion } from '../../lib/useReducedMotion';
 
 type PlanLocationLinkProps = {
+  objetId?: string;
   pieceId?: string;
   emplacementId?: string;
   /**
@@ -30,7 +31,7 @@ const PULSE_MS = 700;
 // Rendu vide si la pièce de l'objet n'a jamais été placée sur un plan —
 // pas de bouton mort pour une fonctionnalité (Plans) que l'utilisateur n'a
 // peut-être pas encore utilisée.
-export function PlanLocationLink({ pieceId, emplacementId, emphasis }: PlanLocationLinkProps) {
+export function PlanLocationLink({ objetId, pieceId, emplacementId, emphasis }: PlanLocationLinkProps) {
   const colors = useThemeColors();
   const reducedMotion = useReducedMotion();
   const { t } = useTranslation();
@@ -74,7 +75,7 @@ export function PlanLocationLink({ pieceId, emplacementId, emphasis }: PlanLocat
           accessibilityRole="button"
           onPress={() =>
             router.push(
-              `/plan/${data.planId}?highlightFormeId=${data.formeId}${emplacementId ? `&highlightEmplacementId=${emplacementId}` : ''}`,
+              { pathname: '/plan/[id]', params: { id: data.planId, highlightFormeId: data.formeId, ...(emplacementId ? { highlightEmplacementId: emplacementId } : {}), ...(objetId ? { highlightObjetId: objetId } : {}) } },
             )
           }
           className={`flex-row items-center justify-center gap-2 rounded-xl bg-coral-light px-4 py-3 active:opacity-70 ${

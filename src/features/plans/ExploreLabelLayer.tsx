@@ -30,7 +30,8 @@ export function ExploreLabelLayer({ rooms, pins, selectedId, zoom, factor, numbe
     const index = roomPins.findIndex((p) => p.id === pin.id);
     const room = rooms.find((r) => r.id === pin.forme_id);
     if (!room) return null;
-    const diameter = 24 * factor;
+    const highlighted = pin.emplacement_id === highlightedId;
+    const diameter = (highlighted ? 44 : 24) * factor;
     const rect = { x: zoom.translateX + (room.geo.x + pin.rel_x * room.geo.width) * zoom.scale - diameter / 2,
       y: zoom.translateY + (room.geo.y + pin.rel_y * room.geo.height) * zoom.scale - diameter / 2,
       width: diameter, height: diameter };
@@ -39,8 +40,9 @@ export function ExploreLabelLayer({ rooms, pins, selectedId, zoom, factor, numbe
     occupied.push(rect);
     return <View key={pin.id} style={{ position: 'absolute', left: rect.x, top: rect.y,
       width: diameter, height: diameter, borderRadius: diameter / 2, backgroundColor: colors.accent,
-      borderWidth: pin.emplacement_id === highlightedId ? 3 : 2, borderColor: pin.emplacement_id === highlightedId ? colors.accentDark : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
-      <Text allowFontScaling={false} style={{ color: '#fff', fontSize: 12 * factor, fontWeight: '700' }}>{index + 1}</Text>
+      boxShadow: highlighted ? `0 0 0 6px ${colors.accentLight}` : undefined,
+      borderWidth: highlighted ? 3 : 2, borderColor: pin.emplacement_id === highlightedId ? colors.accentDark : colors.surface, alignItems: 'center', justifyContent: 'center' }}>
+      <Text allowFontScaling={false} style={{ color: '#fff', fontSize: (highlighted ? 18 : 12) * factor, fontWeight: '700' }}>{index + 1}</Text>
     </View>;
   });
   const textStyle = { fontSize: 14 * factor, lineHeight: 18 * factor, fontWeight: '600' as const, color: colors.ink };
