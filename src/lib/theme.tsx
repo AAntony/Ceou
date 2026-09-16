@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colorScheme, useColorScheme } from 'nativewind';
 import { shade } from './color';
-import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { Platform, useColorScheme as useSystemColorScheme } from 'react-native';
 
 export type ThemePreference = 'system' | 'light' | 'dark';
@@ -27,8 +27,8 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
-  // Le thème RÉELLEMENT appliqué : en 'system' il suit le téléphone, et
-  // change tout seul si l'appareil bascule pendant que l'app est ouverte.
+  const preferenceChanged = useRef(false);
+  const pendingWrite = useRef(Promise.resolve());
   const { colorScheme: active } = useColorScheme();
   const systemScheme = useSystemColorScheme();
 
@@ -44,9 +44,10 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   }, [preference, systemScheme]);
 
   useEffect(() => {
+    let cancelled = false;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((stored) => {
-        if (stored !== 'light' && stored !== 'dark') return;
+        if (cancelled || preferenceChanged.current || (stored !== 'light' && stored !== 'dark')) return;
         setPreferenceState(stored);
         colorScheme.set(stored);
       })
@@ -54,20 +55,28 @@ export function ThemeProvider({ children }: PropsWithChildren) {
         // Lecture impossible : on reste sur le réglage du téléphone. Pas de
         // quoi alerter la personne, elle n'a rien à corriger.
       });
+    return () => { cancelled = true; };
   }, []);
 
   const setPreference = useCallback((next: ThemePreference) => {
+    preferenceChanged.current = true;
     setPreferenceState(next);
     colorScheme.set(next);
     // 'system' n'est pas stocké mais EFFACÉ : c'est l'absence de choix, et
     // l'écrire reviendrait à figer aujourd'hui ce que le défaut pourrait
     // devenir demain.
-    const write = next === 'system' ? AsyncStorage.removeItem(STORAGE_KEY) : AsyncStorage.setItem(STORAGE_KEY, next);
-    write.catch(() => {});
+    // Garder le dernier choix même si plusieurs écritures sont demandées rapidement.
+    pendingWrite.current = pendingWrite.current
+      .then(() => next === 'system' ? AsyncStorage.removeItem(STORAGE_KEY) : AsyncStorage.setItem(STORAGE_KEY, next))
+      .catch(() => {});
   }, []);
 
+  // Un choix explicite est immédiat : ne pas attendre les événements Appearance
+  // d'Android pour piloter le Switch contrôlé et les couleurs de l'interface.
+  const isDark = preference === 'system' ? active === 'dark' : preference === 'dark';
+
   return (
-    <ThemeContext.Provider value={{ preference, isDark: active === 'dark', setPreference }}>{children}</ThemeContext.Provider>
+    <ThemeContext.Provider value={{ preference, isDark, setPreference }}>{children}</ThemeContext.Provider>
   );
 }
 

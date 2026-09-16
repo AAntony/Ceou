@@ -186,7 +186,6 @@ export default function ProfileScreen() {
 
       {saved ? <Text className="mb-4 text-label text-green-600">{t('profile.saved')}</Text> : null}
 
-      {dirty ? <Button label={t('a11y.save_changes')} onPress={handleSave} loading={updateProfile.isPending} /> : null}
       </ProfileSection>
 
       <ProfileSection title={t('profile.sections.preferences.title')} summary={t('profile.sections.preferences.hint')} icon="theme">
