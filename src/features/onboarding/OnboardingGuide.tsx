@@ -890,27 +890,6 @@ function DoneStep({
     router.push('/tutoriels');
   };
 
-  const cycle = [
-    { icon: 'search' as IconName, text: t('onboarding.done.cycle_search') },
-    { icon: 'objet' as IconName, text: t('onboarding.done.cycle_sheet') },
-    { icon: 'plan' as IconName, text: t('onboarding.done.cycle_plan') },
-  ];
-
-  // CE QUE LE GUIDE NE MONTRERA PAS, et l'endroit exact où le dire.
-  //
-  // Le guide enseigne le RANGEMENT, et rien d'autre — c'est ce qui le tient
-  // en deux minutes. Mais quelqu'un qui vient de ranger son premier objet
-  // repart en croyant que l'app ne fait que ça, alors qu'elle garde aussi ses
-  // preuves d'achat, ses prêts, ses partages et son plan. Quatre lignes ici
-  // suffisent à le dire ; le détail est dans les tutoriels, et surtout pas
-  // dans un guide qu'on rallongerait jusqu'à ce que personne ne l'achève.
-  const aussi = [
-    { icon: 'facture' as IconName, text: t('onboarding.done.more_factures') },
-    { icon: 'friends' as IconName, text: t('onboarding.done.more_partage') },
-    { icon: 'pret' as IconName, text: t('onboarding.done.more_prets') },
-    { icon: 'plan' as IconName, text: t('onboarding.done.more_plan') },
-  ];
-
   return (
     <View>
       <Pop>
@@ -953,37 +932,7 @@ function DoneStep({
         <Text className="flex-1 text-label text-teal-dark">{t('onboarding.done.voice_hint')}</Text>
       </View>
 
-      {/* LE CYCLE COMPLET, en trois lignes, et seulement si le plan existe —
-          sinon la troisième promettrait un bouton qui n'apparaîtra pas. */}
-      {hasPlan ? (
-        <View className="mb-6 rounded-2xl bg-sand-dark px-4 py-4">
-          <Text className="mb-3 text-label font-bold text-ink">{t('onboarding.done.cycle_title')}</Text>
-          {cycle.map((entry, index) => (
-            <View key={entry.icon} className="mb-2 flex-row items-start gap-3">
-              <View className="h-7 w-7 items-center justify-center rounded-full bg-surface">
-                <Text className="text-caption font-bold text-ink-soft">{index + 1}</Text>
-              </View>
-              <Icon name={entry.icon} size={18} color={colors.inkSoft} />
-              <Text className="flex-1 text-label text-ink">{entry.text}</Text>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text className="mb-6 text-body text-ink-soft">{t('onboarding.done.next_steps')}</Text>
-      )}
-
-      <View className="mb-6 rounded-2xl border border-ink/10 px-4 py-4">
-        <Text className="mb-3 text-label font-bold text-ink">{t('onboarding.done.more_title')}</Text>
-        {aussi.map((entry) => (
-          <View key={entry.icon} className="mb-2 flex-row items-start gap-3">
-            <Icon name={entry.icon} size={18} color={colors.accentDark} />
-            <Text className="flex-1 text-label leading-5 text-ink-soft">{entry.text}</Text>
-          </View>
-        ))}
-        <View className="mt-3">
-          <Button label={t('onboarding.done.more_link')} variant="outline" onPress={openTutoriels} />
-        </View>
-      </View>
+      <Text className="mb-5 text-body text-ink-soft">{t(hasPlan ? 'onboarding.done.cycle_plan' : 'onboarding.done.next_steps')}</Text>
 
       {hasPlan ? (
         <>
@@ -995,6 +944,7 @@ function DoneStep({
       ) : (
         <Button label={t('onboarding.done.finish')} onPress={onFinish} />
       )}
+      <View className="mt-3"><Button label={t('onboarding.done.more_link')} variant="ghost" onPress={openTutoriels} /></View>
     </View>
   );
 }

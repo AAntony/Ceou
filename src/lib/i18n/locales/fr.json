@@ -370,19 +370,19 @@
   },
   "onboarding": {
     "entry_title": "Découvrir Céoù",
-    "entry_hint": "Un guide de deux minutes pour ranger ton premier objet.",
+    "entry_hint": "On ajoute un premier objet ensemble ?",
     "replay": "Revoir le guide de démarrage",
-    "skip": "Passer",
+    "skip": "Plus tard",
     "welcome": {
-      "title": "Tu ne retrouves jamais rien ?",
-      "body": "Céoù note où tu ranges tes affaires. Le jour où tu les cherches, il te dit exactement où elles sont.",
-      "body2": "On le fait ensemble ? Deux minutes, et tu ranges pour de vrai.",
-      "start": "C'est parti",
+      "title": "Bienvenue dans Céoù !",
+      "body": "Note où tu ranges tes affaires pour les retrouver facilement.",
+      "body2": "On commence par un objet ? Les ciseaux qui disparaissent, par exemple.",
+      "start": "Ajouter mon premier objet",
       "later": "Plus tard"
     },
     "principle": {
-      "title": "Comment ça marche",
-      "intro": "Tes affaires vivent quelque part : dans un logement, dans une pièce, dans un meuble, parfois dans une boîte.",
+      "title": "Un objet, une place",
+      "intro": "Indique où se trouve ton objet, du logement jusqu’au rangement.",
       "levels": {
         "habitation": {
           "example": "Maison",
@@ -394,7 +394,7 @@
         },
         "emplacement": {
           "example": "Commode",
-          "role": "un rangement : un meuble, une étagère, un placard"
+          "role": "un meuble ou une étagère"
         },
         "conteneur": {
           "example": "Boîte",
@@ -405,67 +405,67 @@
           "role": "ton objet"
         }
       },
-      "outro": "Céoù emboîte ces endroits les uns dans les autres et retient le chemin en entier. Toi, tu n'as plus qu'à demander où sont tes ciseaux.",
-      "next": "J'ai compris"
+      "outro": "Une boîte dans un meuble ? Tu peux aussi la préciser.",
+      "next": "Choisir un logement"
     },
     "habitation": {
-      "title": "On commence par ton logement",
-      "hint": "Le grand contenant : tout le reste vivra dedans.",
-      "existing_title": "Tu en as déjà un",
-      "presets_title": "Ou crée-le maintenant",
-      "foot": "Un garage, une cave ou une voiture s'ajoutent plus tard, depuis Habitations."
+      "title": "Où sont tes affaires ?",
+      "hint": "Choisis ton logement ou ajoute-le ici.",
+      "existing_title": "Mes logements",
+      "presets_title": "Ajouter un logement",
+      "foot": "Pour une voiture, un garage ou un autre lieu, rendez-vous dans « Lieux »."
     },
     "piece": {
-      "title": "Une pièce, pour commencer",
-      "hint": "Choisis celle où tu ranges le plus de choses. Tu ajouteras les autres quand tu voudras.",
-      "existing_title": "Les pièces que tu as déjà",
-      "presets_title": "Ou crée-en une"
+      "title": "Dans quelle pièce ?",
+      "hint": "Une seule suffit pour commencer.",
+      "existing_title": "Mes pièces",
+      "presets_title": "Ajouter une pièce"
     },
     "emplacement": {
-      "title": "Où ranges-tu, dans cette pièce ?",
-      "hint": "Un meuble, une étagère, un placard : c'est ce que Céoù appelle un rangement.",
-      "existing_title": "Les rangements que tu as déjà",
-      "presets_title": "Ou crée-en un"
+      "title": "Et dans quel rangement ?",
+      "hint": "Par exemple, un placard, un tiroir ou une étagère.",
+      "existing_title": "Mes rangements",
+      "presets_title": "Ajouter un rangement"
     },
     "conteneur": {
-      "title": "Et là-dedans, une boîte ?",
-      "hint": "Un objet est parfois dans une boîte, un panier, une valise. Céoù sait le retenir aussi — mais ce n'est pas obligatoire.",
-      "existing_title": "Les boîtes que tu as déjà",
-      "presets_title": "Ou crée-en une",
-      "skip": "Non, rien de tout ça"
+      "title": "Il y a une boîte à l’intérieur ?",
+      "hint": "Ajoute-la si ton objet s’y trouve. Sinon, passe à la suite.",
+      "existing_title": "Mes boîtes",
+      "presets_title": "Ajouter une boîte",
+      "skip": "Sans boîte"
     },
     "objet": {
-      "title": "Ton premier objet",
-      "hint": "Quelque chose que tu cherches souvent : les ciseaux, le chargeur, les papiers de la voiture...",
-      "name_label": "Son nom",
+      "title": "Quel objet ranges-tu ici ?",
+      "hint": "Choisis quelque chose que tu aimerais retrouver sans chercher partout.",
+      "name_label": "Nom de l’objet",
       "name_placeholder": "Ciseaux",
-      "submit": "Le ranger ici"
+      "submit": "Enregistrer cet objet"
     },
     "plan": {
-      "title": "Et sur un plan ?",
-      "hint": "Céoù sait aussi dessiner ton logement. Chaque pièce devient une case, chaque rangement une pastille dedans — et tu vois où est ton objet d'un seul coup d'œil.",
-      "foot": "Je pose ta pièce et ton rangement pour toi. Tu ajouteras les autres quand tu voudras, en les déplaçant du doigt.",
-      "create": "Dessine-le pour moi",
+      "title": "Tu veux aussi le voir sur un plan ?",
+      "hint": "On peut créer un premier plan avec cette pièce et ce rangement.",
+      "foot": "C’est un point de départ : tu pourras l’adapter à ton logement.",
+      "create": "Créer mon premier plan",
       "skip": "Plus tard",
       "default_name": "Rez-de-chaussée"
     },
     "done": {
-      "title": "C'est rangé !",
-      "search_hint": "La prochaine fois que tu cherches {{name}}, tape son nom sur l’accueil. Voilà ce que Céoù te répondra :",
-      "voice_hint": "Tu peux aussi appuyer sur le micro et demander à voix haute : « où sont mes ciseaux ? »",
-      "next_steps": "À toi de jouer : ajoute tes autres pièces, tes autres rangements, et tout ce que tu mets dedans. Plus Céoù en sait, plus il te fait gagner du temps.",
+      "title": "C’est noté !",
+      "search_hint": "Pour retrouver {{name}}, cherche son nom dans « Retrouver ».",
+      "voice_hint": "Ou appuie sur « Demande à Céoù » et pose ta question.",
+      "next_steps": "Ajoute le reste à ton rythme. Pas besoin de tout faire aujourd’hui.",
       "more_title": "Céoù sait aussi…",
       "more_factures": "Garder tes preuves d’achat, et te prévenir avant la fin d’une garantie.",
       "more_partage": "Partager un logement avec tes proches, ou donner un accès limité.",
       "more_prets": "Retenir ce que tu as prêté, et à qui.",
       "more_plan": "Dessiner le plan de ton logement et y poser tes affaires.",
-      "more_link": "Voir les tutoriels",
-      "finish": "Voir mon inventaire",
-      "cycle_title": "Le tour est bouclé",
-      "cycle_search": "Tu tapes le nom de ton objet sur l'accueil.",
-      "cycle_sheet": "Tu ouvres sa fiche : elle dit où il est rangé.",
-      "cycle_plan": "Tu appuies sur « Voir sur le plan », et tu le vois dans ta pièce.",
-      "try_it": "Essayons : ouvre sa fiche"
+      "more_link": "Découvrir les tutoriels",
+      "finish": "Retrouver mes objets",
+      "cycle_title": "Essaie le plan",
+      "cycle_search": "Cherche ton objet dans « Retrouver ».",
+      "cycle_sheet": "Ouvre sa fiche pour voir son rangement.",
+      "cycle_plan": "Appuie sur « Voir sur le plan » : sa pièce est mise en évidence.",
+      "try_it": "Ouvrir la fiche de mon objet"
     }
   },
   "assistant": {
@@ -1231,11 +1231,11 @@
   },
   "tutoriels": {
     "entry_title": "Tutoriels",
-    "entry_hint": "Chaque fonctionnalité expliquée pas à pas, avec des exemples.",
+    "entry_hint": "Des explications courtes et des exemples pour chaque usage.",
     "title": "Tutoriels",
-    "intro": "Prends-les dans l’ordre, ou pioche celui dont tu as besoin. Céoù retient ce que tu as lu.",
+    "intro": "Choisis ce que tu veux faire. Quelques étapes suffisent.",
     "search": "Chercher un tutoriel",
-    "search_empty": "Aucun tutoriel ne parle de ça.",
+    "search_empty": "Aucun résultat. Essaie un autre mot.",
     "progress_zero": "Aucun chapitre lu sur {{total}}",
     "progress_one": "{{count}} chapitre lu sur {{total}}",
     "progress_other": "{{count}} chapitres lus sur {{total}}",
@@ -1245,14 +1245,14 @@
     "marked_read": "Chapitre lu",
     "previous": "Précédent",
     "next": "Suivant",
-    "goal": "Objectif",
-    "steps": "Étapes",
+    "goal": "Pour quoi faire ?",
+    "steps": "Comment faire",
     "tip": "Astuce",
-    "result": "Résultat",
+    "result": "Et voilà",
     "open_chapter": "Ouvrir le tutoriel {{name}}",
     "demos": {
       "rangement": {
-        "caption": "Chaque niveau contient le suivant. C’est ce chemin que Céoù te répondra.",
+        "caption": "Du logement à l’objet : chaque niveau se trouve dans le précédent.",
         "habitation": "Maison",
         "piece": "Cuisine",
         "emplacement": "Commode",
@@ -1260,7 +1260,7 @@
         "objet": "Ciseaux"
       },
       "recherche": {
-        "caption": "Tape un nom sur l’accueil : la réponse est le chemin complet.",
+        "caption": "Cherche un objet, puis ouvre sa fiche pour lire tout son chemin.",
         "query": "ciseaux",
         "result": "Ciseaux",
         "path": "Maison › Cuisine › Commode › Boîte"
@@ -1270,7 +1270,8 @@
         "objet": "Perceuse",
         "lieu": "Garage › Établi",
         "move": "Déplacer",
-        "facture": "Ajouter une facture"
+        "facture": "Ajouter une facture",
+        "loan": "Prêter ou emprunter"
       },
       "dossier": {
         "caption": "L’écran Factures d’un logement : ce qui est prouvé, et ce qui ne l’est pas.",
@@ -1287,9 +1288,10 @@
         "title": "Factures"
       },
       "voix": {
-        "caption": "Appuie sur le micro et parle. Céoù répond à voix haute.",
+        "caption": "« Demande à Céoù », en bas de l’accueil, ouvre la conversation.",
         "question": "« Où sont mes ciseaux ? »",
-        "answer": "Les ciseaux sont dans Boîte, Commode, Cuisine."
+        "answer": "Tes ciseaux sont dans la boîte, dans la commode de la cuisine.",
+        "button": "Demande à Céoù"
       },
       "scan_ia": {
         "caption": "Une photo d’étagère, et chaque objet devient une ligne à cocher.",
@@ -1300,10 +1302,12 @@
         "confirm": "Ajouter (3)"
       },
       "plan": {
-        "caption": "Chaque pièce est une forme. Les puces sont tes rangements.",
+        "caption": "Le repère numéroté et la carte indiquent où chercher ton objet.",
         "piece_1": "Cuisine",
         "piece_2": "Salon",
-        "mode": "Explorer"
+        "mode": "Modifier",
+        "storage": "1 · Commode",
+        "item": "Ciseaux"
       },
       "pret": {
         "caption": "Un objet prêté garde sa place dans l’inventaire.",
@@ -1317,7 +1321,8 @@
         "code": "ABCD2345",
         "code_label": "Mon code ami",
         "habitation": "Maison",
-        "permission": "Modification"
+        "permission": "Modification",
+        "section": "Amis et invitations"
       },
       "invite": {
         "caption": "Un code de consultation, sans compte à créer.",
@@ -1326,42 +1331,56 @@
         "note": "Consultation seule · expire le 30/09/2026"
       },
       "affichage": {
-        "caption": "La taille du texte entraîne tout le reste avec elle.",
+        "caption": "Profil → Mes préférences : choisis une taille et regarde l’aperçu.",
         "title": "Taille du texte",
         "normal": "Normale",
         "large": "Grande",
         "huge": "Très grande",
         "preview_name": "Clés de voiture",
-        "preview_location": "Tiroir du buffet · Cuisine"
+        "preview_location": "Tiroir du buffet · Cuisine",
+        "section": "Mes préférences"
       },
       "hors_ligne": {
-        "caption": "Sans réseau, l’app écrit quand même. Elle enverra plus tard.",
+        "caption": "Les modifications attendent le retour de la connexion.",
         "banner": "Hors connexion",
         "objet": "Perceuse",
         "lieu": "Garage › Établi"
+      },
+      "demenagement": {
+        "caption": "Les étapes du déménagement, puis les cartons à retrouver.",
+        "title": "Mon déménagement",
+        "phases": [
+          "Préparation",
+          "En cours",
+          "Déballage",
+          "Terminé"
+        ],
+        "box": "Carton #01 · Cuisine",
+        "contents": "6 objets",
+        "action": "Créer un carton"
       }
     },
     "chapters": {
       "demarrer": {
         "title": "Bien démarrer",
-        "summary": "Comprendre comment Céoù range, et ranger ton premier objet.",
-        "goal": "Ranger ta première affaire, et savoir la retrouver en tapant son nom.",
+        "summary": "Ajouter un objet et savoir où le retrouver.",
+        "goal": "Enregistrer un premier objet, avec son rangement.",
         "steps": [
-          "Crée ton logement. Une maison, un appartement — mais aussi un garage, une cave ou un véhicule.",
-          "Ajoute une pièce : la cuisine, ta chambre. Un garage ou une cave n’en ont pas, on y range directement.",
-          "Ajoute un rangement dans cette pièce : une commode, une étagère, un placard, un bureau.",
-          "Si tes affaires sont dans une boîte, ajoute la boîte. Sinon, saute cette étape : elle n’est pas obligatoire.",
-          "Pose ton objet dedans, avec sa photo. Puis cherche-le depuis l’accueil."
+          "Dans « Lieux », appuie sur « Ajouter » pour créer ton logement.",
+          "Ouvre-le et ajoute une pièce. Pour une voiture ou un garage, passe directement au rangement.",
+          "Ajoute un rangement : placard, tiroir, étagère… puis une boîte si nécessaire.",
+          "Ajoute ton objet. Une photo aide à le reconnaître, mais elle est facultative.",
+          "Retrouve-le par son nom dans « Retrouver », puis ouvre sa fiche."
         ],
-        "tip": "Ne range pas tout d’un coup. Commence par ce que tu cherches le plus souvent : les papiers, les outils, les câbles, les chargeurs.",
-        "result": "Tu tapes « ciseaux » sur l’accueil, et Céoù te répond par le chemin complet. Tu peux aussi le lui demander à voix haute.",
+        "tip": "Commence par ce que tu cherches souvent. Le tiroir à câbles peut attendre son heure.",
+        "result": "La fiche montre le chemin jusqu’à l’objet, avec chaque niveau de rangement.",
         "action": "Faire le guide de démarrage",
-        "action_hint": "Deux minutes, et il crée tout avec toi."
+        "action_hint": "Le guide ajoute un vrai objet à ton inventaire, avec toi."
       },
       "factures": {
         "title": "Tes factures et tes garanties",
-        "summary": "Garder la preuve de ce que tu possèdes, et l’envoyer d’un seul fichier.",
-        "goal": "Rattacher une preuve d’achat à tes objets, être prévenu avant la fin d’une garantie, et pouvoir tout envoyer à ton assureur.",
+        "summary": "Conserver tes justificatifs et suivre les garanties.",
+        "goal": "Retrouver tes preuves d’achat au même endroit que tes objets.",
         "steps": [
           "Ouvre la fiche d’un objet et appuie sur « Ajouter une facture ».",
           "Photographie le ticket — ou importe le PDF que le magasin t’a envoyé par courriel.",
@@ -1370,55 +1389,55 @@
           "Depuis la fiche d’un autre objet, choisis « Une déjà enregistrée » pour le rattacher au même ticket sans rephotographier le papier.",
           "L’onglet « Sans facture » liste tout ce qui n’a pas encore de preuve. Le bouton d’export, en haut, fabrique le dossier complet."
         ],
-        "tip": "Renseigne la fin de garantie même si elle te paraît lointaine. Céoù te prévient trente jours avant — c’est le seul moment où elle sert encore à quelque chose.",
-        "result": "Un seul PDF : le récapitulatif chiffré de tes achats, puis chaque document à l’appui. Prêt à partir par mail à ton assureur."
+        "tip": "Si tu connais la fin de garantie, renseigne-la pour recevoir le rappel prévu 30 jours avant.",
+        "result": "Depuis les factures du logement, tu peux exporter un dossier PDF avec tes justificatifs."
       },
       "retrouver": {
         "title": "Retrouver une affaire",
-        "summary": "Par la recherche, ou en le demandant à voix haute.",
-        "goal": "Poser la question « où est… » et obtenir le chemin exact, les mains prises ou non.",
+        "summary": "Chercher par nom ou demander à Céoù.",
+        "goal": "Retrouver un objet sans faire le tour des placards.",
         "steps": [
-          "Sur l’accueil, tape le début du nom. La liste se réduit à chaque lettre.",
-          "Chaque résultat affiche son chemin complet : le logement, la pièce, le meuble, la boîte.",
-          "Les mains prises, appuie plutôt sur le micro et demande : « où sont mes ciseaux ? ». Céoù répond à voix haute.",
-          "Tu peux aussi ranger à la voix : « range la perceuse dans l’établi ». Céoù le fait, et propose d’annuler si tu t’es trompé.",
-          "S’il hésite entre deux objets ou deux endroits, il te le demande au lieu de choisir tout seul."
+          "Dans « Retrouver », saisis le nom de l’objet. Utilise « Filtres » pour choisir un lieu ou une pièce.",
+          "Ouvre un résultat : la fiche montre le chemin complet dans « Rangé dans ».",
+          "Pour parler, appuie sur « Demande à Céoù », en bas de l’écran, puis demande « Où sont mes ciseaux ? ».",
+          "Tu peux aussi demander de ranger un objet. Vérifie le résultat ; si Céoù te pose une question, précise l’objet ou le rangement.",
+          "Pour terminer, dis « Ça sera tout » ou ferme la fenêtre. Elle se ferme aussi après 20 secondes sans réponse."
         ],
-        "tip": "Céoù n’invente jamais un endroit. S’il ne trouve pas le meuble que tu nommes, il te le dit et ne range rien — mieux vaut un refus qu’un objet posé n’importe où.",
-        "result": "Tu sais où se trouve une affaire en trois secondes, sans ouvrir un seul écran."
+        "tip": "Donne un détail si plusieurs objets portent le même nom : « les ciseaux de cuisine », par exemple.",
+        "result": "Tu peux retrouver le rangement et, si un plan existe, l’ouvrir depuis la fiche."
       },
       "ajouter-vite": {
         "title": "Ajouter beaucoup d’objets",
         "summary": "Scanner une photo ou un code-barre plutôt que tout taper.",
-        "goal": "Remplir une étagère entière sans écrire trente noms à la main.",
+        "goal": "Ajouter plusieurs objets à partir d’une photo.",
         "steps": [
-          "Depuis un rangement, choisis « Scanner une photo ».",
-          "Photographie l’étagère ou le tiroir ouvert, en cadrant large.",
-          "Céoù propose une ligne par objet reconnu. Décoche ce qui n’en est pas, corrige les noms, et valide d’un coup.",
-          "Pour un produit du commerce, il y a plus simple : « Scanner un code-barre » remplit le nom et la photo tout seul.",
-          "Si le code est inconnu, il est quand même conservé : tu complètes le reste à la main."
+          "Dans un rangement, ouvre l’ajout d’objet puis « Scanner une photo ».",
+          "Prends une photo nette de l’étagère ou du tiroir ouvert.",
+          "Vérifie les objets proposés, corrige leurs noms et décoche ceux à ignorer.",
+          "Valide la sélection. Pour un produit étiqueté, tu peux aussi choisir « Scanner un code-barre ».",
+          "Si le produit n’est pas reconnu, complète sa fiche toi-même."
         ],
-        "tip": "La détection passe par un service extérieur, et Céoù te demande ton accord la première fois. Le code-barre, lui, ne consulte qu’un annuaire public de produits.",
-        "result": "Une étagère de quinze objets entre dans l’inventaire en une photo et deux corrections."
+        "tip": "La reconnaissance peut se tromper. Un coup d’œil avant de valider évite d’inventorier le décor.",
+        "result": "Les objets sélectionnés sont ajoutés au rangement."
       },
       "plan": {
         "title": "Le plan de ton logement",
-        "summary": "Dessiner tes pièces, et voir où tes affaires sont posées.",
-        "goal": "Passer du texte au dessin : montrer où une chose se trouve, au lieu de la décrire.",
+        "summary": "Explorer tes pièces et repérer tes objets.",
+        "goal": "Voir rapidement dans quelle pièce et quel rangement chercher.",
         "steps": [
-          "Depuis une habitation, ouvre « Plan ». Si tu pars de zéro, choisis un logement type — studio, deux pièces, maison — et tout est dessiné d’avance.",
-          "En mode « Modifier », appuie sur une pièce pour la sélectionner, glisse-la pour la déplacer, tire les points bleus pour l’agrandir.",
-          "« Porte » puis un appui sur un mur y perce une ouverture ; garde le doigt posé et glisse pour la déplacer le long du mur.",
-          "Les puces sont tes rangements. Un appui en désigne une, un glissé la pose dans la pièce, un double-appui la retire du plan.",
-          "En mode « Explorer », un appui sur une pièce dit ce qu’elle contient — et depuis la fiche d’un objet, « Voir sur le plan » t’y emmène directement."
+          "Dans « Lieux », ouvre ton logement puis « Plans ». Choisis un plan ou ajoute-en un ; un modèle peut t’aider à commencer.",
+          "Appuie sur une pièce pour la voir de plus près. Les rangements numérotés se retrouvent dans la liste sous le plan.",
+          "Pour dessiner ou déplacer les pièces et les rangements, appuie sur le crayon « Modifier ». Termine avec « Terminé ».",
+          "Depuis la fiche d’un objet, appuie sur « Voir sur le plan ». La pièce est cadrée et le rangement placé est repéré par un numéro agrandi.",
+          "La carte sous le plan rappelle l’objet et son chemin. Ferme-la pour explorer les autres pièces."
         ],
-        "tip": "Le bouton « Voir en liste » raconte le même plan en mots — « en haut à gauche », « au centre ». C’est plus rapide à parcourir qu’un dessin, et ça reste lisible quand on ne voit pas bien.",
-        "result": "Tu ouvres le plan, tu appuies sur la cuisine, et tu vois les quatre rangements qu’elle contient."
+        "tip": "Si le rangement n’est pas placé sur le plan, Céoù montre la pièce. La vue en liste reste disponible pour lire le plan sans le dessin.",
+        "result": "Le même numéro relie le rangement sur le plan à la carte de ton objet."
       },
       "prets": {
         "title": "Prêter et emprunter",
         "summary": "Retenir ce qui est sorti de chez toi, et ce que tu dois rendre.",
-        "goal": "Ne plus chercher qui a ta perceuse, ni oublier le livre qu’on t’a confié.",
+        "goal": "Savoir à qui tu as prêté un objet et ce que tu dois rendre.",
         "steps": [
           "Sur la fiche d’un objet, appuie sur « Prêter ou emprunter ».",
           "Dis dans quel sens ça va : tu le prêtes, ou tu l’as emprunté.",
@@ -1426,64 +1445,76 @@
           "Mets une date de retour si tu en as une : Céoù te le rappellera le jour venu. Sans date, le prêt reste dans la liste jusqu’à ce que tu le clôtures.",
           "Quand l’objet revient, un bouton sur sa fiche ou dans l’écran Prêts referme le prêt."
         ],
-        "tip": "Un objet prêté ne quitte pas ton inventaire : il garde sa place, c’est là qu’il retournera. Un bandeau sur sa fiche rappelle seulement qu’il n’y est pas en ce moment.",
-        "result": "L’écran Prêts liste ce qui circule, les retards en tête."
+        "tip": "La perceuse n’a pas disparu : sa fiche indique simplement à qui tu l’as prêtée.",
+        "result": "Les prêts restent consultables jusqu’à leur clôture."
       },
       "amis": {
         "title": "Partager avec tes proches",
-        "summary": "Donner accès à un logement, et choisir jusqu’où.",
-        "goal": "Qu’une autre personne voie — ou modifie — l’inventaire d’un logement que vous partagez.",
+        "summary": "Choisir qui peut consulter ou modifier tes lieux.",
+        "goal": "Partager un inventaire avec tes proches.",
         "steps": [
-          "Dans Profil, montre ton code ami : huit caractères, ou son QR. Il ne change jamais.",
-          "Ton proche le saisit dans « Ajouter un ami », ou scanne le QR. Une demande t’arrive.",
-          "Tant que tu n’as rien partagé, il ne voit rien : accepter quelqu’un ne donne accès à aucun logement.",
-          "Ouvre sa fiche, et choisis pour chaque habitation : aucun accès, consultation, modification, ou propriétaire.",
-          "Range tes amis en catégories — famille, colocataires, voisins — si la liste s’allonge."
+          "Dans « Profil », ouvre « Amis et invitations » pour retrouver ton code ami.",
+          "Ton proche le saisit ou scanne son QR depuis « Partages » puis « Ajouter un ami ».",
+          "Accepte la demande. L’amitié seule ne partage aucun lieu.",
+          "Depuis sa fiche, choisis les droits pour chaque habitation : consultation, modification ou propriétaire.",
+          "Tu peux changer ces droits quand tu en as besoin."
         ],
-        "tip": "Le droit se règle par HABITATION, pas par personne. Ton conjoint peut modifier la maison et ne rien voir du garage.",
-        "result": "La personne voit ton logement sur son accueil, avec exactement les droits que tu lui as donnés."
+        "tip": "Les droits se règlent lieu par lieu : partager la maison n’oblige pas à partager le garage.",
+        "result": "Ton proche accède uniquement aux lieux que tu lui as ouverts."
       },
       "invites": {
         "title": "Un accès sans compte",
         "summary": "Un code de consultation pour un locataire, un artisan, un gardien.",
-        "goal": "Montrer un logement à quelqu’un qui n’a pas Céoù, et ne veut pas l’installer.",
+        "goal": "Donner un accès en consultation sans demander de créer un compte.",
         "steps": [
-          "Dans Profil, choisis « Générer un code d’accès ».",
-          "Coche les habitations concernées. Un invité n’a que la consultation : il ne peut rien modifier ni ajouter.",
-          "Règle la durée et le nombre d’utilisations — ou rends le code permanent, si c’est pour quelqu’un qui reste.",
-          "Donne-lui un nom, « Locataires de juillet » par exemple : c’est ce qui te permettra de le reconnaître plus tard.",
-          "Partage le lien ou le code. La personne l’entre dans « J’ai un code d’invitation », sans créer de compte."
+          "Dans « Profil » → « Amis et invitations », appuie sur « Générer un code d’accès ».",
+          "Choisis les habitations à rendre consultables.",
+          "Règle la durée et le nombre d’utilisations selon tes besoins.",
+          "Donne un nom au code pour le reconnaître, par exemple « Locataires de septembre ».",
+          "Partage le lien ou le code. Ton invité utilise « J’ai un code d’invitation » pour entrer."
         ],
-        "tip": "Tes codes vivent dans « Mes codes d’invitation ». En supprimer un coupe l’accès immédiatement, y compris à ceux qui s’en servent déjà.",
-        "result": "Ton locataire parcourt l’inventaire du logement depuis son téléphone, sans compte et sans rien pouvoir changer."
+        "tip": "Retrouve les codes dans « Mes codes d’invitation », dans la même section. Tu peux y couper un accès.",
+        "result": "L’invité consulte les lieux autorisés sans pouvoir modifier l’inventaire."
       },
       "affichage": {
         "title": "Régler l’affichage",
         "summary": "Thème, taille du texte, langue.",
-        "goal": "Adapter Céoù à tes yeux et à ta lumière, pas l’inverse.",
+        "goal": "Choisir un affichage confortable pour toi.",
         "steps": [
-          "Dans Profil, ouvre « Affichage ».",
-          "Choisis la taille du texte : normale, grande, très grande. Ce n’est pas que le texte — les boutons, les images et les espaces grandissent avec.",
-          "Un aperçu montre le résultat avant que tu ne quittes l’écran.",
-          "Le mode sombre suit ton téléphone par défaut. Tu peux le forcer dans un sens ou dans l’autre.",
-          "La langue se change au même endroit, et s’applique tout de suite."
+          "Dans « Profil », ouvre « Mes préférences ».",
+          "Choisis « Français » ou « English » pour la langue.",
+          "Active ou désactive le mode sombre, ou laisse Céoù suivre le téléphone.",
+          "Choisis une taille de texte et regarde l’aperçu. Le réglage s’applique tout de suite."
         ],
-        "tip": "Si ton téléphone est déjà réglé sur un texte agrandi, Céoù le suit sans que tu aies rien à faire — et te le dit dans l’écran Affichage.",
-        "result": "L’app entière se retaille : les listes, les fiches, le plan, les tutoriels."
+        "tip": "Les réglages de taille du téléphone sont aussi pris en compte.",
+        "result": "Le texte et les contrôles s’adaptent dans toute l’application."
       },
       "hors-ligne": {
         "title": "Sans réseau",
         "summary": "Ce que Céoù sait faire dans une cave ou un garage.",
-        "goal": "Ranger, photographier et chercher là où il n’y a pas de réseau — c’est-à-dire là où on range.",
+        "goal": "Continuer à ranger quand le réseau manque.",
         "steps": [
-          "Un bandeau apparaît en haut quand la connexion tombe. Tu vois les dernières données chargées.",
-          "Tu peux quand même créer, renommer, déplacer, photographier : tout s’écrit sur le téléphone et s’affiche immédiatement.",
-          "Céoù garde ces modifications en file et les envoie tout seul au retour du réseau.",
-          "La recherche fonctionne aussi : ton inventaire est chargé d’avance, y compris les fiches que tu n’as jamais ouvertes.",
-          "Si le serveur refuse une modification, elle n’est pas perdue : un bandeau la signale et tu peux réessayer ou l’abandonner."
+          "Ouvre Céoù avec une connexion avant de partir : les données disponibles sont conservées sur le téléphone.",
+          "Sans réseau, consulte ton inventaire et ajoute, renomme ou déplace tes objets.",
+          "Les modifications en attente sont envoyées au retour de la connexion.",
+          "Si une modification est refusée, le bandeau te permet de la revoir ou de réessayer."
         ],
-        "tip": "Deux choses seulement demandent du réseau : l’export de tes factures, qui doit retélécharger les documents, et la reconnaissance vocale.",
-        "result": "Tu ranges ta cave sans une barre de réseau, et tout remonte quand tu ressors."
+        "tip": "L’assistant vocal, la reconnaissance de photos, la recherche de produits par code-barre et l’export de factures ont besoin d’une connexion.",
+        "result": "Tes changements locaux attendent le retour du réseau pour être synchronisés."
+      },
+      "demenagement": {
+        "title": "Préparer un déménagement",
+        "summary": "Retrouver tes affaires, même au milieu des cartons.",
+        "goal": "Suivre les cartons du départ jusqu’au déballage.",
+        "steps": [
+          "Dans « Lieux », ouvre « Organiser un déménagement », puis crée ton déménagement.",
+          "Choisis le lieu de départ et la destination.",
+          "Crée un carton, ajoute une photo pour le reconnaître et place tes objets dedans.",
+          "Utilise les actions pour scanner un carton ou imprimer ses étiquettes. Suis les étapes en haut de l’écran.",
+          "À l’arrivée, passe au déballage et indique où tu installes les objets."
+        ],
+        "tip": "Le déménagement reste privé tant que tu ne choisis pas « Partager avec des amis ». Les droits restent ceux des habitations concernées.",
+        "result": "Chaque carton garde la liste de ses objets. Pratique pour trouver le chargeur avant la troisième nuit."
       }
     }
   },

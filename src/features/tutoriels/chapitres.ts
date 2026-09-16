@@ -21,6 +21,7 @@ import type { IconName } from '../../components/Icon';
 
 /** Les mini-écrans simulés. Voir Demos.tsx pour ce que chacun dessine. */
 export type DemoId =
+  | 'demenagement'
   | 'rangement'
   | 'recherche'
   | 'tuile-facture'
@@ -91,6 +92,11 @@ export const CHAPITRES: Chapitre[] = [
     id: 'plan',
     icon: 'plan',
     demo: 'plan',
+  },
+  {
+    id: 'demenagement',
+    icon: 'conteneur',
+    demo: 'demenagement',
   },
   {
     id: 'prets',

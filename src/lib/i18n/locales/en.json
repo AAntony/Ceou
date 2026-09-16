@@ -370,19 +370,19 @@
   },
   "onboarding": {
     "entry_title": "Discover Céoù",
-    "entry_hint": "A two-minute guide to putting your first item away.",
+    "entry_hint": "Let’s add your first item together.",
     "replay": "Replay the getting-started guide",
-    "skip": "Skip",
+    "skip": "Later",
     "welcome": {
-      "title": "Never find anything?",
-      "body": "Céoù notes where you put your things. The day you look for them, it tells you exactly where they are.",
-      "body2": "Shall we do it together? Two minutes, and you are really putting things away.",
-      "start": "Let's go",
+      "title": "Welcome to Céoù!",
+      "body": "Save where you keep things so they’re easy to find later.",
+      "body2": "Let’s start with one item. Those disappearing scissors, perhaps?",
+      "start": "Add my first item",
       "later": "Later"
     },
     "principle": {
-      "title": "How it works",
-      "intro": "Your things live somewhere: in a home, in a room, in a piece of furniture, sometimes in a box.",
+      "title": "An item and its place",
+      "intro": "Choose where your item is kept, from the home down to its storage.",
       "levels": {
         "habitation": {
           "example": "House",
@@ -405,67 +405,67 @@
           "role": "your item"
         }
       },
-      "outro": "Céoù nests these places one inside the other and remembers the whole path. All you have to do is ask where your scissors are.",
-      "next": "Got it"
+      "outro": "A box inside a cupboard? You can include that too.",
+      "next": "Choose a home"
     },
     "habitation": {
-      "title": "Let's start with your home",
-      "hint": "The big container: everything else will live inside it.",
-      "existing_title": "You already have one",
-      "presets_title": "Or create it now",
-      "foot": "A garage, a cellar or a car can be added later, from Homes."
+      "title": "Where do you keep your things?",
+      "hint": "Choose your home or add it here.",
+      "existing_title": "My homes",
+      "presets_title": "Add a home",
+      "foot": "You can add a car, garage or another place from Places."
     },
     "piece": {
-      "title": "One room, to begin with",
-      "hint": "Pick the one where you store the most. You can add the others whenever you like.",
-      "existing_title": "Rooms you already have",
-      "presets_title": "Or create one"
+      "title": "Which room?",
+      "hint": "One room is enough to get started.",
+      "existing_title": "My rooms",
+      "presets_title": "Add a room"
     },
     "emplacement": {
-      "title": "Where do you store things, in that room?",
-      "hint": "A piece of furniture, a shelf, a cupboard: that is what Céoù calls a storage spot.",
-      "existing_title": "Storage spots you already have",
-      "presets_title": "Or create one"
+      "title": "Where in that room?",
+      "hint": "A cupboard, drawer or shelf, for example.",
+      "existing_title": "My storage",
+      "presets_title": "Add storage"
     },
     "conteneur": {
-      "title": "And in there, a box?",
-      "hint": "An item is sometimes inside a box, a basket, a suitcase. Céoù can remember that too — but it is optional.",
-      "existing_title": "Boxes you already have",
-      "presets_title": "Or create one",
-      "skip": "No, none of that"
+      "title": "Is there a box inside?",
+      "hint": "Add it if your item is inside. Otherwise, carry on.",
+      "existing_title": "My boxes",
+      "presets_title": "Add a box",
+      "skip": "No box"
     },
     "objet": {
-      "title": "Your first item",
-      "hint": "Something you often look for: the scissors, the charger, the car papers...",
-      "name_label": "Its name",
+      "title": "What do you keep here?",
+      "hint": "Pick something you’d like to find without searching everywhere.",
+      "name_label": "Item name",
       "name_placeholder": "Scissors",
-      "submit": "Put it away here"
+      "submit": "Save this item"
     },
     "plan": {
-      "title": "And on a plan?",
-      "hint": "Céoù can also draw your home. Each room becomes a box, each storage spot a badge inside it — and you see where your item is at a glance.",
-      "foot": "I will place your room and your storage spot for you. You can add the others whenever you like, by dragging them around.",
-      "create": "Draw it for me",
+      "title": "Want to see it on a plan too?",
+      "hint": "We can create a starter plan with this room and storage.",
+      "foot": "It’s a starting point. You can adjust it to match your home.",
+      "create": "Create my first plan",
       "skip": "Later",
       "default_name": "Ground floor"
     },
     "done": {
-      "title": "All tidied up!",
-      "search_hint": "Next time you look for {{name}}, type its name on the home screen. Here is what Céoù will answer:",
-      "voice_hint": "You can also tap the microphone and ask out loud: \"where are my scissors?\"",
-      "next_steps": "Over to you: add your other rooms, your other storage spots, and everything you put inside them. The more Céoù knows, the more time it saves you.",
+      "title": "All saved!",
+      "search_hint": "To find {{name}}, search for its name in Find.",
+      "voice_hint": "Or tap “Ask Céoù” and ask your question.",
+      "next_steps": "Add the rest at your own pace. No need to do it all today.",
       "more_title": "Céoù can also…",
       "more_factures": "Keep your proofs of purchase, and warn you before a warranty ends.",
       "more_partage": "Share a home with people close to you, or grant limited access.",
       "more_prets": "Remember what you lent, and to whom.",
       "more_plan": "Draw your home’s floor plan and place your belongings on it.",
-      "more_link": "See the tutorials",
-      "finish": "See my inventory",
-      "cycle_title": "Full circle",
-      "cycle_search": "You type your item name on the home screen.",
-      "cycle_sheet": "You open its sheet: it says where the item is stored.",
-      "cycle_plan": "You tap \"View on plan\", and you see it inside your room.",
-      "try_it": "Let's try: open its sheet"
+      "more_link": "Explore the tutorials",
+      "finish": "Find my items",
+      "cycle_title": "Try the plan",
+      "cycle_search": "Search for your item in Find.",
+      "cycle_sheet": "Open its details to see where it is stored.",
+      "cycle_plan": "Tap “View on plan” to highlight its room.",
+      "try_it": "Open my item"
     }
   },
   "assistant": {
@@ -1231,11 +1231,11 @@
   },
   "tutoriels": {
     "entry_title": "Tutorials",
-    "entry_hint": "Every feature explained step by step, with examples.",
+    "entry_hint": "Short explanations and examples for everyday tasks.",
     "title": "Tutorials",
-    "intro": "Take them in order, or pick the one you need. Céoù remembers what you have read.",
+    "intro": "Choose what you want to do. We’ll walk you through it.",
     "search": "Search the tutorials",
-    "search_empty": "No tutorial covers that.",
+    "search_empty": "No results. Try another word.",
     "progress_zero": "No chapter read out of {{total}}",
     "progress_one": "{{count}} chapter read out of {{total}}",
     "progress_other": "{{count}} chapters read out of {{total}}",
@@ -1245,14 +1245,14 @@
     "marked_read": "Chapter read",
     "previous": "Previous",
     "next": "Next",
-    "goal": "Goal",
-    "steps": "Steps",
+    "goal": "What you’ll do",
+    "steps": "How to do it",
     "tip": "Tip",
-    "result": "Result",
+    "result": "All set",
     "open_chapter": "Open the {{name}} tutorial",
     "demos": {
       "rangement": {
-        "caption": "Each level holds the next. That path is what Céoù answers with.",
+        "caption": "From home to item: each level sits inside the previous one.",
         "habitation": "House",
         "piece": "Kitchen",
         "emplacement": "Dresser",
@@ -1260,7 +1260,7 @@
         "objet": "Scissors"
       },
       "recherche": {
-        "caption": "Type a name on the home screen: the answer is the full path.",
+        "caption": "Search for an item, then open its details for the full path.",
         "query": "scissors",
         "result": "Scissors",
         "path": "House › Kitchen › Dresser › Box"
@@ -1270,7 +1270,8 @@
         "objet": "Drill",
         "lieu": "Garage › Workbench",
         "move": "Move",
-        "facture": "Add a receipt"
+        "facture": "Add a receipt",
+        "loan": "Lend or borrow"
       },
       "dossier": {
         "caption": "A home’s Receipts screen: what is proven, and what is not.",
@@ -1287,9 +1288,10 @@
         "title": "Receipts"
       },
       "voix": {
-        "caption": "Tap the mic and speak. Céoù answers out loud.",
+        "caption": "Ask Céoù at the bottom of Find opens the conversation.",
         "question": "“Where are my scissors?”",
-        "answer": "The scissors are in Box, Dresser, Kitchen."
+        "answer": "Your scissors are in the box, in the kitchen chest of drawers.",
+        "button": "Ask Céoù"
       },
       "scan_ia": {
         "caption": "One photo of a shelf, and each item becomes a line to tick.",
@@ -1300,10 +1302,12 @@
         "confirm": "Add (3)"
       },
       "plan": {
-        "caption": "Each room is a shape. The pins are your storage units.",
+        "caption": "The numbered marker and card show where to look for your item.",
         "piece_1": "Kitchen",
         "piece_2": "Living room",
-        "mode": "Explore"
+        "mode": "Edit",
+        "storage": "1 · Chest of drawers",
+        "item": "Scissors"
       },
       "pret": {
         "caption": "A lent item keeps its place in the inventory.",
@@ -1317,7 +1321,8 @@
         "code": "ABCD2345",
         "code_label": "My friend code",
         "habitation": "House",
-        "permission": "Edit"
+        "permission": "Edit",
+        "section": "Friends and invitations"
       },
       "invite": {
         "caption": "A read-only code, with no account to create.",
@@ -1326,42 +1331,56 @@
         "note": "Read-only · expires 30/09/2026"
       },
       "affichage": {
-        "caption": "Text size pulls everything else along with it.",
+        "caption": "Profile → My preferences: choose a text size and check the preview.",
         "title": "Text size",
         "normal": "Normal",
         "large": "Large",
         "huge": "Very large",
         "preview_name": "Car keys",
-        "preview_location": "Sideboard drawer · Kitchen"
+        "preview_location": "Sideboard drawer · Kitchen",
+        "section": "My preferences"
       },
       "hors_ligne": {
-        "caption": "With no network the app still writes. It will send later.",
+        "caption": "Changes wait for the connection to return.",
         "banner": "Offline",
         "objet": "Drill",
         "lieu": "Garage › Workbench"
+      },
+      "demenagement": {
+        "caption": "Moving progress, followed by the boxes you need.",
+        "title": "My move",
+        "phases": [
+          "Preparation",
+          "In progress",
+          "Unpacking",
+          "Finished"
+        ],
+        "box": "Box #01 · Kitchen",
+        "contents": "6 items",
+        "action": "Create a box"
       }
     },
     "chapters": {
       "demarrer": {
         "title": "Getting started",
-        "summary": "Understand how Céoù stores things, and put your first item away.",
-        "goal": "Put your first belonging away, and know how to find it by typing its name.",
+        "summary": "Add an item and learn how to find it.",
+        "goal": "Save your first item and its storage location.",
         "steps": [
-          "Create your home. A house, a flat — but also a garage, a cellar or a vehicle.",
-          "Add a room: the kitchen, your bedroom. A garage or a cellar has none, you store things directly there.",
-          "Add a storage unit in that room: a dresser, a shelf, a cupboard, a desk.",
-          "If your things are in a box, add the box. Otherwise skip this step: it is not required.",
-          "Put your item inside, with its photo. Then search for it from the home screen."
+          "In Places, tap Add to create your home.",
+          "Open it and add a room. For a car or garage, go straight to storage.",
+          "Add storage, such as a cupboard or shelf, and a box if needed.",
+          "Add your item. A photo helps you recognise it but is optional.",
+          "Search for its name in Find, then open its details."
         ],
-        "tip": "Do not store everything at once. Start with what you look for most often: papers, tools, cables, chargers.",
-        "result": "You type “scissors” on the home screen, and Céoù answers with the full path. You can also ask out loud.",
+        "tip": "Start with things you often look for. The cable drawer can wait.",
+        "result": "The item details show each level of its storage path.",
         "action": "Run the getting-started guide",
-        "action_hint": "Two minutes, and it creates everything with you."
+        "action_hint": "The guide helps you add a real item to your inventory."
       },
       "factures": {
         "title": "Your receipts and warranties",
-        "summary": "Keep proof of what you own, and send it as a single file.",
-        "goal": "Attach proof of purchase to your items, get warned before a warranty ends, and be able to send it all to your insurer.",
+        "summary": "Keep receipts and track warranties.",
+        "goal": "Keep proof of purchase alongside your items.",
         "steps": [
           "Open an item page and tap “Add a receipt”.",
           "Photograph the till receipt — or import the PDF the shop emailed you.",
@@ -1370,55 +1389,55 @@
           "From another item page, choose “One already saved” to attach it to the same receipt without photographing the paper again.",
           "The “Without receipt” tab lists everything with no proof yet. The export button, at the top, builds the complete file."
         ],
-        "tip": "Fill in the warranty end date even when it feels far off. Céoù warns you thirty days before — the only moment it can still be of use.",
-        "result": "A single PDF: the itemised summary of your purchases, then every supporting document. Ready to email your insurer."
+        "tip": "Add the warranty end date to receive the reminder scheduled 30 days before it expires.",
+        "result": "Export a PDF of your supporting documents from the home’s invoices."
       },
       "retrouver": {
         "title": "Finding a belonging",
         "summary": "By searching, or by asking out loud.",
-        "goal": "Ask “where is…” and get the exact path, hands full or not.",
+        "goal": "Find an item without searching every cupboard.",
         "steps": [
-          "On the home screen, type the start of the name. The list narrows with every letter.",
-          "Each result shows its full path: the home, the room, the furniture, the box.",
-          "With your hands full, tap the mic instead and ask: “where are my scissors?”. Céoù answers out loud.",
-          "You can also put things away by voice: “put the drill on the workbench”. Céoù does it, and offers to undo if you misspoke.",
-          "When it hesitates between two items or two places, it asks you rather than choosing on its own."
+          "In Find, enter the item’s name. Use Filters to choose a place or room.",
+          "Open a result to see its full storage path.",
+          "To speak, tap Ask Céoù at the bottom and ask “Where are my scissors?”.",
+          "You can also ask to store an item. Check the result and clarify the item or storage if Céoù asks.",
+          "Say “That’s all” or close the window when finished. It also closes after 20 seconds without a reply."
         ],
-        "tip": "Céoù never invents a place. If it cannot find the furniture you name, it says so and stores nothing — a refusal beats an item dropped anywhere.",
-        "result": "You know where a belonging is in three seconds, without opening a single screen."
+        "tip": "Be specific when items share a name: “the kitchen scissors”, for example.",
+        "result": "Find the storage location and open its plan from the item details, if one exists."
       },
       "ajouter-vite": {
         "title": "Adding many items",
         "summary": "Scan a photo or a barcode instead of typing everything.",
-        "goal": "Fill a whole shelf without writing thirty names by hand.",
+        "goal": "Add several items from a photo.",
         "steps": [
-          "From a storage unit, choose “Scan a photo”.",
-          "Photograph the shelf or the open drawer, framing it wide.",
-          "Céoù offers one line per item recognised. Untick what is not an item, fix the names, and confirm in one go.",
-          "For a shop-bought product there is a shortcut: “Scan a barcode” fills in the name and the photo on its own.",
-          "If the code is unknown it is still kept: you fill in the rest by hand."
+          "From a storage location, open the add-item menu and choose Scan a photo.",
+          "Take a clear picture of the shelf or open drawer.",
+          "Check the suggested items, correct names and uncheck anything to ignore.",
+          "Confirm your selection. For a labelled product, you can also scan its barcode.",
+          "If the product is unknown, complete its details yourself."
         ],
-        "tip": "Detection goes through an outside service, and Céoù asks for your consent the first time. The barcode only queries a public product directory.",
-        "result": "A shelf of fifteen items enters the inventory in one photo and two corrections."
+        "tip": "Recognition can make mistakes. A quick check avoids adding the scenery to your inventory.",
+        "result": "Your selected items are added to the storage location."
       },
       "plan": {
         "title": "Your home’s floor plan",
-        "summary": "Draw your rooms, and see where your belongings sit.",
-        "goal": "Move from words to a drawing: show where something is instead of describing it.",
+        "summary": "Explore rooms and locate your items.",
+        "goal": "See which room and storage to look in.",
         "steps": [
-          "From a home, open “Plan”. Starting from nothing, pick a typical layout — studio, two rooms, house — and everything is drawn for you.",
-          "In “Edit” mode, tap a room to select it, drag it to move it, pull the blue dots to resize it.",
-          "“Door” then a tap on a wall opens it up; keep your finger down and slide to move it along the wall.",
-          "The pins are your storage units. A tap picks one, a drag places it in the room, a double-tap removes it from the plan.",
-          "In “Explore” mode, tapping a room tells you what it holds — and from an item page, “View on plan” takes you straight there."
+          "In Places, open your home, then Plans. Open a plan or add one; a template can help you get started.",
+          "Tap a room to zoom in. Its numbered storage locations appear in the list below.",
+          "Tap Edit to draw or move rooms and storage, then Done when finished.",
+          "From an item’s details, tap View on plan. Its room is framed and placed storage gets a larger numbered marker.",
+          "The card below shows the item and its path. Close it to explore other rooms."
         ],
-        "tip": "The “View as list” button tells the same plan in words — “top left”, “centre”. It is quicker to scan than a drawing, and it stays readable when eyesight is not.",
-        "result": "You open the plan, tap the kitchen, and see the four storage units it holds."
+        "tip": "If storage is not placed on the plan, Céoù highlights the room. List view also lets you read the plan without using the drawing.",
+        "result": "The same number connects the storage marker to your item’s card."
       },
       "prets": {
         "title": "Lending and borrowing",
         "summary": "Remember what left your home, and what you owe back.",
-        "goal": "Stop hunting for who has your drill, or forgetting the book you were lent.",
+        "goal": "Remember who has your things and what you need to return.",
         "steps": [
           "On an item page, tap “Lend or borrow”.",
           "Say which way it goes: you are lending it, or you borrowed it.",
@@ -1426,64 +1445,76 @@
           "Set a return date if you have one: Céoù will remind you on the day. Without a date, the loan stays in the list until you close it.",
           "When the item comes back, a button on its page or in the Loans screen closes the loan."
         ],
-        "tip": "A lent item does not leave your inventory: it keeps its place, which is where it will return. A banner on its page only reminds you that it is not there right now.",
-        "result": "The Loans screen lists what is out, overdue first."
+        "tip": "The drill hasn’t vanished. Its details tell you who borrowed it.",
+        "result": "Loans stay available until you close them."
       },
       "amis": {
         "title": "Sharing with people close to you",
         "summary": "Give access to a home, and choose how far it goes.",
-        "goal": "Let someone else see — or edit — the inventory of a home you share.",
+        "goal": "Share an inventory with people you know.",
         "steps": [
-          "In Profile, show your friend code: eight characters, or its QR. It never changes.",
-          "They enter it in “Add a friend”, or scan the QR. A request reaches you.",
-          "Until you share something, they see nothing: accepting someone grants access to no home at all.",
-          "Open their page, and choose for each home: no access, read-only, edit, or owner.",
-          "Sort your friends into categories — family, flatmates, neighbours — once the list grows."
+          "In Profile, open Friends and invitations to find your friend code.",
+          "Your friend enters it or scans its QR from Sharing, then Add a friend.",
+          "Accept the request. Becoming friends does not share any places.",
+          "Open their details and choose permissions for each home: view, edit or owner.",
+          "Change these permissions whenever needed."
         ],
-        "tip": "The permission is set per HOME, not per person. Your partner can edit the house and see nothing of the garage.",
-        "result": "They see your home on their own home screen, with exactly the rights you gave them."
+        "tip": "Permissions apply to each place. Sharing the house doesn’t mean sharing the garage.",
+        "result": "Your friend can access only the places you shared."
       },
       "invites": {
         "title": "Access with no account",
         "summary": "A read-only code for a tenant, a tradesperson, a house-sitter.",
-        "goal": "Show a home to someone who does not have Céoù, and does not want to install it.",
+        "goal": "Give someone view-only access without creating an account.",
         "steps": [
-          "In Profile, choose “Generate an access code”.",
-          "Tick the homes concerned. A guest only gets read-only access: they can change or add nothing.",
-          "Set the duration and the number of uses — or make the code permanent, for someone who stays.",
-          "Give it a name, “July tenants” for instance: that is what will let you recognise it later.",
-          "Share the link or the code. They enter it in “I have an invitation code”, with no account to create."
+          "In Profile → Friends and invitations, tap Generate an access code.",
+          "Choose the homes they can view.",
+          "Set the duration and number of uses.",
+          "Name the code so you can recognise it, for example September guests.",
+          "Share the link or code. Your guest chooses I have an invitation code to enter."
         ],
-        "tip": "Your codes live in “My invitation codes”. Deleting one cuts access immediately, including for people already using it.",
-        "result": "Your tenant browses the home’s inventory from their phone, with no account and nothing they can change."
+        "tip": "Manage or revoke access under My invitation codes in the same section.",
+        "result": "Guests can view authorised places without changing the inventory."
       },
       "affichage": {
         "title": "Adjusting the display",
         "summary": "Theme, text size, language.",
-        "goal": "Fit Céoù to your eyes and your light, not the other way round.",
+        "goal": "Choose a display that feels comfortable.",
         "steps": [
-          "In Profile, open “Display”.",
-          "Choose the text size: normal, large, very large. It is not only the text — buttons, images and spacing grow with it.",
-          "A preview shows the result before you leave the screen.",
-          "Dark mode follows your phone by default. You can force it either way.",
-          "The language changes in the same place, and applies straight away."
+          "In Profile, open My preferences.",
+          "Choose Français or English for the language.",
+          "Turn dark mode on or off, or let Céoù follow your phone.",
+          "Choose a text size and check the preview. It applies straight away."
         ],
-        "tip": "If your phone is already set to enlarged text, Céoù follows it with nothing for you to do — and says so in the Display screen.",
-        "result": "The whole app resizes: lists, pages, the plan, the tutorials."
+        "tip": "Your phone’s text size settings are also taken into account.",
+        "result": "Text and controls adapt throughout the app."
       },
       "hors-ligne": {
         "title": "With no network",
         "summary": "What Céoù can do in a cellar or a garage.",
-        "goal": "Store, photograph and search where there is no signal — that is, where you actually store things.",
+        "goal": "Keep organising when the signal drops.",
         "steps": [
-          "A banner appears at the top when the connection drops. You see the last data loaded.",
-          "You can still create, rename, move, photograph: everything is written on the phone and shows up immediately.",
-          "Céoù queues those changes and sends them on its own when the network returns.",
-          "Search works too: your inventory is loaded in advance, including pages you have never opened.",
-          "If the server refuses a change, it is not lost: a banner flags it and you can retry or drop it."
+          "Open Céoù while connected before you leave: available data is kept on your phone.",
+          "Offline, browse your inventory and add, rename or move items.",
+          "Pending changes are sent when the connection returns.",
+          "If a change is rejected, use the banner to review it or try again."
         ],
-        "tip": "Only two things need the network: exporting your receipts, which has to download the documents again, and speech recognition.",
-        "result": "You store your cellar with no signal, and everything goes up when you come back out."
+        "tip": "Voice, photo recognition, barcode product lookup and invoice export need a connection.",
+        "result": "Local changes wait for a connection before syncing."
+      },
+      "demenagement": {
+        "title": "Plan a move",
+        "summary": "Find your things among the boxes.",
+        "goal": "Track boxes from packing to unpacking.",
+        "steps": [
+          "In Places, open Organise a move and create your move.",
+          "Choose the starting place and destination.",
+          "Create a box, add a photo and pack your items into it.",
+          "Use the actions to scan a box or print labels. Follow progress at the top of the screen.",
+          "On arrival, switch to unpacking and choose where to put each item."
+        ],
+        "tip": "Your move stays private until you choose Share with friends. Permissions follow the homes involved.",
+        "result": "Each box keeps its list of items. Handy when you need that charger on the first night."
       }
     }
   },

@@ -51,6 +51,7 @@ const RENDER = {
   'tuile-facture': (d) => `<p class="d-heading">${text(d.objet, d.lieu)}</p>
     <div class="d-tiles">
       <span class="d-tile"><span class="d-badge">${ICONS.move}</span>${e(d.move)}</span>
+      <span class="d-tile"><span class="d-badge">${ICONS.loan}</span>${e(d.loan)}</span>
       <span class="d-tile is-pulse"><span class="d-badge">${ICONS.receipt}</span>${e(d.facture)}</span>
     </div>`,
 
@@ -64,7 +65,7 @@ const RENDER = {
   export: (d) => `<div class="d-card d-bar">${ICONS.back}<b>${e(d.title)}</b><span class="d-round is-pulse">${ICONS.export}</span></div>`,
 
   // La réponse est une phrase, pas une liste : Céoù la dit à voix haute.
-  voix: (d) => `<div class="d-line"><span class="d-mic is-pulse">${ICONS.mic}</span><b>${e(d.question)}</b></div>
+  voix: (d) => `<p class="d-primary">${ICONS.mic}${e(d.button)}</p><div class="d-line"><span class="d-mic is-pulse">${ICONS.mic}</span><b>${e(d.question)}</b></div>
     <p class="d-answer">${ICONS.check}<span>${e(d.answer)}</span></p>`,
 
   'scan-ia': (d) => {
@@ -78,10 +79,12 @@ const RENDER = {
   // Deux formes et trois puces, rien de plus : une pièce est une FORME, un
   // rangement est un POINT posé dedans. Un plan réaliste noierait l'idée.
   plan: (d) => `<div class="d-card d-plan">
-      <span class="d-room is-teal"><b>${e(d.piece_1)}</b><span class="d-dots"><i></i><i></i></span></span>
-      <span class="d-room is-mustard"><b>${e(d.piece_2)}</b><span class="d-dots"><i></i></span></span>
+      <span class="d-room is-teal"><b>${e(d.piece_1)}</b><span class="d-pill">1</span></span>
+      <span class="d-room is-mustard"><b>${e(d.piece_2)}</b></span>
     </div>
-    <span class="d-pill">${e(d.mode)}</span>`,
+    <span class="d-pill">${e(d.mode)}</span><div class="d-card">${thumb('tag')}${text(d.item, d.storage)}</div>`,
+
+  demenagement: (d) => `<p class="d-heading">${e(d.title)}</p><div class="d-chips">${d.phases.map((phase,i)=>`<span class="d-chip">${i+1} · ${e(phase)}</span>`).join('')}</div><p class="d-pill">${e(d.action)}</p><div class="d-card">${thumb('box')}${text(d.box,d.contents)}</div>`,
 
   pret: (d) => `<div class="d-card d-stack">
       <b>${e(d.objet)}</b>
@@ -92,7 +95,7 @@ const RENDER = {
 
   // Le droit se règle par habitation : la rangée met le logement et le droit
   // sur la même ligne.
-  amis: (d) => `<p class="d-label is-plain">${e(d.code_label)}</p>
+  amis: (d) => `<p class="d-heading">${e(d.section)}</p><p class="d-label is-plain">${e(d.code_label)}</p>
     <div class="d-card d-code"><b>${e(d.code)}</b>${ICONS.qr}</div>
     <div class="d-card d-home">${ICONS.home}<span class="d-grow">${e(d.habitation)}</span><span class="d-tag">${e(d.permission)}</span></div>`,
 
@@ -100,7 +103,7 @@ const RENDER = {
 
   // L'aperçu est déjà à la taille choisie : « grande » ne veut rien dire tant
   // qu'on n'a pas vu une vraie rangée grandir.
-  affichage: (d) => `<p class="d-label is-plain">${e(d.title)}</p>
+  affichage: (d) => `<p class="d-heading">${e(d.section)}</p><p class="d-label is-plain">${e(d.title)}</p>
     <div class="d-tabs"><span>${e(d.normal)}</span><span class="is-on">${e(d.large)}</span><span>${e(d.huge)}</span></div>
     <div class="d-card is-large">${thumb('tag')}${text(d.preview_name, d.preview_location)}</div>`,
 

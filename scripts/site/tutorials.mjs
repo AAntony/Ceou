@@ -25,6 +25,7 @@ const ICON_OF = {
   factures: 'receipt',
   plan: 'plan',
   prets: 'loan',
+  demenagement: 'box',
   amis: 'people',
   invites: 'qr',
   affichage: 'a11y',

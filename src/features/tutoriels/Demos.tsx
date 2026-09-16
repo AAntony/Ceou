@@ -37,6 +37,7 @@ import { Pulse } from './Pulse';
 // different, et une table de composants obligerait a les declarer avant leur
 // usage ou a les hisser dans un objet en tete de fichier.
 export function Demo({ id }: { id: DemoId }) {
+  if (id === 'demenagement') return <DemoDemenagement />;
   if (id === 'rangement') return <DemoRangement />;
   if (id === 'recherche') return <DemoRecherche />;
   if (id === 'tuile-facture') return <DemoTuileFacture />;
@@ -56,7 +57,7 @@ export function Demo({ id }: { id: DemoId }) {
 function Ecran({ legende, children }: PropsWithChildren<{ legende: string }>) {
   return (
     <View className="mb-4" accessible accessibilityLabel={legende}>
-      <View className="overflow-hidden rounded-2xl border border-ink/10 bg-sand p-3">{children}</View>
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden className="overflow-hidden rounded-2xl border border-ink/10 bg-sand p-3">{children}</View>
       <Text className="mt-2 text-caption leading-4 text-ink-soft">{legende}</Text>
     </View>
   );
@@ -92,6 +93,7 @@ function DemoRecherche() {
 
   return (
     <Ecran legende={t('tutoriels.demos.recherche.caption')}>
+      <Text className="mb-2 text-body font-bold text-coral-dark">Céoù</Text>
       <View className="flex-row items-center gap-2 rounded-xl border border-ink/10 bg-surface px-3 py-2">
         <Icon name="search" size={16} color={colors.inkFaint} />
         <Text className="text-label text-ink">{t('tutoriels.demos.recherche.query')}</Text>
@@ -123,34 +125,22 @@ function DemoTuileFacture() {
       <Text className="text-body font-semibold text-ink">{t('tutoriels.demos.tuile_facture.objet')}</Text>
       <Text className="mb-3 text-caption text-ink-soft">{t('tutoriels.demos.tuile_facture.lieu')}</Text>
 
-      {/* LA MOITIÉ DE LARGEUR EST PORTÉE PAR LES ENVELOPPES, jamais par la
-          tuile. Un `flex-1` posé sur la tuile elle-même passe à `flexBasis: 0`
-          dès qu'un parent se mesure sur son contenu — c'est le piège de
-          hauteur documenté dans BottomSheetModal, et l'anneau interpose
-          justement un tel parent. */}
-      <View className="flex-row gap-2">
-        <View className="flex-1">
-          <Tuile icon="move" label={t('tutoriels.demos.tuile_facture.move')} />
-        </View>
-        {/* L'ANNEAU EST SUR CELLE-CI, et sur aucune autre : l'étape qu'on est
-            en train de lire parle de ce bouton précis. */}
-        <View className="flex-1">
-          <Pulse radius={16}>
-            <Tuile icon="facture" label={t('tutoriels.demos.tuile_facture.facture')} accent={colors.accentDark} />
-          </Pulse>
-        </View>
+      <View className="flex-row flex-wrap gap-2">
+        <Tuile icon="move" label={t('inventory.objet.move')} />
+        <Tuile icon="pret" label={t('loans.entry')} />
+        <Tuile icon="facture" label={t('tutoriels.demos.tuile_facture.facture')} accent={colors.accentDark} />
       </View>
     </Ecran>
   );
 }
 
 /** Une tuile d'action, dessinée à la taille d'une miniature. */
-function Tuile({ icon, label, accent }: { icon: 'move' | 'facture'; label: string; accent?: string }) {
+function Tuile({ icon, label, accent }: { icon: 'move' | 'facture' | 'pret'; label: string; accent?: string }) {
   const colors = useThemeColors();
   return (
-    <View className="items-center gap-1.5 rounded-2xl border border-ink/10 bg-surface px-2 py-3">
+    <View style={{ flexGrow: 1, flexBasis: 80 }} className="items-center justify-center gap-1.5 rounded-2xl border border-ink/10 bg-surface px-2 py-3">
       <IconBadge icon={icon} fill={colors.accentLight} iconColor={accent ?? colors.accentDark} size={30} />
-      <Text numberOfLines={2} className="text-center text-caption font-semibold text-ink">
+      <Text className="text-center text-caption font-semibold text-ink">
         {label}
       </Text>
     </View>
@@ -240,22 +230,23 @@ function DemoExport() {
 function DemoVoix() {
   const { t } = useTranslation();
   const colors = useThemeColors();
-  const micro = useScaled(40);
+
 
   return (
     <Ecran legende={t('tutoriels.demos.voix.caption')}>
-      <View className="flex-row items-center gap-3">
+      <View className="gap-3">
         {/* LE MICRO BAT : c'est le seul bouton de cet écran, et l'étape qu'on
             lit dit « appuie dessus ». */}
         <Pulse radius={999}>
           <View
-            style={{ width: micro, height: micro, borderRadius: micro / 2 }}
-            className="items-center justify-center bg-coral"
+
+            className="flex-row items-center justify-center gap-2 rounded-full bg-coral px-3 py-3"
           >
             <Icon name="microphone" size={18} color="#fff" />
+            <Text className="text-caption font-semibold text-white">{t('tutoriels.demos.voix.button')}</Text>
           </View>
         </Pulse>
-        <Text className="flex-1 text-label font-semibold text-ink">{t('tutoriels.demos.voix.question')}</Text>
+        <Text className="text-label font-semibold text-ink">{t('tutoriels.demos.voix.question')}</Text>
       </View>
 
       {/* LA RÉPONSE EST UNE PHRASE, pas une liste : Céoù la dit à voix haute,
@@ -298,48 +289,41 @@ function DemoScanIa() {
 
 function DemoPlan() {
   const { t } = useTranslation();
-  const hauteur = useScaled(96);
-
-  return (
-    <Ecran legende={t('tutoriels.demos.plan.caption')}>
-      {/* DEUX FORMES ET TROIS PUCES, et rien de plus : ce qu'il faut
-          comprendre, c'est qu'une pièce est une FORME et qu'un rangement est
-          un POINT posé dedans. Un plan réaliste noierait cette idée. */}
-      <View style={{ height: hauteur }} className="rounded-xl bg-surface p-2">
-        <View className="flex-1 flex-row gap-2">
-          <View className="flex-1 justify-between rounded-lg bg-teal-light p-1.5">
-            <Text className="text-caption font-semibold text-teal-dark">{t('tutoriels.demos.plan.piece_1')}</Text>
-            <View className="flex-row gap-1">
-              <Puce />
-              <Puce />
-            </View>
-          </View>
-          <View className="flex-1 justify-between rounded-lg bg-mustard-light p-1.5">
-            <Text className="text-caption font-semibold text-mustard-dark">{t('tutoriels.demos.plan.piece_2')}</Text>
-            <Puce />
-          </View>
-        </View>
+  return <Ecran legende={t('tutoriels.demos.plan.caption')}>
+    <View className="mb-3 flex-row items-center justify-between gap-2">
+      <Text className="flex-1 text-label font-semibold text-ink">{t('onboarding.plan.default_name')}</Text>
+      <Text className="text-caption text-coral-dark">{t('tutoriels.demos.plan.mode')}</Text>
+    </View>
+    <View className="flex-row rounded-xl border border-ink/20 bg-surface">
+      <View className="flex-1 items-center justify-center gap-4 border-r border-ink/20 bg-coral-light px-2 py-6">
+        <Text className="text-center text-label font-semibold text-ink">{t('tutoriels.demos.plan.piece_1')}</Text>
+        <View className="h-10 w-10 items-center justify-center rounded-full border-2 border-surface bg-coral"><Text className="text-body font-bold text-white">1</Text></View>
       </View>
-
-      <View className="mt-2 self-start rounded-full bg-sand-dark px-3 py-1">
-        <Text className="text-caption font-semibold text-ink">{t('tutoriels.demos.plan.mode')}</Text>
-      </View>
-    </Ecran>
-  );
+      <View className="flex-1 items-center justify-center px-2 py-6"><Text className="text-center text-label text-ink-soft">{t('tutoriels.demos.plan.piece_2')}</Text></View>
+    </View>
+    <View className="mt-3 rounded-xl border border-ink/10 bg-surface p-3">
+      <Text className="text-caption text-coral-dark">{t('plans.object_focus.title')}</Text>
+      <Text className="text-body font-semibold text-ink">{t('tutoriels.demos.plan.item')}</Text>
+      <Text className="text-label text-ink-soft">{t('tutoriels.demos.plan.storage')}</Text>
+    </View>
+  </Ecran>;
 }
 
-/** Une puce de rangement sur le plan : un point, pas une étiquette. */
-function Puce() {
+function DemoDemenagement() {
+  const { t } = useTranslation();
   const colors = useThemeColors();
-  const taille = useScaled(14);
-  return (
-    <View
-      style={{ width: taille, height: taille, borderRadius: taille / 2 }}
-      className="items-center justify-center bg-surface"
-    >
-      <Icon name="etagere" size={8} color={colors.inkSoft} />
+  const phases = t('tutoriels.demos.demenagement.phases', { returnObjects: true }) as string[];
+  return <Ecran legende={t('tutoriels.demos.demenagement.caption')}>
+    <Text className="mb-3 text-body font-semibold text-ink">{t('tutoriels.demos.demenagement.title')}</Text>
+    <View className="mb-3 flex-row flex-wrap gap-2">
+      {phases.map((phase, i) => <View key={phase} className="flex-row items-center gap-1 rounded-xl bg-coral-light px-2 py-2"><Text className="text-caption text-coral-dark">{i + 1} · {phase}</Text></View>)}
     </View>
-  );
+    <View className="mb-3 flex-row items-center gap-2"><Icon name="conteneur" size={20} color={colors.accentDark} /><Text className="flex-1 text-label text-coral-dark">{t('tutoriels.demos.demenagement.action')}</Text></View>
+    <View className="flex-row items-center gap-3 rounded-xl bg-surface p-3">
+      <Icon name="camera" size={26} color={colors.inkSoft} />
+      <View className="flex-1"><Text className="text-label font-semibold text-ink">{t('tutoriels.demos.demenagement.box')}</Text><Text className="text-caption text-ink-soft">{t('tutoriels.demos.demenagement.contents')}</Text></View>
+    </View>
+  </Ecran>;
 }
 
 function DemoPret() {
@@ -370,6 +354,7 @@ function DemoAmis() {
 
   return (
     <Ecran legende={t('tutoriels.demos.amis.caption')}>
+      <Text className="mb-2 text-label font-semibold text-ink">{t('profile.sections.sharing.title')}</Text>
       <Text className="mb-1 text-caption text-ink-soft">{t('tutoriels.demos.amis.code_label')}</Text>
       <View className="flex-row items-center justify-between rounded-xl border border-ink/10 bg-surface px-3 py-2">
         <Text className="text-body font-bold tracking-widest text-ink">{t('tutoriels.demos.amis.code')}</Text>
@@ -411,16 +396,17 @@ function DemoAffichage() {
 
   return (
     <Ecran legende={t('tutoriels.demos.affichage.caption')}>
+      <Text className="mb-3 text-label font-semibold text-ink">{t('profile.sections.preferences.title')}</Text>
       <Text className="mb-1.5 text-caption text-ink-soft">{t('tutoriels.demos.affichage.title')}</Text>
-      <View className="flex-row gap-1 rounded-full bg-sand-dark p-1">
+      <View className="flex-row flex-wrap gap-2">
         {[
           { cle: 'normal', actif: false },
           { cle: 'large', actif: true },
           { cle: 'huge', actif: false },
         ].map(({ cle, actif }) => (
-          <View key={cle} className={`flex-1 items-center rounded-full py-1 ${actif ? 'bg-surface' : ''}`}>
+          <View key={cle} className={`flex-1 items-center justify-center rounded-xl border px-1 py-3 ${actif ? 'border-coral bg-coral-light' : 'border-ink/10 bg-surface'}`}>
             <Text className={`text-caption ${actif ? 'font-semibold text-ink' : 'text-ink-soft'}`}>
-              {t(`tutoriels.demos.affichage.${cle}`)}
+              Aa{'\n'}{t(`tutoriels.demos.affichage.${cle}`)}
             </Text>
           </View>
         ))}
