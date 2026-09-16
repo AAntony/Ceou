@@ -1,4 +1,6 @@
 import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
+import { useContext } from 'react';
+import { EqualHeightButtonContext } from './ButtonRow';
 import { useScaled } from '../lib/textScale';
 import { useThemeColors } from '../lib/theme';
 import {
@@ -28,10 +30,13 @@ type ButtonProps = PressableProps & {
 // disaient trois fois la meme chose et divergeaient sans qu'on le voie —
 // `accessibilityState` etait recopie a l'identique dans chacune, et il aurait
 // suffi d'en corriger deux sur trois.
-export function Button({ label, loading, variant = 'primary', icon, disabled, accessibilityState, ...pressableProps }: ButtonProps) {
+export function Button({ label, loading, variant = 'primary', icon, disabled, accessibilityState, style, ...pressableProps }: ButtonProps) {
+  const equalHeight = useContext(EqualHeightButtonContext);
   const colors = useThemeColors();
   const tileMinHeight = useScaled(TILE_MIN_HEIGHT);
   const inactive = disabled || loading;
+  const layoutStyle = [variant === 'tile' ? { minHeight: tileMinHeight } : undefined,
+    equalHeight ? { flexGrow: 1 } : undefined];
 
   // Le tourniquet doit se voir SUR le bouton, pas dedans : sa couleur suit
   // celle du libelle qu'il remplace le temps de l'attente.
@@ -49,7 +54,7 @@ export function Button({ label, loading, variant = 'primary', icon, disabled, ac
       // bouton qui tourne est simplement un bouton qui ne repond pas.
       accessibilityState={{ ...accessibilityState, disabled: !!inactive, busy: !!loading }}
       className={`${BUTTON_SURFACE[variant]} ${inactive ? BUTTON_DISABLED : ''}`}
-      style={variant === 'tile' ? { minHeight: tileMinHeight } : undefined}
+      style={typeof style === 'function' ? (state) => [...layoutStyle, style(state)] : [...layoutStyle, style]}
       {...pressableProps}
     >
       {loading ? (

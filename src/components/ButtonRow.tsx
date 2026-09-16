@@ -1,10 +1,12 @@
-import { Children, type ReactNode } from 'react';
+import { Children, createContext, type ReactNode } from 'react';
 import { View } from 'react-native';
 import { STACK_SCALE, useTextScale } from '../lib/textScale';
 
 type ButtonRowProps = {
   children: ReactNode;
 };
+
+export const EqualHeightButtonContext = createContext(false);
 
 // DEUX (OU TROIS) ACTIONS DE MEME RANG, COTE A COTE, A LARGEUR EGALE.
 //
@@ -42,6 +44,7 @@ export function ButtonRow({ children }: ButtonRowProps) {
   }
 
   return (
+    <EqualHeightButtonContext.Provider value>
     <View className="flex-row gap-3">
       {items.map((item, index) => (
         <View key={index} className="flex-1">
@@ -49,5 +52,6 @@ export function ButtonRow({ children }: ButtonRowProps) {
         </View>
       ))}
     </View>
+    </EqualHeightButtonContext.Provider>
   );
 }

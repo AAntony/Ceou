@@ -24,7 +24,13 @@ export function LocationBreadcrumb({ objetId }: { objetId: string }) {
       {nodes.map((node, index) => {
         const last = index === nodes.length - 1;
         return <Pressable key={node.id} onPress={() => open(node)} accessibilityRole="link"
-          accessibilityLabel={node.name} className="min-h-[48px] flex-row items-center gap-3 py-2">
+          accessibilityLabel={nodes.slice(0, index + 1).map((ancestor) => ancestor.name).join(', ')}
+          style={{ marginLeft: Math.min(index, 4) * 20 }}
+          className="min-h-[48px] flex-row items-center gap-3 py-2">
+          {index > 0 ? <View pointerEvents="none" accessible={false} importantForAccessibility="no"
+            style={{ position: 'absolute', left: -4, top: -24, height: 48, width: 14,
+              borderLeftWidth: 1, borderBottomWidth: 1, borderColor: colors.inkSoft, opacity: 0.45,
+              borderBottomLeftRadius: 8 }} /> : null}
           <View className="w-8 items-center">
             <Icon name={node.kind === 'habitation' ? 'home' : node.kind === 'piece' ? 'piece' : node.kind === 'conteneur' ? 'conteneur' : 'armoire'} size={20} color={last ? colors.accentDark : colors.inkSoft} />
           </View>
