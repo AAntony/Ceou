@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Céoù · Pilotage financier</title><link rel="stylesheet" href="/styles.css"><script type="module" src="/app.mjs"></script></head>
+<body>
+<a class="skip" href="#main">Aller au contenu</a>
+<aside class="sidebar">
+  <a class="brand" href="/">Céoù<span>pilotage</span></a>
+  <p class="eyebrow">ESPACE FONDATEUR</p>
+  <nav aria-label="Navigation du tableau de bord">
+    <button data-page="overview" aria-current="page"><span aria-hidden="true">◫</span> Vue d’ensemble</button>
+    <button data-page="costs"><span aria-hidden="true">≡</span> Dépenses & usages</button>
+    <button data-page="simulation"><span aria-hidden="true">↗</span> Simuler les offres</button>
+    <button data-page="guide"><span aria-hidden="true">↓</span> Où trouver mes exports ?</button>
+  </nav>
+  <div class="local-note"><span class="dot"></span> Sur cet ordinateur<p>Aucune connexion aux fournisseurs. Tes données restent dans ce navigateur.</p><small>Exporte une sauvegarde pour les conserver ou changer de navigateur.</small></div>
+</aside>
+<main id="main">
+  <header class="topbar"><span class="badge">FINANCES · PRIVÉ</span><div class="actions"><button id="backup" class="secondary">Sauvegarder mes données</button><label>Mois observé<input id="month" type="month" required></label></div></header>
+  <p id="status" role="status" aria-live="polite"></p>
+  <section id="overview" class="page">
+    <div class="intro"><p class="eyebrow">COMPRENDRE AVANT DE FIXER UN PRIX</p><h1>Chaque euro compte.</h1><p>Les dépenses renseignées, les usages observés et les hypothèses restent bien distincts.</p></div>
+    <div id="coverage" class="notice"></div>
+    <div class="metrics">
+      <article class="metric"><span>Dépenses renseignées</span><strong id="total">—</strong><small>Euros · base hors taxes</small></article>
+      <article class="metric"><span>Coût / utilisateur actif</span><strong id="per-user">—</strong><small>Moyenne globale, pas par offre</small></article>
+      <article class="metric"><span>Utilisateurs actifs</span><strong id="active-count">—</strong><small id="paid-count">Abonnés actifs non renseignés</small></article>
+      <article class="metric"><span>Dépenses IA renseignées</span><strong id="ai-total">—</strong><small>Voix, photos et autres appels</small></article>
+    </div>
+    <div class="columns"><article class="panel"><div class="panel-title"><h2>Où part le budget ?</h2><span class="badge">SAISIES / IMPORTS</span></div><div id="breakdown"></div></article>
+    <article class="panel"><h2>Ce que l’on sait du mois</h2><dl id="observations"></dl><p class="muted">Les minutes ne donnent pas les tokens facturés. Sans attribution fiable des factures et relevés complets, aucun coût par minute ou par utilisateur payant n’est déduit automatiquement.</p><button class="text-button" data-page="costs">Compléter les données →</button></article></div>
+    <article class="panel"><div class="panel-title"><h2>Évolution des dépenses renseignées</h2><span class="muted">Pas d’extrapolation des mois incomplets</span></div><div id="history" class="table-wrap"></div></article>
+  </section>
+  <section id="costs" class="page" hidden>
+    <div class="intro"><p class="eyebrow">LES CHIFFRES OBSERVÉS</p><h1>Un point de départ fiable.</h1><p>Saisis les postes de tes factures ou importe le modèle Céoù. N’ajoute jamais à la fois une facture totale et son détail.</p></div>
+    <article class="panel"><h2>Utilisation du mois sélectionné</h2><p class="muted">Laisse vide ce qui est inconnu. Utilise la même période que les dépenses. Les utilisateurs actifs sont des comptes distincts, pas le nombre d’inscrits.</p>
+      <form id="usage-form" class="form-grid">
+        <label>Utilisateurs actifs<input name="active" type="number" min="0" step="1" placeholder="Non renseigné"></label>
+        <label>Dont abonnés actifs<input name="paid" type="number" min="0" step="1" placeholder="Non renseigné"></label>
+        <label>Minutes vocales déclarées<input name="voiceMinutes" type="number" min="0" step="any" placeholder="Non renseigné"></label>
+        <label>Analyses photo effectuées<input name="photoScans" type="number" min="0" step="1" placeholder="Non renseigné"></label>
+        <button class="primary" type="submit">Enregistrer les usages</button>
+      </form>
+    </article>
+    <article class="panel"><h2>Ajouter une dépense</h2><p class="muted">Montant hors taxes après remises ; un avoir est négatif. Pour une facture commune à plusieurs projets, renseigne uniquement la part de Céoù. Les coûts fixes sont mensualisés manuellement.</p>
+      <form id="cost-form" class="form-grid">
+        <label>Référence unique<input name="id" required maxlength="250" placeholder="ex. supabase-2026-09-abonnement"></label>
+        <label>Fournisseur<input name="provider" required maxlength="200" placeholder="ex. Supabase"></label>
+        <label>Poste<select name="category" id="category"></select></label>
+        <label>Nature<select name="kind"><option value="variable">Variable · selon la consommation</option><option value="fixed">Fixe · abonnement, forfait…</option></select></label>
+        <label>Montant HT<input name="amount" type="number" step="any" required placeholder="0,00"></label>
+        <label>Devise<select name="currency"><option>EUR</option><option>USD</option><option>GBP</option></select></label>
+        <label>1 unité de devise = … €<input name="eur_rate" type="number" min="0.000001" step="any" required value="1"></label>
+        <label>Source / note<input name="note" maxlength="2000" placeholder="Facture, période, règle de répartition…"></label>
+        <button class="primary" type="submit">Ajouter au mois sélectionné</button>
+      </form>
+    </article>
+    <article class="panel"><div class="panel-title"><h2>Journal du mois</h2><div class="actions"><button id="template" class="secondary">Modèle CSV</button><label class="file-button">Importer un CSV<input id="csv" type="file" accept=".csv,text/csv"></label></div></div>
+      <p class="muted">Format Céoù uniquement. Les CSV fournisseurs bruts et les PDF ne sont pas interprétés automatiquement. Chaque référence identique est ignorée ; un conflit bloque l’import entier.</p><div id="ledger" class="table-wrap"></div>
+      <details><summary>Comment remplir le modèle CSV ?</summary><p class="muted">Une ligne par poste et mois : <strong>id</strong> = référence unique ; <strong>month</strong> = AAAA-MM ; <strong>provider</strong> = fournisseur ; <strong>category</strong> = voice, photo, ai, hosting, storage, network, tools ou other ; <strong>kind</strong> = fixed ou variable ; <strong>amount</strong> = montant HT après remises ; <strong>currency</strong> = EUR, USD ou GBP ; <strong>eur_rate</strong> = valeur en euros d’une unité de la devise (1 pour EUR) ; <strong>note</strong> = origine du chiffre. Séparateur virgule ou point-virgule, encodage UTF-8. Les avoirs sont négatifs.</p></details>
+    </article>
+  </section>
+  <section id="simulation" class="page" hidden>
+    <div class="intro"><p class="eyebrow">DES HYPOTHÈSES, PAS DES RECETTES ACQUISES</p><h1>Une offre qui tient la route.</h1><p>Le revenu annuel est réparti sur douze mois. Modifie les coûts pour comparer usage habituel, intensif et quotas entièrement consommés.</p></div>
+    <div class="notice">Les tarifs et taux ci-dessous sont des hypothèses modifiables. Les coûts restent vides tant que tu ne les renseignes pas. Aucune publicité ni recharge n’est supposée financer le modèle.</div>
+    <div class="simulation-grid"><article class="panel"><form id="scenario-form">
+      <h2>Audience & tarifs</h2><div class="form-grid compact">
+      <label>Utilisateurs actifs / mois<input name="active" type="number" min="1" step="1" required></label>
+      <label>Abonnés parmi les actifs (%)<input name="conversion" type="number" min="0" max="100" step="any" required></label>
+      <label>Abonnement mensuel TTC (€)<input name="monthly" type="number" min="0" step="any" required></label>
+      <label>Abonnement annuel TTC (€)<input name="annual" type="number" min="0" step="any" required></label>
+      <label>Part des abonnés annuels (%)<input name="annualShare" type="number" min="0" max="100" step="any" required></label>
+      <label>TVA retenue (%)<input name="vat" type="number" min="0" max="100" step="any" required></label>
+      <label>Commission sur le HT (%)<input name="commission" type="number" min="0" max="100" step="any" required></label>
+      </div><h2>Coûts mensuels estimés</h2><p class="muted">Hors taxes, sans double comptage : IA + stockage + transferts dans les coûts par personne ; forfaits et outils dans les charges fixes. Inclure le support si tu veux le budgéter.</p><div class="form-grid compact">
+      <label>Charges fixes (€ / mois)<input name="fixed" type="number" min="0" step="any" placeholder="À renseigner" required></label>
+      <label>Coût variable / gratuit (€)<input name="freeCost" type="number" min="0" step="any" placeholder="À mesurer / estimer" required></label>
+      <label>Coût variable / abonné (€)<input name="paidCost" type="number" min="0" step="any" placeholder="À mesurer / estimer" required></label>
+      </div><button type="submit" class="primary">Calculer et enregistrer le scénario</button>
+    </form></article>
+    <div><article class="panel result-panel"><span class="badge">PROJECTION MENSUELLE</span><h2>Solde après les coûts saisis</h2><strong id="scenario-result" class="big-result">—</strong><p id="scenario-note">Renseigne les trois coûts pour calculer la projection.</p><dl id="scenario-details"></dl></article>
+    <article class="panel"><h2>Et si la conversion change ?</h2><div id="sensitivity" class="table-wrap"></div><p class="muted">Charges fixes constantes dans cette simulation. Les paliers d’hébergement, remboursements, acquisition, rémunération et impôts ne sont inclus que si tu les budgets dans les coûts. Ce solde n’est pas un bénéfice comptable.</p></article></div></div>
+  </section>
+  <section id="guide" class="page" hidden>
+    <div class="intro"><p class="eyebrow">LES DOCUMENTS À RÉUNIR</p><h1>De la facture au bon tarif.</h1><p>Commence par le dernier mois complet et le mois en cours, séparément. Aucun mot de passe ni clé API n’est nécessaire.</p></div>
+    <div class="guide-grid">
+    <article class="panel"><span class="step">01</span><h2>Google · Gemini</h2><p><strong>Google Cloud → Facturation → compte concerné → Tableau des coûts / Cost table.</strong> Sélectionne le mois et le projet associé à Céoù, puis télécharge le CSV.</p><p>Conserve projet, service, SKU, coût, remises/crédits, devise et période. Joins le PDF ou relevé pour rapprocher le total. Une recharge prépayée n’est pas une consommation : utilise les coûts consommés.</p><p>Dans <strong>Google AI Studio → Dashboard → Usage</strong>, relève aussi les requêtes et consommations par modèle disponibles, pour la même période. Si aucun export n’est proposé, un relevé des valeurs suffit.</p><a href="https://docs.cloud.google.com/billing/docs/how-to/cost-table" target="_blank" rel="noreferrer">Guide officiel Google Cloud ↗</a> · <a href="https://ai.google.dev/gemini-api/docs/billing?hl=fr" target="_blank" rel="noreferrer">Facturation Gemini ↗</a></article>
+    <article class="panel"><span class="step">02</span><h2>Supabase</h2><p><strong>Dashboard → organisation de Céoù → Billing → factures.</strong> Télécharge le PDF du dernier cycle complet et relève la facture à venir pour le cycle actuel.</p><p>Dans <strong>Usage</strong>, relève les utilisateurs actifs mensuels (MAU), le stockage, les transferts et les fonctions Edge. Note les dates exactes du cycle, qui peuvent différer du mois civil.</p><p>Une facture d’organisation peut regrouper plusieurs projets. Distingue la part de Céoù et les coûts de test. Le MAU de facturation est un indicateur d’activité authentifiée, pas une mesure exacte de rétention.</p><a href="https://supabase.com/dashboard/org/_/usage" target="_blank" rel="noreferrer">Ouvrir les usages Supabase ↗</a> · <a href="https://supabase.com/docs/guides/platform/your-monthly-invoice" target="_blank" rel="noreferrer">Comprendre la facture ↗</a></article>
+    <article class="panel"><span class="step">03</span><h2>Durées vocales existantes</h2><p>Dans <strong>Supabase → projet Céoù → SQL Editor</strong>, exécute la requête en lecture seule ci-dessous, puis exporte le résultat en CSV.</p><p>Elle agrège les sessions par mois sans exporter d’identifiants. Les sessions non soldées sont signalées séparément : leur temps réservé ne doit pas devenir une durée réellement consommée.</p><p>Ce relevé sert au contrôle des usages, pas au calcul exact de la facture Gemini. Les compteurs déclarés par le client ne sont pas une preuve de consommation fournisseur.</p><a href="/voice-usage.sql" download>Télécharger la requête SQL ↧</a></article>
+    <article class="panel"><span class="step">04</span><h2>Autres frais & sauvegardes</h2><p>Rassemble les factures Expo/EAS si tu paies un forfait, du domaine et des autres outils utilisés pour Céoù. Répartis un abonnement annuel sur douze mois.</p><p>Plus tard, les rapports de ventes et remboursements du magasin permettront de remplacer les hypothèses de recettes. Pour l’instant, le simulateur ne prétend pas connaître tes revenus.</p><p><strong>Import :</strong> reporte les postes HT dans le modèle CSV Céoù ou le formulaire. Les PDF restent des justificatifs ; ne cumule pas totaux et détails.</p><label class="file-button">Restaurer une sauvegarde JSON<input id="restore" type="file" accept=".json,application/json"></label><p class="muted">La restauration remplace les données locales après confirmation. Une sauvegarde contient aussi tes hypothèses financières : garde-la privée.</p></article>
+    </div>
+    <article class="panel"><h2>Où vivent mes données ?</h2><p>Sur cet ordinateur, dans le stockage local de ce navigateur, à l’adresse <strong>http://127.0.0.1:8094</strong>. Ouvre toujours cette même adresse. Une autre adresse, un autre navigateur ou l’effacement de ses données donne un espace séparé ou vide.</p><p>Le serveur n’écoute que sur cet ordinateur. Aucun fichier financier n’est envoyé à GitHub, à Céoù ou à un fournisseur. Le bouton de sauvegarde permet de télécharger tes données ; le tableau de bord ne les écrit pas dans le dépôt du projet.</p></article>
+  </section>
+  <footer>Avec Céoù, les décisions se prennent sur des chiffres. Les cases vides restent vides.</footer>
+</main>
+</body></html>
