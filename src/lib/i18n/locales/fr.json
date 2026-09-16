@@ -348,6 +348,17 @@
         "title": "Compte et données",
         "hint": "Sécurité, corbeille et confidentialité"
       }
+    },
+    "setup": {
+      "title": "Comment peut-on t’appeler ?",
+      "hint": "Choisis le nom ou le pseudo que tes amis verront dans Céoù.",
+      "name": "Nom d’utilisateur",
+      "avatar": "Avatar Céoù souriant",
+      "photo_hint": "Tu peux garder ce sourire ou choisir ta photo.",
+      "error": "Impossible d’enregistrer pour le moment. Réessaie.",
+      "continue": "C’est parti",
+      "required": "Choisis un nom ou un pseudo pour continuer.",
+      "signup_photo": "Ton avatar est prêt. Tu pourras choisir une photo à ta première connexion."
     }
   },
   "home": {

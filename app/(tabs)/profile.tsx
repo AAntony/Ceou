@@ -1,3 +1,4 @@
+import { CeouAvatar } from '../../src/components/CeouAvatar';
 import Constants from 'expo-constants';
 import { Image } from 'expo-image';
 import { router, useNavigation } from 'expo-router';
@@ -164,9 +165,7 @@ export default function ProfileScreen() {
           ) : profile?.avatar_url ? (
             <Image source={avatar} style={{ width: avatarSize, height: avatarSize }} />
           ) : (
-            <Text className="text-display font-semibold text-ink-soft">
-              {(displayName || session?.user.email || '?').charAt(0).toUpperCase()}
-            </Text>
+            <CeouAvatar size={avatarSize} />
           )}
         </View>
         <Text className="flex-1 text-label font-semibold text-coral-dark">{t('profile.avatar.change')}</Text>

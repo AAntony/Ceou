@@ -76,7 +76,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
-    "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans",
+    "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans && npm run test:profile",
     "verify:ci": "npm run typecheck && npm run lint -- --max-warnings 30 && npm test",
     "test:scanner": "node --test scripts/tests/scanner.test.mjs",
     "site": "node scripts/build-site.mjs",
@@ -85,7 +85,8 @@
     "test:redesign": "node --test scripts/test-redesign.mjs",
     "test:voice": "node --test scripts/tests/voice-live-tools.test.mjs scripts/tests/voice-audio.test.mjs",
     "preweb": "node scripts/setup-plan-web.mjs",
-    "test:plans": "node --test scripts/tests/plans-layout.test.mjs"
+    "test:plans": "node --test scripts/tests/plans-layout.test.mjs",
+    "test:profile": "node --test scripts/tests/profile-setup.test.mjs"
   },
   "private": true
 }

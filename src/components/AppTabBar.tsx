@@ -1,3 +1,4 @@
+import { CeouAvatar } from './CeouAvatar';
 import { Image } from 'expo-image';
 import { router, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -150,7 +151,7 @@ function TabItem({ label, iconName, active, onPress, avatarUrl, badgeCount = 0 }
           >
             <Image source={avatar} style={{ width: '100%', height: '100%' }} />
           </View>
-        ) : (
+        ) : iconName === 'profile' ? <CeouAvatar size={avatarSize} /> : (
           <Icon name={iconName} size={iconSize} color={color} fixedSize />
         )}
 

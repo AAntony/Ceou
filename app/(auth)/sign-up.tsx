@@ -1,3 +1,4 @@
+import { CeouAvatar } from '../../src/components/CeouAvatar';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,7 @@ import { supabase } from '../../src/lib/supabase/client';
 
 export default function SignUpScreen() {
   const { t, i18n } = useTranslation();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,6 +22,7 @@ export default function SignUpScreen() {
 
   const handleSubmit = async () => {
     setError(null);
+    if (!username.trim()) { setError(t('profile.setup.required')); return; }
 
     if (!isPasswordValid(password)) {
       setError(t('auth.errors.password_too_short'));
@@ -38,7 +41,7 @@ export default function SignUpScreen() {
     const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: authRedirectUrl('signup', i18n.language) },
+      options: { data: { display_name: username.trim() }, emailRedirectTo: authRedirectUrl('signup', i18n.language) },
     });
     setLoading(false);
 
@@ -48,14 +51,16 @@ export default function SignUpScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
-      <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 32 }} keyboardShouldPersistTaps="handled">
         <Text className="mb-8 text-display font-bold text-ink">{t('auth.sign_up.title')}</Text>
 
         {success ? (
           <Text className="text-body text-ink-soft">{t('auth.sign_up.success')}</Text>
         ) : (
           <>
-            <TextField
+            <View className="mb-4 flex-row items-center gap-3"><CeouAvatar size={56} /><Text className="flex-1 text-caption text-ink-soft">{t('profile.setup.signup_photo')}</Text></View>
+            <TextField label={t('profile.setup.name')} value={username} onChangeText={setUsername} maxLength={50} autoComplete="nickname" />
+          <TextField
               label={t('auth.email')}
               value={email}
               onChangeText={setEmail}

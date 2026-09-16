@@ -1,3 +1,4 @@
+import { CeouAvatar } from '../../components/CeouAvatar';
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 import { Icon } from '../../components/Icon';
@@ -19,25 +20,6 @@ import { useThemeColors } from '../../lib/theme';
 
 const AVATAR_SIZE = 42;
 
-// Teinte de repli déterministe sur l'identifiant : le même ami garde la même
-// couleur d'une session à l'autre, et deux amis voisins dans la liste en ont
-// statistiquement des différentes.
-const AVATAR_COLORS = ['#2EC4B6', '#8B7BD8', '#FFC857', '#D85A30', '#1591EA', '#7BB661'];
-
-function avatarColor(seed: string): string {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-}
-
-/** Deux lettres au plus : « Agathe Moreau » -> AM, « Agathe » -> AG. */
-function initials(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  return (words[0][0] + words[1][0]).toUpperCase();
-}
-
 type FriendRowProps = {
   id: string;
   name: string;
@@ -46,14 +28,14 @@ type FriendRowProps = {
   onPress: () => void;
 };
 
-export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowProps) {
+export function FriendRow({ name, subtitle, avatarUrl, onPress }: FriendRowProps) {
   const colors = useThemeColors();
   const avatarPhoto = useMediaSource(avatarUrl);
-  const color = avatarColor(id);
+
   // L'avatar et ses initiales sont dessines en pixels : ils grandissent avec
   // le texte du nom pose a cote, sinon le cercle devient un point.
   const avatarSize = useScaled(AVATAR_SIZE);
-  const initialsSize = useScaled(14);
+
   const { textScale } = useTextScale();
   const titleLines = textScale >= WRAP_SCALE ? 2 : 1;
 
@@ -68,16 +50,13 @@ export function FriendRow({ id, name, subtitle, avatarUrl, onPress }: FriendRowP
 
   const avatar = (
     <View
-      style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: color }}
+      style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2, backgroundColor: colors.accent }}
       className="items-center justify-center overflow-hidden"
     >
       {avatarPhoto ? (
         <Image source={avatarPhoto} style={{ width: '100%', height: '100%' }} contentFit="cover" />
       ) : (
-        // Les initiales plutôt qu'une silhouette générique : elles
-        // distinguent réellement deux amis sans photo, ce qu'un même
-        // pictogramme répété ne fait pas.
-        <Text style={{ color: '#FFFFFF', fontSize: initialsSize, fontWeight: '600' }}>{initials(name)}</Text>
+        <CeouAvatar size={avatarSize} />
       )}
     </View>
   );

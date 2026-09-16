@@ -115,7 +115,7 @@ export function useOnboardingLaunch() {
   const ownsNothing = (habitations ?? []).every((habitation) => habitation.user_id !== session?.user.id);
   const ready = localLatch !== null && !profileLoading && !habitationsLoading && splashDone;
   const shouldAutoOpen =
-    ready && !isGuest && !localLatch && !profile?.onboarding_done_at && ownsNothing;
+    ready && !!profile?.display_name?.trim() && !isGuest && !localLatch && !profile?.onboarding_done_at && ownsNothing;
 
   useEffect(() => {
     if (!shouldAutoOpen || autoOpened.current) return;

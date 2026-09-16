@@ -47,6 +47,7 @@ function upgradeErrorMessage(error: { code?: string; message: string }): string 
 
 export default function UpgradeAccountScreen() {
   const { t, i18n } = useTranslation();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -56,6 +57,7 @@ export default function UpgradeAccountScreen() {
 
   const handleSubmit = async () => {
     setError(null);
+    if (!username.trim()) { setError(t('profile.setup.required')); return; }
 
     if (!isPasswordValid(password)) {
       setError(t('auth.errors.password_too_short'));
@@ -68,7 +70,7 @@ export default function UpgradeAccountScreen() {
 
     setLoading(true);
     const { error: updateError } = await supabase.auth.updateUser(
-      { email: email.trim(), password },
+      { email: email.trim(), password, data: { display_name: username.trim() } },
       { emailRedirectTo: authRedirectUrl('signup', i18n.language) },
     );
     setLoading(false);
@@ -105,10 +107,11 @@ export default function UpgradeAccountScreen() {
     <>
       <Stack.Screen options={{ headerShown: true, title: t('guest.upgrade.title') }} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} className="flex-1 bg-sand">
-        <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 32 }} keyboardShouldPersistTaps="handled">
           <Text className="mb-2 text-display font-bold text-ink">{t('guest.upgrade.title')}</Text>
           <Text className="mb-8 text-body leading-6 text-ink-soft">{t('guest.upgrade.description')}</Text>
 
+          <TextField label={t('profile.setup.name')} value={username} onChangeText={setUsername} maxLength={50} autoComplete="nickname" />
           <TextField
             label={t('auth.email')}
             value={email}

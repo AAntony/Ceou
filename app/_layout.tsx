@@ -1,3 +1,4 @@
+import { ProfileSetup } from '../src/features/profile/ProfileSetup';
 import { focusManager } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from 'expo-router';
@@ -144,6 +145,7 @@ function AppShell() {
         </SafeAreaInsetsContext.Provider>
       </View>
       <AuthedTabBar />
+      {splashDone ? <ProfileSetup /> : null}
 
       {/* En dernier : c'est un calque, il doit passer au-dessus du reste. */}
       {splashDone ? null : (

@@ -348,6 +348,17 @@
         "title": "Account and data",
         "hint": "Security, trash and privacy"
       }
+    },
+    "setup": {
+      "title": "What should we call you?",
+      "hint": "Choose the name or nickname your friends will see in Céoù.",
+      "name": "Username",
+      "avatar": "Smiling Céoù avatar",
+      "photo_hint": "Keep this smile or choose your own photo.",
+      "error": "Could not save right now. Please try again.",
+      "continue": "Let’s go",
+      "required": "Choose a name or nickname to continue.",
+      "signup_photo": "Your avatar is ready. You can choose a photo when you first sign in."
     }
   },
   "home": {
