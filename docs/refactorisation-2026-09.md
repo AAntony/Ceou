@@ -49,12 +49,13 @@ Conserver les parcours, textes, droits, règles métier, clés du cache et forma
 
 - Audit npm des dépendances de production : 22 signalements au départ (dont 7 élevés), **0 après corrections** au 16 septembre 2026. Ce résultat est celui du registre npm, pas une garantie d'absence de toute vulnérabilité.
 - Correctifs compatibles : `@xmldom/xmldom` 0.8.15 / 0.9.12 et `js-yaml` 4.3.2.
-- Résolutions ciblées de l'outillage : Metro utilise `image-size` 2.0.3 ; Xcode utilise `uuid` 11.1.1. Tests de l'import effectif par Metro, des dimensions d'une image du projet et du format des identifiants Xcode.
+- Résolutions ciblées de l'outillage : Metro utilise `image-size` 2.0.3 ; Xcode utilise `uuid` 11.1.1. Le patch Metro adapte la lecture des chemins à l'API asynchrone `imageSizeFromFile`, limitée à 512 Kio par image. Tests du pipeline Android réel de Metro avec une image du projet et une image d'Expo Router, de l'import par défaut et du format des identifiants Xcode.
 - Expo Router : `decode-uri-component` 0.5.0 corrige le déni de service par entrée malformée ([avis de sécurité](https://github.com/advisories/GHSA-vcc3-ghjq-m6fr)). Le patch de `query-string` adapte son import CommonJS à l'export par défaut ESM. Tests des accents, emojis, paramètres répétés, signes `+`, et d'une longue séquence invalide. `postinstall` échoue désormais explicitement si un patch ne s'applique plus.
 - Expo SDK et modules natifs inchangés. Les résolutions ciblées sont documentées pour pouvoir les retirer quand les dépendances parentes intègrent ces corrections.
-- **87 tests**, TypeScript et lint passent. Les avertissements React connus passent de 30 à 28 ; seuil CI abaissé à 28, sans désactiver de règle supplémentaire.
+- **88 tests**, TypeScript et lint passent. Les avertissements React connus passent de 30 à 28 ; seuil CI abaissé à 28, sans désactiver de règle supplémentaire.
 - Comparaison reproductible : `node scripts/benchmark-search.mjs`, 10 000 objets synthétiques, cinq requêtes, dix répétitions après échauffement. Sur cette machine : préparation 28,03 ms ; médiane par recherche 182,20 ms avant / 0,44 ms après. Ce gain porte sur le calcul local de recherche, pas sur toute l'application ni sur un appareil Android.
 - Aperçu local en 390 × 844 : fiche objet, hiérarchie du rangement, repérage dans le plan, recadrage, recherche exacte/partielle, filtre Salon puis remise à zéro. Aucune donnée réelle modifiée.
+- Export Android réussi : 2 717 modules et 39 ressources. L'essai initial avait révélé l'incompatibilité de lecture des chemins d'image par Metro ; le correctif et son test de pipeline font partie de cette livraison. Les trois patches ont été vérifiés via `postinstall`, dont celui de Metro depuis un fichier non patché.
 
 ## Périmètre et suites raisonnables
 
