@@ -44,7 +44,7 @@ La signature Google, l'identité, le bloc, la récompense, le challenge serveur 
 
 Le paiement et la vérification du compte développeur ne créent pas les produits de Céoù. Il reste à créer l'app Android **`com.aantony.ceou`**, déposer un AAB sur une piste de test interne, créer l'abonnement avec ses offres mensuelle/annuelle et relier Google Play à RevenueCat. Importer ces produits, les associer à `ceou_plus` et à l'offering Current.
 
-Définir ensuite `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` avec la **clé publique Google Play `goog_…`** dans l'environnement EAS production. Le profil production utilise `EXPO_PUBLIC_BILLING_MODE=live`. La clé secrète reste exclusivement dans Supabase.
+Définir ensuite `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` avec la **clé publique Google Play `goog_…`** et `EXPO_PUBLIC_BILLING_MODE=live` dans l'environnement EAS production. Le profil de build production précise également ce mode ; la variable d'environnement EAS est nécessaire pour les futures mises à jour OTA. La clé secrète reste exclusivement dans Supabase.
 
 Avant d'activer la vente : valider les prix dans Play, l'achat sandbox Play, la restauration sur un autre appareil, les annulations/expirations, les transferts de compte et le consentement publicitaire sur Android. Compléter les déclarations Play (achats, annonces, données collectées) et publier la politique de confidentialité mise à jour. La suppression du compte Céoù ne résilie pas un abonnement Play : il doit être géré dans Play.
 
@@ -63,6 +63,7 @@ La bascule de `enforce` et `ads_enabled` est une opération d'administration sé
 
 ## Maintenance
 
+- La compilation Android utilise Kotlin 2.3.21 via `expo-build-properties`, nécessaire pour lire les métadonnées Kotlin 2.3 de Google Mobile Ads 25.4. Toute modification de ce réglage exige un nouveau build natif.
 - Migration `20260917120000_billing.sql` : règles, compteurs, réservations et protections d'accès.
 - Fonctions `billing-sync`, `revenuecat-webhook`, `billing-ad`, `admob-reward`, `detect-objects`.
 - Les fonctions publiques de callback vérifient leur signature fournisseur ; les endpoints applicatifs vérifient l'utilisateur avec `auth.getUser`.
