@@ -2,15 +2,21 @@ import { Platform } from 'react-native';
 import mobileAds, { AdsConsent, AdEventType, RewardedAd, RewardedAdEventType, TestIds } from 'react-native-google-mobile-ads';
 import { billingTestMode, rewardedUnitId } from './config';
 import { logClientError } from '../../lib/errorLogging';
-import { adErrorCode, requireAdConsent } from './adConsent';
+import { adErrorCode, openAdvertisingPrivacy, privacyOptionsRequired, requireAdConsent } from './adConsent';
 import type { AdStage } from './adConsent';
 export const adsSupported = Platform.OS==='android';
 let active = false;
 
-export async function advertisingPrivacy(): Promise<void> {
+export async function advertisingPrivacyRequired(): Promise<boolean> {
   try {
-    await AdsConsent.requestInfoUpdate();
-    await AdsConsent.showPrivacyOptionsForm();
+    return privacyOptionsRequired(await AdsConsent.requestInfoUpdate());
+  } catch (error) {
+    throw reportAdFailure(error, 'privacy');
+  }
+}
+export async function advertisingPrivacy(): Promise<boolean> {
+  try {
+    return await openAdvertisingPrivacy(AdsConsent);
   } catch (error) {
     throw reportAdFailure(error, 'privacy');
   }

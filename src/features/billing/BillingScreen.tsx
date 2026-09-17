@@ -8,7 +8,7 @@ import { Icon } from '../../components/Icon';
 import { showMessage } from '../../lib/dialog';
 import { useSession } from '../auth/SessionProvider';
 import { billingRequest } from './api';
-import { adsSupported, advertisingPrivacy, showRewardAd } from './ads';
+import { adsSupported, advertisingPrivacy, advertisingPrivacyRequired, showRewardAd } from './ads';
 import { billingTestMode, revenueCatKey } from './config';
 import { useBilling } from './useBilling';
 import * as store from './store';
@@ -34,6 +34,16 @@ export function BillingScreen() {
   const configuration=useQuery({queryKey:['billing-configuration',userId],queryFn:()=>billingRequest<{ready:boolean}>('billing-sync',{action:'status'}),enabled:!!userId && store.storeSupported,retry:false,staleTime:60000});
   const ready=configuration.data?.ready===true;
   const offers=useQuery({queryKey:['billing-offers',userId],queryFn:()=>store.offers(userId!),enabled:!!userId && store.storeSupported && ready, retry:false,staleTime:60000});
+  const privacy = useQuery({
+    queryKey: ['advertising-privacy', userId],
+    queryFn: advertisingPrivacyRequired,
+    enabled: !!userId && adsSupported,
+    meta: { persist: false },
+    retry: false,
+    // A full-screen ad can change app focus; refresh explicitly after it closes.
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
   const run=async(action:()=>Promise<void>)=>{
     if(running.current) return;
     running.current=true;setBusy(true);
@@ -46,7 +56,16 @@ export function BillingScreen() {
     } finally {running.current=false;if(alive.current) setBusy(false);}
   };
   const sync=async()=>{await billingRequest('billing-sync');await billing.refetch();};
-  const refresh=async()=>{await billing.refetch();if(store.storeSupported) {const result=await configuration.refetch();if(result.data?.ready) {await sync();await offers.refetch();}}};
+  const refreshPrivacy = async () => { if (adsSupported) await privacy.refetch(); };
+  const editPrivacy = async () => {
+    try {
+      const shown = await advertisingPrivacy();
+      if (!shown) showMessage(t('billing.privacy_not_required'));
+    } finally {
+      await refreshPrivacy();
+    }
+  };
+  const refresh=async()=>{await billing.refetch();await refreshPrivacy();if(store.storeSupported) {const result=await configuration.refetch();if(result.data?.ready) {await sync();await offers.refetch();}}};
   const watch=async()=>{
     const {id}=await billingRequest<{id:string}>('billing-ad',{action:'prepare',test:billingTestMode});
     let earned=false;
@@ -64,6 +83,7 @@ export function BillingScreen() {
     } finally {
       if(!earned) await billingRequest('billing-ad',{action:'cancel',id}).catch(()=>{});
       await billing.refetch();
+      await refreshPrivacy();
     }
   };
   const data=billing.data;
@@ -110,11 +130,16 @@ export function BillingScreen() {
           <Text className="text-body font-bold text-ink">{t('billing.bonus')}</Text><Text className="text-body text-ink-soft">{t('billing.bonus_hint',{reward:data.reward_photos,max:data.ads_per_day})}</Text>
           <Text className="text-body font-semibold text-coral-dark">{t('billing.bonus_count',{count:data.bonus_remaining})}</Text>
           <Text className="text-caption text-ink-soft">{t('billing.bonus_expiry')}</Text>
-          <Button label={t(billingTestMode?'billing.simulate':'billing.watch',{count:data.reward_photos})} disabled={busy || !adsSupported || data.ads_today>=data.ads_per_day || (billingTestMode?!data.tester:!data.ads_enabled)} onPress={()=>void run(watch)}/>
+          <Button label={t(billingTestMode?'billing.simulate':'billing.watch',{count:data.reward_photos})} disabled={busy || privacy.isFetching || !adsSupported || data.ads_today>=data.ads_per_day || (billingTestMode?!data.tester:!data.ads_enabled)} onPress={()=>void run(watch)}/>
           {data.ads_today>=data.ads_per_day ? <Text className="text-caption text-ink-soft">{t('billing.ad_limit')}</Text>:null}
           {billingTestMode && !data.tester ? <Text className="text-caption text-ink-soft">{t('billing.test_account')}</Text>:null}
           {!billingTestMode && !data.ads_enabled ? <Text className="text-caption text-ink-soft">{t('billing.ads_disabled')}</Text>:null}
-          {adsSupported ? <Button variant="ghost" disabled={busy} label={t('billing.privacy')} onPress={()=>void run(advertisingPrivacy)}/>:null}
+          {adsSupported && privacy.data === true ? <Button variant="ghost" disabled={busy || privacy.isFetching} label={t('billing.privacy')} onPress={()=>void run(editPrivacy)}/>:null}
+          {adsSupported && !privacy.isError && privacy.data === false ? <Text className="text-caption text-ink-soft">{t('billing.privacy_not_required')}</Text>:null}
+          {adsSupported && privacy.isError ? <>
+            <Text className="text-caption text-ink-soft">{t('billing.privacy_check_failed')}</Text>
+            <Button variant="ghost" disabled={busy || privacy.isFetching} label={t('billing.privacy_retry')} onPress={()=>void run(refreshPrivacy)}/>
+          </>:null}
         </View>
         <Button variant="ghost" disabled={busy} loading={busy} label={t('billing.refresh')} onPress={()=>void run(refresh)}/>
         <Button variant="ghost" label={t('billing.legal')} onPress={()=>router.push('/privacy-policy')}/>

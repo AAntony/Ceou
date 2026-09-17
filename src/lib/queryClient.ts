@@ -276,6 +276,8 @@ export const persistOptions: Omit<PersistQueryClientOptions, 'queryClient'> = {
     // signature morte coûte une image absente.
     shouldDehydrateQuery: (query) =>
       defaultShouldDehydrateQuery(query) &&
+      // Consent form availability must come from UMP, not yesterday's disk cache.
+      query.meta?.persist !== false &&
       query.queryKey[0] !== INVENTORY_SNAPSHOT_KEY &&
       query.queryKey[0] !== MEDIA_SIGNATURE_KEY,
   },

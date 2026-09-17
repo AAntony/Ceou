@@ -21,6 +21,37 @@ type ConsentProvider = {
   getConsentInfo(): Promise<{ canRequestAds: boolean }>;
 };
 
+type PrivacyConsentInfo = {
+  status: string;
+  privacyOptionsRequirementStatus: string;
+};
+
+type PrivacyConsentProvider = {
+  requestInfoUpdate(): Promise<PrivacyConsentInfo>;
+  loadAndShowConsentFormIfRequired(): Promise<unknown>;
+  showPrivacyOptionsForm(): Promise<unknown>;
+};
+
+export function privacyOptionsRequired(info: Pick<PrivacyConsentInfo, 'privacyOptionsRequirementStatus'>): boolean {
+  if (info.privacyOptionsRequirementStatus === 'REQUIRED') return true;
+  if (info.privacyOptionsRequirementStatus === 'NOT_REQUIRED') return false;
+  // An unknown status is a failed check, not confirmation that no form is needed.
+  throw new Error('billing_consent_unavailable');
+}
+
+export async function openAdvertisingPrivacy(provider: PrivacyConsentProvider): Promise<boolean> {
+  const info = await provider.requestInfoUpdate();
+  // UMP rejects showPrivacyOptionsForm when its current status is NOT_REQUIRED.
+  // Recheck on tap because the requirement may have changed since rendering.
+  if (!privacyOptionsRequired(info)) return false;
+  if (info.status === 'REQUIRED') {
+    await provider.loadAndShowConsentFormIfRequired();
+  } else {
+    await provider.showPrivacyOptionsForm();
+  }
+  return true;
+}
+
 export async function requireAdConsent(provider: ConsentProvider, onRecoveredError?: (error: unknown) => void): Promise<void> {
   let refreshFailed = false;
   let refreshError: unknown;
