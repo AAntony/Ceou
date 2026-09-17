@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const p = verifyAdmobQuery(query,key.pem);
     const user = p.get('user_id') || '', id = p.get('custom_data') || '';
     const timestamp = Number(p.get('timestamp'));
-    const unit = Deno.env.get('ADMOB_REWARDED_UNIT') || 'ca-app-pub-6809656178417507/9362986675';
+    const unit = Deno.env.get('ADMOB_REWARDED_UNIT') || 'ca-app-pub-9364843473034868/9217315316';
     if (![unit,unit.split('/')[1]].includes(p.get('ad_unit') || '') || !uuid.test(user) || !uuid.test(id)
       || p.get('reward_amount')!=='1' || p.get('reward_item')!=='credit_ia'
       || !Number.isFinite(timestamp) || Math.abs(Date.now()-timestamp)>86400000) throw new Error('invalid_callback');

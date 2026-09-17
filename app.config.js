@@ -41,7 +41,7 @@ module.exports = {
   expo: {
     name: 'Ceou',
     slug: 'ceou',
-    version: '1.2.0',
+    version: '1.2.1',
     orientation: 'portrait',
     icon: './assets/icon.png',
     // 'automatic' et non 'light' depuis l'ajout du theme sombre : c'est ce
@@ -118,7 +118,7 @@ module.exports = {
       ['expo-build-properties', { android: { kotlinVersion: ANDROID_KOTLIN_VERSION } }],
       ['./plugins/withAndroidKotlinCompiler', { kotlinVersion: ANDROID_KOTLIN_VERSION }],
       ['react-native-google-mobile-ads', {
-        androidAppId: 'ca-app-pub-6809656178417507~5535422302',
+        androidAppId: 'ca-app-pub-9364843473034868~3366222835',
         // iOS is not commercially configured yet; use Google's sample app ID.
         iosAppId: 'ca-app-pub-3940256099942544~1458002511',
         delayAppMeasurementInit: true,

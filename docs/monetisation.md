@@ -37,6 +37,8 @@ L'application consulte l'état du serveur avant de charger les offres. Tant que 
 
 ## Dernières opérations AdMob
 
+- Identifiants remplacés le 17 septembre, d'après la nouvelle configuration fournie par l'éditeur : application Android `ca-app-pub-9364843473034868~3366222835`, bloc avec récompense `ca-app-pub-9364843473034868/9217315316`. La configuration cliente et le contrôle SSV serveur utilisent le nouveau bloc ; `ADMOB_REWARDED_UNIT` doit avoir cette même valeur dans Supabase. L'identifiant de l'application est natif : installer le nouvel APK **1.2.1**, les anciennes versions ne peuvent pas recevoir ce changement par OTA. Le runtime passe à 1.2.1 pour isoler les futures mises à jour compatibles avec cette configuration.
+- Associer le message de consentement à cette nouvelle application AdMob et configurer la validation SSV sur le nouveau bloc. Le profil preview conserve les annonces Google de démonstration et n'active pas les annonces rémunérées.
 - L'application Android et le bloc « Bonus IA » sont enregistrés dans la configuration native. Les options Séries d'annonces et Interactive restent celles choisies dans AdMob.
 - Le bloc conserve **1 `credit_ia`** comme récompense AdMob : le serveur transforme ce crédit en **2 analyses**. Ne pas changer ce libellé sans adapter la validation serveur.
 - Dans les paramètres avancés du bloc, activer la validation côté serveur (SSV) vers :
