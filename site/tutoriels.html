@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tutoriels — Céoù</title>
-  <meta name="description" content="Les tutoriels de Céoù, chapitre par chapitre : ranger, retrouver, scanner, garder ses factures, dessiner son plan, prêter, partager.">
+  <meta name="description" content="Bien démarrer avec Céoù : inventaire, plans, assistant, factures, prêts, cartons et partages. Des explications courtes, pas à pas.">
   <link rel="canonical" href="https://ceou.eu/tutoriels.html">
   <link rel="alternate" hreflang="en" href="https://ceou.eu/tutorials.html">
   <link rel="alternate" hreflang="fr" href="https://ceou.eu/tutoriels.html">
@@ -17,7 +17,7 @@
   <meta property="og:site_name" content="Céoù">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:title" content="Tutoriels — Céoù">
-  <meta property="og:description" content="Les tutoriels de Céoù, chapitre par chapitre : ranger, retrouver, scanner, garder ses factures, dessiner son plan, prêter, partager.">
+  <meta property="og:description" content="Bien démarrer avec Céoù : inventaire, plans, assistant, factures, prêts, cartons et partages. Des explications courtes, pas à pas.">
   <meta property="og:url" content="https://ceou.eu/tutoriels.html">
   <meta property="og:image" content="https://ceou.eu/og-image.png">
   <meta property="og:image:width" content="1024">
@@ -1243,6 +1243,49 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 .doc-back { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.9375rem; text-decoration: none; }
 .doc-back::before { content: ""; width: 0.4rem; height: 0.4rem; border-left: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); }
 
+/* Current product presentation and optional plans. */
+.hero h1 { white-space: pre-line; }
+.hero .button { font-size: 0.9375rem; margin-top: 0; }
+.hero .device { width: min(22rem, 100%); }
+.found-note { display: flex; align-items: flex-start; gap: 0.45rem; margin: 1.1rem 0; color: var(--accent-strong); font-size: 0.875rem; }
+.found-note svg { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
+.hero-plan { padding: 0.8rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+.hero-plan .screen-title { font-size: 0.875rem; margin-bottom: 0.6rem; }
+.plan-showcase { padding: 1.25rem; }
+.plan-location { display: flex; align-items: center; gap: 0.8rem; padding: 1rem; background: var(--accent-soft); border-radius: 1rem; margin-top: 0.8rem; }
+.plan-location > svg { width: 1.6rem; height: 1.6rem; color: var(--accent-strong); flex-shrink: 0; }
+.plan-location b, .plan-location span span { display: block; }
+.plan-location span span { color: var(--ink-soft); font-size: 0.875rem; margin-top: 0.25rem; }
+.plan-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.plan-card { padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--line-strong); border-radius: 1.5rem; background: var(--surface); }
+.plan-card h3 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.plan-plus { border: 2px solid var(--accent-strong); }
+.plan-plus h3 { color: var(--accent-strong); }
+.plan-card dl { margin: 0; }
+.plan-card dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.4rem 0.8rem; padding: 0.85rem 0; border-top: 1px solid var(--line); }
+.plan-card dt { color: var(--ink-soft); min-width: 0; flex: 1 1 10rem; }
+.plan-card dd { margin: 0; font-size: 1.2rem; font-weight: 700; text-align: right; flex-shrink: 0; }
+.plan-note { color: var(--ink-soft); font-size: 0.9375rem; margin: 1.25rem 0 2rem; max-width: 50rem; }
+.reward-note { display: flex; align-items: flex-start; gap: 1.2rem; padding: 1.5rem; background: var(--accent-soft); border-radius: 1.25rem; }
+.reward-note > div { min-width: 0; }
+.reward-note .pill { flex-shrink: 0; }
+.reward-note h3 { margin-bottom: 0.6rem; }
+.test-label { font-size: 0.8125rem; margin-top: 0.8rem; font-weight: 600; }
+.privacy-summary { padding: 1.4rem; margin-bottom: 2rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--surface); }
+.privacy-summary ul { list-style: disc; padding-left: 1.2rem; margin: 0.8rem 0 1rem; }
+.privacy-summary li + li { margin-top: 0.5rem; }
+.provider-links li { margin-bottom: 0.6rem; }
+.mobile-toc { display: none; }
+@media (max-width: 61.99rem) {
+  .mobile-toc { display: block; padding: 1rem; border: 1px solid var(--line-strong); border-radius: 1rem; margin-bottom: 2rem; }
+  .mobile-toc summary { cursor: pointer; font-weight: 600; }
+  .mobile-toc a { display: block; padding: 0.45rem 0; }
+}
+@media (max-width: 38rem) {
+  .plan-cards { grid-template-columns: minmax(0, 1fr); }
+  .reward-note { flex-direction: column; }
+}
+
 /* === Apparitions au défilement ========================================= */
 
 /* Tout est conditionné à la classe "js" posée par le script en tête de page.
@@ -1297,7 +1340,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
    sans ces quelques lignes, elle sort avec un menu collant en travers de la
    première page et des liens dont on ne voit pas la destination. */
 @media print {
-  .announce, .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
+  .announce, .top, .progress, .doc-toc, .mobile-toc, .foot .eu, .cta { display: none !important; }
   body { background: #FFFFFF; color: #000000; }
   .doc-layout { display: block; padding: 0; }
   .highlight { border: 1px solid #999999; background: none; }
@@ -1310,7 +1353,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
   <a class="skip" href="#main">Aller au contenu</a>
   <aside class="announce" aria-label="Annonce">
     <div class="wrap announce-inner">
-      <p><span class="announce-tag">En test</span>Céoù cherche ses premiers testeurs : 5 minutes pour donner ton avis.</p>
+      <p><span class="announce-tag">En test</span>Céoù se prépare à sortir. Aide-nous à peaufiner l’application.</p>
       <p class="announce-links">
         <a class="announce-cta" href="https://forms.gle/ngUZoU7c9f6euFFp6">Je participe<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/></svg></a>
         <a class="announce-more" href="index.html#avancement">Où en est Céoù ?</a>
@@ -1332,11 +1375,10 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
         <span></span>
       </button>
       <nav class="nav" id="site-nav" aria-label="Le site">
-        <a href="index.html#comment">Comment ça marche</a>
-        <a href="index.html#fonctionnalites">Fonctionnalités</a>
+        <a href="index.html#fonctionnalites">L’application</a>
+        <a href="index.html#formules">Gratuit &amp; Plus</a>
         <a href="tutoriels.html" aria-current="page">Tutoriels</a>
-        <a href="index.html#engagements">Engagements</a>
-        <a href="index.html#avancement">Avancement</a>
+        <a href="index.html#avancement">La bêta</a>
         <a href="index.html#questions">Questions</a>
         <a href="confidentialite.html">Confidentialité</a>
         <span class="nav-sep" aria-hidden="true"></span>
@@ -1351,7 +1393,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
       <div class="tuto-head">
         <span class="eyebrow">Tutoriels</span>
         <h1>Céoù, pas à pas</h1>
-        <p class="lede">Les tutoriels de l’application, tels que tu les trouveras dedans : du premier objet rangé au partage avec tes proches. De quoi voir ce que Céoù sait faire avant même de l’installer.</p>
+        <p class="lede">Commence par le premier chapitre ou va directement à ce qui t’intéresse. Les exemples illustrent les fonctions de l’application ; leur apparence peut évoluer pendant les tests.</p>
       </div>
       <nav class="toc" id="sommaire" aria-labelledby="sommaire-titre">
         <h2 class="toc-title" id="sommaire-titre">Sommaire</h2>
@@ -2021,17 +2063,16 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
   <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
   <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
 </svg><span>Céoù</span></span>
-          <p class="tagline">Céoù — sais toujours où sont tes affaires</p>
-          <p class="eu">Hébergé dans l’Union européenne</p>
+          <p class="tagline">Moins chercher. Mieux profiter.</p>
+          <p class="eu">Créé par Antony Monreal · En test sur Android</p>
         </div>
         <div>
           <h2>Le site</h2>
           <ul>
-            <li><a href="index.html#comment">Comment ça marche</a></li>
-            <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="index.html#fonctionnalites">L’application</a></li>
+            <li><a href="index.html#formules">Gratuit &amp; Plus</a></li>
             <li><a href="tutoriels.html">Tutoriels</a></li>
-            <li><a href="index.html#engagements">Engagements</a></li>
-            <li><a href="index.html#avancement">Avancement</a></li>
+            <li><a href="index.html#avancement">La bêta</a></li>
             <li><a href="index.html#questions">Questions</a></li>
           </ul>
         </div>

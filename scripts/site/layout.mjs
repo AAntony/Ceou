@@ -319,7 +319,7 @@ export function shell({ lang, page, title, description, body, bodyClass = '', st
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
   <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#main">${escape(SITE[lang].skip)}</a>
-${announce(lang, page === 'home')}
+${page === 'privacy' ? '' : announce(lang, page === 'home')}
 ${body}
 ${footer(lang, page)}
 ${ld}

@@ -90,13 +90,19 @@ function heroMock(copy) {
             <ul class="results">
 ${results}
             </ul>
+            <p class="found-note">${ICONS.check}${escape(mock.found)}</p>
+            <div class="hero-plan">
+              <p class="screen-title">${escape(mock.planTitle)}</p>
+              ${planIllustration('', copy.lang, true)}
+            </div>
           </div>
         </div>`;
 }
 
 function detailMock(copy, kind) {
   if (kind === 'plan') {
-    return `<div class="mock">${planIllustration(escape(copy.mocks.plan))}</div>`;
+    return `<div class="mock plan-showcase">${planIllustration(escape(copy.mocks.plan), copy.lang)}
+      <div class="plan-location">${ICONS.search}<span><b>${escape(copy.lang === 'fr' ? 'Perceuse retrouvée' : 'Drill located')}</b><span>${escape(copy.lang === 'fr' ? 'Garage › Établi › Boîte à outils' : 'Garage › Workbench › Toolbox')}</span></span></div></div>`;
   }
 
   if (kind === 'chat') {
@@ -171,6 +177,22 @@ ${stages}
             <p class="invite-note">${withMailto(escape(progress.invite.notify))}</p>
           </div>
         </div>
+      </div>
+    </section>`;
+}
+
+function plansSection(copy) {
+  const plans = copy.plans;
+  const cards = [1, 2].map((column) => `<article class="plan-card${column === 2 ? ' plan-plus' : ''}">
+          <h3>${escape(plans.columns[column])}</h3>
+          <dl>${plans.rows.map(row => `<div><dt>${escape(row[0])}</dt><dd>${escape(row[column])}</dd></div>`).join('')}</dl>
+        </article>`).join('\n');
+  return `<section class="section section-alt" id="${copy.ids.plans}" data-spy-target>
+      <div class="wrap">
+        <div class="section-head reveal"><span class="eyebrow">${escape(plans.eyebrow)}</span><h2>${escape(plans.title)}</h2><p class="lede">${escape(plans.lede)}</p></div>
+        <div class="plan-cards reveal">${cards}</div>
+        <p class="plan-note">${escape(plans.note)}</p>
+        <div class="reward-note reveal"><span class="pill">${ICONS.scan}</span><div><h3>${escape(plans.rewardTitle)}</h3><p>${escape(plans.rewardBody)}</p><p class="test-label">${escape(plans.status)}</p></div></div>
       </div>
     </section>`;
 }
@@ -255,7 +277,7 @@ ${points}
           <h1>${escape(copy.hero.title)}</h1>
           <p class="lede">${escape(copy.hero.body)}</p>
           <div class="hero-actions">
-            <a class="badge" href="#${ids.progress}">${escape(copy.hero.badge)}</a>
+            <a class="button" href="#${ids.progress}">${escape(copy.hero.badge)}</a>
             <a class="ghost" href="#${ids.features}">${escape(copy.hero.cta)}</a>
           </div>
           <p class="hero-note">${escape(copy.hero.note)}</p>
@@ -313,6 +335,8 @@ ${pillars}
       </div>
     </section>
 
+${plansSection(copy)}
+
 ${progressSection(copy)}
 
     <section class="section" id="${ids.faq}" data-spy-target>
@@ -347,14 +371,11 @@ ${faq}
         '@type': 'SoftwareApplication',
         name: 'Céoù',
         applicationCategory: 'UtilitiesApplication',
-        operatingSystem: 'Android, iOS',
+        operatingSystem: 'Android',
         inLanguage: ['fr', 'en'],
         description: copy.description,
         url: `${ORIGIN}/`,
-        // Ni publicité ni achat dans l'app : le déclarer ici est exact
-        // aujourd'hui, et devra être retiré le jour où ça cesserait de
-        // l'être — une donnée structurée est une affirmation publique.
-        offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+        // No commercial price or download link is published during the beta.
         privacyPolicy: `${ORIGIN}/${FILES.privacy[lang]}`,
       },
       {
@@ -383,6 +404,7 @@ function privacyPage(lang) {
   const entries = [
     ...policy.sections.map((section) => ({ id: slug(section.heading), label: section.heading })),
     { id: DELETION_ANCHOR[lang], label: deletion.heading },
+    { id: 'prestataires', label: copy.docSummary.sourcesTitle },
     { id: 'contact', label: copy.contact.heading },
   ];
 
@@ -423,12 +445,30 @@ ${toc}
       <div class="doc">
         <h1>${escape(policy.title)}</h1>
         <p class="updated">${escape(policy.updated)}</p>
+        <aside class="privacy-summary" aria-label="${escape(copy.docSummary.title)}">
+          <h2>${escape(copy.docSummary.title)}</h2>
+          <ul>${copy.docSummary.points.map(point => `<li>${withMailto(escape(point))}</li>`).join('')}</ul>
+          <a href="#${DELETION_ANCHOR[lang]}">${escape(deletion.heading)}</a>
+        </aside>
+        <details class="mobile-toc"><summary>${escape(copy.docToc)}</summary><ul>${toc}</ul></details>
 
 ${sections}
 
         <section class="highlight" id="${DELETION_ANCHOR[lang]}" data-spy-target>
           <h2>${escape(deletion.heading)}</h2>
 ${paragraphs}
+        </section>
+
+        <section id="prestataires" data-spy-target>
+          <h2>${escape(copy.docSummary.sourcesTitle)}</h2>
+          <ul class="provider-links">
+            <li><a href="https://supabase.com/privacy">Supabase</a> · <a href="https://supabase.com/legal/dpa">Data Processing Addendum</a></li>
+            <li><a href="https://policies.google.com/privacy">Google</a> · <a href="https://policies.google.com/technologies/partner-sites">AdMob</a> · <a href="https://ai.google.dev/gemini-api/terms">Gemini API</a></li>
+            <li><a href="https://www.revenuecat.com/privacy">RevenueCat</a></li>
+            <li><a href="https://expo.dev/privacy">Expo</a> · <a href="https://www.apple.com/legal/privacy/">Apple</a></li>
+            <li><a href="https://www.upcitemdb.com/privacy">UPCItemDB</a></li>
+            <li><a href="https://www.cnil.fr/fr/plaintes">CNIL</a></li>
+          </ul>
         </section>
 
         <section id="contact" data-spy-target>
@@ -611,11 +651,19 @@ writeFileSync(
 RewriteEngine On
 RewriteCond %{HTTP:X-Forwarded-Proto} =http
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
 `,
   'utf8',
 );
 
 const pages = ['fr', 'en'].flatMap((lang) => [FILES.home[lang], FILES.tutorials[lang], FILES.privacy[lang]]);
-console.log(`site/ : ${pages.join(', ')}, og-image.png, .htaccess`);
+writeFileSync(join(outDir, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${ORIGIN}/sitemap.xml\n`);
+writeFileSync(join(outDir, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(page => `  <url><loc>${ORIGIN}/${page === 'index.html' ? '' : page}</loc></url>`).join('\n')}\n</urlset>\n`);
+writeFileSync(join(outDir, 'app-ads.txt'), 'google.com, pub-9364843473034868, DIRECT, f08c47fec0942fa0\n');
+console.log(`site/ : ${pages.join(', ')}, og-image.png, .htaccess, robots.txt, sitemap.xml, app-ads.txt`);
 console.log(`ancres de suppression : #${DELETION_ANCHOR.fr} (fr), #${DELETION_ANCHOR.en} (en)`);
 console.log(`langue alternee : ${FILES.home.fr} <-> ${FILES.home[OTHER.fr]}`);

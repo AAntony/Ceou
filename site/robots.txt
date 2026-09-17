@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ceou.eu/sitemap.xml

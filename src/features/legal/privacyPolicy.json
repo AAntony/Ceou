@@ -2,125 +2,133 @@
   "policy": {
     "fr": {
       "title": "Politique de confidentialité",
-      "updated": "Dernière mise à jour : septembre 2026",
+      "updated": "Dernière mise à jour : 17 septembre 2026",
       "sections": [
         {
-          "heading": "Avertissement",
-          "body": "Ce texte est rédigé par l'éditeur de l'application (pas un professionnel du droit) dans un souci de transparence honnête sur les données traitées. Il ne remplace pas une relecture juridique professionnelle, en particulier si l'application venait à être proposée plus largement au public."
+          "heading": "Qui est responsable de tes données",
+          "body": "Céoù est édité par Antony Monreal, à titre indépendant, qui est responsable des traitements décrits ici. Pour toute question ou demande concernant tes données : contact@ceou.eu. Cette politique couvre l’application Céoù et son site de présentation ceou.eu."
         },
         {
-          "heading": "Qui traite tes données",
-          "body": "Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte contact@ceou.eu."
+          "heading": "Ton compte et ton inventaire",
+          "body": "Pour utiliser ton propre inventaire, tu renseignes une adresse e-mail, un mot de passe et un nom affiché. La photo de profil est facultative : une image Céoù est proposée par défaut. Le service d’authentification Supabase gère ton mot de passe ; l’éditeur ne le consulte pas en clair.\n\nNous enregistrons les informations que tu ajoutes : lieux, pièces, plans, rangements, conteneurs, objets, photos, descriptions, codes-barres, factures et informations de garantie, ainsi que les déplacements, prêts, déménagements et cartons. Tu choisis le contenu que tu y mets. Les informations nécessaires au fonctionnement du compte et de l’inventaire sont traitées pour fournir le service que tu demandes."
         },
         {
-          "heading": "Données collectées",
-          "body": "Ton adresse email et ton mot de passe (pour la connexion), un nom affiché et une photo de profil optionnels, ainsi que le contenu que tu crées dans l'app : habitations, pièces, emplacements, conteneurs, objets (nom, description, photo, code-barre) et leur historique de déplacement."
+          "heading": "Les partages que tu choisis",
+          "body": "Les amis, invitations et droits d’accès servent à ouvrir les lieux de ton choix à d’autres personnes. Ton nom affiché et ton avatar peuvent être visibles par les personnes avec lesquelles tu interagis. Le contenu d’un lieu partagé est accessible selon les droits accordés. Le partage d’un déménagement est une option distincte.\n\nTu peux modifier ou retirer les accès dans l’application. Retirer un accès ne peut pas effacer une copie ou une capture qu’une personne aurait déjà conservée. Lorsque tu renseignes un prêt, le nom ou les coordonnées du contact que tu saisis font aussi partie de tes données."
         },
         {
-          "heading": "Hébergement",
-          "body": "Toutes ces données sont hébergées chez Supabase, dans l'Union Européenne (région eu-north-1, Stockholm)."
+          "heading": "Hébergement et copie sur ton appareil",
+          "body": "Le compte, l’inventaire et les données de suivi de Céoù sont hébergés chez Supabase, dans la région européenne configurée pour le projet (Stockholm). Les connexions utilisent HTTPS et des droits d’accès limitent les données accessibles à chaque compte. Cela ne signifie pas que tous les prestataires cités ci-dessous traitent leurs données dans l’Union européenne.\n\nUne copie de certaines données et de tes préférences est conservée sur ton appareil pour accélérer l’application et consulter l’inventaire déjà synchronisé sans réseau. Elle n’est pas un outil de suivi publicitaire."
         },
         {
-          "heading": "Le scan photo par intelligence artificielle",
-          "body": "Si tu utilises la fonctionnalité de scan photo pour ajouter plusieurs objets à la fois, la photo que tu prends est envoyée à l'API Gemini de Google (hors Union Européenne) afin de détecter automatiquement les objets qu'elle contient. Google traite cette photo uniquement pour répondre à cette requête ponctuelle. Cette fonctionnalité te demande un accord explicite avant sa toute première utilisation, distinct de l'acceptation de cette politique."
+          "heading": "Pourquoi ces données sont utilisées",
+          "body": "Le fonctionnement du compte, l’inventaire, les partages demandés, les quotas et la gestion des achats reposent sur l’exécution du service. La détection des pannes, la prévention des abus et le suivi des coûts répondent à l’intérêt légitime de maintenir un service fiable et sûr. Les traitements soumis à ton accord, notamment l’IA et les choix publicitaires qui le nécessitent, reposent sur ton consentement. Les données éventuellement exigées par la réglementation sont traitées pour respecter ces obligations.\n\nTu peux utiliser le rangement et la recherche manuelle sans activer l’IA ni demander de publicité. Refuser une permission du téléphone empêche seulement la fonction qui en a besoin, par exemple prendre une photo ou parler au micro."
         },
         {
-          "heading": "L'assistant vocal",
-          "body": "Céoù propose deux façons de parler à son assistant, chacune avec son propre accord explicite, demandé avant la toute première utilisation.\n\nLa conversation : ta voix est envoyée en direct à l'API Gemini de Google, hors Union Européenne, qui l'écoute et te répond avec sa propre voix. Au fil de la conversation, Céoù lui transmet aussi les résultats des recherches qu'elle demande pour te répondre — des noms d'objets, de pièces et de rangements, et l'état d'un prêt — mais jamais ton inventaire entier, ni aucun identifiant de ta base. Rien n'est envoyé tant que la conversation n'est pas ouverte, et elle s'arrête dès que l'application passe en arrière-plan. Pour appliquer une durée de conversation quotidienne, Céoù conserve la durée de chaque conversation avec ton compte ; il ne conserve ni l'audio ni ce qui a été dit.\n\nL'assistant simple, utilisé quand la conversation n'est pas disponible : la reconnaissance vocale de ton téléphone transforme ta voix en texte — c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs, comme la dictée du clavier. Seul le texte obtenu, jamais l'audio, est ensuite envoyé à l'API Gemini pour être interprété.\n\nDans les deux cas, ce qui est envoyé n'est traité que pour te répondre."
+          "heading": "L’analyse de photos par l’IA",
+          "body": "Quand tu demandes une analyse, la photo sélectionnée est transmise à l’API Gemini de Google pour proposer les objets qu’elle contient. Un accord spécifique est demandé avant la première utilisation. Les propositions peuvent être corrigées avant leur ajout à l’inventaire. La fonction a besoin d’Internet.\n\nCéoù ne conserve pas une copie de la photo dans son compteur d’analyses. Une photo que tu enregistres volontairement sur une fiche reste, elle, dans ton inventaire. Google applique ses conditions de traitement et de sécurité de l’API ; une conservation technique peut notamment intervenir pour prévenir les abus. L’affirmation « la photo est immédiatement effacée partout » ne correspondrait donc pas au fonctionnement du service."
         },
         {
-          "heading": "Recherche de produit par code-barre",
-          "body": "Si tu scannes un code-barre, ce code (pas d'autre donnée personnelle) est envoyé à UPCItemDB, un service tiers, pour retrouver automatiquement le nom et la photo du produit."
+          "heading": "L’assistant vocal",
+          "body": "La conversation utilise Gemini Live : le son du micro est envoyé en direct à Google, qui produit la réponse audio. Les informations nécessaires aux recherches et actions demandées (par exemple le nom d’un objet, son rangement ou un prêt) peuvent être transmises au cours de l’échange. L’assistant demande ton accord avant sa première utilisation. La capture s’arrête à la fermeture de la conversation ou lorsque l’application passe en arrière-plan.\n\nSi l’assistant simple est utilisé, la reconnaissance vocale du téléphone transforme ta voix en texte. Selon l’appareil et ses réglages, Apple ou Google peut traiter ce son sur ses serveurs. Le texte de la commande est ensuite interprété par Gemini.\n\nCéoù conserve les durées de session pour les quotas et le suivi des coûts, sans archiver les enregistrements audio ni les transcriptions dans ces compteurs. Google applique les conditions de son API, y compris ses mesures de sécurité et de prévention des abus."
         },
         {
-          "heading": "Notifications",
-          "body": "Si tu acceptes les notifications, ton téléphone reçoit un identifiant d'envoi (un « jeton ») fourni par le service de notifications d'Expo. Il est conservé avec ton compte pour pouvoir t'avertir — un prêt à rendre, une demande d'ami — et transite par Expo, Apple et Google au moment de l'envoi, comme toute notification sur téléphone. Il disparaît quand tu refuses les notifications ou quand tu supprimes ton compte."
+          "heading": "Les codes-barres",
+          "body": "La recherche de produit envoie le code scanné à UPCItemDB pour retrouver un nom et une image. La requête réseau communique aussi des données techniques, notamment ton adresse IP. L’affichage d’une image de produit peut contacter le site qui l’héberge. Aucun inventaire complet n’est envoyé pour cette recherche."
         },
         {
-          "heading": "Journal d'erreurs",
-          "body": "Quand l'application rencontre une erreur, elle enregistre le message technique, la trace de l'erreur et le contexte de l'écran concerné, rattachés à ton compte. Cela ne sert qu'à corriger les pannes, reste chez le même hébergeur que le reste de tes données, et disparaît avec ton compte."
+          "heading": "Notifications et erreurs techniques",
+          "body": "Si tu autorises les notifications, un identifiant d’envoi fourni par Expo est associé à ton compte. Il sert aux rappels et aux événements utiles, comme une demande d’ami ou un prêt. La distribution peut passer par Expo, Google et Apple selon le téléphone. Les permissions se gèrent dans les réglages de l’appareil.\n\nEn cas d’erreur, Céoù peut enregistrer le message technique, la trace de l’erreur et un contexte de diagnostic associé au compte. Ces journaux servent à rechercher et corriger les problèmes. Ils ne constituent pas un enregistrement permanent de ton écran ou de tes conversations."
         },
         {
-          "heading": "Ce qui n'est jamais fait",
-          "body": "Ton inventaire, tes photos et le contenu de tes conversations ne sont pas transmis aux services publicitaires. Tes données ne sont pas vendues et ton inventaire n'est partagé avec d'autres utilisateurs que selon tes choix."
-        },
-        {
-          "heading": "Abonnement et compteurs d'utilisation",
-          "body": "RevenueCat et Google Play gèrent les achats et la restauration de Céoù Plus. RevenueCat reçoit l'identifiant technique de ton compte, les informations d'achat et des informations techniques sur l'application et l'appareil. Céoù ne reçoit pas tes coordonnées bancaires. Les compteurs d'analyses photo, les quantités de jetons consommés par ces analyses, les durées de conversation et les crédits bonus sont rattachés à ton compte chez Supabase. Ils servent à appliquer les quotas et suivre les coûts, sans conserver les photos envoyées à l'IA ni le contenu des conversations dans ces compteurs."
+          "heading": "Abonnements et compteurs d’utilisation",
+          "body": "Lorsque les achats sont disponibles, RevenueCat et Google Play servent à présenter, vérifier et restaurer Céoù Plus. RevenueCat reçoit l’identifiant technique de ton compte, l’état des achats et des données techniques sur l’application et l’appareil. Céoù ne reçoit pas tes coordonnées bancaires. Les offres de test sont signalées dans l’application.\n\nLes compteurs d’analyses photo, de jetons IA, de durée de conversation et de crédits bonus sont associés au compte chez Supabase, avec les dates et informations nécessaires à la vérification. Ils servent à suivre les coûts, appliquer les limites et éviter les attributions en double. La remise à zéro d’un quota mensuel n’efface pas l’historique technique correspondant."
         },
         {
           "heading": "Publicités à la demande",
-          "body": "Une publicité avec récompense est lancée uniquement si tu la demandes. Le service Google AdMob peut traiter des informations techniques sur ton appareil, des identifiants publicitaires selon les autorisations, et les interactions avec les annonces. Un formulaire présente tes choix lorsque cela est requis ; tu peux les retrouver dans Profil → Forfait et bonus IA → Mes choix publicitaires. Pour attribuer la récompense, Google reçoit l'identifiant technique de ton compte et un identifiant de vérification unique. Ces services peuvent traiter des données hors de l'Union européenne. Les versions de test utilisent des annonces de démonstration."
+          "body": "Les publicités avec récompense Google AdMob se lancent lorsque tu demandes un bonus et que cette fonction est disponible. Le choix de regarder une publicité est distinct du consentement à la personnalisation publicitaire. Le formulaire de Google présente les choix requis selon ta région ; ils sont accessibles dans Profil → Forfait et bonus IA → Mes choix publicitaires, lorsque cette option est disponible.\n\nLe service publicitaire traite notamment l’adresse IP (pouvant donner une localisation approximative), des identifiants d’appareil ou publicitaires selon les autorisations, les interactions avec les annonces et des données de diagnostic. Ces informations servent à diffuser les annonces, mesurer leur fonctionnement et prévenir la fraude. Google et les partenaires présentés dans le formulaire peuvent les recevoir. Une annonce non personnalisée n’est pas nécessairement sans collecte de données.\n\nPour vérifier une récompense, Google reçoit l’identifiant technique du compte et un identifiant de demande unique. Céoù enregistre le résultat de cette vérification et le bonus accordé. Ton inventaire, tes photos et le contenu de tes conversations ne sont pas transmis aux services publicitaires par Céoù. Les annonces de démonstration utilisent aussi les services techniques de Google."
         },
         {
-          "heading": "Durée de conservation",
-          "body": "Tes données sont conservées tant que ton compte existe. Tu peux en demander la suppression à tout moment (voir ci-dessous)."
+          "heading": "Le site web et les prises de contact",
+          "body": "Le site de présentation n’intègre ni publicité, ni outil de mesure d’audience, ni traceur marketing. Ses pages ne chargent pas de police ou de script tiers. L’hébergeur reçoit cependant les informations techniques nécessaires pour servir les pages, comme l’adresse IP et la date de la requête, et peut tenir des journaux de sécurité.\n\nLe questionnaire est un lien vers Google Forms : Google est contacté lorsque tu l’ouvres, selon ses propres règles de confidentialité. Si tu fournis une adresse pour participer aux tests, elle sert à te recontacter à ce sujet. Tu peux demander à ne plus être contacté. Les échanges par e-mail servent à répondre à tes demandes."
         },
         {
-          "heading": "Tes droits",
-          "body": "Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à contact@ceou.eu."
+          "heading": "Traitements hors de l’Union européenne",
+          "body": "Les services de Google (Gemini, AdMob, Google Play et Forms), RevenueCat, Expo et UPCItemDB peuvent traiter des données en dehors de l’Union européenne. Leurs conditions décrivent les lieux de traitement et les garanties applicables, notamment les clauses contractuelles types ou les décisions d’adéquation lorsqu’elles s’appliquent. Les politiques et conditions des prestataires sont indiquées sur la version web de cette page. Pour obtenir des précisions sur un transfert ou ses garanties : contact@ceou.eu."
+        },
+        {
+          "heading": "Conservation et suppression",
+          "body": "Les informations du compte et le contenu de l’inventaire sont conservés tant que le compte existe ou jusqu’à leur suppression par tes soins. Les historiques techniques liés au compte, dont les compteurs d’IA, les vérifications de bonus et les journaux d’erreurs, peuvent rester jusqu’à la suppression du compte. Les échanges de support sont conservés le temps de traiter la demande et ses suites.\n\nLa suppression dans Céoù ne supprime pas automatiquement les données détenues séparément par Google Play, RevenueCat ou les autres prestataires. Les justificatifs de transaction et les données nécessaires à leurs obligations légales ou à la prévention de la fraude peuvent être conservés selon leurs règles. Contacte-nous pour une demande concernant les données associées à Céoù chez ces prestataires. Les sauvegardes techniques peuvent conserver des copies jusqu’à leur remplacement."
+        },
+        {
+          "heading": "Tes droits et tes choix",
+          "body": "Tu peux demander l’accès, la rectification, l’effacement, la limitation ou, selon les conditions applicables, la portabilité de tes données et t’opposer aux traitements fondés sur l’intérêt légitime. Tu peux retirer un consentement pour l’avenir ; cela ne remet pas en cause les traitements déjà réalisés légalement. Pour l’IA, cesse de l’utiliser et contacte-nous pour retirer ton accord enregistré ; les choix publicitaires et les permissions du téléphone disposent de leurs propres réglages.\n\nPour exercer un droit ou obtenir un export, écris à contact@ceou.eu, de préférence depuis l’adresse de ton compte. Nous répondons en principe sous un mois ; si un délai supplémentaire est nécessaire dans les cas prévus par le RGPD, nous t’en informons. Une vérification d’identité peut être nécessaire en cas de doute. Tu peux aussi adresser une réclamation à la CNIL sur cnil.fr.\n\nPour supprimer ton compte dans l’application : Profil → Mon compte → Supprimer mon compte. Sans l’application, envoie un e-mail avec « Suppression de compte » en objet. Si tu as un abonnement, résilie-le séparément dans Google Play : supprimer Céoù ou ton compte ne l’annule pas."
         }
       ]
     },
     "en": {
       "title": "Privacy Policy",
-      "updated": "Last updated: September 2026",
+      "updated": "Last updated: 17 September 2026",
       "sections": [
         {
-          "heading": "Disclaimer",
-          "body": "This text was written by the app's developer (not a legal professional) in the interest of honest transparency about how data is handled. It does not replace a professional legal review, particularly if the app were to be offered more widely to the public."
+          "heading": "Who is responsible for your data",
+          "body": "Céoù is independently developed and published by Antony Monreal, the controller responsible for the processing described here. For questions or requests about your data: contact@ceou.eu. This policy covers the Céoù app and its presentation website, ceou.eu."
         },
         {
-          "heading": "Who processes your data",
-          "body": "Ceou is published independently. For any question about your data, contact contact@ceou.eu."
+          "heading": "Your account and inventory",
+          "body": "To use your own inventory, you provide an email address, a password and a display name. A profile photo is optional: a Céoù image is provided by default. Supabase authentication manages your password; the developer does not view it in plain text.\n\nWe store what you add: places, rooms, plans, storage spots, containers, items, photos, descriptions, barcodes, receipts and warranty information, as well as item moves, loans, home moves and boxes. You choose the content you enter. The information needed for your account and inventory is processed to provide the service you request."
         },
         {
-          "heading": "Data collected",
-          "body": "Your email and password (for login), an optional display name and profile picture, and the content you create in the app: homes, rooms, spots, containers, items (name, description, photo, barcode) and their move history."
+          "heading": "The sharing you choose",
+          "body": "Friends, invitations and access permissions let you share selected places with other people. Your display name and avatar may be visible to people you interact with. Shared content is accessible according to the permissions granted. Sharing a home move is a separate option.\n\nYou can change or revoke access in the app. Revoking access cannot remove a copy or screenshot someone has already kept. When you record a loan, any contact name or details you enter also become part of your records."
         },
         {
-          "heading": "Hosting",
-          "body": "All this data is hosted with Supabase, within the European Union (eu-north-1 region, Stockholm)."
+          "heading": "Hosting and data on your device",
+          "body": "Céoù accounts, inventory and usage records are hosted with Supabase in the project’s configured European region (Stockholm). Connections use HTTPS and access permissions limit the data each account can access. This does not mean all the providers listed below process their data within the European Union.\n\nSome data and your preferences are cached on your device to speed up the app and let you browse previously synced inventory without a connection. This cache is not used for advertising tracking."
         },
         {
-          "heading": "AI photo scanning",
-          "body": "If you use the photo scan feature to add several items at once, the photo you take is sent to Google's Gemini API (outside the EU) to automatically detect the objects it contains. Google processes this photo only to answer that one-off request. This feature asks for your explicit consent before its very first use, separate from accepting this policy."
+          "heading": "Why we use this data",
+          "body": "Accounts, inventory, requested sharing, allowances and purchase management are processed to provide the service. Troubleshooting, abuse prevention and cost monitoring serve our legitimate interest in keeping the service reliable and secure. Processing that requires your agreement, including AI and advertising choices where required, relies on your consent. Any data required by law is processed to meet those obligations.\n\nYou can organise and search manually without enabling AI or requesting an ad. Declining a device permission only prevents the feature that needs it, such as taking a photo or using the microphone."
+        },
+        {
+          "heading": "AI photo analysis",
+          "body": "When you request an analysis, the selected photo is sent to Google’s Gemini API to suggest the items it contains. A separate agreement is requested before first use. You can correct the suggestions before adding them to your inventory. Internet access is required.\n\nCéoù does not keep a copy of the photo in its analysis counter. A photo you deliberately save to an item remains in your inventory. Google applies its API data processing and security terms, which can include technical retention to prevent abuse. Photos should therefore not be assumed to be immediately erased by every provider."
         },
         {
           "heading": "The voice assistant",
-          "body": "Ceou offers two ways to talk to its assistant, each with its own explicit consent, asked before the very first use.\n\nConversation: your voice is streamed live to Google's Gemini API, outside the EU, which listens and answers with its own voice. As the conversation goes, Ceou also passes it the results of the searches it requests to answer you — names of items, rooms and storage, and the status of a loan — but never your whole inventory, nor any identifier from your database. Nothing is sent until the conversation is open, and it stops as soon as the app goes to the background. To apply a daily conversation time, Ceou keeps the length of each conversation with your account; it keeps neither the audio nor what was said.\n\nThe simple assistant, used when conversation is not available: your phone's own speech recognition turns your voice into text — that is Apple's or Google's depending on the device, and it may send the audio to their servers, like your keyboard's dictation. Only the resulting text, never the audio, is then sent to the Gemini API to be interpreted.\n\nIn both cases, what is sent is only processed to answer you."
+          "body": "Conversation uses Gemini Live: microphone audio is streamed to Google, which generates spoken replies. Information needed for your requested searches and actions, such as an item’s name, storage location or a loan, may be sent during the conversation. The assistant asks for your agreement before first use. Recording stops when you close the conversation or the app goes into the background.\n\nIf the simple assistant is used, the phone’s speech recognition converts your speech to text. Depending on the device and its settings, Apple or Google may process this audio on their servers. Gemini then interprets the text command.\n\nCéoù stores session durations for allowances and cost monitoring, without archiving audio recordings or transcripts in these counters. Google applies its API terms, including security and abuse prevention measures."
         },
         {
-          "heading": "Barcode product lookup",
-          "body": "If you scan a barcode, that code (no other personal data) is sent to UPCItemDB, a third-party service, to automatically retrieve the product name and photo."
+          "heading": "Barcodes",
+          "body": "Product lookup sends the scanned code to UPCItemDB to find a name and image. The network request also communicates technical data, including your IP address. Displaying a product image may contact the website hosting it. Your complete inventory is not sent for this lookup."
         },
         {
-          "heading": "Notifications",
-          "body": "If you allow notifications, your phone receives a delivery identifier (a token) issued by Expo's notification service. It is stored with your account so we can alert you — a loan due back, a friend request — and passes through Expo, Apple and Google when a notification is sent, as any phone notification does. It is removed when you turn notifications off or when you delete your account."
-        },
-        {
-          "heading": "Error logs",
-          "body": "When the app hits an error, it records the technical message, the error trace and the context of the screen involved, tied to your account. This is used only to fix failures, stays with the same host as the rest of your data, and disappears with your account."
-        },
-        {
-          "heading": "What is never done",
-          "body": "Your inventory, photos and conversation content are not sent to advertising services. Your data is not sold, and your inventory is only shared with other app users according to your choices."
+          "heading": "Notifications and technical errors",
+          "body": "If you allow notifications, a delivery identifier provided by Expo is linked to your account. It is used for reminders and useful events such as friend requests or loans. Delivery may involve Expo, Google and Apple depending on your phone. Permissions are managed in your device settings.\n\nWhen an error occurs, Céoù may record a technical message, error trace and diagnostic context linked to the account. These logs help investigate and fix problems. They are not a continuous recording of your screen or conversations."
         },
         {
           "heading": "Subscriptions and usage counters",
-          "body": "RevenueCat and Google Play handle Céoù Plus purchases and restoration. RevenueCat receives your technical account identifier, purchase information and technical information about the app and device. Céoù does not receive your bank details. Photo analysis counts, tokens used by those analyses, conversation durations and extra credits are linked to your account in Supabase. These counters enforce allowances and track costs without storing photos sent to AI or conversation content."
+          "body": "When purchases are available, RevenueCat and Google Play present, verify and restore Céoù Plus. RevenueCat receives your technical account identifier, purchase status and technical information about the app and device. Céoù does not receive your bank details. Test offers are labelled in the app.\n\nPhoto analysis counts, AI token usage, conversation durations and bonus credits are linked to your account in Supabase, along with dates and verification records. They support cost monitoring, allowances and duplicate prevention. Resetting a monthly allowance does not erase the corresponding technical history."
         },
         {
           "heading": "Optional advertising",
-          "body": "Rewarded ads start only when you request them. Google AdMob may process technical device information, advertising identifiers depending on permissions, and ad interactions. A form presents your choices where required; you can revisit them under Profile → Plan and AI extras → My advertising choices. To award credits, Google receives your technical account identifier and a unique verification identifier. These services may process data outside the European Union. Test builds use demo ads."
+          "body": "Google AdMob rewarded ads start when you request a bonus and the feature is available. Choosing to watch an ad is separate from consenting to personalised advertising. Google’s form presents the choices required for your region; revisit them under Profile → Plan and AI extras → My advertising choices when that option is available.\n\nThe advertising service processes IP addresses (which can indicate approximate location), device or advertising identifiers depending on permissions, ad interactions and diagnostic data. These support ad delivery, measurement and fraud prevention. Google and the partners identified in the form may receive them. Non-personalised ads do not necessarily mean no data is collected.\n\nTo verify a reward, Google receives the technical account identifier and a unique request identifier. Céoù stores the verification result and awarded bonus. Céoù does not send your inventory, photos or conversation content to advertising services. Demo ads also use Google’s technical services."
         },
         {
-          "heading": "Retention",
-          "body": "Your data is kept for as long as your account exists. You can request its deletion at any time (see below)."
+          "heading": "The website and getting in touch",
+          "body": "The presentation website contains no ads, audience analytics or marketing trackers. Its pages load no third-party fonts or scripts. The host still receives technical information needed to serve pages, such as IP addresses and request dates, and may keep security logs.\n\nThe survey links to Google Forms: opening it contacts Google under its own privacy rules. If you provide an email to take part in testing, it is used to contact you about that. You can ask not to be contacted again. Email exchanges are used to respond to your requests."
         },
         {
-          "heading": "Your rights",
-          "body": "You can view and edit your data directly in the app at any time. Full deletion of your account and data is done from the app: Profile, then \"My account\", then \"Delete my account\". It is immediate and permanent, photos included. For a data export, write to contact@ceou.eu."
+          "heading": "Processing outside the European Union",
+          "body": "Google services (Gemini, AdMob, Google Play and Forms), RevenueCat, Expo and UPCItemDB may process data outside the European Union. Their terms describe processing locations and applicable safeguards, including standard contractual clauses or adequacy decisions where applicable. Provider policies and terms are linked on the web version of this page. For details about a transfer or its safeguards: contact@ceou.eu."
+        },
+        {
+          "heading": "Retention and deletion",
+          "body": "Account information and inventory content are kept while the account exists or until you delete them. Account-linked technical histories, including AI counters, reward checks and error logs, may remain until account deletion. Support correspondence is retained while handling the request and its follow-up.\n\nDeleting your Céoù account does not automatically delete data held separately by Google Play, RevenueCat or other providers. Transaction records and data needed for their legal obligations or fraud prevention may be retained under their rules. Contact us about Céoù-related data requests involving these providers. Technical backups can retain copies until they are replaced."
+        },
+        {
+          "heading": "Your rights and choices",
+          "body": "You can request access, correction, deletion, restriction and, where applicable, portability of your data, and object to processing based on legitimate interests. You can withdraw consent for future processing without affecting processing already carried out lawfully. For AI, stop using it and contact us to withdraw your recorded agreement; advertising choices and device permissions have their own settings.\n\nTo exercise a right or request an export, email contact@ceou.eu, preferably from your account’s email address. We normally respond within one month; if an extension is needed in cases allowed by the GDPR, we will let you know. Identity verification may be needed if there is doubt. You can also complain to the CNIL at cnil.fr or your local data protection authority.\n\nTo delete your account in the app: Profile → My account → Delete my account. Without the app, email us with “Account deletion” as the subject. If you have a subscription, cancel it separately in Google Play: deleting Céoù or your account does not cancel it."
         }
       ]
     }
@@ -129,21 +137,21 @@
     "fr": {
       "heading": "Supprimer ton compte et tes données",
       "paragraphs": [
-        "Depuis l'application, c'est immédiat : Profil, puis « Mon compte », puis « Supprimer mon compte ». Ton mot de passe t'est redemandé, pour confirmer que c'est bien toi.",
-        "Sans l'application, écris à contact@ceou.eu depuis l'adresse e-mail de ton compte, avec « Suppression de compte » en objet. La demande est traitée sous 30 jours.",
-        "Ce qui est supprimé : ton compte et ton profil, tes habitations, pièces, emplacements, conteneurs et objets, leurs photos, l'historique de leurs déplacements, tes prêts et emprunts, tes amis, tes partages et tes invitations, tes jetons de notification et tes journaux d'erreurs.",
-        "Ce qui reste : les habitations que des amis ont partagées avec toi ne sont pas supprimées — elles leur appartiennent, tu perds simplement leur accès. De même, si quelqu'un a enregistré t'avoir prêté un objet, la ligne reste chez lui : elle fait partie de ses données à lui, pas des tiennes.",
-        "La suppression est définitive : rien n'est récupérable ensuite depuis l'application. Les sauvegardes techniques de l'hébergeur peuvent en conserver une copie le temps de leur rotation, avant d'être écrasées à leur tour."
+        "Dans Céoù : Profil → Mon compte → Supprimer mon compte. Ton mot de passe est demandé pour confirmer l’action. Une fois la suppression réussie, l’accès au compte est supprimé et l’action est définitive.",
+        "Sans l’application : écris à contact@ceou.eu depuis l’adresse de ton compte, avec « Suppression de compte » en objet. La demande est traitée en principe sous un mois, après les vérifications nécessaires.",
+        "La suppression emporte le profil, les lieux possédés et leur inventaire, les plans, les photos enregistrées sous le compte, les prêts, les déménagements et cartons associés au compte, les partages, les invitations, les compteurs et les journaux rattachés. Les lieux possédés par d’autres personnes restent chez elles ; tu en perds l’accès. Les données qu’elles ont saisies elles-mêmes, comme la trace d’un prêt, peuvent rester dans leur propre inventaire.",
+        "Les copies de sauvegarde disparaissent au fil de leur rotation. Les prestataires de paiement et de publicité appliquent leurs propres obligations de conservation ; écris-nous si ta demande concerne aussi les données associées à Céoù chez eux.",
+        "Un abonnement Google Play se résilie séparément dans Google Play. La suppression du compte ou la désinstallation de l’application ne met pas fin à son renouvellement."
       ]
     },
     "en": {
       "heading": "Deleting your account and your data",
       "paragraphs": [
-        "From the app, it is immediate: Profile, then \"My account\", then \"Delete my account\". You are asked for your password again, to confirm it is really you.",
-        "Without the app, write to contact@ceou.eu from your account’s email address, with \"Account deletion\" as the subject. Requests are handled within 30 days.",
-        "What is deleted: your account and profile, your homes, rooms, spots, containers and items, their photos, their move history, your loans and borrowings, your friends, your shares and invitations, your notification tokens and your error logs.",
-        "What remains: homes that friends shared with you are not deleted — they belong to them, you simply lose access. Likewise, if someone recorded lending you an item, that record stays with them: it is part of their data, not yours.",
-        "Deletion is permanent: nothing can be recovered from the app afterwards. The host’s technical backups may keep a copy for the length of their rotation, before being overwritten in turn."
+        "In Céoù: Profile → My account → Delete my account. Your password is requested to confirm. After successful deletion, account access is removed and the action is permanent.",
+        "Without the app: email contact@ceou.eu from your account’s email address with “Account deletion” as the subject. Requests are normally handled within one month, after any necessary checks.",
+        "Deletion removes the profile, owned places and their inventory, plans, photos stored under the account, associated loans, moves and boxes, sharing, invitations, counters and linked logs. Places owned by others remain theirs; you lose access. Records they entered themselves, such as a loan, may remain in their own inventory.",
+        "Backup copies disappear as they are rotated. Payment and advertising providers apply their own retention obligations; contact us if your request also concerns Céoù-related data held by them.",
+        "A Google Play subscription must be cancelled separately in Google Play. Deleting the account or uninstalling the app does not stop renewal."
       ]
     }
   }

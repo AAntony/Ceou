@@ -1243,6 +1243,49 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 .doc-back { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.9375rem; text-decoration: none; }
 .doc-back::before { content: ""; width: 0.4rem; height: 0.4rem; border-left: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); }
 
+/* Current product presentation and optional plans. */
+.hero h1 { white-space: pre-line; }
+.hero .button { font-size: 0.9375rem; margin-top: 0; }
+.hero .device { width: min(22rem, 100%); }
+.found-note { display: flex; align-items: flex-start; gap: 0.45rem; margin: 1.1rem 0; color: var(--accent-strong); font-size: 0.875rem; }
+.found-note svg { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
+.hero-plan { padding: 0.8rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+.hero-plan .screen-title { font-size: 0.875rem; margin-bottom: 0.6rem; }
+.plan-showcase { padding: 1.25rem; }
+.plan-location { display: flex; align-items: center; gap: 0.8rem; padding: 1rem; background: var(--accent-soft); border-radius: 1rem; margin-top: 0.8rem; }
+.plan-location > svg { width: 1.6rem; height: 1.6rem; color: var(--accent-strong); flex-shrink: 0; }
+.plan-location b, .plan-location span span { display: block; }
+.plan-location span span { color: var(--ink-soft); font-size: 0.875rem; margin-top: 0.25rem; }
+.plan-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.plan-card { padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--line-strong); border-radius: 1.5rem; background: var(--surface); }
+.plan-card h3 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.plan-plus { border: 2px solid var(--accent-strong); }
+.plan-plus h3 { color: var(--accent-strong); }
+.plan-card dl { margin: 0; }
+.plan-card dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.4rem 0.8rem; padding: 0.85rem 0; border-top: 1px solid var(--line); }
+.plan-card dt { color: var(--ink-soft); min-width: 0; flex: 1 1 10rem; }
+.plan-card dd { margin: 0; font-size: 1.2rem; font-weight: 700; text-align: right; flex-shrink: 0; }
+.plan-note { color: var(--ink-soft); font-size: 0.9375rem; margin: 1.25rem 0 2rem; max-width: 50rem; }
+.reward-note { display: flex; align-items: flex-start; gap: 1.2rem; padding: 1.5rem; background: var(--accent-soft); border-radius: 1.25rem; }
+.reward-note > div { min-width: 0; }
+.reward-note .pill { flex-shrink: 0; }
+.reward-note h3 { margin-bottom: 0.6rem; }
+.test-label { font-size: 0.8125rem; margin-top: 0.8rem; font-weight: 600; }
+.privacy-summary { padding: 1.4rem; margin-bottom: 2rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--surface); }
+.privacy-summary ul { list-style: disc; padding-left: 1.2rem; margin: 0.8rem 0 1rem; }
+.privacy-summary li + li { margin-top: 0.5rem; }
+.provider-links li { margin-bottom: 0.6rem; }
+.mobile-toc { display: none; }
+@media (max-width: 61.99rem) {
+  .mobile-toc { display: block; padding: 1rem; border: 1px solid var(--line-strong); border-radius: 1rem; margin-bottom: 2rem; }
+  .mobile-toc summary { cursor: pointer; font-weight: 600; }
+  .mobile-toc a { display: block; padding: 0.45rem 0; }
+}
+@media (max-width: 38rem) {
+  .plan-cards { grid-template-columns: minmax(0, 1fr); }
+  .reward-note { flex-direction: column; }
+}
+
 /* === Apparitions au défilement ========================================= */
 
 /* Tout est conditionné à la classe "js" posée par le script en tête de page.
@@ -1297,7 +1340,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
    sans ces quelques lignes, elle sort avec un menu collant en travers de la
    première page et des liens dont on ne voit pas la destination. */
 @media print {
-  .announce, .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
+  .announce, .top, .progress, .doc-toc, .mobile-toc, .foot .eu, .cta { display: none !important; }
   body { background: #FFFFFF; color: #000000; }
   .doc-layout { display: block; padding: 0; }
   .highlight { border: 1px solid #999999; background: none; }
@@ -1308,15 +1351,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 <body class="doc-page">
   <div class="progress" aria-hidden="true"></div>
   <a class="skip" href="#main">Aller au contenu</a>
-  <aside class="announce" aria-label="Annonce">
-    <div class="wrap announce-inner">
-      <p><span class="announce-tag">En test</span>Céoù cherche ses premiers testeurs : 5 minutes pour donner ton avis.</p>
-      <p class="announce-links">
-        <a class="announce-cta" href="https://forms.gle/ngUZoU7c9f6euFFp6">Je participe<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4.5h6v6"/><path d="M19.5 4.5 11 13"/><path d="M17.5 14.2v3.4a2 2 0 0 1-2 2H6.4a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2h3.4"/></svg></a>
-        <a class="announce-more" href="index.html#avancement">Où en est Céoù ?</a>
-      </p>
-    </div>
-  </aside>
+
   <header class="top" data-open="false">
     <div class="wrap top-inner">
       <a class="brand" href="index.html">
@@ -1332,11 +1367,10 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
         <span></span>
       </button>
       <nav class="nav" id="site-nav" aria-label="Le site">
-        <a href="index.html#comment">Comment ça marche</a>
-        <a href="index.html#fonctionnalites">Fonctionnalités</a>
+        <a href="index.html#fonctionnalites">L’application</a>
+        <a href="index.html#formules">Gratuit &amp; Plus</a>
         <a href="tutoriels.html">Tutoriels</a>
-        <a href="index.html#engagements">Engagements</a>
-        <a href="index.html#avancement">Avancement</a>
+        <a href="index.html#avancement">La bêta</a>
         <a href="index.html#questions">Questions</a>
         <a href="confidentialite.html" aria-current="page">Confidentialité</a>
         <span class="nav-sep" aria-hidden="true"></span>
@@ -1351,86 +1385,149 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
       <nav class="doc-toc" data-spy aria-label="Sur cette page">
         <h2>Sur cette page</h2>
         <ul>
-            <li><a href="#avertissement">Avertissement</a></li>
-            <li><a href="#qui-traite-tes-donnees">Qui traite tes données</a></li>
-            <li><a href="#donnees-collectees">Données collectées</a></li>
-            <li><a href="#hebergement">Hébergement</a></li>
-            <li><a href="#le-scan-photo-par-intelligence-artificielle">Le scan photo par intelligence artificielle</a></li>
-            <li><a href="#l-assistant-vocal">L'assistant vocal</a></li>
-            <li><a href="#recherche-de-produit-par-code-barre">Recherche de produit par code-barre</a></li>
-            <li><a href="#notifications">Notifications</a></li>
-            <li><a href="#journal-d-erreurs">Journal d'erreurs</a></li>
-            <li><a href="#ce-qui-n-est-jamais-fait">Ce qui n'est jamais fait</a></li>
-            <li><a href="#duree-de-conservation">Durée de conservation</a></li>
-            <li><a href="#tes-droits">Tes droits</a></li>
+            <li><a href="#qui-est-responsable-de-tes-donnees">Qui est responsable de tes données</a></li>
+            <li><a href="#ton-compte-et-ton-inventaire">Ton compte et ton inventaire</a></li>
+            <li><a href="#les-partages-que-tu-choisis">Les partages que tu choisis</a></li>
+            <li><a href="#hebergement-et-copie-sur-ton-appareil">Hébergement et copie sur ton appareil</a></li>
+            <li><a href="#pourquoi-ces-donnees-sont-utilisees">Pourquoi ces données sont utilisées</a></li>
+            <li><a href="#l-analyse-de-photos-par-l-ia">L’analyse de photos par l’IA</a></li>
+            <li><a href="#l-assistant-vocal">L’assistant vocal</a></li>
+            <li><a href="#les-codes-barres">Les codes-barres</a></li>
+            <li><a href="#notifications-et-erreurs-techniques">Notifications et erreurs techniques</a></li>
+            <li><a href="#abonnements-et-compteurs-d-utilisation">Abonnements et compteurs d’utilisation</a></li>
+            <li><a href="#publicites-a-la-demande">Publicités à la demande</a></li>
+            <li><a href="#le-site-web-et-les-prises-de-contact">Le site web et les prises de contact</a></li>
+            <li><a href="#traitements-hors-de-l-union-europeenne">Traitements hors de l’Union européenne</a></li>
+            <li><a href="#conservation-et-suppression">Conservation et suppression</a></li>
+            <li><a href="#tes-droits-et-tes-choix">Tes droits et tes choix</a></li>
             <li><a href="#suppression-de-compte">Supprimer ton compte et tes données</a></li>
+            <li><a href="#prestataires">Les politiques de nos prestataires</a></li>
             <li><a href="#contact">Contact</a></li>
         </ul>
       </nav>
 
       <div class="doc">
         <h1>Politique de confidentialité</h1>
-        <p class="updated">Dernière mise à jour : septembre 2026</p>
+        <p class="updated">Dernière mise à jour : 17 septembre 2026</p>
+        <aside class="privacy-summary" aria-label="L’essentiel, en un coup d’œil">
+          <h2>L’essentiel, en un coup d’œil</h2>
+          <ul><li>Ton inventaire sert à retrouver et gérer tes affaires.</li><li>Tu choisis tes partages, l’IA et les publicités avec récompense.</li><li>Pour tes données ou une suppression : <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</li></ul>
+          <a href="#suppression-de-compte">Supprimer ton compte et tes données</a>
+        </aside>
+        <details class="mobile-toc"><summary>Sur cette page</summary><ul>            <li><a href="#qui-est-responsable-de-tes-donnees">Qui est responsable de tes données</a></li>
+            <li><a href="#ton-compte-et-ton-inventaire">Ton compte et ton inventaire</a></li>
+            <li><a href="#les-partages-que-tu-choisis">Les partages que tu choisis</a></li>
+            <li><a href="#hebergement-et-copie-sur-ton-appareil">Hébergement et copie sur ton appareil</a></li>
+            <li><a href="#pourquoi-ces-donnees-sont-utilisees">Pourquoi ces données sont utilisées</a></li>
+            <li><a href="#l-analyse-de-photos-par-l-ia">L’analyse de photos par l’IA</a></li>
+            <li><a href="#l-assistant-vocal">L’assistant vocal</a></li>
+            <li><a href="#les-codes-barres">Les codes-barres</a></li>
+            <li><a href="#notifications-et-erreurs-techniques">Notifications et erreurs techniques</a></li>
+            <li><a href="#abonnements-et-compteurs-d-utilisation">Abonnements et compteurs d’utilisation</a></li>
+            <li><a href="#publicites-a-la-demande">Publicités à la demande</a></li>
+            <li><a href="#le-site-web-et-les-prises-de-contact">Le site web et les prises de contact</a></li>
+            <li><a href="#traitements-hors-de-l-union-europeenne">Traitements hors de l’Union européenne</a></li>
+            <li><a href="#conservation-et-suppression">Conservation et suppression</a></li>
+            <li><a href="#tes-droits-et-tes-choix">Tes droits et tes choix</a></li>
+            <li><a href="#suppression-de-compte">Supprimer ton compte et tes données</a></li>
+            <li><a href="#prestataires">Les politiques de nos prestataires</a></li>
+            <li><a href="#contact">Contact</a></li></ul></details>
 
-        <section id="avertissement" data-spy-target>
-          <h2>Avertissement</h2>
-          <p>Ce texte est rédigé par l'éditeur de l'application (pas un professionnel du droit) dans un souci de transparence honnête sur les données traitées. Il ne remplace pas une relecture juridique professionnelle, en particulier si l'application venait à être proposée plus largement au public.</p>
+        <section id="qui-est-responsable-de-tes-donnees" data-spy-target>
+          <h2>Qui est responsable de tes données</h2>
+          <p>Céoù est édité par Antony Monreal, à titre indépendant, qui est responsable des traitements décrits ici. Pour toute question ou demande concernant tes données : <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>. Cette politique couvre l’application Céoù et son site de présentation ceou.eu.</p>
         </section>
-        <section id="qui-traite-tes-donnees" data-spy-target>
-          <h2>Qui traite tes données</h2>
-          <p>Ceou est édité à titre indépendant. Pour toute question sur tes données, contacte <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+        <section id="ton-compte-et-ton-inventaire" data-spy-target>
+          <h2>Ton compte et ton inventaire</h2>
+          <p>Pour utiliser ton propre inventaire, tu renseignes une adresse e-mail, un mot de passe et un nom affiché. La photo de profil est facultative : une image Céoù est proposée par défaut. Le service d’authentification Supabase gère ton mot de passe ; l’éditeur ne le consulte pas en clair.</p>
+          <p>Nous enregistrons les informations que tu ajoutes : lieux, pièces, plans, rangements, conteneurs, objets, photos, descriptions, codes-barres, factures et informations de garantie, ainsi que les déplacements, prêts, déménagements et cartons. Tu choisis le contenu que tu y mets. Les informations nécessaires au fonctionnement du compte et de l’inventaire sont traitées pour fournir le service que tu demandes.</p>
         </section>
-        <section id="donnees-collectees" data-spy-target>
-          <h2>Données collectées</h2>
-          <p>Ton adresse email et ton mot de passe (pour la connexion), un nom affiché et une photo de profil optionnels, ainsi que le contenu que tu crées dans l'app : habitations, pièces, emplacements, conteneurs, objets (nom, description, photo, code-barre) et leur historique de déplacement.</p>
+        <section id="les-partages-que-tu-choisis" data-spy-target>
+          <h2>Les partages que tu choisis</h2>
+          <p>Les amis, invitations et droits d’accès servent à ouvrir les lieux de ton choix à d’autres personnes. Ton nom affiché et ton avatar peuvent être visibles par les personnes avec lesquelles tu interagis. Le contenu d’un lieu partagé est accessible selon les droits accordés. Le partage d’un déménagement est une option distincte.</p>
+          <p>Tu peux modifier ou retirer les accès dans l’application. Retirer un accès ne peut pas effacer une copie ou une capture qu’une personne aurait déjà conservée. Lorsque tu renseignes un prêt, le nom ou les coordonnées du contact que tu saisis font aussi partie de tes données.</p>
         </section>
-        <section id="hebergement" data-spy-target>
-          <h2>Hébergement</h2>
-          <p>Toutes ces données sont hébergées chez Supabase, dans l'Union Européenne (région eu-north-1, Stockholm).</p>
+        <section id="hebergement-et-copie-sur-ton-appareil" data-spy-target>
+          <h2>Hébergement et copie sur ton appareil</h2>
+          <p>Le compte, l’inventaire et les données de suivi de Céoù sont hébergés chez Supabase, dans la région européenne configurée pour le projet (Stockholm). Les connexions utilisent HTTPS et des droits d’accès limitent les données accessibles à chaque compte. Cela ne signifie pas que tous les prestataires cités ci-dessous traitent leurs données dans l’Union européenne.</p>
+          <p>Une copie de certaines données et de tes préférences est conservée sur ton appareil pour accélérer l’application et consulter l’inventaire déjà synchronisé sans réseau. Elle n’est pas un outil de suivi publicitaire.</p>
         </section>
-        <section id="le-scan-photo-par-intelligence-artificielle" data-spy-target>
-          <h2>Le scan photo par intelligence artificielle</h2>
-          <p>Si tu utilises la fonctionnalité de scan photo pour ajouter plusieurs objets à la fois, la photo que tu prends est envoyée à l'API Gemini de Google (hors Union Européenne) afin de détecter automatiquement les objets qu'elle contient. Google traite cette photo uniquement pour répondre à cette requête ponctuelle. Cette fonctionnalité te demande un accord explicite avant sa toute première utilisation, distinct de l'acceptation de cette politique.</p>
+        <section id="pourquoi-ces-donnees-sont-utilisees" data-spy-target>
+          <h2>Pourquoi ces données sont utilisées</h2>
+          <p>Le fonctionnement du compte, l’inventaire, les partages demandés, les quotas et la gestion des achats reposent sur l’exécution du service. La détection des pannes, la prévention des abus et le suivi des coûts répondent à l’intérêt légitime de maintenir un service fiable et sûr. Les traitements soumis à ton accord, notamment l’IA et les choix publicitaires qui le nécessitent, reposent sur ton consentement. Les données éventuellement exigées par la réglementation sont traitées pour respecter ces obligations.</p>
+          <p>Tu peux utiliser le rangement et la recherche manuelle sans activer l’IA ni demander de publicité. Refuser une permission du téléphone empêche seulement la fonction qui en a besoin, par exemple prendre une photo ou parler au micro.</p>
+        </section>
+        <section id="l-analyse-de-photos-par-l-ia" data-spy-target>
+          <h2>L’analyse de photos par l’IA</h2>
+          <p>Quand tu demandes une analyse, la photo sélectionnée est transmise à l’API Gemini de Google pour proposer les objets qu’elle contient. Un accord spécifique est demandé avant la première utilisation. Les propositions peuvent être corrigées avant leur ajout à l’inventaire. La fonction a besoin d’Internet.</p>
+          <p>Céoù ne conserve pas une copie de la photo dans son compteur d’analyses. Une photo que tu enregistres volontairement sur une fiche reste, elle, dans ton inventaire. Google applique ses conditions de traitement et de sécurité de l’API ; une conservation technique peut notamment intervenir pour prévenir les abus. L’affirmation « la photo est immédiatement effacée partout » ne correspondrait donc pas au fonctionnement du service.</p>
         </section>
         <section id="l-assistant-vocal" data-spy-target>
-          <h2>L'assistant vocal</h2>
-          <p>Céoù propose deux façons de parler à son assistant, chacune avec son propre accord explicite, demandé avant la toute première utilisation.</p>
-          <p>La conversation : ta voix est envoyée en direct à l'API Gemini de Google, hors Union Européenne, qui l'écoute et te répond avec sa propre voix. Au fil de la conversation, Céoù lui transmet aussi les résultats des recherches qu'elle demande pour te répondre — des noms d'objets, de pièces et de rangements, et l'état d'un prêt — mais jamais ton inventaire entier, ni aucun identifiant de ta base. Rien n'est envoyé tant que la conversation n'est pas ouverte, et elle s'arrête dès que l'application passe en arrière-plan. Pour appliquer une durée de conversation quotidienne, Céoù conserve la durée de chaque conversation avec ton compte ; il ne conserve ni l'audio ni ce qui a été dit.</p>
-          <p>L'assistant simple, utilisé quand la conversation n'est pas disponible : la reconnaissance vocale de ton téléphone transforme ta voix en texte — c'est celle d'Apple ou de Google selon l'appareil, et elle peut transmettre l'audio à leurs serveurs, comme la dictée du clavier. Seul le texte obtenu, jamais l'audio, est ensuite envoyé à l'API Gemini pour être interprété.</p>
-          <p>Dans les deux cas, ce qui est envoyé n'est traité que pour te répondre.</p>
+          <h2>L’assistant vocal</h2>
+          <p>La conversation utilise Gemini Live : le son du micro est envoyé en direct à Google, qui produit la réponse audio. Les informations nécessaires aux recherches et actions demandées (par exemple le nom d’un objet, son rangement ou un prêt) peuvent être transmises au cours de l’échange. L’assistant demande ton accord avant sa première utilisation. La capture s’arrête à la fermeture de la conversation ou lorsque l’application passe en arrière-plan.</p>
+          <p>Si l’assistant simple est utilisé, la reconnaissance vocale du téléphone transforme ta voix en texte. Selon l’appareil et ses réglages, Apple ou Google peut traiter ce son sur ses serveurs. Le texte de la commande est ensuite interprété par Gemini.</p>
+          <p>Céoù conserve les durées de session pour les quotas et le suivi des coûts, sans archiver les enregistrements audio ni les transcriptions dans ces compteurs. Google applique les conditions de son API, y compris ses mesures de sécurité et de prévention des abus.</p>
         </section>
-        <section id="recherche-de-produit-par-code-barre" data-spy-target>
-          <h2>Recherche de produit par code-barre</h2>
-          <p>Si tu scannes un code-barre, ce code (pas d'autre donnée personnelle) est envoyé à UPCItemDB, un service tiers, pour retrouver automatiquement le nom et la photo du produit.</p>
+        <section id="les-codes-barres" data-spy-target>
+          <h2>Les codes-barres</h2>
+          <p>La recherche de produit envoie le code scanné à UPCItemDB pour retrouver un nom et une image. La requête réseau communique aussi des données techniques, notamment ton adresse IP. L’affichage d’une image de produit peut contacter le site qui l’héberge. Aucun inventaire complet n’est envoyé pour cette recherche.</p>
         </section>
-        <section id="notifications" data-spy-target>
-          <h2>Notifications</h2>
-          <p>Si tu acceptes les notifications, ton téléphone reçoit un identifiant d'envoi (un « jeton ») fourni par le service de notifications d'Expo. Il est conservé avec ton compte pour pouvoir t'avertir — un prêt à rendre, une demande d'ami — et transite par Expo, Apple et Google au moment de l'envoi, comme toute notification sur téléphone. Il disparaît quand tu refuses les notifications ou quand tu supprimes ton compte.</p>
+        <section id="notifications-et-erreurs-techniques" data-spy-target>
+          <h2>Notifications et erreurs techniques</h2>
+          <p>Si tu autorises les notifications, un identifiant d’envoi fourni par Expo est associé à ton compte. Il sert aux rappels et aux événements utiles, comme une demande d’ami ou un prêt. La distribution peut passer par Expo, Google et Apple selon le téléphone. Les permissions se gèrent dans les réglages de l’appareil.</p>
+          <p>En cas d’erreur, Céoù peut enregistrer le message technique, la trace de l’erreur et un contexte de diagnostic associé au compte. Ces journaux servent à rechercher et corriger les problèmes. Ils ne constituent pas un enregistrement permanent de ton écran ou de tes conversations.</p>
         </section>
-        <section id="journal-d-erreurs" data-spy-target>
-          <h2>Journal d'erreurs</h2>
-          <p>Quand l'application rencontre une erreur, elle enregistre le message technique, la trace de l'erreur et le contexte de l'écran concerné, rattachés à ton compte. Cela ne sert qu'à corriger les pannes, reste chez le même hébergeur que le reste de tes données, et disparaît avec ton compte.</p>
+        <section id="abonnements-et-compteurs-d-utilisation" data-spy-target>
+          <h2>Abonnements et compteurs d’utilisation</h2>
+          <p>Lorsque les achats sont disponibles, RevenueCat et Google Play servent à présenter, vérifier et restaurer Céoù Plus. RevenueCat reçoit l’identifiant technique de ton compte, l’état des achats et des données techniques sur l’application et l’appareil. Céoù ne reçoit pas tes coordonnées bancaires. Les offres de test sont signalées dans l’application.</p>
+          <p>Les compteurs d’analyses photo, de jetons IA, de durée de conversation et de crédits bonus sont associés au compte chez Supabase, avec les dates et informations nécessaires à la vérification. Ils servent à suivre les coûts, appliquer les limites et éviter les attributions en double. La remise à zéro d’un quota mensuel n’efface pas l’historique technique correspondant.</p>
         </section>
-        <section id="ce-qui-n-est-jamais-fait" data-spy-target>
-          <h2>Ce qui n'est jamais fait</h2>
-          <p>Tes données ne sont ni vendues, ni utilisées à des fins publicitaires, ni partagées avec d'autres utilisateurs de l'app au-delà de ce que tu choisis explicitement de partager.</p>
+        <section id="publicites-a-la-demande" data-spy-target>
+          <h2>Publicités à la demande</h2>
+          <p>Les publicités avec récompense Google AdMob se lancent lorsque tu demandes un bonus et que cette fonction est disponible. Le choix de regarder une publicité est distinct du consentement à la personnalisation publicitaire. Le formulaire de Google présente les choix requis selon ta région ; ils sont accessibles dans Profil → Forfait et bonus IA → Mes choix publicitaires, lorsque cette option est disponible.</p>
+          <p>Le service publicitaire traite notamment l’adresse IP (pouvant donner une localisation approximative), des identifiants d’appareil ou publicitaires selon les autorisations, les interactions avec les annonces et des données de diagnostic. Ces informations servent à diffuser les annonces, mesurer leur fonctionnement et prévenir la fraude. Google et les partenaires présentés dans le formulaire peuvent les recevoir. Une annonce non personnalisée n’est pas nécessairement sans collecte de données.</p>
+          <p>Pour vérifier une récompense, Google reçoit l’identifiant technique du compte et un identifiant de demande unique. Céoù enregistre le résultat de cette vérification et le bonus accordé. Ton inventaire, tes photos et le contenu de tes conversations ne sont pas transmis aux services publicitaires par Céoù. Les annonces de démonstration utilisent aussi les services techniques de Google.</p>
         </section>
-        <section id="duree-de-conservation" data-spy-target>
-          <h2>Durée de conservation</h2>
-          <p>Tes données sont conservées tant que ton compte existe. Tu peux en demander la suppression à tout moment (voir ci-dessous).</p>
+        <section id="le-site-web-et-les-prises-de-contact" data-spy-target>
+          <h2>Le site web et les prises de contact</h2>
+          <p>Le site de présentation n’intègre ni publicité, ni outil de mesure d’audience, ni traceur marketing. Ses pages ne chargent pas de police ou de script tiers. L’hébergeur reçoit cependant les informations techniques nécessaires pour servir les pages, comme l’adresse IP et la date de la requête, et peut tenir des journaux de sécurité.</p>
+          <p>Le questionnaire est un lien vers Google Forms : Google est contacté lorsque tu l’ouvres, selon ses propres règles de confidentialité. Si tu fournis une adresse pour participer aux tests, elle sert à te recontacter à ce sujet. Tu peux demander à ne plus être contacté. Les échanges par e-mail servent à répondre à tes demandes.</p>
         </section>
-        <section id="tes-droits" data-spy-target>
-          <h2>Tes droits</h2>
-          <p>Tu peux à tout moment consulter et modifier tes données directement dans l'application. La suppression complète de ton compte et de tes données se fait depuis l'application : Profil, puis « Mon compte », puis « Supprimer mon compte ». Elle est immédiate et définitive, photos comprises. Pour un export de tes données, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+        <section id="traitements-hors-de-l-union-europeenne" data-spy-target>
+          <h2>Traitements hors de l’Union européenne</h2>
+          <p>Les services de Google (Gemini, AdMob, Google Play et Forms), RevenueCat, Expo et UPCItemDB peuvent traiter des données en dehors de l’Union européenne. Leurs conditions décrivent les lieux de traitement et les garanties applicables, notamment les clauses contractuelles types ou les décisions d’adéquation lorsqu’elles s’appliquent. Les politiques et conditions des prestataires sont indiquées sur la version web de cette page. Pour obtenir des précisions sur un transfert ou ses garanties : <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>.</p>
+        </section>
+        <section id="conservation-et-suppression" data-spy-target>
+          <h2>Conservation et suppression</h2>
+          <p>Les informations du compte et le contenu de l’inventaire sont conservés tant que le compte existe ou jusqu’à leur suppression par tes soins. Les historiques techniques liés au compte, dont les compteurs d’IA, les vérifications de bonus et les journaux d’erreurs, peuvent rester jusqu’à la suppression du compte. Les échanges de support sont conservés le temps de traiter la demande et ses suites.</p>
+          <p>La suppression dans Céoù ne supprime pas automatiquement les données détenues séparément par Google Play, RevenueCat ou les autres prestataires. Les justificatifs de transaction et les données nécessaires à leurs obligations légales ou à la prévention de la fraude peuvent être conservés selon leurs règles. Contacte-nous pour une demande concernant les données associées à Céoù chez ces prestataires. Les sauvegardes techniques peuvent conserver des copies jusqu’à leur remplacement.</p>
+        </section>
+        <section id="tes-droits-et-tes-choix" data-spy-target>
+          <h2>Tes droits et tes choix</h2>
+          <p>Tu peux demander l’accès, la rectification, l’effacement, la limitation ou, selon les conditions applicables, la portabilité de tes données et t’opposer aux traitements fondés sur l’intérêt légitime. Tu peux retirer un consentement pour l’avenir ; cela ne remet pas en cause les traitements déjà réalisés légalement. Pour l’IA, cesse de l’utiliser et contacte-nous pour retirer ton accord enregistré ; les choix publicitaires et les permissions du téléphone disposent de leurs propres réglages.</p>
+          <p>Pour exercer un droit ou obtenir un export, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a>, de préférence depuis l’adresse de ton compte. Nous répondons en principe sous un mois ; si un délai supplémentaire est nécessaire dans les cas prévus par le RGPD, nous t’en informons. Une vérification d’identité peut être nécessaire en cas de doute. Tu peux aussi adresser une réclamation à la CNIL sur cnil.fr.</p>
+          <p>Pour supprimer ton compte dans l’application : Profil → Mon compte → Supprimer mon compte. Sans l’application, envoie un e-mail avec « Suppression de compte » en objet. Si tu as un abonnement, résilie-le séparément dans Google Play : supprimer Céoù ou ton compte ne l’annule pas.</p>
         </section>
 
         <section class="highlight" id="suppression-de-compte" data-spy-target>
           <h2>Supprimer ton compte et tes données</h2>
-          <p>Depuis l'application, c'est immédiat : Profil, puis « Mon compte », puis « Supprimer mon compte ». Ton mot de passe t'est redemandé, pour confirmer que c'est bien toi.</p>
-          <p>Sans l'application, écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> depuis l'adresse e-mail de ton compte, avec « Suppression de compte » en objet. La demande est traitée sous 30 jours.</p>
-          <p>Ce qui est supprimé : ton compte et ton profil, tes habitations, pièces, emplacements, conteneurs et objets, leurs photos, l'historique de leurs déplacements, tes prêts et emprunts, tes amis, tes partages et tes invitations, tes jetons de notification et tes journaux d'erreurs.</p>
-          <p>Ce qui reste : les habitations que des amis ont partagées avec toi ne sont pas supprimées — elles leur appartiennent, tu perds simplement leur accès. De même, si quelqu'un a enregistré t'avoir prêté un objet, la ligne reste chez lui : elle fait partie de ses données à lui, pas des tiennes.</p>
-          <p>La suppression est définitive : rien n'est récupérable ensuite depuis l'application. Les sauvegardes techniques de l'hébergeur peuvent en conserver une copie le temps de leur rotation, avant d'être écrasées à leur tour.</p>
+          <p>Dans Céoù : Profil → Mon compte → Supprimer mon compte. Ton mot de passe est demandé pour confirmer l’action. Une fois la suppression réussie, l’accès au compte est supprimé et l’action est définitive.</p>
+          <p>Sans l’application : écris à <a href="mailto:contact@ceou.eu">contact@ceou.eu</a> depuis l’adresse de ton compte, avec « Suppression de compte » en objet. La demande est traitée en principe sous un mois, après les vérifications nécessaires.</p>
+          <p>La suppression emporte le profil, les lieux possédés et leur inventaire, les plans, les photos enregistrées sous le compte, les prêts, les déménagements et cartons associés au compte, les partages, les invitations, les compteurs et les journaux rattachés. Les lieux possédés par d’autres personnes restent chez elles ; tu en perds l’accès. Les données qu’elles ont saisies elles-mêmes, comme la trace d’un prêt, peuvent rester dans leur propre inventaire.</p>
+          <p>Les copies de sauvegarde disparaissent au fil de leur rotation. Les prestataires de paiement et de publicité appliquent leurs propres obligations de conservation ; écris-nous si ta demande concerne aussi les données associées à Céoù chez eux.</p>
+          <p>Un abonnement Google Play se résilie séparément dans Google Play. La suppression du compte ou la désinstallation de l’application ne met pas fin à son renouvellement.</p>
+        </section>
+
+        <section id="prestataires" data-spy-target>
+          <h2>Les politiques de nos prestataires</h2>
+          <ul class="provider-links">
+            <li><a href="https://supabase.com/privacy">Supabase</a> · <a href="https://supabase.com/legal/dpa">Data Processing Addendum</a></li>
+            <li><a href="https://policies.google.com/privacy">Google</a> · <a href="https://policies.google.com/technologies/partner-sites">AdMob</a> · <a href="https://ai.google.dev/gemini-api/terms">Gemini API</a></li>
+            <li><a href="https://www.revenuecat.com/privacy">RevenueCat</a></li>
+            <li><a href="https://expo.dev/privacy">Expo</a> · <a href="https://www.apple.com/legal/privacy/">Apple</a></li>
+            <li><a href="https://www.upcitemdb.com/privacy">UPCItemDB</a></li>
+            <li><a href="https://www.cnil.fr/fr/plaintes">CNIL</a></li>
+          </ul>
         </section>
 
         <section id="contact" data-spy-target>
@@ -1450,17 +1547,16 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
   <path d="M32 6c-9.4 0-17 7.6-17 17 0 12.8 17 35 17 35s17-22.2 17-35c0-9.4-7.6-17-17-17z" fill="currentColor"/>
   <circle cx="32" cy="22" r="7.5" fill="var(--sand)"/>
 </svg><span>Céoù</span></span>
-          <p class="tagline">Céoù — sais toujours où sont tes affaires</p>
-          <p class="eu">Hébergé dans l’Union européenne</p>
+          <p class="tagline">Moins chercher. Mieux profiter.</p>
+          <p class="eu">Créé par Antony Monreal · En test sur Android</p>
         </div>
         <div>
           <h2>Le site</h2>
           <ul>
-            <li><a href="index.html#comment">Comment ça marche</a></li>
-            <li><a href="index.html#fonctionnalites">Fonctionnalités</a></li>
+            <li><a href="index.html#fonctionnalites">L’application</a></li>
+            <li><a href="index.html#formules">Gratuit &amp; Plus</a></li>
             <li><a href="tutoriels.html">Tutoriels</a></li>
-            <li><a href="index.html#engagements">Engagements</a></li>
-            <li><a href="index.html#avancement">Avancement</a></li>
+            <li><a href="index.html#avancement">La bêta</a></li>
             <li><a href="index.html#questions">Questions</a></li>
           </ul>
         </div>

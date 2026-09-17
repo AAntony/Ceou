@@ -1233,6 +1233,49 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
 .doc-back { display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 1rem; font-size: 0.9375rem; text-decoration: none; }
 .doc-back::before { content: ""; width: 0.4rem; height: 0.4rem; border-left: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; transform: rotate(45deg); }
 
+/* Current product presentation and optional plans. */
+.hero h1 { white-space: pre-line; }
+.hero .button { font-size: 0.9375rem; margin-top: 0; }
+.hero .device { width: min(22rem, 100%); }
+.found-note { display: flex; align-items: flex-start; gap: 0.45rem; margin: 1.1rem 0; color: var(--accent-strong); font-size: 0.875rem; }
+.found-note svg { width: 1.2rem; height: 1.2rem; flex-shrink: 0; }
+.hero-plan { padding: 0.8rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); }
+.hero-plan .screen-title { font-size: 0.875rem; margin-bottom: 0.6rem; }
+.plan-showcase { padding: 1.25rem; }
+.plan-location { display: flex; align-items: center; gap: 0.8rem; padding: 1rem; background: var(--accent-soft); border-radius: 1rem; margin-top: 0.8rem; }
+.plan-location > svg { width: 1.6rem; height: 1.6rem; color: var(--accent-strong); flex-shrink: 0; }
+.plan-location b, .plan-location span span { display: block; }
+.plan-location span span { color: var(--ink-soft); font-size: 0.875rem; margin-top: 0.25rem; }
+.plan-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+.plan-card { padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--line-strong); border-radius: 1.5rem; background: var(--surface); }
+.plan-card h3 { font-size: 1.5rem; margin-bottom: 1.5rem; }
+.plan-plus { border: 2px solid var(--accent-strong); }
+.plan-plus h3 { color: var(--accent-strong); }
+.plan-card dl { margin: 0; }
+.plan-card dl > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.4rem 0.8rem; padding: 0.85rem 0; border-top: 1px solid var(--line); }
+.plan-card dt { color: var(--ink-soft); min-width: 0; flex: 1 1 10rem; }
+.plan-card dd { margin: 0; font-size: 1.2rem; font-weight: 700; text-align: right; flex-shrink: 0; }
+.plan-note { color: var(--ink-soft); font-size: 0.9375rem; margin: 1.25rem 0 2rem; max-width: 50rem; }
+.reward-note { display: flex; align-items: flex-start; gap: 1.2rem; padding: 1.5rem; background: var(--accent-soft); border-radius: 1.25rem; }
+.reward-note > div { min-width: 0; }
+.reward-note .pill { flex-shrink: 0; }
+.reward-note h3 { margin-bottom: 0.6rem; }
+.test-label { font-size: 0.8125rem; margin-top: 0.8rem; font-weight: 600; }
+.privacy-summary { padding: 1.4rem; margin-bottom: 2rem; border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--surface); }
+.privacy-summary ul { list-style: disc; padding-left: 1.2rem; margin: 0.8rem 0 1rem; }
+.privacy-summary li + li { margin-top: 0.5rem; }
+.provider-links li { margin-bottom: 0.6rem; }
+.mobile-toc { display: none; }
+@media (max-width: 61.99rem) {
+  .mobile-toc { display: block; padding: 1rem; border: 1px solid var(--line-strong); border-radius: 1rem; margin-bottom: 2rem; }
+  .mobile-toc summary { cursor: pointer; font-weight: 600; }
+  .mobile-toc a { display: block; padding: 0.45rem 0; }
+}
+@media (max-width: 38rem) {
+  .plan-cards { grid-template-columns: minmax(0, 1fr); }
+  .reward-note { flex-direction: column; }
+}
+
 /* === Apparitions au défilement ========================================= */
 
 /* Tout est conditionné à la classe "js" posée par le script en tête de page.
@@ -1287,7 +1330,7 @@ a.badge:hover { text-decoration: underline; text-underline-offset: 0.2em; }
    sans ces quelques lignes, elle sort avec un menu collant en travers de la
    première page et des liens dont on ne voit pas la destination. */
 @media print {
-  .announce, .top, .progress, .doc-toc, .foot .eu, .cta { display: none !important; }
+  .announce, .top, .progress, .doc-toc, .mobile-toc, .foot .eu, .cta { display: none !important; }
   body { background: #FFFFFF; color: #000000; }
   .doc-layout { display: block; padding: 0; }
   .highlight { border: 1px solid #999999; background: none; }

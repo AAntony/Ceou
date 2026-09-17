@@ -1,6 +1,6 @@
 # Le site public de Céoù
 
-Six pages, une image et une règle de serveur, engendrées dans `site/`.
+Six pages, une image et quatre fichiers de configuration, générés dans `site/`.
 **Ne rien y modifier à la main** — le dossier est réécrit à chaque exécution
 du générateur.
 
@@ -14,6 +14,9 @@ du générateur.
 | `privacy.html` | Politique de confidentialité, anglais | `#account-deletion` |
 | `og-image.png` | Vignette de partage et icône de raccourci | |
 | `.htaccess` | Redirection de HTTP vers HTTPS (Apache, donc OVH) | |
+| `app-ads.txt` | Vendeur Google AdMob autorisé, avec le compte éditeur actuel | |
+| `robots.txt` | Autorise l’exploration et indique le sitemap | |
+| `sitemap.xml` | Liste les six adresses canoniques | |
 
 Ce document vit ici et non dans `site/` : ce dossier part en ligne tel quel, et
 tout ce qu'il contient devient public. Une note de développement n'a rien à
@@ -105,6 +108,45 @@ qu'il fait n'est nécessaire pour lire la page.** Bloqué, la page s'affiche
 entière du premier coup.
 
 ## Déployer
+
+### Mise à jour du 17 septembre 2026
+
+L’accueil présente les fonctionnalités actuelles et les limites Gratuit/Plus
+validées pour les tests, sans tarif commercial inventé. Les pages de confidentialité
+FR/EN identifient **Antony Monreal** comme responsable et détaillent AdMob,
+RevenueCat, Gemini, les compteurs et les demandes de suppression.
+La suppression d’un compte ne résilie pas un abonnement Google Play.
+
+Le texte commun de l’application a aussi été actualisé. Une future mise à jour
+de l’application doit embarquer ce JSON pour que la version installée soit identique
+au site ; reconstruire le site seul ne met pas à jour les téléphones.
+
+Générer les fichiers ou les pousser sur GitHub **ne publie pas le domaine OVH**.
+Téléverser les onze fichiers de `site/` dans `www`, y compris `.htaccess`,
+en remplaçant leurs anciennes versions. Aucun identifiant FTP n’est enregistré
+dans ces sources.
+
+Avant de renseigner AdMob, ouvrir la page publique sans connexion et vérifier
+la date **17 septembre 2026**, le nom de l’éditeur et la rubrique
+**Publicités à la demande** :
+
+- Politique à coller dans AdMob : `https://ceou.eu/confidentialite.html`
+- Variante anglaise : `https://ceou.eu/privacy.html`
+- Suppression Google Play : `https://ceou.eu/confidentialite.html#suppression-de-compte`
+- Vendeur publicitaire : `https://ceou.eu/app-ads.txt`
+
+Le fichier publicitaire contient le compte `pub-9364843473034868`, fourni le
+17 septembre. Il ne remplace pas le formulaire de consentement AdMob.
+Associer `https://ceou.eu` comme site du développeur dans la fiche Google Play
+permettra à AdMob de le trouver lorsque la fiche sera disponible.
+
+Références utilisées pour la mise à jour :
+
+- [Information des personnes — CNIL](https://www.cnil.fr/fr/conformite-rgpd-information-des-personnes-et-transparence)
+- [Données du SDK Google Mobile Ads](https://developers.google.com/admob/android/privacy/play-data-disclosure)
+- [Conditions Gemini API](https://ai.google.dev/gemini-api/terms)
+- [Confidentialité RevenueCat](https://www.revenuecat.com/privacy)
+- [Configuration app-ads.txt](https://support.google.com/admob/answer/9363762?hl=fr)
 
 ### OVH (l'hébergement inclus avec le domaine)
 

@@ -93,8 +93,9 @@ export const FAVICON =
  * trait sont celles du vrai plan — épais pour le mur qui ferme le logement,
  * fin pour une cloison entre deux pièces, et les trous sont des portes.
  */
-export function planIllustration(label) {
-  return `<svg class="plan-svg" viewBox="0 0 320 210" role="img" aria-label="${label}">
+export function planIllustration(label, lang = 'fr', decorative = false) {
+  const names = lang === 'fr' ? ['Salon', 'Cuisine', 'Entrée', 'Garage'] : ['Living room', 'Kitchen', 'Hall', 'Garage'];
+  return `<svg class="plan-svg" viewBox="0 0 320 210" ${decorative ? 'aria-hidden="true"' : `role="img" aria-label="${label}"`}>
   <rect x="8" y="8" width="304" height="194" rx="14" fill="var(--surface)" stroke="var(--line)"/>
   <g class="plan-rooms">
     <rect x="28" y="28" width="128" height="92" rx="4" fill="var(--room-1)"/>
@@ -110,9 +111,17 @@ export function planIllustration(label) {
       <path d="M28 120h72M132 120h152"/>
     </g>
   </g>
+  <g fill="var(--ink)" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle">
+    <text x="92" y="78">${names[0]}</text>
+    <text x="220" y="59">${names[1]}</text>
+    <text x="220" y="105">${names[2]}</text>
+    <text x="88" y="154">${names[3]}</text>
+  </g>
+  <rect x="176" y="132" width="77" height="35" rx="6" fill="var(--surface)" stroke="var(--accent-strong)" stroke-width="1.5"/>
   <g class="plan-pin">
-    <circle cx="196" cy="150" r="15" fill="var(--accent)"/>
-    <circle cx="196" cy="150" r="5.5" fill="var(--sand)"/>
+    <circle cx="212" cy="150" r="23" fill="var(--accent)" opacity="0.18"/>
+    <circle cx="212" cy="150" r="12" fill="var(--accent-fill)"/>
+    <path d="m207 150 3 3 6-6" fill="none" stroke="var(--on-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>`;
 }
