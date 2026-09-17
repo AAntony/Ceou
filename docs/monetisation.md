@@ -18,9 +18,9 @@ Les analyses et minutes se renouvellent au premier du mois UTC. Les publicités 
 ## Dernières opérations RevenueCat
 
 1. Ouvrir le projet Céoù dans [RevenueCat](https://app.revenuecat.com/).
-2. Dans Product catalog, créer ou utiliser l'entitlement **`ceou_plus`**. Lui associer les produits mensuel et annuel du Test Store. Les placer dans une offering marquée **Current**. Les tarifs affichés viennent de la boutique, sans prix codé dans l'app.
+2. Dans Product catalog, conserver l'entitlement existant **`céoù_pro`** (accents compris). Son nom affiché peut devenir **Céoù Plus**. Vérifier parmi ses trois produits les abonnements mensuel et annuel du Test Store, puis les placer dans une offering marquée **Current**. Ne pas ajouter d'offre à vie : le serveur attend un abonnement avec une date d'expiration. Les tarifs affichés viennent de la boutique, sans prix codé dans l'app.
 3. Dans les clés API du projet, créer une **clé secrète API v1** pour le serveur. Ne pas employer la clé publique `test_…` à cet endroit.
-4. Ouvrir [les secrets des fonctions Supabase](https://supabase.com/dashboard/project/neessqtornvankriouwd/functions/secrets). Ajouter `REVENUECAT_SECRET_KEY` avec cette clé. Ne jamais la mettre dans Git, EAS public ou le chat. Si l'entitlement porte un autre identifiant, ajouter `REVENUECAT_ENTITLEMENT` avec son identifiant exact.
+4. Ouvrir [les secrets des fonctions Supabase](https://supabase.com/dashboard/project/neessqtornvankriouwd/functions/secrets). `REVENUECAT_SECRET_KEY` a été ajouté ; sa présence est vérifiée, la connexion complète reste à valider avec un achat de test. `REVENUECAT_ENTITLEMENT=céoù_pro` est également configuré et vérifié pour correspondre à l'identifiant existant. Le nom `ceou_plus` reste uniquement la valeur de repli du code pour un serveur non configuré. Ne jamais mettre la clé secrète dans Git, EAS public ou le chat.
 5. Pour la synchronisation automatique, créer un secret aléatoire distinct nommé `REVENUECAT_WEBHOOK_SECRET` dans Supabase. Dans RevenueCat → Integrations → Webhooks, utiliser l'URL ci-dessous et le header Authorization `Bearer <ce secret>`. Envoyer le test RevenueCat, puis vérifier une simulation d'achat, une restauration et une expiration.
 
 Webhook : `https://neessqtornvankriouwd.supabase.co/functions/v1/revenuecat-webhook`
@@ -42,7 +42,7 @@ La signature Google, l'identité, le bloc, la récompense, le challenge serveur 
 
 ## Google Play puis passage commercial
 
-Le paiement et la vérification du compte développeur ne créent pas les produits de Céoù. Il reste à créer l'app Android **`com.aantony.ceou`**, déposer un AAB sur une piste de test interne, créer l'abonnement avec ses offres mensuelle/annuelle et relier Google Play à RevenueCat. Importer ces produits, les associer à `ceou_plus` et à l'offering Current.
+Le paiement et la vérification du compte développeur ne créent pas les produits de Céoù. Il reste à créer l'app Android **`com.aantony.ceou`**, déposer un AAB sur une piste de test interne, créer l'abonnement avec ses offres mensuelle/annuelle et relier Google Play à RevenueCat. Importer ces produits, les associer à `céoù_pro` et à l'offering Current.
 
 Définir ensuite `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` avec la **clé publique Google Play `goog_…`** et `EXPO_PUBLIC_BILLING_MODE=live` dans l'environnement EAS production. Le profil de build production précise également ce mode ; la variable d'environnement EAS est nécessaire pour les futures mises à jour OTA. La clé secrète reste exclusivement dans Supabase.
 
