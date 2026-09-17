@@ -53,6 +53,11 @@
   "billing_ad_limit": "You've reached today's ad limit.",
   "billing_test_disabled": "This account is not authorized for test credits yet.",
   "billing_ad_unavailable": "No ad is available right now. Please try again later.",
+  "billing_ads_configuration": "The advertising privacy form is not available for Céoù yet. Setup must be completed before you can test an ad.",
+  "billing_consent_unavailable": "The advertising privacy form could not be loaded. Try again later. No bonus has been used.",
+  "billing_ad_network": "The advertising service could not be reached. Check your connection and try again.",
+  "billing_unavailable": "The plan and bonus service is temporarily unavailable. Please try again later.",
+  "unauthorized": "Your Céoù session needs to be renewed. Sign in again and retry.",
   "billing_native_required": "Open Céoù on Android to use this option.",
   "error": "That didn't work. Please try again in a moment.",
   "legal": "Privacy"

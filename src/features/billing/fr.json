@@ -53,6 +53,11 @@
   "billing_ad_limit": "Le maximum de publicités pour aujourd’hui est atteint.",
   "billing_test_disabled": "Ce compte n’est pas encore autorisé à recevoir les bonus de test.",
   "billing_ad_unavailable": "Aucune publicité disponible pour le moment. Réessaie un peu plus tard.",
+  "billing_ads_configuration": "Le formulaire de confidentialité des publicités n’est pas encore disponible pour Céoù. La configuration doit être terminée avant de pouvoir tester une publicité.",
+  "billing_consent_unavailable": "Impossible de charger le formulaire de confidentialité des publicités. Réessaie plus tard. Aucun bonus n’a été consommé.",
+  "billing_ad_network": "Impossible de joindre le service publicitaire. Vérifie ta connexion puis réessaie.",
+  "billing_unavailable": "Le service de forfaits et de bonus est momentanément indisponible. Réessaie plus tard.",
+  "unauthorized": "Ta connexion à Céoù doit être renouvelée. Reconnecte-toi puis réessaie.",
   "billing_native_required": "Ouvre Céoù sur Android pour utiliser cette option.",
   "error": "Cette action n’a pas abouti. Réessaie dans quelques instants.",
   "legal": "Confidentialité"
