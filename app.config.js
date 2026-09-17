@@ -1,4 +1,5 @@
 const { execSync } = require('child_process');
+const { resolveBillingConfig } = require('./billing.config');
 
 // Identifiant précis de version affiché en bas de l'écran Profil — le
 // numéro "1.0.0" seul ne bouge jamais assez souvent pour savoir quelle
@@ -223,12 +224,7 @@ module.exports = {
       ],
     ],
     extra: {
-      billing: {
-        mode: process.env.EXPO_PUBLIC_BILLING_MODE === 'live' ? 'live' : 'test',
-        revenueCatKey: process.env.EXPO_PUBLIC_BILLING_MODE === 'live'
-          ? (process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY || '')
-          : 'test_kdAWkKfnPoHDUbxFHDPVuopebrZ',
-      },
+      billing: resolveBillingConfig(process.env),
       router: {},
       eas: {
         projectId: 'e6e7590c-fe95-4ec3-93c4-5da5ee7e9b94',

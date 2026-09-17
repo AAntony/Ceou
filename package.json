@@ -82,7 +82,7 @@
     "typecheck": "tsc --noEmit",
     "verify": "npm run typecheck && npm run lint",
     "test": "npm run test:redesign && npm run test:moving && npm run test:voice && npm run test:scanner && npm run test:plans && npm run test:profile && npm run test:resilience && npm run test:finance && npm run test:billing",
-    "test:billing": "node --test scripts/tests/billing.test.mjs",
+    "test:billing": "node --test scripts/tests/billing.test.mjs scripts/tests/billing-store.test.mjs",
     "verify:ci": "npm run typecheck && npm run lint -- --max-warnings 28 && npm test",
     "test:scanner": "node --test scripts/tests/scanner.test.mjs",
     "site": "node scripts/build-site.mjs",

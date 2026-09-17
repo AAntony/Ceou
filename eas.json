@@ -5,7 +5,8 @@
   },
   "build": {
     "development": {
-      "env": { "EXPO_PUBLIC_BILLING_MODE": "test" },
+      "environment": "development",
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "test", "EXPO_PUBLIC_REVENUECAT_TEST_STORE": "true" },
       "developmentClient": true,
       "distribution": "internal",
       "android": {
@@ -14,7 +15,8 @@
       "channel": "development"
     },
     "preview": {
-      "env": { "EXPO_PUBLIC_BILLING_MODE": "test" },
+      "environment": "preview",
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "test", "EXPO_PUBLIC_REVENUECAT_TEST_STORE": "false" },
       "autoIncrement": true,
       "distribution": "internal",
       "android": {
@@ -23,7 +25,8 @@
       "channel": "preview"
     },
     "production": {
-      "env": { "EXPO_PUBLIC_BILLING_MODE": "live" },
+      "environment": "production",
+      "env": { "EXPO_PUBLIC_BILLING_MODE": "live", "EXPO_PUBLIC_REVENUECAT_TEST_STORE": "false" },
       "autoIncrement": true,
       "channel": "production"
     }

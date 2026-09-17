@@ -3,8 +3,9 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import { supabase } from '../../lib/supabase/client';
 import { billingTestMode, revenueCatKey } from './config';
 import type { StoreOffer } from './types';
+import { canInitializeStore } from './storePolicy';
 
-export const storeSupported = Platform.OS === 'android' && !!revenueCatKey && (billingTestMode || revenueCatKey.startsWith('goog_'));
+export const storeSupported = canInitializeStore(Platform.OS, revenueCatKey, billingTestMode, __DEV__);
 let queue: Promise<unknown> = Promise.resolve();
 function serial<T>(operation: () => Promise<T>): Promise<T> {
   const next = queue.then(operation,operation); queue=next.catch(()=>{}); return next;

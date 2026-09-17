@@ -4,7 +4,15 @@
 
 Les SDK RevenueCat et AdMob sont intégrés dans le build Android 1.2.0. L'écran est accessible dans **Profil → Forfait et bonus IA**. La version web affiche les compteurs ; achats et publicités sont réservés à Android.
 
-Le serveur reste en **observation** (`billing_settings.enforce=false`). Les annonces réelles sont désactivées (`ads_enabled=false`). L'inventaire existant reste accessible, même au-dessus des quotas. Aucun paiement réel n'est activé par cette livraison. Le build preview emploie RevenueCat Test Store et les annonces Google de démonstration. Seuls les comptes ajoutés par l'administrateur dans `billing_testers` reçoivent des droits Plus sandbox et des crédits publicitaires simulés.
+Le serveur reste en **observation** (`billing_settings.enforce=false`). Les annonces réelles sont désactivées (`ads_enabled=false`). L'inventaire existant reste accessible, même au-dessus des quotas. Le build preview utilise les annonces Google de démonstration ; ses achats restent indisponibles tant que Google Play n'est pas configuré. Seuls les comptes ajoutés par l'administrateur dans `billing_testers` reçoivent des droits Plus sandbox et des crédits publicitaires simulés.
+
+### Correctif du 17 septembre : fermeture « Wrong API Key »
+
+L'APK preview initial contenait à tort une clé RevenueCat `test_…` alors qu'EAS compile ce profil en release. RevenueCat ferme volontairement les applications release qui utilisent Test Store. Le correctif empêche l'initialisation de cette combinaison, y compris si elle arrive par OTA. Les consommations et bonus publicitaires restent accessibles. Aucune modification du secret Supabase ni de l'entitlement ne résout cette incompatibilité de build.
+
+Test Store est désormais activé explicitement avec `EXPO_PUBLIC_REVENUECAT_TEST_STORE=true`, uniquement pour le profil **development** (ou Metro avec un build de développement). **Preview** et **production** utilisent la clé Android publique `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=goog_…`. Preview tolère son absence et affiche un message d'attente ; le mode live refuse une clé absente ou incompatible avant publication. Le mode publicitaire `test` ne signifie pas qu'un achat Google Play est gratuit : il faut configurer des testeurs de licence Google Play et vérifier l'indication d'achat de test dans la confirmation.
+
+Pour les OTA, utiliser l'environnement EAS correspondant au canal et y définir aussi `EXPO_PUBLIC_BILLING_MODE` et `EXPO_PUBLIC_REVENUECAT_TEST_STORE` : les valeurs `env` d'eas.json concernent les builds, pas les OTA. L'environnement preview reste en mode `test` et Test Store à `false`.
 
 | Forfait | Lieux possédés | Objets | Analyses photo/mois | Conversation/mois |
 |---|---:|---:|---:|---:|
@@ -57,7 +65,7 @@ La bascule de `enforce` et `ads_enabled` est une opération d'administration sé
 1. Installer le nouveau build 1.2.0 : l'ancienne application 1.1.0 ne contient pas les modules natifs nécessaires.
 2. Ouvrir Profil → Forfait et bonus IA. Vérifier les quantités, le thème clair/sombre et la taille du texte. Le bandeau d'observation doit être présent.
 3. Avec le compte de test autorisé, regarder une annonce de démonstration jusqu'à la récompense : +2 analyses. La fermer avant la récompense : aucun crédit. Vérifier l'absence de double crédit et le maximum de cinq annonces.
-4. Après configuration RevenueCat, simuler un achat, restaurer, puis contrôler le forfait et l'expiration. Aucune carte bancaire ne doit être demandée par le Test Store.
+4. Après configuration RevenueCat et Google Play, effectuer un achat de test avec un compte déclaré testeur de licence Play, restaurer, puis contrôler le forfait et l'expiration. Vérifier l'indication d'achat de test avant confirmation. Les simulations Test Store sont réservées aux builds de développement.
 5. Se déconnecter puis utiliser un autre compte : ses compteurs et droits doivent être distincts.
 6. Les annonces peuvent être indisponibles si le formulaire UMP AdMob n'est pas encore publié : terminer cette configuration puis réessayer, sans désactiver le consentement.
 

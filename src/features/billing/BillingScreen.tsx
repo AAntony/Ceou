@@ -9,7 +9,7 @@ import { showMessage } from '../../lib/dialog';
 import { useSession } from '../auth/SessionProvider';
 import { billingRequest } from './api';
 import { adsSupported, advertisingPrivacy, showRewardAd } from './ads';
-import { billingTestMode } from './config';
+import { billingTestMode, revenueCatKey } from './config';
 import { useBilling } from './useBilling';
 import * as store from './store';
 import { resetDate } from './format';
@@ -68,6 +68,8 @@ export function BillingScreen() {
   };
   const data=billing.data;
   const caps=data?.plans[data.plan];
+  const pendingStoreMessage = Platform.OS === 'web' ? 'billing.web'
+    : billingTestMode && !store.storeSupported ? 'billing.test_store_pending' : 'billing.store_pending';
   return <>
     <Stack.Screen options={{title:t('billing.title')}} />
     <ScrollView className="flex-1 bg-sand" contentContainerStyle={{padding:20,paddingBottom:40,width:'100%',maxWidth:760,alignSelf:'center'}}>
@@ -95,7 +97,8 @@ export function BillingScreen() {
           </View>)}
           {(offers.data || []).map(offer=><Button key={offer.id} disabled={busy || !ready} label={t('billing.choose',{price:offer.price,period:offer.period==='P1M'?t('billing.month'):offer.period==='P1Y'?t('billing.year'):''})}
             onPress={()=>void run(async()=>{await sync();await store.purchase(userId!,offer.id);await sync();showMessage(t('billing.synced'));})} />)}
-          {!offers.data?.length ? <Text className="text-caption text-ink-soft">{t(Platform.OS==='web'?'billing.web':'billing.store_pending')}</Text>:null}
+          {!offers.data?.length ? <Text className="text-caption text-ink-soft">{t(pendingStoreMessage)}</Text>:null}
+          {billingTestMode && revenueCatKey.startsWith('goog_') && offers.data?.length ? <Text className="text-caption text-ink-soft">{t('billing.play_test_notice')}</Text>:null}
           <Text className="text-caption text-ink-soft">{t('billing.preserved')}</Text>
           {offers.data?.length ? <Text className="text-caption text-ink-soft">{t('billing.renew_terms')}</Text>:null}
           {store.storeSupported && ready ? <>
